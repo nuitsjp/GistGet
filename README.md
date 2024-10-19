@@ -1,1 +1,1 @@
-# GitGet
+# GistGet
