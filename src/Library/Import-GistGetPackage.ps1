@@ -15,9 +15,25 @@ function Import-GistGetPackage {
     Import-Module -Name PowerShellForGitHub
     Import-Module -Name powershell-yaml
 
-    if ($GistId -eq $null -and $Uri -eq $null) {
-        Write-Error "GistId or Uri must be specified"
-        exit 1
+    if (-not $GistId -and -not $Uri) {
+        # Get GistId from environment variable
+        Write-Verbose "Getting GistId from environment variable"
+        . $PSScriptRoot\Get-GistGetGistId.ps1
+        $GistId = Get-GistGetGistId
+        Write-Verbose "Environment variable GistId: $GistId"
+
+        # If GistId is not set, get it from user input
+        if (-not $GistId) {
+            $GistId = Read-Host "Enter GistId"
+            if (-not $GistId) {
+                Write-Error "GistId or Uri must be specified"
+                exit 1
+            }
+
+            # Set GistId to environment variable
+            . $PSScriptRoot\Set-GistGetGistId.ps1
+            Set-GistGetGistId -GistId $GistId
+        }
     }
 
     if ($GistId)
@@ -38,8 +54,8 @@ function Import-GistGetPackage {
     if($Uri)
     {
         # Get file contents
+        Write-Verbose "Getting Gist from $Uri"
         $packages = Invoke-RestMethod -Uri $Uri | ConvertFrom-Yaml
-        $packages
     }
 
     $packageIds = @{}; Get-WinGetPackage | ForEach-Object { $packageIds[$_.Id] = $true }
