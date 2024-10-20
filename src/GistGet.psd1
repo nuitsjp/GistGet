@@ -10,6 +10,7 @@
     # コマンドとエイリアスのエクスポート
     FunctionsToExport = @(
         'Import-GistGetPackage',
+        'Uninstall-GistGetPackage',
         'Set-GistId',
         'Get-GitHubPackageList', 
         'Add-GitHubPackage', 
@@ -25,6 +26,7 @@
 
     # ディペンデンシー
     RequiredModules = @(
+        'powershell-yaml',
         'PowerShellForGitHub',
         'Microsoft.WinGet.Client')
     ExternalModuleDependencies = @()

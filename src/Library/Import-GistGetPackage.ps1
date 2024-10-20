@@ -14,6 +14,7 @@ function Import-GistGetPackage {
 
     Import-Module -Name PowerShellForGitHub
     Import-Module -Name powershell-yaml
+    . $PSScriptRoot\GistGetPackage.ps1
 
     if (-not $GistId -and -not $Uri) {
         # Get GistId from environment variable
@@ -49,23 +50,38 @@ function Import-GistGetPackage {
         }
 
         # Get file contents
-        $packages = $gist.files.$fileName.content | ConvertFrom-Yaml
+        $yaml = $gist.files.$fileName.content
     }
     if($Uri)
     {
         # Get file contents
         Write-Verbose "Getting Gist from $Uri"
-        $packages = Invoke-RestMethod -Uri $Uri | ConvertFrom-Yaml
+        $yaml = Invoke-RestMethod -Uri $Uri
     }
+
+    $packages = ConvertTo-GistGetPackageFromYaml -yaml $yaml
 
     $packageIds = @{}; Get-WinGetPackage | ForEach-Object { $packageIds[$_.Id] = $true }
     foreach ($package in $packages) {
         $packageId = $package.Id
-        if ($packageIds.ContainsKey($packageId)) {
-            Write-Verbose "Package $packageId already exists"
+        if ($package.Uninstall) {
+            if ($packageIds.ContainsKey($packageId)) {
+                # Uninstall the package if it exists
+                Write-Host "Uninstalling package $packageId"
+                Uninstall-WinGetPackage -Id $packageId
+            } else {
+                # Do nothing if the package does not exist
+                Write-Verbose "Package $packageId does not exist"
+            }
         } else {
-            Write-Host "Installing package $packageId"
-            Install-WinGetPackage -Id $packageId
+            if ($packageIds.ContainsKey($packageId)) {
+                # Do nothing if the package already exists
+                Write-Verbose "Package $packageId already exists"
+            } else {
+                # Install the package if it does not exist
+                Write-Host "Installing package $packageId"
+                Install-WinGetPackage -Id $packageId
+            }
         }
     }
 
