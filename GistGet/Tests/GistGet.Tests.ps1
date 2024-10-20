@@ -1,5 +1,5 @@
 # テスト対象のモジュールをインポート
-Import-Module -Name "$PSScriptRoot/../GistGet.psm1" -Force
+Import-Module -Name "$PSScriptRoot/.." -Force
 
 Describe "GistGetPackage Tests" {
     It "Test for ConvertTo-GistGetPackageFromYaml" {

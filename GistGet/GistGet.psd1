@@ -28,34 +28,26 @@
     RequiredModules = @(
         'powershell-yaml',
         'PowerShellForGitHub',
-        'Microsoft.WinGet.Client')
-    ExternalModuleDependencies = @()
+        'Microsoft.WinGet.Client'
+    )
 
     # 言語とフォーマット
     FileList = @()
     FormatsToProcess = @()
     TypesToProcess = @()
 
-    # DscResources and NestedModules are currently not used
-    NestedModules = @()
+    # モジュールの互換性
+    CompatiblePSEditions = @('Core')
 
-    # 使い方やサンプルへのリンク（あれば）
+    # ヘルプドキュメント
     HelpInfoURI = 'https://github.com/nuitsjp/GistGet'
 
     # Private data (署名や公開しないデータ)
-    PrivateData = @{}
-
-    # モジュールの互換性
-    CompatiblePSEditions = @('Core')  # PowerShell CoreとDesktopのどちらで使用可能か
-
-    # モジュールの必要性や参照ドキュメント
-    RequiredScripts = @()
-    ExternalScripts = @()
-    ExternalTypes = @()
-
-    # ログ、署名に関する設定
-    LogPipelineExecutionDetails = $false
-    LicenseUri = 'https://github.com/nuitsjp/GistGet/blob/main/LICENSE'
-    ProjectUri = 'https://github.com/nuitsjp/GistGet'
-    ReleaseNotes = 'Initial release of GistGet PowerShell module for managing WinGet packages.'
+    PrivateData = @{
+        PSData = @{
+            LicenseUri  = 'https://github.com/nuitsjp/GistGet/blob/main/LICENSE'
+            ProjectUri  = 'https://github.com/nuitsjp/GistGet'
+            ReleaseNotes = 'Initial release of GistGet PowerShell module for managing WinGet packages.'
+        }
+    }
 }
