@@ -1,4 +1,3 @@
-# YAML→GistGetPackageクラスへの変換関数
 class GistGetPackage {
     [string]$Id
     [string]$PackageParameters
