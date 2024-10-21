@@ -1,8 +1,9 @@
 # テスト対象のモジュールをインポート
-Import-Module -Name "$PSScriptRoot/.." -Force
+Import-Module -Name "$PSScriptRoot\..\src\GistGet.psd1" -Force
 
 Describe "GistGetPackage Tests" {
     It "Test for ConvertTo-GistGetPackageFromYaml" {
+        
         # Arrange: テストの準備
         $yaml = Get-Content -Path "$PSScriptRoot\assets\test.yaml" -Raw
         

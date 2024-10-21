@@ -1,6 +1,7 @@
 @{
     # モジュールの一般情報
-    ModuleVersion = '0.0.1'
+    RootModule = 'GistGet.psm1'
+    ModuleVersion = '0.0.4'
     GUID = 'ca1583d5-836a-46bc-a39d-fa11d205b864'
     Author = 'nuits.jp'
     Copyright = '(c) nuits.jp. All rights reserved.'
@@ -9,12 +10,7 @@
 
     # コマンドとエイリアスのエクスポート
     FunctionsToExport = @(
-        'Import-GistGetPackage',
-        'Uninstall-GistGetPackage',
-        'Set-GistId',
-        'Get-GitHubPackageList', 
-        'Add-GitHubPackage', 
-        'Remove-GitHubPackage'
+        'Import-GistGetPackage'
     )
     CmdletsToExport = @()
     AliasesToExport = @()

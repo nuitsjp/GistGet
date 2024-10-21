@@ -14,7 +14,6 @@ function Import-GistGetPackage {
 
     Import-Module -Name PowerShellForGitHub
     Import-Module -Name powershell-yaml
-    . $PSScriptRoot\GistGetPackage.ps1
 
     if (-not $GistId -and -not $Uri) {
         # Get GistId from environment variable
