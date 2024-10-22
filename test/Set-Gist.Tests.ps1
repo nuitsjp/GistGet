@@ -49,9 +49,17 @@ InModuleScope GistGet {
             $content = "Not Found"
 
             # Act: 関数を実行
-            Set-Gist -GistId $gistId -Content $content
+            $errorInfo = $null
+            try {
+                Set-Gist -GistId $gistId -Content $content
+            }
+            catch {
+                $errorInfo = $_
+            }
 
             # Assert: 結果が期待通りか確認
+            $errorInfo.Exception.Message.Contains('https://github.com/nuitsjp/GistGet/blob/main/docs/Set-GitHubToken.md') | Should -Be $true
+            $errorInfo.Exception.InnerException.Response.StatusCode | Should -Be 404
         }
     }
 }

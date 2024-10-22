@@ -32,7 +32,7 @@ function Set-Gist {
     catch {
         if ($_.Exception.Response.StatusCode -eq 404) {
             # メッセージと内部例外を設定して例外をスロー
-            $message = "Gist '$GistId' not found. "
+            $message = "Gist '$GistId' is missing or you do not have permission to access it, if GistId is correct, please issue a token and set it up: https://github.com/nuitsjp/GistGet/blob/main/docs/Set-GitHubToken.md"
             throw New-Object System.Exception($message, $_.Exception)
         }
         else {
