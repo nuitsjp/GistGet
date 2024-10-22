@@ -7,6 +7,11 @@ Import-Module -Name PowerShellForGitHub
 Import-Module -Name powershell-yaml
 Import-Module -Name Microsoft.WinGet.Client
 
+# グローバル変数の定義
+# GistIdを環境変数へ保管するためのキー
+$global:GistGetGistId = 'GistGetGistId'
+
+
 # Publicフォルダーのスクリプトをロード（公開関数）
 Get-ChildItem -Path (Join-Path $PSScriptRoot 'Public') -Filter *.ps1 | ForEach-Object {
     . $_.FullName
