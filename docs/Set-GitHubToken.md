@@ -1,5 +1,7 @@
 # Setting Up Gist Authentication Token
 
+[for Japanese](ja-jp/Set-GitHubToken.md)
+
 To perform Git updates, you need to set up an authentication token.
 
 You can generate a token from the link below:
