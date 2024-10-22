@@ -6,7 +6,7 @@ InModuleScope GistGet {
         It "値が設定されている場合、正しく取得されること" {
             # Arrange: テストの準備
             $currentDateTime = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-            [System.Environment]::SetEnvironmentVariable($global:GistGetGistId, $currentDateTime, [System.EnvironmentVariableTarget]::User)
+            Set-ItemProperty -Path "HKCU:\Environment" -Name $Global:GistGetGistId -Value $currentDateTime
 
             # Act: 関数を実行
             $result = Get-GistGetGistId
@@ -17,8 +17,10 @@ InModuleScope GistGet {
 
         It "値が設定されていない場合、値が取得されないこと" {
             # Arrange: テストの準備
-            [System.Environment]::SetEnvironmentVariable($global:GistGetGistId, $null, [System.EnvironmentVariableTarget]::User)
-
+            if (Get-ItemProperty -Path "HKCU:\Environment" -Name $Global:GistGetGistId -ErrorAction SilentlyContinue) {
+                Remove-ItemProperty -Path "HKCU:\Environment" -Name $Global:GistGetGistId
+            }
+    
             # Act: 関数を実行
             $result = Get-GistGetGistId
 
@@ -29,6 +31,12 @@ InModuleScope GistGet {
             }
             if($result) {
                 $false | Should -Be $true
+            }
+        }
+
+        AfterEach {
+            if (Get-ItemProperty -Path "HKCU:\Environment" -Name $Global:GistGetGistId -ErrorAction SilentlyContinue) {
+                Remove-ItemProperty -Path "HKCU:\Environment" -Name $Global:GistGetGistId
             }
         }
     }

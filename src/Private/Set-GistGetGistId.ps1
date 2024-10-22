@@ -6,7 +6,5 @@ function Set-GistGetGistId {
     )
 
     # ユーザー環境変数「GistGetGistId」にGistIdを設定
-    [System.Environment]::SetEnvironmentVariable('GistGetGistId', $GistId, [System.EnvironmentVariableTarget]::User)
-    # プロセス環境変数「GistGetGistId」にGistIdを設定
-    [System.Environment]::SetEnvironmentVariable('GistGetGistId', $GistId, [System.EnvironmentVariableTarget]::Process)
+    Set-ItemProperty -Path "HKCU:\Environment" -Name $Global:GistGetGistId -Value $GistId
 }
