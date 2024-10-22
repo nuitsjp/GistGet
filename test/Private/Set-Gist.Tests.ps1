@@ -1,5 +1,5 @@
 # テスト対象のモジュールをインポート
-Import-Module -Name "$PSScriptRoot\..\src\GistGet.psd1" -Force
+Import-Module -Name "$PSScriptRoot\..\..\src\GistGet.psd1" -Force
 
 InModuleScope GistGet {
     Describe "Set-Gist Tests" {
