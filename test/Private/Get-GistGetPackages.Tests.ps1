@@ -86,5 +86,15 @@ InModuleScope GistGet {
             $packages[2].PackageParameters | Should -Be ""
             $packages[2].Uninstall | Should -Be $true
         }
+
+        It "Ocurred Error" {
+            # Arrange: テストの準備
+    
+            # Act: 関数を実行
+            { Get-GistGetPackages } | Should -Throw
+
+            # Assert: 結果が期待通りか確認
+        }
+
     }
 }

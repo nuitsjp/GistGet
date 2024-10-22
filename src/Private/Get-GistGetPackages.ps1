@@ -30,6 +30,9 @@ function Get-GistGetPackages {
         # Get file contents
         $yaml = $gist.files.$fileName.content
     }
+    else {
+        throw "GistId, Uri, or Path must be specified"
+    }
 
     return ConvertTo-GistGetPackageFromYaml -Yaml $yaml
 }
