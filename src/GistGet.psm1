@@ -1,5 +1,8 @@
 # GistGet.psm1
 
+# エラーが発生した場合はスクリプトを停止
+$ErrorActionPreference = 'Stop'
+
 # Publicフォルダーのスクリプトをロード（公開関数）
 Get-ChildItem -Path (Join-Path $PSScriptRoot 'Public') -Filter *.ps1 | ForEach-Object {
     . $_.FullName

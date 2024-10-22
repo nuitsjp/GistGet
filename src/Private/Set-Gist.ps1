@@ -8,23 +8,35 @@ function Set-Gist {
         [string] $Content
     )
 
-    # ファイルの名前を取得
-    $fileName = $GistFileName
-    if (-not $fileName) {
-        # Gistの情報を取得
-        $gist = Get-GitHubGist -Gist $GistId
+    try {
+        # ファイルの名前を取得
+        $fileName = $GistFileName
+        if (-not $fileName) {
+            # Gistの情報を取得
+            $gist = Get-GitHubGist -Gist $GistId
 
-        # Get the first file if GistFileName is not specified
-        $fileName = $gist.files.PSObject.Properties.Name | Select-Object -First 1
+            # Get the first file if GistFileName is not specified
+            $fileName = $gist.files.PSObject.Properties.Name | Select-Object -First 1
+        }
+
+        # 更新用のハッシュテーブルを作成
+        $updateHash = @{
+            $fileName = @{
+                content = $Content
+            }
+        }
+
+        # Gistを更新
+        Set-GitHubGist -Gist $GistId -Update $updateHash
     }
-
-    # 更新用のハッシュテーブルを作成
-    $updateHash = @{
-        $fileName = @{
-            content = $Content
+    catch {
+        if ($_.Exception.Response.StatusCode -eq 404) {
+            # メッセージと内部例外を設定して例外をスロー
+            $message = "Gist '$GistId' not found. "
+            throw New-Object System.Exception($message, $_.Exception)
+        }
+        else {
+            throw
         }
     }
-
-    # Gistを更新
-    Set-GitHubGist -Gist $GistId -Update $updateHash
 }

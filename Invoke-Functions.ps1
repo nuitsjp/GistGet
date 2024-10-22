@@ -1,2 +1,8 @@
-. $PSScriptRoot\src\GistGet.psm1
-Get-Command Import-GistGetPackage -ErrorAction SilentlyContinue
+param(
+    [Parameter(Mandatory = $true)]
+    [string] $Token
+)
+
+Import-Module -Name "$PSScriptRoot\src\GistGet.psd1" -Force
+
+Set-GitHubToken -Token $Token
