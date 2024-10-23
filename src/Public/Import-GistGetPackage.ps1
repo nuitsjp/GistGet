@@ -3,7 +3,8 @@ function Import-GistGetPackage {
     param(
         [string] $GistId,
         [string] $GistFileName,
-        [string] $Uri
+        [string] $Uri,
+        [string] $Path
     )
 
     # Administrator Authority Check
@@ -12,50 +13,25 @@ function Import-GistGetPackage {
         exit 1
     }
 
-    if (-not $GistId -and -not $Uri) {
+    if (-not $GistId -and -not $Uri -and -not $Path) {
         # Get GistId from environment variable
         Write-Verbose "Getting GistId from environment variable"
-        . $PSScriptRoot\Get-GistGetGistId.ps1
         $GistId = Get-GistGetGistId
         Write-Verbose "Environment variable GistId: $GistId"
 
         # If GistId is not set, get it from user input
         if (-not $GistId) {
-            $GistId = Read-Host "Enter GistId"
-            if (-not $GistId) {
-                Write-Error "GistId or Uri must be specified"
-                exit 1
-            }
-
-            # Set GistId to environment variable
-            . $PSScriptRoot\Set-GistGetGistId.ps1
-            Set-GistGetGistId -GistId $GistId
+            throw "GistId, Uri, or Path, or the GistId must be registered in advance with Set-GistGetGistId."
         }
     }
 
-    if ($GistId)
-    {
-        # Get Gist information
-        Write-Verbose "Getting Gist for $GistId"
-        $gist = Get-GitHubGist -Gist $GistId
+    $packageParams = @{}
+    if ($GistId) { $packageParams['GistId'] = $GistId }
+    if ($GistFileName) { $packageParams['GistFileName'] = $GistFileName }
+    if ($Uri) { $packageParams['Uri'] = $Uri }
+    if ($Path) { $packageParams['Path'] = $Path }
 
-        $fileName = $GistFileName
-        if (-not $fileName) {
-            # Get the first file if GistFileName is not specified
-            $fileName = $gist.files.PSObject.Properties.Name | Select-Object -First 1
-        }
-
-        # Get file contents
-        $yaml = $gist.files.$fileName.content
-    }
-    if($Uri)
-    {
-        # Get file contents
-        Write-Verbose "Getting Gist from $Uri"
-        $yaml = Invoke-RestMethod -Uri $Uri
-    }
-
-    $packages = ConvertTo-GistGetPackageFromYaml -yaml $yaml
+    $packages = Get-GistGetPackages @packageParams
 
     $packageIds = @{}; Get-WinGetPackage | ForEach-Object { $packageIds[$_.Id] = $true }
     foreach ($package in $packages) {
