@@ -13,6 +13,7 @@ class GistGetPackage {
 # GistGetPackageクラス→YAMLへの変換関数
 function ConvertTo-YamlFromGistGetPackage {
     param (
+        [Parameter(Mandatory = $true)]
         [GistGetPackage[]]$Packages
     )
 
@@ -38,6 +39,7 @@ function ConvertTo-YamlFromGistGetPackage {
 
 function ConvertTo-GistGetPackageFromYaml {
     param (
+        [Parameter(Mandatory = $true)]
         [string]$Yaml
     )
     
