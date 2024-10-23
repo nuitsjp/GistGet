@@ -9,7 +9,7 @@ function Set-GistGetPackages {
     )
 
     # 引数がいずれも指定されていない場合は、環境変数から GistId を取得
-    if (-not $GistId -and -and -not $Path) {
+    if (-not $GistId -and -not $Path) {
         # Get GistId from environment variable
         Write-Verbose "Getting GistId from environment variable"
         $GistId = Get-GistGetGistId
@@ -17,8 +17,8 @@ function Set-GistGetPackages {
     }
 
     if ($Path) {
-        Write-Verbose "Getting Gist from $Path"
-        $yaml = Get-Content -Path $Path -Raw
+        # Save to file
+        ConvertTo-YamlFromGistGetPackage | Set-Content -Path $Path
     }
     elseif($GistId)
     {
