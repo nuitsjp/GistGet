@@ -10,6 +10,7 @@
 
     # コマンドとエイリアスのエクスポート
     FunctionsToExport = @(
+        'Get-GistGetPackages',
         'Import-GistGetPackage',
         'Set-GitHubToken',
         'Set-GistGetGistId'
