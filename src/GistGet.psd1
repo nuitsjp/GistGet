@@ -11,7 +11,8 @@
     # コマンドとエイリアスのエクスポート
     FunctionsToExport = @(
         'Import-GistGetPackage',
-        'Set-GitHubToken'
+        'Set-GitHubToken',
+        'Set-GistGetGistId'
     )
     CmdletsToExport = @()
     AliasesToExport = @()
