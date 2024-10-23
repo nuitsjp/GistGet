@@ -21,11 +21,13 @@ function Import-GistGetPackage {
 
     $packages = Get-GistGetPackages @packageParams
 
-    $packageIds = @{}; Get-WinGetPackage | ForEach-Object { $packageIds[$_.Id] = $true }
+    # インストール済みのパッケージを取得
+    $installedPackageIds = @{}; Get-WinGetPackage | ForEach-Object { $installedPackageIds[$_.Id] = $true }
+    
     foreach ($package in $packages) {
         $packageId = $package.Id
         if ($package.Uninstall) {
-            if ($packageIds.ContainsKey($packageId)) {
+            if ($installedPackageIds.ContainsKey($packageId)) {
                 # Uninstall the package if it exists
                 Write-Host "Uninstalling package $packageId"
                 Uninstall-WinGetPackage -Id $packageId
@@ -34,7 +36,7 @@ function Import-GistGetPackage {
                 Write-Verbose "Package $packageId does not exist"
             }
         } else {
-            if ($packageIds.ContainsKey($packageId)) {
+            if ($installedPackageIds.ContainsKey($packageId)) {
                 # Do nothing if the package already exists
                 Write-Verbose "Package $packageId already exists"
             } else {
