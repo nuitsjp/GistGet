@@ -7,6 +7,14 @@ function Get-GistGetPackages {
         [string] $Path
     )
 
+    # 引数がいずれも指定されていない場合は、環境変数から GistId を取得
+    if (-not $GistId -and -not $Uri -and -not $Path) {
+        # Get GistId from environment variable
+        Write-Verbose "Getting GistId from environment variable"
+        $GistId = Get-GistGetGistId
+        Write-Verbose "Environment variable GistId: $GistId"
+    }
+
     if ($Path) {
         Write-Verbose "Getting Gist from $Path"
         $yaml = Get-Content -Path $Path -Raw
@@ -31,7 +39,7 @@ function Get-GistGetPackages {
         $yaml = $gist.files.$fileName.content
     }
     else {
-        throw "GistId, Uri, or Path must be specified"
+        throw "GistId, Uri, or Path, or the GistId must be registered in advance with Set-GistGetGistId."
     }
 
     return ConvertTo-GistGetPackageFromYaml -Yaml $yaml
