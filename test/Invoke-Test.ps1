@@ -7,4 +7,5 @@ if (-not (Get-Module -Name Microsoft.WinGet.Client -ListAvailable)) {
     Install-Module -Name Microsoft.WinGet.Client -Force -Scope CurrentUser
 }
 
+# Invoke-Pester -Name "Set-GistGetPackages Tests"
 Invoke-Pester

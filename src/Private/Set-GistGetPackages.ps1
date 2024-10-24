@@ -14,30 +14,27 @@ function Set-GistGetPackages {
         Write-Verbose "Getting GistId from environment variable"
         $GistId = Get-GistGetGistId
         Write-Verbose "Environment variable GistId: $GistId"
+
+        if (-not $GistId) {
+            throw "Please specify a GistId or Path. Alternatively, you need to register the GistId in advance using Set-GistGetGistId."
+        }
     }
 
+    $yaml = ConvertTo-YamlFromGistGetPackage -Packages $Packages
     if ($Path) {
         # Save to file
-        ConvertTo-YamlFromGistGetPackage | Set-Content -Path $Path
+        $yaml | Set-Content -Path $Path -NoNewline
     }
     elseif($GistId)
     {
-        # Get Gist information
-        Write-Verbose "Getting Gist for $GistId"
-        $gist = Get-GitHubGist -Gist $GistId
+        $packageParams = @{}
+        if ($GistId) { $packageParams['GistId'] = $GistId }
+        if ($GistFileName) { $packageParams['GistFileName'] = $GistFileName }
 
-        $fileName = $GistFileName
-        if (-not $fileName) {
-            # Get the first file if GistFileName is not specified
-            $fileName = $gist.files.PSObject.Properties.Name | Select-Object -First 1
-        }
-
-        # Get file contents
-        $yaml = $gist.files.$fileName.content
+        Set-Gist @packageParams -Content $yaml
     }
     else {
-        throw "Please specify a GistId or Path. Alternatively, you need to register the GistId in advance using Set-GistGetGistId."
+        # Should not reach here
+        throw
     }
-
-    return ConvertTo-GistGetPackageFromYaml -Yaml $yaml
 }

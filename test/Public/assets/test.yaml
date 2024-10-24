@@ -1,0 +1,8 @@
+- id: 7zip.7zip
+- id: Microsoft.VisualStudioCode.Insiders
+  packageParameters: >-
+    /VERYSILENT
+    /NORESTART
+    /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
+- id: Zoom.Zoom
+  uninstall: true
