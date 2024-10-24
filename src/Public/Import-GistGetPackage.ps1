@@ -8,10 +8,10 @@ function Import-GistGetPackage {
     )
 
     # Administrator Authority Check
-    if (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-        Write-Error "This script must be run with administrative privileges; run PowerShell as an administrator and run the script again."
-        exit 1
-    }
+    # if (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    #     Write-Error "This script must be run with administrative privileges; run PowerShell as an administrator and run the script again."
+    #     exit 1
+    # }
 
     $packageParams = @{}
     if ($GistId) { $packageParams['GistId'] = $GistId }
