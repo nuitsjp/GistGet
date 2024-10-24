@@ -13,6 +13,7 @@
         'Get-GistGetGistId',
         'Get-GistGetPackages',
         'Import-GistGetPackage',
+        'Install-GistGetPackage',
         'Set-GistGetGistId',
         'Set-GitHubToken'
     )
