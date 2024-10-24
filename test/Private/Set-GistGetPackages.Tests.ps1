@@ -18,13 +18,13 @@ InModuleScope GistGet {
 
             # GistGitPackages配列を作成
             $packages = @(
-                [GistGetPackage]::new("7zip.7zip", "", $false),
                 [GistGetPackage]::new(
                     "Microsoft.VisualStudioCode.Insiders",
                     "/VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath",
                     $false
                 ),
-                [GistGetPackage]::new("Zoom.Zoom", "", $true)
+                [GistGetPackage]::new("Zoom.Zoom", "", $true),
+                [GistGetPackage]::new("7zip.7zip", "", $false)
             )
 
             # Act: 関数を実行

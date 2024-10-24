@@ -20,7 +20,9 @@ function Set-GistGetPackages {
         }
     }
 
-    $yaml = ConvertTo-YamlFromGistGetPackage -Packages $Packages
+    # $Packages を Id の昇順でソートしてyamlに変換
+    $yaml = ConvertTo-YamlFromGistGetPackage -Packages ($Packages | Sort-Object Id)
+
     if ($Path) {
         # Save to file
         $yaml | Set-Content -Path $Path -NoNewline
