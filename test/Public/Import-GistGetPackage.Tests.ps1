@@ -19,9 +19,6 @@ InModuleScope GistGet {
     
         It "インストール -> インストール" {
             # Arrange: テストの準備
-            if ((Get-WinGetPackage -Id NuitsJp.ClaudeToZenn).Length -eq 0) {
-                Install-WinGetPackage -id NuitsJp.ClaudeToZenn
-            }
 
             # Act: 関数を実行
             Import-GistGetPackage -Path "$PSScriptRoot\assets\test-install.yaml"
@@ -34,9 +31,6 @@ InModuleScope GistGet {
 
         It "インストール -> アンインストール" {
             # Arrange: テストの準備
-            if ((Get-WinGetPackage -Id NuitsJp.ClaudeToZenn).Length -eq 0) {
-                Install-WinGetPackage -id NuitsJp.ClaudeToZenn
-            }
 
             # Act: 関数を実行
             Import-GistGetPackage -Path "$PSScriptRoot\assets\test-uninstall.yaml"

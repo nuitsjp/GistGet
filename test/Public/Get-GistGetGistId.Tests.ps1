@@ -1,31 +1,36 @@
 # テスト対象のモジュールをインポート
 Import-Module -Name "$PSScriptRoot\..\..\src\GistGet.psd1" -Force
 
-Describe "Set-GistGetGistId Tests" {
-    It "値が正しく設定されること" {
+Describe "Get-GistGetGistId Tests" {
+    It "値が設定されている場合、正しく取得されること" {
         # Arrange: テストの準備
         $currentDateTime = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
         Set-ItemProperty -Path "HKCU:\Environment" -Name $Global:GistGetGistId -Value $currentDateTime
 
         # Act: 関数を実行
-        Set-GistGetGistId -GistId $currentDateTime
+        $result = Get-GistGetGistId
 
         # Assert: 結果が期待通りか確認
-        $result = [System.Environment]::GetEnvironmentVariable($global:GistGetGistId, [System.EnvironmentVariableTarget]::User)
         $result | Should -Be $currentDateTime
     }
 
-    It "Set-GistGetGistIdの結果がGet-GistGetGistIdで取得できること" {
+    It "値が設定されていない場合、値が取得されないこと" {
         # Arrange: テストの準備
-        $currentDateTime = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-        Set-ItemProperty -Path "HKCU:\Environment" -Name $Global:GistGetGistId -Value $currentDateTime
+        if (Get-ItemProperty -Path "HKCU:\Environment" -Name $Global:GistGetGistId -ErrorAction SilentlyContinue) {
+            Remove-ItemProperty -Path "HKCU:\Environment" -Name $Global:GistGetGistId
+        }
 
         # Act: 関数を実行
-        Set-GistGetGistId -GistId $currentDateTime
+        $result = Get-GistGetGistId
 
         # Assert: 結果が期待通りか確認
-        $result = Get-GistGetGistId
-        $result | Should -Be $currentDateTime
+        $result | Should -Be $null
+        if(-not $result) {
+            $true | Should -Be $true
+        }
+        if($result) {
+            $false | Should -Be $true
+        }
     }
 
     AfterEach {

@@ -3,6 +3,15 @@
 # エラーが発生した場合はスクリプトを停止
 $ErrorActionPreference = 'Stop'
 
+# Check if WinGet is available
+try {
+    $null = Get-Command winget -ErrorAction Stop
+}
+catch {
+    Write-Error "WinGet is not installed. Please install WinGet first."
+    return
+}
+
 Import-Module -Name PowerShellForGitHub
 Import-Module -Name powershell-yaml
 Import-Module -Name Microsoft.WinGet.Client
