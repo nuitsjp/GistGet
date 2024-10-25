@@ -56,7 +56,7 @@ GistGetのコマンドを通してインストールすると、Gist上の定義
 
 このため別の端末でSync-GistGetPackageを実行することで、環境を容易に同期することが可能です。
 
-新しいパッケージの追加だけでなく、アンインストールも同期できます。
+アンインストールも同期できます。
 
 ```pwsh
 Uninstall-GistGetPackage -Id Git.Git
