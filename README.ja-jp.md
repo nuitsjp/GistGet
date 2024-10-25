@@ -2,13 +2,22 @@
 
 GistGetはWinGetのインストールリストをGistで管理するためのPowerShell Moduleです。
 
+Gist以外にも、Uriやファイルパスを利用することもできるため、プロダクトの開発環境を整えるため、開発端末の設定を同期するといった使い方もできます。
+
+WinGetのexport/importとは次の点で異なります。
+
+1. install/uninstall時に、設定がGistに同期されます
+2. installパラメーターを利用できます
+3. uninstallを同期することも可能です
+
+
+# Introduction
+
+PowerShell GalleryからModuleをインストールします。
+
 ```pwsh
 Install-Module GistGet
 ```
-
-Uriやファイルパスを指定することもできるため、プロダクトの開発環境を整えるため、開発端末の設定を同期するといった使い方もできます。
-
-# Introduction
 
 [GitHubからGistを更新するためのトークンを取得し](docs/ja-jp/Set-GitHubToken.md)、設定します。
 
@@ -31,9 +40,42 @@ Gistの定義に従ってパッケージを同期します。
 Sync-GistGetPackage
 ```
 
-別の端末などから定義が追加されていた場合、追加インストールされます。
+新たなパッケージをインストールします。
 
-また別の端末でアンインストールした場合、アンインストールをマークすると、同期時に合わせてアンインストールされます。
+```pwsh
+Install-GistGetPackage -Id Git.Git
+```
+
+GistGetのコマンドを通してインストールすると、Gist上の定義ファイルも更新されます。このため別の端末でSync-GistGetPackageを実行することで、環境を容易に同期することが可能です。
+
+```yaml
+- id: 7zip.7zip
+- id: Adobe.Acrobat.Reader.64-bit
+- id: Git.Git
+```
+
+新しいパッケージの追加だけでなく、アンインストールも同期できます。
+
+```pwsh
+Uninstall-GistGetPackage -Id Git.Git
+```
+
+Gist上の定義ファイルも同期されます。
+
+```yaml
+- id: 7zip.7zip
+- id: Adobe.Acrobat.Reader.64-bit
+- id: Git.Git
+  uninstall: true
+```
+
+別の端末でSync-GistGetPackageを実行すると、その端末からもアンインストールされます。
+
+アンインストールを同期したくない場合は、WinGetの標準コマンドを利用してください。
+
+```pwsh
+winget uninstall --id Git.Git
+```
 
 # Functions
 
