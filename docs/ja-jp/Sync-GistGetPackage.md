@@ -10,6 +10,8 @@ Sync-GistGetPackage
 
 GistGetでは定義ファイルを、[Gist](#Gist)・[Uri](#Uri)・[ファイル](#File)の何れかから取得して利用できます。
 
+## YAML
+
 YAMLファイルは、つぎのように記述します。
 
 ```yaml
