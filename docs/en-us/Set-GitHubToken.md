@@ -14,11 +14,11 @@ Here, we assign the minimum permissions needed to use GistGet. If you intend to 
 
 For repository access, assign the lowest level of permission, which is read access to public repositories.
 
-![](images/repository-access.png)
+![](../images/repository-access.png)
 
 For Account permissions, assign Git Read and Write access.
 
-![](images/account-permissions.png)
+![](../images/account-permissions.png)
 
 After assigning the required permissions, generate the token and set it up as shown below:
 
