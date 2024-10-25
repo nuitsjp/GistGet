@@ -11,7 +11,7 @@ InModuleScope GistGet {
                 )
             }
 
-            Mock Get-GistGetPackages { 
+            Mock Get-GistGetPackage { 
                 return @(
                     [GistGetPackage]::new('NuitsJp.ClaudeToZenn', "", $false)
                 )
@@ -46,7 +46,7 @@ InModuleScope GistGet {
             Uninstall-GistGetPackage @testParams
 
             # Assert: 結果が期待通りか確認
-            Should -Invoke Get-GistGetPackages -ParameterFilter {
+            Should -Invoke Get-GistGetPackage -ParameterFilter {
                 $GistId -eq "test-gist-id" -and
                 $GistFileName -eq "test-gist-file-name"
             }
@@ -90,7 +90,7 @@ InModuleScope GistGet {
                 )
             }
 
-            Mock Get-GistGetPackages { 
+            Mock Get-GistGetPackage { 
                 return @(
                     [GistGetPackage]::new('Foo', "", $false)
                 )
@@ -114,7 +114,7 @@ InModuleScope GistGet {
             Uninstall-GistGetPackage @testParams
 
             # Assert: 結果が期待通りか確認
-            Should -Invoke Get-GistGetPackages -ParameterFilter {
+            Should -Invoke Get-GistGetPackage -ParameterFilter {
                 $GistId -eq "test-gist-id"
             }
 
@@ -138,7 +138,7 @@ InModuleScope GistGet {
                 )
             }
 
-            Mock Get-GistGetPackages { 
+            Mock Get-GistGetPackage { 
                 return @(
                     [GistGetPackage]::new('NuitsJp.ClaudeToZenn', "", $false)
                 )
@@ -162,7 +162,7 @@ InModuleScope GistGet {
             Uninstall-GistGetPackage @testParams
 
             # Assert: 結果が期待通りか確認
-            Should -Invoke Get-GistGetPackages -ParameterFilter {
+            Should -Invoke Get-GistGetPackage -ParameterFilter {
                 $GistId -eq "test-gist-id"
             }
 
@@ -190,7 +190,7 @@ InModuleScope GistGet {
                 )
             }
 
-            Mock Get-GistGetPackages { 
+            Mock Get-GistGetPackage { 
                 return @(
                 )
             }
@@ -213,7 +213,7 @@ InModuleScope GistGet {
             Uninstall-GistGetPackage @testParams
 
             # Assert: 結果が期待通りか確認
-            Should -Invoke Get-GistGetPackages -ParameterFilter {
+            Should -Invoke Get-GistGetPackage -ParameterFilter {
                 $GistId -eq "test-gist-id"
             }
 

@@ -11,7 +11,7 @@
     # コマンドとエイリアスのエクスポート
     FunctionsToExport = @(
         'Get-GistGetGistId',
-        'Get-GistGetPackages',
+        'Get-GistGetPackage',
         'Import-GistGetPackage',
         'Install-GistGetPackage',
         'Set-GistGetGistId',

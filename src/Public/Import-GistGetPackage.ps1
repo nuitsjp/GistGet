@@ -19,7 +19,7 @@ function Import-GistGetPackage {
     if ($Uri) { $packageParams['Uri'] = $Uri }
     if ($Path) { $packageParams['Path'] = $Path }
 
-    $packages = Get-GistGetPackages @packageParams
+    $packages = Get-GistGetPackage @packageParams
 
     # インストール済みのパッケージを取得
     $installedPackageIds = @{}; Get-WinGetPackage | ForEach-Object { $installedPackageIds[$_.Id] = $true }

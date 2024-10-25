@@ -2,7 +2,7 @@
 Import-Module -Name "$PSScriptRoot\..\..\src\GistGet.psd1" -Force
 
 InModuleScope GistGet {
-    Describe "Get-GistGetPackages Tests" {
+    Describe "Get-GistGetPackage Tests" {
         BeforeEach {
             if (Get-ItemProperty -Path "HKCU:\Environment" -Name $Global:GistGetGistId -ErrorAction SilentlyContinue) {
                 Remove-ItemProperty -Path "HKCU:\Environment" -Name $Global:GistGetGistId
@@ -13,7 +13,7 @@ InModuleScope GistGet {
             # Arrange: テストの準備
             
             # Act: 関数を実行
-            $packages = Get-GistGetPackages -Path "$PSScriptRoot\assets\test.yaml"
+            $packages = Get-GistGetPackage -Path "$PSScriptRoot\assets\test.yaml"
             
             # Assert: 結果が期待通りか確認
             $packages.Count | Should -Be 3
@@ -34,7 +34,7 @@ InModuleScope GistGet {
             # Arrange: テストの準備
 
             # Act: 関数を実行
-            $packages = Get-GistGetPackages -Uri "https://gist.githubusercontent.com/nuitsjp/82b27147c684502b4f9c4488f9fe6fa9/raw/a31f9016194b09b016def634765af9dedb13023c/Test-Load-Packages.yaml"
+            $packages = Get-GistGetPackage -Uri "https://gist.githubusercontent.com/nuitsjp/82b27147c684502b4f9c4488f9fe6fa9/raw/a31f9016194b09b016def634765af9dedb13023c/Test-Load-Packages.yaml"
 
             # Assert: 結果が期待通りか確認
             $packages.Count | Should -Be 3
@@ -55,7 +55,7 @@ InModuleScope GistGet {
             # Arrange: テストの準備
     
             # Act: 関数を実行
-            $packages = Get-GistGetPackages -GistId "82b27147c684502b4f9c4488f9fe6fa9"
+            $packages = Get-GistGetPackage -GistId "82b27147c684502b4f9c4488f9fe6fa9"
     
             # Assert: 結果が期待通りか確認
             $packages.Count | Should -Be 3
@@ -76,7 +76,7 @@ InModuleScope GistGet {
             # Arrange: テストの準備
     
             # Act: 関数を実行
-            $packages = Get-GistGetPackages -GistId "82b27147c684502b4f9c4488f9fe6fa9" -GistFileName "Test-Get-GistGetPackages.yaml"
+            $packages = Get-GistGetPackage -GistId "82b27147c684502b4f9c4488f9fe6fa9" -GistFileName "Test-Get-GistGetPackages.yaml"
     
             # Assert: 結果が期待通りか確認
             $packages.Count | Should -Be 3
@@ -98,7 +98,7 @@ InModuleScope GistGet {
             Set-ItemProperty -Path "HKCU:\Environment" -Name $Global:GistGetGistId -Value "82b27147c684502b4f9c4488f9fe6fa9"
     
             # Act: 関数を実行
-            $packages = Get-GistGetPackages
+            $packages = Get-GistGetPackage
     
             # Assert: 結果が期待通りか確認
             $packages.Count | Should -Be 3
@@ -119,7 +119,7 @@ InModuleScope GistGet {
             # Arrange: テストの準備
     
             # Act: 関数を実行
-            { Get-GistGetPackages } | Should -Throw
+            { Get-GistGetPackage } | Should -Throw
 
             # Assert: 結果が期待通りか確認
         }

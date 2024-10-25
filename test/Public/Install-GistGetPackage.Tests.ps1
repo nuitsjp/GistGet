@@ -5,7 +5,7 @@ InModuleScope GistGet {
     Describe "Install-GistGetPackage Not Installed Tests" {
         BeforeAll {
             # モックの準備
-            Mock Get-GistGetPackages { 
+            Mock Get-GistGetPackage { 
                 return @()
             }
 
@@ -44,7 +44,7 @@ InModuleScope GistGet {
             Install-GistGetPackage @testParams
 
             # Assert: 結果が期待通りか確認
-            Should -Invoke Get-GistGetPackages -ParameterFilter {
+            Should -Invoke Get-GistGetPackage -ParameterFilter {
                 $GistId -eq "test-gist-id" -and
                 $GistFileName -eq "test-gist-file-name"
             }

@@ -22,7 +22,7 @@ For Account permissions, assign Git Read and Write access.
 
 After assigning the required permissions, generate the token and set it up as shown below:
 
-```powershell
+```pwsh
 Set-GitHubToken -Token "<Your Access Token>"
 ```
 

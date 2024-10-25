@@ -1,7 +1,7 @@
 function Set-GitHubToken {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true)]
+        [Parameter(Position = 0, Mandatory = $true)]
         [string] $Token
     )
 

@@ -1,4 +1,4 @@
-function Get-GistGetPackages {
+function Get-GistGetPackage {
     [CmdletBinding()]
     param(
         [string] $GistId,

@@ -38,7 +38,7 @@ function Uninstall-GistGetPackage {
         $packageParams = @{}
         if ($GistId) { $packageParams['GistId'] = $GistId }
         if ($GistFileName) { $packageParams['GistFileName'] = $GistFileName }
-        [GistGetPackage[]]$gistGetPackages = Get-GistGetPackages @packageParams
+        [GistGetPackage[]]$gistGetPackages = Get-GistGetPackage @packageParams
 
         # Build parameter hashtable for Find-WinGetPackage
         $getParams = @{}

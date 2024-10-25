@@ -20,6 +20,6 @@ Account permissionsは、GitのRead and writeを割り当てます。
 
 必要な権限を割り当てたらトークンを発行し、つぎのように呼び出して設定します。
 
-```powershell
+```pwsh
 Set-GitHubToken -Token "<Your Access Token>"
 ```
