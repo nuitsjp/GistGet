@@ -46,13 +46,15 @@ Sync-GistGetPackage
 Install-GistGetPackage -Id Git.Git
 ```
 
-GistGetのコマンドを通してインストールすると、Gist上の定義ファイルも更新されます。このため別の端末でSync-GistGetPackageを実行することで、環境を容易に同期することが可能です。
+GistGetのコマンドを通してインストールすると、Gist上の定義ファイルも更新されます。
 
 ```yaml
 - id: 7zip.7zip
 - id: Adobe.Acrobat.Reader.64-bit
 - id: Git.Git
 ```
+
+このため別の端末でSync-GistGetPackageを実行することで、環境を容易に同期することが可能です。
 
 新しいパッケージの追加だけでなく、アンインストールも同期できます。
 
