@@ -61,9 +61,6 @@ function Install-GistGetPackage {
             return
         }
 
-        # Display found packages
-        $packagesToInstall | Format-Table -Property Name, Id, Version
-
         # Build parameter hashtable for Install-WinGetPackage
         $installParams = @{}
 
