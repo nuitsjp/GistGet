@@ -2,7 +2,7 @@
 Import-Module -Name "$PSScriptRoot\..\..\src\GistGet.psd1" -Force
 
 InModuleScope GistGet {
-    Describe "Import-GistGetPackage Installed Tests" {
+    Describe "Sync-GistGetPackage Installed Tests" {
         BeforeAll {
             # モックの準備
             Mock Get-WinGetPackage { 
@@ -21,7 +21,7 @@ InModuleScope GistGet {
             # Arrange: テストの準備
 
             # Act: 関数を実行
-            Import-GistGetPackage -Path "$PSScriptRoot\assets\test-install.yaml"
+            Sync-GistGetPackage -Path "$PSScriptRoot\assets\test-install.yaml"
 
             # Assert: 結果が期待通りか確認
             Should -Invoke Get-WinGetPackage
@@ -33,7 +33,7 @@ InModuleScope GistGet {
             # Arrange: テストの準備
 
             # Act: 関数を実行
-            Import-GistGetPackage -Path "$PSScriptRoot\assets\test-uninstall.yaml"
+            Sync-GistGetPackage -Path "$PSScriptRoot\assets\test-uninstall.yaml"
 
             # Assert: 結果が期待通りか確認
             Should -Invoke Get-WinGetPackage
@@ -44,7 +44,7 @@ InModuleScope GistGet {
         }
     }
 
-    Describe "Import-GistGetPackage Not Installed Tests" {
+    Describe "Sync-GistGetPackage Not Installed Tests" {
         BeforeAll {
             # モックの準備
             Mock Get-WinGetPackage { 
@@ -60,7 +60,7 @@ InModuleScope GistGet {
             # Arrange: テストの準備
 
             # Act: 関数を実行
-            Import-GistGetPackage -Path "$PSScriptRoot\assets\test-install.yaml"
+            Sync-GistGetPackage -Path "$PSScriptRoot\assets\test-install.yaml"
 
             # Assert: 結果が期待通りか確認
             Should -Invoke Get-WinGetPackage
@@ -77,7 +77,7 @@ InModuleScope GistGet {
             }
 
             # Act: 関数を実行
-            Import-GistGetPackage -Path "$PSScriptRoot\assets\test-uninstall.yaml"
+            Sync-GistGetPackage -Path "$PSScriptRoot\assets\test-uninstall.yaml"
 
             # Assert: 結果が期待通りか確認
             Should -Invoke Get-WinGetPackage

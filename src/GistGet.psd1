@@ -12,7 +12,7 @@
     FunctionsToExport = @(
         'Get-GistGetGistId',
         'Get-GistGetPackage',
-        'Import-GistGetPackage',
+        'Sync-GistGetPackage',
         'Install-GistGetPackage',
         'Set-GistGetGistId',
         'Set-GitHubToken',

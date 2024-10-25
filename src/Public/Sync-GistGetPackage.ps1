@@ -1,4 +1,4 @@
-function Import-GistGetPackage {
+function Sync-GistGetPackage {
     [CmdletBinding()]
     param(
         [string] $GistId,

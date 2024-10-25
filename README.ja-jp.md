@@ -28,7 +28,7 @@ Set-GitHubToken "<Your Access Token>"
 Gistの定義に従ってパッケージのインストールをします。定義ファイルに追加があった場合、ローカルにインストールされていないものだけが、インストールされます。
 
 ```pwsh
-Import-GistGetPackage
+Sync-GistGetPackage
 ```
 
 # Functions
