@@ -3,6 +3,13 @@ Import-Module -Name "$PSScriptRoot\..\..\src\GistGet.psd1" -Force
 
 InModuleScope GistGet {
     Describe "Get-GistGetPackage Tests" {
+        BeforeAll {
+            # モックの準備
+            Mock Get-GistDescription { 
+                return 'FooBar'
+            }
+        }
+
         BeforeEach {
             if (Get-ItemProperty -Path "HKCU:\Environment" -Name $Global:GistGetGistId -ErrorAction SilentlyContinue) {
                 Remove-ItemProperty -Path "HKCU:\Environment" -Name $Global:GistGetGistId
