@@ -83,7 +83,7 @@ winget uninstall --id Git.Git
 
 |Function|概略|
 |--|--|
-|Set-GitHubToken|インストールパッケージの定義Gistを取得・更新するためのGitHubトークンを設定します。|
+|[Set-GitHubToken](docs/ja-jp/Set-GitHubToken.md)|インストールパッケージの定義Gistを取得・更新するためのGitHubトークンを設定します。|
 |Sync-GistGetPackage|Gistの定義にローカルのパッケージを同期します。|
 |Get-GistGetPackage|Gistに定義されているパッケージの一覧を取得します。|
 |Install-GistGetPackage|WinGetからパッケージをインストールし、合わせてGist上の定義ファイルを更新します。|
