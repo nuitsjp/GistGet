@@ -15,7 +15,8 @@
         'Import-GistGetPackage',
         'Install-GistGetPackage',
         'Set-GistGetGistId',
-        'Set-GitHubToken'
+        'Set-GitHubToken',
+        'Uninstall-GistGetPackage'
     )
     CmdletsToExport = @()
     AliasesToExport = @()

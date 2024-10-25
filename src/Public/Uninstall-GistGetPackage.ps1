@@ -1,42 +1,99 @@
 function Uninstall-GistGetPackage {
     [CmdletBinding()]
-    param (
+    param(
+        [Parameter(Position = 0, ValueFromPipelineByPropertyName = $true)]
         [string[]]$Query,
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
+        [string] $GistId,
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
+        [string] $GistFileName,
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [string]$Command,
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [uint32]$Count,
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [string]$Id,
-        [ValidateSet("Equals", "EqualsCaseInsensitive", "StartsWithCaseInsensitive", "ContainsCaseInsensitive")]
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
+        [ValidateSet('Equals', 'EqualsCaseInsensitive', 'StartsWithCaseInsensitive', 'ContainsCaseInsensitive')]
         [string]$MatchOption,
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [string]$Moniker,
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [string]$Name,
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [string]$Source,
-        [string]$Tag
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
+        [string]$Tag,
+        [Parameter()]
+        [switch]$Force,
+        [Parameter()]
+        [ValidateSet('Default', 'Silent', 'Interactive')]
+        [string]$Mode
     )
 
-    # Get-WinGetPackage用のハッシュテーブルを作成し、指定されたパラメーターのみ追加
-    $packageParams = @{}
-    if ($Query) { $packageParams['Query'] = $Query }
-    if ($Command) { $packageParams['Command'] = $Command }
-    if ($Count) { $packageParams['Count'] = $Count }
-    if ($Id) { $packageParams['Id'] = $Id }
-    if ($MatchOption) { $packageParams['MatchOption'] = $MatchOption }
-    if ($Moniker) { $packageParams['Moniker'] = $Moniker }
-    if ($Name) { $packageParams['Name'] = $Name }
-    if ($Source) { $packageParams['Source'] = $Source }
-    if ($Tag) { $packageParams['Tag'] = $Tag }
+    begin {
+    }
 
-    # Get-WinGetPackageでパッケージのリストを取得
-    $packages = Get-WinGetPackage @packageParams
-    $packages
+    process {
+        $packageParams = @{}
+        if ($GistId) { $packageParams['GistId'] = $GistId }
+        if ($GistFileName) { $packageParams['GistFileName'] = $GistFileName }
+        [GistGetPackage[]]$gistGetPackages = Get-GistGetPackages @packageParams
 
-    # 取得したパッケージを削除
-    # foreach ($package in $packages) {
-    #     Write-Verbose "Removing package: $($package.Name)"
-    #     if ($package.Id) {
-    #         Remove-WinGetPackage -Id $package.Id -Confirm:$false
-    #     } else {
-    #         Write-Warning "Package does not have an Id and cannot be removed: $($package.Name)"
-    #     }
-    # }
+        # Build parameter hashtable for Find-WinGetPackage
+        $getParams = @{}
+        $parameterList = @(
+            'Query', 'Command', 'Count', 'Id', 'MatchOption',
+            'Moniker', 'Name', 'Source', 'Tag'
+        )
+
+        foreach ($param in $parameterList) {
+            if ($PSBoundParameters.ContainsKey($param)) {
+                $getParams[$param] = $PSBoundParameters[$param]
+            }
+        }
+
+        # Find packages
+        $packagesToUninstall = Get-WinGetPackage @getParams
+            
+        if (-not $packagesToUninstall) {
+            Write-Warning "No packages were found matching the specified criteria."
+            return
+        }
+
+        # Display found packages
+        $packagesToUninstall | Format-Table -Property Name, Id, Version
+
+        # Build parameter hashtable for Install-WinGetPackage
+        $uninstallParams = @{}
+
+        if ($Force) {
+            $uninstallParams['Force'] = $true
+        }
+
+        if ($Mode) {
+            $uninstallParams['Mode'] = $Mode
+        }
+
+        # Install packages
+        [bool]$isRemovedPackage = $false
+        foreach ($package in $packagesToUninstall) {
+            Uninstall-WinGetPackage -Id $package.Id @uninstallParams
+            # $gistGetPackagesに含まれていた場合は削除
+            $installedPackage = $gistGetPackages | 
+                Where-Object { $_.Id -eq $package.Id } | 
+                Select-Object -First 1
+            if ($installedPackage) {
+                $installedPackage.uninstall = $true
+                $isRemovedPackage = $true
+            }
+        }
+
+        if ($isRemovedPackage) {
+            Set-GistGetPackages @packageParams -Packages $gistGetPackages
+        }
+    }
+
+    end {
+    }
 }
-
