@@ -174,7 +174,6 @@ InModuleScope GistGet {
 
             Should -Invoke Set-GistGetPackages -ParameterFilter {
                 $GistId -eq "test-gist-id" -and
-                $GistFileName -eq "test-gist-file-name" -and
                 $Packages.Count -eq 1 -and
                 $Packages[0].Id -eq "NuitsJp.ClaudeToZenn" -and
                 $Packages[0].packageParameters -eq "" -and

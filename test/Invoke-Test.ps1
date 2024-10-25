@@ -10,4 +10,4 @@ if (-not (Get-Module -Name Microsoft.WinGet.Client -ListAvailable)) {
 # Invoke-Pester -Name "Set-GistGetPackages Tests"
 # Invoke-Pester -Name "Import-GistGetPackage Tests"
 # Invoke-Pester -Name "Install-GistGetPackage Not Installed Tests"
-Invoke-Pester -Name "Uninstall-GistGetPackage インストールなし and Gistなし Tests"
+Invoke-Pester -Name "Uninstall-GistGetPackage インストールなし and Gistあり Tests"

@@ -56,14 +56,6 @@ function Uninstall-GistGetPackage {
         # Find packages
         $packagesToUninstall = Get-WinGetPackage @getParams
             
-        if (-not $packagesToUninstall) {
-            Write-Warning "No packages were found matching the specified criteria."
-            return
-        }
-
-        # Display found packages
-        $packagesToUninstall | Format-Table -Property Name, Id, Version
-
         # Build parameter hashtable for Install-WinGetPackage
         $uninstallParams = @{}
 
@@ -84,7 +76,21 @@ function Uninstall-GistGetPackage {
                 Where-Object { $_.Id -eq $package.Id } | 
                 Select-Object -First 1
             if ($installedPackage) {
+                Write-Host "Uninstalling $($installedPackage.Id) from Gist."
                 $installedPackage.uninstall = $true
+                $isRemovedPackage = $true
+            }
+        }
+
+        if(-not $packagesToUninstall) {
+            Write-Warning "No packages were found matching the specified criteria."
+            
+            if ($Id) {
+                $gistGetPackages = $gistGetPackages | Where-Object { $_.Id -eq $Id }
+            }
+            foreach ($package in $gistGetPackages) {
+                Write-Host "Uninstalling $($package.Id) from Gist."
+                $package.Uninstall = $true
                 $isRemovedPackage = $true
             }
         }
