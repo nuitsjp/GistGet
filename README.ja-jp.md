@@ -86,7 +86,7 @@ winget uninstall --id Git.Git
 |[Set-GitHubToken](docs/ja-jp/Set-GitHubToken.md)|インストールパッケージの定義Gistを取得・更新するためのGitHubトークンを設定します。|
 |[Sync-GistGetPackage](docs/ja-jp/Sync-GistGetPackage.md)|Gistの定義にローカルのパッケージを同期します。|
 |[Get-GistGetPackage](docs/ja-jp/Get-GistGetPackage.md)|Gistに定義されているパッケージの一覧を取得します。|
-|Install-GistGetPackage|WinGetからパッケージをインストールし、合わせてGist上の定義ファイルを更新します。|
+|[Install-GistGetPackage]()|WinGetからパッケージをインストールし、合わせてGist上の定義ファイルを更新します。|
 |Uninstall-GistGetPackage|パッケージをアンインストールし、合わせてGist上のアンインストールをマークします。|
 |Set-GistGetGistId|GistをGist descriptionではなくIdやファイル名から取得したい場合に、Idなどを設定します。|
 |Get-GistGetGistId|設定されているGistのIdなどを取得します。|
