@@ -1,3 +1,58 @@
+<#
+.SYNOPSIS
+    Synchronizes installed packages with GistGet package configuration.
+
+.DESCRIPTION
+    This function synchronizes the system's installed packages with a GistGet package configuration. 
+    It performs the following operations:
+    - Installs packages that are in the configuration but not installed
+    - Uninstalls packages marked for removal in the configuration
+    - Skips packages that are already in the desired state
+    The configuration can be loaded from a GitHub Gist, URL, or local file.
+
+.PARAMETER GistId
+    The ID of the Gist containing the package configuration.
+
+.PARAMETER GistFileName
+    The specific filename within the Gist to use for configuration.
+
+.PARAMETER Uri
+    The URL from which to retrieve the package configuration.
+
+.PARAMETER Path
+    The local file path containing the package configuration.
+
+.EXAMPLE
+    PS> Sync-GistGetPackage
+    Synchronizes packages using the GistId from environment variables.
+
+.EXAMPLE
+    PS> Sync-GistGetPackage -GistId "1234567890abcdef" -GistFileName "packages.yaml"
+    Synchronizes packages using configuration from a specific Gist file.
+
+.EXAMPLE
+    PS> Sync-GistGetPackage -Path "C:\packages.yaml"
+    Synchronizes packages using configuration from a local file.
+
+.NOTES
+    Package synchronization behavior:
+    - New packages: Installed if not present
+    - Existing packages: Left unchanged
+    - Packages marked for uninstall: Removed if present
+    
+    Requirements:
+    - WinGet must be installed and accessible
+    - Appropriate permissions for package installation/uninstallation
+    - Valid package configuration in YAML format
+
+.OUTPUTS
+    None. Progress information is displayed through Write-Host and Write-Verbose.
+
+.LINK
+    Get-GistGetPackage
+    Install-WinGetPackage
+    Uninstall-WinGetPackage
+#>
 function Sync-GistGetPackage {
     [CmdletBinding()]
     param(
@@ -6,12 +61,6 @@ function Sync-GistGetPackage {
         [string] $Uri,
         [string] $Path
     )
-
-    # Administrator Authority Check
-    # if (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    #     Write-Error "This script must be run with administrative privileges; run PowerShell as an administrator and run the script again."
-    #     exit 1
-    # }
 
     $packageParams = @{}
     if ($GistId) { $packageParams['GistId'] = $GistId }
