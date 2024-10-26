@@ -16,7 +16,6 @@ InModuleScope GistGet {
             $tempFile = [System.IO.Path]::GetTempFileName()
             Remove-Item -Path $tempFile -Force
 
-            # GistGitPackages配列を作成
             $packages = @(
                 [PSCustomObject]@{
                     id = "Microsoft.VisualStudioCode.Insiders"
@@ -45,7 +44,7 @@ InModuleScope GistGet {
 
             # GistGitPackages配列を作成
             $packages = @(
-                [GistGetPackage]::new("7zip.7zip", "", $false)
+                [PSCustomObject]@{id = "7zip.7zip"}
             )
 
             # Act: 関数を実行

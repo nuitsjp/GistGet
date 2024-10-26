@@ -116,7 +116,7 @@ function Install-GistGetPackage {
         $packageParams = @{}
         if ($GistId) { $packageParams['GistId'] = $GistId }
         if ($GistFileName) { $packageParams['GistFileName'] = $GistFileName }
-        [GistGetPackage[]]$gistGetPackages = Get-GistGetPackage @packageParams
+        $gistGetPackages = Get-GistGetPackage @packageParams
 
         # Build parameter hashtable for Find-WinGetPackage
         $findParams = @{}
@@ -156,7 +156,7 @@ function Install-GistGetPackage {
             Install-WinGetPackage -Id $package.Id @installParams
             # $gistGetPackagesに含まれていなかった場合は追加
             if (-not ($gistGetPackages | Where-Object { $_.Id -eq $package.Id })) {
-                $gistGetPackages += [GistGetPackage]::new($package.Id, "", $false)
+                $gistGetPackages += [PSCustomObject]@{id = $package.Id}
                 $isAppendPackage = $true
             }
         }

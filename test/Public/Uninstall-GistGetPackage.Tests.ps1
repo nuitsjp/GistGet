@@ -13,7 +13,7 @@ InModuleScope GistGet {
 
             Mock Get-GistGetPackage { 
                 return @(
-                    [GistGetPackage]::new('NuitsJp.ClaudeToZenn', "", $false)
+                    [PSCustomObject]@{ Id = 'NuitsJp.ClaudeToZenn'}
                 )
             }
 
@@ -92,7 +92,7 @@ InModuleScope GistGet {
 
             Mock Get-GistGetPackage { 
                 return @(
-                    [GistGetPackage]::new('Foo', "", $false)
+                    [PSCustomObject]@{ Id = 'Foo'}
                 )
             }
 
@@ -140,7 +140,7 @@ InModuleScope GistGet {
 
             Mock Get-GistGetPackage { 
                 return @(
-                    [GistGetPackage]::new('NuitsJp.ClaudeToZenn', "", $false)
+                    [PSCustomObject]@{ Id = 'NuitsJp.ClaudeToZenn'}
                 )
             }
 
