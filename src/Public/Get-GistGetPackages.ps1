@@ -59,7 +59,6 @@
 .LINK
     Get-GistGetGistId
     Get-GitHubGist
-    ConvertTo-GistGetPackageFromYaml
 #>
 function Get-GistGetPackage {
     [CmdletBinding()]
@@ -101,5 +100,5 @@ function Get-GistGetPackage {
         throw "Please specify a GistId, Uri or Path. Alternatively, you need to register the GistId in advance using Set-GistGetGistId."
     }
 
-    return ConvertTo-GistGetPackageFromYaml -Yaml $yaml
+    return $yaml | ConvertFrom-Yaml
 }
