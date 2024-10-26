@@ -91,7 +91,32 @@ function Sync-GistGetPackage {
             } else {
                 # Install the package if it does not exist
                 Write-Host "Installing package $packageId"
-                Install-WinGetPackage -Id $packageId
+
+                $findParams = @{}
+                $parameterList = @(
+                    'AllowHashMismatch',
+                    'Architecture',
+                    'Custom',
+                    'Force',
+                    'InstallerType',
+                    'Locale',
+                    'Log',
+                    'Mode',
+                    'Id', 
+                    'Override',
+                    'Scope',
+                    'Version',
+                    'Confirm',
+                    'WhatIf'
+                )
+        
+                foreach ($param in $parameterList) {
+                    if ($package.ContainsKey($param)) {
+                        $findParams[$param] = $package[$param]
+                    }
+                }
+        
+                Install-WinGetPackage @findParams
             }
         }
     }

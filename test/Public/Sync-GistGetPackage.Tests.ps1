@@ -65,7 +65,20 @@ InModuleScope GistGet {
             # Assert: 結果が期待通りか確認
             Should -Invoke Get-WinGetPackage
             Should -Invoke Install-WinGetPackage -ParameterFilter {
-                $Id -eq 'NuitsJp.ClaudeToZenn'
+                $Architecture -eq 'x64' -and
+                $AllowHashMismatch -eq $true -and
+                $Custom -eq "custom parameters" -and
+                $Force -eq $true -and
+                $Id -eq 'NuitsJp.ClaudeToZenn' -and
+                $InstallerType -eq 'Exe' -and
+                $Locale -eq 'en-US' -and
+                $Log -eq 'log.txt' -and
+                $Mode -eq 'Silent' -and
+                $Override -eq 'override parameters' -and
+                $Scope -eq 'User' -and
+                $Version -eq '1.0.0' -and
+                $Confirm -eq $false -and
+                $WhatIf -eq $false
             }
             Should -Not -Invoke Uninstall-WinGetPackage
         }
