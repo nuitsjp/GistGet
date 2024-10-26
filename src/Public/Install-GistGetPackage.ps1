@@ -155,7 +155,7 @@ function Install-GistGetPackage {
         foreach ($package in $packagesToInstall) {
             Install-WinGetPackage -Id $package.Id @installParams
             # $gistGetPackagesに含まれていなかった場合は追加
-            if (-not ($gistGetPackages | Where-Object { $_.Id -eq $package.Id })) {
+            if (-not ($gistGetPackages | Where-Object { $_.id -eq $package.Id })) {
                 $gistGetPackages += [PSCustomObject]@{id = $package.Id}
                 $isAppendPackage = $true
             }
