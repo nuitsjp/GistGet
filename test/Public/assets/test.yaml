@@ -1,6 +1,6 @@
 - id: 7zip.7zip
 - id: Microsoft.VisualStudioCode.Insiders
-  packageParameters: >-
+  override: >-
     /VERYSILENT
     /NORESTART
     /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath

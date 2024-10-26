@@ -25,15 +25,15 @@ InModuleScope GistGet {
             # Assert: 結果が期待通りか確認
             $packages.Count | Should -Be 3
             $packages[0].Id | Should -Be "7zip.7zip"
-            $packages[0].PackageParameters | Should -BeNullOrEmpty
-            $packages[0].Uninstall | Should -BeNullOrEmpty
+            $packages[0].Override | Should -BeNullOrEmpty
+            $packages[0].Uninstall | Should -Be $false
 
             $packages[1].Id | Should -Be "Microsoft.VisualStudioCode.Insiders"
-            $packages[1].PackageParameters | Should -Be "/VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath"
-            $packages[1].Uninstall | Should -BeNullOrEmpty
+            $packages[1].Override | Should -Be "/VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath"
+            $packages[1].Uninstall | Should -Be $false
 
             $packages[2].Id | Should -Be "Zoom.Zoom"
-            $packages[2].PackageParameters | Should -BeNullOrEmpty
+            $packages[2].Override | Should -BeNullOrEmpty
             $packages[2].Uninstall | Should -Be $true
         }
 
@@ -41,20 +41,20 @@ InModuleScope GistGet {
             # Arrange: テストの準備
 
             # Act: 関数を実行
-            $packages = Get-GistGetPackage -Uri "https://gist.githubusercontent.com/nuitsjp/82b27147c684502b4f9c4488f9fe6fa9/raw/a31f9016194b09b016def634765af9dedb13023c/Test-Load-Packages.yaml"
+            $packages = Get-GistGetPackage -Uri "https://gist.githubusercontent.com/nuitsjp/82b27147c684502b4f9c4488f9fe6fa9/raw/2d94edca50cbfee9837982c59ccd2afb2f223897/Test-Get-GistGetPackages.yaml"
 
             # Assert: 結果が期待通りか確認
             $packages.Count | Should -Be 3
             $packages[0].Id | Should -Be "7zip.7zip"
-            $packages[0].PackageParameters | Should -BeNullOrEmpty
-            $packages[0].Uninstall | Should -BeNullOrEmpty
+            $packages[0].Override | Should -BeNullOrEmpty
+            $packages[0].Uninstall | Should -Be $false
 
             $packages[1].Id | Should -Be "Microsoft.VisualStudioCode.Insiders"
-            $packages[1].PackageParameters | Should -Be "/VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath"
-            $packages[1].Uninstall | Should -BeNullOrEmpty
+            $packages[1].Override | Should -Be "/VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath"
+            $packages[1].Uninstall | Should -Be $false
 
             $packages[2].Id | Should -Be "Zoom.Zoom"
-            $packages[2].PackageParameters | Should -BeNullOrEmpty
+            $packages[2].Override | Should -BeNullOrEmpty
             $packages[2].Uninstall | Should -Be $true
         }
 
@@ -67,15 +67,15 @@ InModuleScope GistGet {
             # Assert: 結果が期待通りか確認
             $packages.Count | Should -Be 3
             $packages[0].Id | Should -Be "7zip.7zip"
-            $packages[0].PackageParameters | Should -BeNullOrEmpty
-            $packages[0].Uninstall | Should -BeNullOrEmpty
+            $packages[0].Override | Should -BeNullOrEmpty
+            $packages[0].Uninstall | Should -Be $false
     
             $packages[1].Id | Should -Be "Microsoft.VisualStudioCode.Insiders"
-            $packages[1].PackageParameters | Should -Be "/VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath"
-            $packages[1].Uninstall | Should -BeNullOrEmpty
+            $packages[1].Override | Should -Be "/VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath"
+            $packages[1].Uninstall | Should -Be $false
     
             $packages[2].Id | Should -Be "Zoom.Zoom"
-            $packages[2].PackageParameters | Should -BeNullOrEmpty
+            $packages[2].Override | Should -BeNullOrEmpty
             $packages[2].Uninstall | Should -Be $true
         }
 
@@ -88,15 +88,15 @@ InModuleScope GistGet {
             # Assert: 結果が期待通りか確認
             $packages.Count | Should -Be 3
             $packages[0].Id | Should -Be "7zip.7zip"
-            $packages[0].PackageParameters | Should -BeNullOrEmpty
-            $packages[0].Uninstall | Should -BeNullOrEmpty
+            $packages[0].Override | Should -BeNullOrEmpty
+            $packages[0].Uninstall | Should -Be $false
     
             $packages[1].Id | Should -Be "Microsoft.VisualStudioCode.Insiders"
-            $packages[1].PackageParameters | Should -Be "/VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath"
-            $packages[1].Uninstall | Should -BeNullOrEmpty
+            $packages[1].Override | Should -Be "/VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath"
+            $packages[1].Uninstall | Should -Be $false
     
             $packages[2].Id | Should -Be "Zoom.Zoom"
-            $packages[2].PackageParameters | Should -BeNullOrEmpty
+            $packages[2].Override | Should -BeNullOrEmpty
             $packages[2].Uninstall | Should -Be $true
         }
 
@@ -110,15 +110,15 @@ InModuleScope GistGet {
             # Assert: 結果が期待通りか確認
             $packages.Count | Should -Be 3
             $packages[0].Id | Should -Be "7zip.7zip"
-            $packages[0].PackageParameters | Should -BeNullOrEmpty
-            $packages[0].Uninstall | Should -BeNullOrEmpty
+            $packages[0].Override | Should -BeNullOrEmpty
+            $packages[0].Uninstall | Should -Be $false
     
             $packages[1].Id | Should -Be "Microsoft.VisualStudioCode.Insiders"
-            $packages[1].PackageParameters | Should -Be "/VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath"
-            $packages[1].Uninstall | Should -BeNullOrEmpty
+            $packages[1].Override | Should -Be "/VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath"
+            $packages[1].Uninstall | Should -Be $false
     
             $packages[2].Id | Should -Be "Zoom.Zoom"
-            $packages[2].PackageParameters | Should -BeNullOrEmpty
+            $packages[2].Override | Should -BeNullOrEmpty
             $packages[2].Uninstall | Should -Be $true
         }
 

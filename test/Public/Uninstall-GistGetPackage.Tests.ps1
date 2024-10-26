@@ -7,13 +7,13 @@ InModuleScope GistGet {
             # モックの準備
             Mock Get-WinGetPackage { 
                 return @(
-                    [PSCustomObject]@{ Id = 'NuitsJp.ClaudeToZenn' }
+                    [PSCustomObject]@{ Id = 'NuitsJp.ClaudeToZenn'}
                 )
             }
 
             Mock Get-GistGetPackage { 
                 return @(
-                    [PSCustomObject]@{ Id = 'NuitsJp.ClaudeToZenn'}
+                    [GistGetPackage]::new('NuitsJp.ClaudeToZenn')
                 )
             }
 
@@ -74,8 +74,7 @@ InModuleScope GistGet {
                 $GistFileName -eq "test-gist-file-name" -and
                 $Packages.Count -eq 1 -and
                 $Packages[0].Id -eq "NuitsJp.ClaudeToZenn" -and
-                $Packages[0].packageParameters -eq "" -and
-                $Packages[0].uninstall -eq $true
+                $Packages[0].Uninstall -eq $true
             }
         }
 
@@ -86,13 +85,13 @@ InModuleScope GistGet {
             # モックの準備
             Mock Get-WinGetPackage { 
                 return @(
-                    [PSCustomObject]@{ Id = 'NuitsJp.ClaudeToZenn' }
+                    [PSCustomObject]@{ Id = 'NuitsJp.ClaudeToZenn'}
                 )
             }
 
             Mock Get-GistGetPackage { 
                 return @(
-                    [PSCustomObject]@{ Id = 'Foo'}
+                    [GistGetPackage]::new('Foo')
                 )
             }
 
@@ -140,7 +139,7 @@ InModuleScope GistGet {
 
             Mock Get-GistGetPackage { 
                 return @(
-                    [PSCustomObject]@{ Id = 'NuitsJp.ClaudeToZenn'}
+                    [GistGetPackage]::new('NuitsJp.ClaudeToZenn')
                 )
             }
 
@@ -176,8 +175,7 @@ InModuleScope GistGet {
                 $GistId -eq "test-gist-id" -and
                 $Packages.Count -eq 1 -and
                 $Packages[0].Id -eq "NuitsJp.ClaudeToZenn" -and
-                $Packages[0].packageParameters -eq "" -and
-                $Packages[0].uninstall -eq $true
+                $Packages[0].Uninstall -eq $true
             }
         }
     }

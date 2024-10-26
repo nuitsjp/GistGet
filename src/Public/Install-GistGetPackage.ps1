@@ -82,31 +82,31 @@ function Install-GistGetPackage {
         [Parameter(Position = 0, ValueFromPipelineByPropertyName = $true)]
         [string[]]$Query,
         [Parameter(ValueFromPipelineByPropertyName = $true)]
+        [string] $Id,
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
+        [string] $Name,
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
+        [string] $Source,
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
+        [string] $Moniker,
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
+        [ValidateSet('Equals', 'EqualsCaseInsensitive', 'StartsWithCaseInsensitive', 'ContainsCaseInsensitive')]
+        [string] $MatchOption,
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
+        [string] $Command,
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
+        [uint32] $Count,
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
+        [string] $Tag,
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [string] $GistId,
         [Parameter(ValueFromPipelineByPropertyName = $true)]
         [string] $GistFileName,
-        [Parameter(ValueFromPipelineByPropertyName = $true)]
-        [string]$Command,
-        [Parameter(ValueFromPipelineByPropertyName = $true)]
-        [uint32]$Count,
-        [Parameter(ValueFromPipelineByPropertyName = $true)]
-        [string]$Id,
-        [Parameter(ValueFromPipelineByPropertyName = $true)]
-        [ValidateSet('Equals', 'EqualsCaseInsensitive', 'StartsWithCaseInsensitive', 'ContainsCaseInsensitive')]
-        [string]$MatchOption,
-        [Parameter(ValueFromPipelineByPropertyName = $true)]
-        [string]$Moniker,
-        [Parameter(ValueFromPipelineByPropertyName = $true)]
-        [string]$Name,
-        [Parameter(ValueFromPipelineByPropertyName = $true)]
-        [string]$Source,
-        [Parameter(ValueFromPipelineByPropertyName = $true)]
-        [string]$Tag,
         [Parameter()]
-        [switch]$Force,
+        [switch] $Force,
         [Parameter()]
         [ValidateSet('Default', 'Silent', 'Interactive')]
-        [string]$Mode
+        [string] $Mode
     )
 
     begin {

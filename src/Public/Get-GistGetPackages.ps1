@@ -100,5 +100,5 @@ function Get-GistGetPackage {
         throw "Please specify a GistId, Uri or Path. Alternatively, you need to register the GistId in advance using Set-GistGetGistId."
     }
 
-    return $yaml | ConvertFrom-Yaml
+    return [GistGetPackage]::ParseYaml($yaml)
 }

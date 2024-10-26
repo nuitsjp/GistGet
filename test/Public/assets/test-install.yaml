@@ -11,5 +11,5 @@
   scope: User
   skipDependencies: true
   version: 1.0.0
-  confirm: false
-  whatIf: false
+  confirm: true
+  whatIf: true
