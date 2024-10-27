@@ -2,7 +2,7 @@
 Import-Module -Name "$PSScriptRoot\..\..\src\GistGet.psd1" -Force
 
 InModuleScope GistGet {
-    Describe "Set-Gist Tests" {
+    Describe "Set-GistContent Tests" {
         It "ファイル名を指定しない場合、最初のファイルを更新する" {
             try {
                 # Arrange: テストの準備
@@ -11,7 +11,7 @@ InModuleScope GistGet {
                 $content = "First Updated at $currentDateTime"
 
                 # Act: 関数を実行
-                Set-Gist -GistId $gistId -Content $content
+                Set-GistContent -GistId $gistId -Content $content
 
                 # Assert: 結果が期待通りか確認
                 $result = Get-GistContent -GistId $gistId
@@ -36,7 +36,7 @@ InModuleScope GistGet {
             $content = "Second Updated at $currentDateTime"
 
             # Act: 関数を実行
-            Set-Gist -GistId $gistId -GistFileName $gistFileName -Content $content
+            Set-GistContent -GistId $gistId -GistFileName $gistFileName -Content $content
 
             # Assert: 結果が期待通りか確認
             $result = Get-GistContent -GistId $gistId -GistFileName $gistFileName
@@ -51,7 +51,7 @@ InModuleScope GistGet {
             # Act: 関数を実行
             $errorInfo = $null
             try {
-                Set-Gist -GistId $gistId -Content $content
+                Set-GistContent -GistId $gistId -Content $content
             }
             catch {
                 $errorInfo = $_

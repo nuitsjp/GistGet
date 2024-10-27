@@ -1,4 +1,4 @@
-function Set-Gist {
+function Set-GistContent {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]

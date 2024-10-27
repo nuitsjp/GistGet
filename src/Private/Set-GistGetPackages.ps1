@@ -32,7 +32,7 @@ function Set-GistGetPackages {
         if ($GistId) { $packageParams['GistId'] = $GistId }
         if ($GistFileName) { $packageParams['GistFileName'] = $GistFileName }
 
-        Set-Gist @packageParams -Content $yaml
+        Set-GistContent @packageParams -Content $yaml
     }
     else {
         # Should not reach here

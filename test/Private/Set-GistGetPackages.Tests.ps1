@@ -5,7 +5,7 @@ InModuleScope GistGet {
     Describe "Set-GistGetPackages Tests" {
         BeforeAll {
             # モックの準備
-            Mock Set-Gist { 
+            Mock Set-GistContent { 
             }
         }
     
@@ -61,7 +61,7 @@ InModuleScope GistGet {
             Set-GistGetPackages -GistId "FooGistId" -GistFileName "FooGistFileName" -Packages $packages
 
             # Assert: 結果が期待通りか確認
-            Should -Invoke Set-Gist -ParameterFilter {
+            Should -Invoke Set-GistContent -ParameterFilter {
                 $GistId -eq "FooGistId"
                 $GistFileName -eq "FooGistFileName"
             }
