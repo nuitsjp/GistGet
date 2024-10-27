@@ -53,19 +53,22 @@ class GistGetPackage {
         return $hash
     }
 
-    static [string] ToYaml([GistGetPackage[]]$packages) {
+    static [string] ToYaml($packages) {
         $values = [ordered]@{}
-        foreach ($package in $packages) {
+
+        # $Packages を Id の昇順でソートしてyamlに変換
+        foreach ($package in ($packages | Sort-Object Id)) {
             $properties = [ordered]@{}
             foreach ($param in [GistGetPackage]::Parameters) {
-                if ($package.$param) {
+                # id 以外の有効なプロパティを取得
+                if ($package.$param -and $param -ne "id") {
                     $properties[$param] = $package.$param
                 }
             }
             $values[$package.Id] = $properties
         }
-
-        return $values | ConvertTo-Yaml
+    
+        return ConvertTo-Yaml $values
     }
 
 

@@ -20,19 +20,7 @@ function Set-GistGetPackages {
         }
     }
 
-    # $Packages を Id の昇順でソートしてyamlに変換
-    $values = [ordered]@{}
-    foreach ($package in ($packages | Sort-Object Id)) {
-        $properties = [ordered]@{}
-        foreach ($param in [GistGetPackage]::Parameters) {
-            if ($package.$param -and $param -ne "id") {
-                $properties[$param] = $package.$param
-            }
-        }
-        $values[$package.Id] = $properties
-    }
-
-    $yaml = ConvertTo-Yaml $values
+    $yaml = [GistGetPackage]::ToYaml($Packages)
 
     if ($Path) {
         # Save to file
