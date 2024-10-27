@@ -14,7 +14,7 @@ InModuleScope GistGet {
                 Set-Gist -GistId $gistId -Content $content
 
                 # Assert: 結果が期待通りか確認
-                $result = Get-Gist -GistId $gistId
+                $result = Get-GistContent -GistId $gistId
                 $result | Should -Be $content
             }
             catch {
@@ -39,7 +39,7 @@ InModuleScope GistGet {
             Set-Gist -GistId $gistId -GistFileName $gistFileName -Content $content
 
             # Assert: 結果が期待通りか確認
-            $result = Get-Gist -GistId $gistId -GistFileName $gistFileName
+            $result = Get-GistContent -GistId $gistId -GistFileName $gistFileName
             $result | Should -Be $content
         }
 

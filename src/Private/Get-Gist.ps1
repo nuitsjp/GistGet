@@ -1,4 +1,4 @@
-function Get-Gist {
+function Get-GistContent {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
