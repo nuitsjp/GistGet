@@ -17,17 +17,23 @@ InModuleScope GistGet {
             Remove-Item -Path $tempFile -Force
 
             $packages = @(
-                [PSCustomObject]@{
-                    id = "Microsoft.VisualStudioCode.Insiders"
-                    packageParameters = "/VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath"
-                },
-                [PSCustomObject]@{
-                    id = "Zoom.Zoom"
-                    uninstall = $true
-                },
-                [PSCustomObject]@{
-                    id = "7zip.7zip"
-                }
+                [GistGetPackage]::CreateFromHashtable(
+                    @{
+                        id = "Microsoft.VisualStudioCode.Insiders"
+                        override = "/VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath"
+                    }
+                ),
+                [GistGetPackage]::CreateFromHashtable(
+                    @{
+                        id = "Zoom.Zoom"
+                        uninstall = $true
+                    }
+                ),
+                [GistGetPackage]::CreateFromHashtable(
+                    @{
+                        id = "7zip.7zip"
+                    }
+                )
             )
 
             # Act: 関数を実行
@@ -44,7 +50,11 @@ InModuleScope GistGet {
 
             # GistGitPackages配列を作成
             $packages = @(
-                [PSCustomObject]@{id = "7zip.7zip"}
+                [GistGetPackage]::CreateFromHashtable(
+                    @{
+                        id = "7zip.7zip"
+                    }
+                )
             )
 
             # Act: 関数を実行

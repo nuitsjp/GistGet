@@ -17,21 +17,21 @@ class GistGetPackage {
     [bool]$Uninstall = $false
     
     static [string[]] $Parameters = @(
-        'Id', 
-        'AllowHashMismatch',
-        'Architecture',
-        'Custom',
-        'Force',
-        'InstallerType',
-        'Locale',
-        'Log',
-        'Mode',
-        'Override',
-        'Scope',
-        'Version',
-        'Confirm',
-        'WhatIf',
-        'Uninstall'
+        'id', 
+        'allowHashMismatch',
+        'architecture',
+        'custom',
+        'force',
+        'installerType',
+        'locale',
+        'log',
+        'mode',
+        'override',
+        'scope',
+        'version',
+        'confirm',
+        'whatIf',
+        'uninstall'
     )
 
     # デフォルトコンストラクタ
@@ -44,7 +44,7 @@ class GistGetPackage {
     }
 
     [hashtable] ToHashtable() {
-        $hash = @{}
+        $hash = [ordered]@{}
         foreach ($param in [GistGetPackage]::Parameters) {
             if ($this.$param) {
                 $hash[$param] = $this.$param
@@ -53,8 +53,19 @@ class GistGetPackage {
         return $hash
     }
 
-    static [hashtable] ToHashtable([GistGetPackage]$package) {
-        return $package.ToHashtable()
+    static [string] ToYaml([GistGetPackage[]]$packages) {
+        $values = [ordered]@{}
+        foreach ($package in $packages) {
+            $properties = [ordered]@{}
+            foreach ($param in [GistGetPackage]::Parameters) {
+                if ($package.$param) {
+                    $properties[$param] = $package.$param
+                }
+            }
+            $values[$package.Id] = $properties
+        }
+
+        return $values | ConvertTo-Yaml
     }
 
 

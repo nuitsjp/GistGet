@@ -5,7 +5,7 @@ function Set-GistGetPackages {
         [string] $GistFileName,
         [string] $Path,
         [Parameter(Mandatory = $true)]
-        [PSCustomObject[]]$Packages
+        [GistGetPackage[]]$Packages
     )
 
     # 引数がいずれも指定されていない場合は、環境変数から GistId を取得
@@ -21,7 +21,18 @@ function Set-GistGetPackages {
     }
 
     # $Packages を Id の昇順でソートしてyamlに変換
-    $yaml = $Packages | Sort-Object Id | ConvertTo-Yaml
+    $values = [ordered]@{}
+    foreach ($package in ($packages | Sort-Object Id)) {
+        $properties = [ordered]@{}
+        foreach ($param in [GistGetPackage]::Parameters) {
+            if ($package.$param -and $param -ne "id") {
+                $properties[$param] = $package.$param
+            }
+        }
+        $values[$package.Id] = $properties
+    }
+
+    $yaml = ConvertTo-Yaml $values
 
     if ($Path) {
         # Save to file

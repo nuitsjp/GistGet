@@ -91,7 +91,7 @@ function Sync-GistGetPackage {
             } else {
                 # Install the package if it does not exist
                 Write-Host "Installing package $packageId"
-                $findParams = [GistGetPackage]::ToHashtable($package)
+                $findParams = $package.ToHashtable()
         
                 Install-WinGetPackage @findParams
             }
