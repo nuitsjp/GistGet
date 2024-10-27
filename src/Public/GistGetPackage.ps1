@@ -72,9 +72,19 @@ class GistGetPackage {
     # 静的ファクトリーメソッド
     static [GistGetPackage[]] ParseYaml([string]$yaml) {
         $packages = @()
-        $packageList = $yaml | ConvertFrom-Yaml
-        foreach ($package in $packageList) {
-            $packages += [GistGetPackage]::CreateFromHashtable($package)
+        $hashtable = $yaml | ConvertFrom-Yaml
+        $keys = $hashtable.Keys | Sort-Object
+        foreach ($key in $keys) {
+            $properties = $hashtable[$key]
+            $package = [GistGetPackage]::new($key)
+            if ($properties) {
+                foreach ($param in [GistGetPackage]::Parameters) {
+                    if ($properties.ContainsKey($param)) {
+                        $package.$param = $properties[$param]
+                    }
+                }
+            }
+            $packages += $package
         }
         return $packages
     }

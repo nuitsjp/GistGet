@@ -41,7 +41,7 @@ InModuleScope GistGet {
             # Arrange: テストの準備
 
             # Act: 関数を実行
-            $packages = Get-GistGetPackage -Uri "https://gist.githubusercontent.com/nuitsjp/82b27147c684502b4f9c4488f9fe6fa9/raw/2d94edca50cbfee9837982c59ccd2afb2f223897/Test-Get-GistGetPackages.yaml"
+            $packages = Get-GistGetPackage -Uri "https://gist.githubusercontent.com/nuitsjp/82b27147c684502b4f9c4488f9fe6fa9/raw/bd7abee92f8c8f152659960172c96600ae709036/Test-Get-GistGetPackages.yaml"
 
             # Assert: 結果が期待通りか確認
             $packages.Count | Should -Be 3

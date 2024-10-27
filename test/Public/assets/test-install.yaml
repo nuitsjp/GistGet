@@ -1,4 +1,4 @@
-- id: NuitsJp.ClaudeToZenn
+NuitsJp.ClaudeToZenn:
   architecture: x64
   allowHashMismatch: true
   custom: custom parameters
