@@ -7,7 +7,7 @@ InModuleScope GistGet {
             # Arrange: テストの準備
             $gistId = "e723f4e0011958413d806c589c6ffdd4"
             $gistFileName = "second.txt"
-            $gist = [Gist]::new($gistId, $gistFileName)
+            $gist = [GistFile]::new($gistId, $gistFileName)
             $currentDateTime = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
             $content = "Second Updated at $currentDateTime"
 
@@ -23,7 +23,7 @@ InModuleScope GistGet {
             # Arrange: テストの準備
             $gistId = "notfound"
             $gistFileName = "second.txt"
-            $gist = [Gist]::new($gistId, $gistFileName)
+            $gist = [GistFile]::new($gistId, $gistFileName)
             $content = "Not Found"
 
             # Act: 関数を実行

@@ -2,7 +2,7 @@ function Get-GistContent {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [Gist] $Gist
+        [GistFile] $Gist
     )
 
     # Get Gist information

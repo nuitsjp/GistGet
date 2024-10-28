@@ -6,7 +6,7 @@ InModuleScope GistGet {
         BeforeAll {
             # モックの準備
             Mock Find-Gist {
-                return [Gist]::new("Foo", "Bar")
+                return [GistFile]::new("Foo", "Bar")
             }
 
             Mock Get-GistGetPackage { 

@@ -2,7 +2,7 @@ function Set-GistContent {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [Gist] $Gist,
+        [GistFile] $Gist,
         [Parameter(Mandatory = $true)]
         [string] $Content
     )

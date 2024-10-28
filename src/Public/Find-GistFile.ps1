@@ -4,7 +4,7 @@ function Find-Gist
     $fistFileName = Get-UserEnvironmentVariable -Name $global:EnvironmentVariableNameGistFileName
 
     if($gistId -and $fistFileName) {
-        return [Gist]::new($gistId, $fistFileName)
+        return [GistFile]::new($gistId, $fistFileName)
     }
     else {
         # Gistの検索
@@ -27,7 +27,7 @@ function Find-Gist
                     throw "Multiple files were found in the Gist with ""$(Get-GistDescription)"" set in the Gist description."
                 }
                 $fileName = $fileNames | Select-Object -First 1
-                return [Gist]::new($id, $fileName)
+                return [GistFile]::new($id, $fileName)
             }
             default {
                 throw "Multiple Gists were found with ""$(Get-GistDescription)"" set in the Gist description."

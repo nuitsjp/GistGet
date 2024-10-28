@@ -2,7 +2,7 @@ function Set-GistGetPackages {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [Gist] $Gist,
+        [GistFile] $Gist,
         [Parameter(Mandatory = $true)]
         [GistGetPackage[]]$Packages
     )

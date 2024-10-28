@@ -12,7 +12,7 @@ InModuleScope GistGet {
         It "指定されたGistを更新する" {
             # Arrange: テストの準備
 
-            $gist = [Gist]::new("FooGistId", "FooGistFileName")
+            $gist = [GistFile]::new("FooGistId", "FooGistFileName")
             $packages = @(
                 [GistGetPackage]::CreateFromHashtable(
                     @{

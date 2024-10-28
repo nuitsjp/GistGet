@@ -62,7 +62,7 @@ InModuleScope GistGet {
             # Arrange: テストの準備
     
             # Act: 関数を実行
-            $gist = [Gist]::new("82b27147c684502b4f9c4488f9fe6fa9", "GistGet.yaml")
+            $gist = [GistFile]::new("82b27147c684502b4f9c4488f9fe6fa9", "GistGet.yaml")
             $packages = Get-GistGetPackage -Gist $gist
     
             # Assert: 結果が期待通りか確認

@@ -7,7 +7,7 @@ InModuleScope GistGet {
             # Arrange: テストの準備
             $gistId = "e081365e591c1d76141da8bef4fa2057"
             $gistFileName = "second.txt"
-            $gist = [Gist]::new($gistId, $gistFileName)
+            $gist = [GistFile]::new($gistId, $gistFileName)
 
             # Act: 関数を実行
             $result = Get-GistContent -Gist $gist
@@ -20,7 +20,7 @@ InModuleScope GistGet {
             # Arrange: テストの準備
             $gistId = "e081365e591c1d76141da8bef4fa2057"
             $gistFileName = "foo"
-            $gist = [Gist]::new($gistId, $gistFileName)
+            $gist = [GistFile]::new($gistId, $gistFileName)
 
             # Act: 関数を実行
             { Get-GistContent -Gist $gist } | Should -Throw
@@ -32,7 +32,7 @@ InModuleScope GistGet {
             # Arrange: テストの準備
             $gistId = "foo"
             $gistFileName = "second.txt"
-            $gist = [Gist]::new($gistId, $gistFileName)
+            $gist = [GistFile]::new($gistId, $gistFileName)
 
             # Act: 関数を実行
             { Get-GistContent -Gist $gist } | Should -Throw

@@ -8,7 +8,7 @@ Sync-GistGetPackage
 
 デフォルトでは「Gist description...」に「GistGet」とだけ記述されているGistの先頭のファイルが利用されます。
 
-GistGetでは定義ファイルを、[Gist](#Gist)・[Uri](#Uri)・[ファイル](#File)の何れかから取得して利用できます。
+GistGetでは定義ファイルを、[GistFile](#Gist)・[Uri](#Uri)・[ファイル](#File)の何れかから取得して利用できます。
 
 ## YAML
 

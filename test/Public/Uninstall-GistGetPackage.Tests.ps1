@@ -6,7 +6,7 @@ InModuleScope GistGet {
         BeforeAll {
             # モックの準備
             Mock Find-Gist {
-                return [Gist]::new("Foo", "Bar")
+                return [GistFile]::new("Foo", "Bar")
             }
 
             Mock Get-WinGetPackage { 
@@ -109,7 +109,7 @@ InModuleScope GistGet {
         It "すべてのパラメータが正しく渡されることを確認" {
             # Arrange: テストパラメータの設定
             Mock Find-Gist {
-                return [Gist]::new("Foo", "Bar")
+                return [GistFile]::new("Foo", "Bar")
             }
 
             $testParams = @{
@@ -142,7 +142,7 @@ InModuleScope GistGet {
         BeforeAll {
             # モックの準備
             Mock Find-Gist {
-                return [Gist]::new("Foo", "Bar")
+                return [GistFile]::new("Foo", "Bar")
             }
 
             Mock Get-WinGetPackage { 
@@ -200,7 +200,7 @@ InModuleScope GistGet {
         BeforeAll {
             # モックの準備
             Mock Find-Gist {
-                return [Gist]::new("Foo", "Bar")
+                return [GistFile]::new("Foo", "Bar")
             }
 
             Mock Get-WinGetPackage { 

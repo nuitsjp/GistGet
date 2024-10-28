@@ -1,7 +1,7 @@
 function Get-GistGetPackage {
     [CmdletBinding()]
     param(
-        [Gist] $Gist,
+        [GistFile] $Gist,
         [string] $Uri,
         [string] $Path
     )
