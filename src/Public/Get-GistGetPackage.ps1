@@ -14,16 +14,15 @@ function Get-GistGetPackage {
         Write-Verbose "Getting Gist from $Uri"
         $yaml = Invoke-RestMethod -Uri $Uri
     }
-    elseif($GistFile)
-    {
+    else {
+        if (-not $GistFile) {
+            $GistFile = Get-GistFile
+        }
         $gistId = $GistFile.Id
         $gistFileName = $GistFile.FileName
         Write-Verbose "Getting Gist for id:$gistId fileName:$gistFileName"
         $remoteGist = Get-GitHubGist -Gist $gistId
         $yaml = $remoteGist.files.$gistFileName.content
-    }
-    else {
-        throw "Please specify a GistId, Uri or Path. Alternatively, you need to register the GistId in advance using Set-GistGetGistId."
     }
 
     return [GistGetPackage]::ParseYaml($yaml)
