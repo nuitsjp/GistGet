@@ -6,37 +6,32 @@ $ErrorActionPreference = 'Stop'
 $global:EnvironmentVariableNameGistId = 'GIST_GET_GIST_ID'
 $global:EnvironmentVariableNameGistFileName = 'GIST_GET_GIST_FILE_NAME'
 
+# クラス定義を最初にロード
+. $PSScriptRoot\Classes.ps1
 
-# Check if WinGet is available
-try {
-    $null = Get-Command winget -ErrorAction Stop
-}
-catch {
-    Write-Error "WinGet is not installed. Please install WinGet first."
-    return
-}
+# Public関数のロード
+$Public = @( Get-ChildItem -Path $PSScriptRoot\Public\*.ps1 -ErrorAction SilentlyContinue )
+$Private = @( Get-ChildItem -Path $PSScriptRoot\Private\*.ps1 -ErrorAction SilentlyContinue )
 
-Import-Module -Name PowerShellForGitHub
-Import-Module -Name powershell-yaml
-Import-Module -Name Microsoft.WinGet.Client
-
-# グローバル変数の定義
-# GistIdを環境変数へ保管するためのキー
-$global:GistGetGistId = 'GistGetGistId'
-
-
-# Publicフォルダーのスクリプトをロード（公開関数）
-Get-ChildItem -Path (Join-Path $PSScriptRoot 'Public') -Filter *.ps1 | ForEach-Object {
-    . $_.FullName
+# Private関数のドット・ソーシング
+foreach($import in $Private) {
+    try {
+        . $import.FullName
+    }
+    catch {
+        Write-Error -Message "Failed to import function $($import.FullName): $_"
+    }
 }
 
-# Privateフォルダーのスクリプトをロード（非公開関数）
-Get-ChildItem -Path (Join-Path $PSScriptRoot 'Private') -Filter *.ps1 | ForEach-Object {
-    . $_.FullName
+# Public関数のドット・ソーシング
+foreach($import in $Public) {
+    try {
+        . $import.FullName
+    }
+    catch {
+        Write-Error -Message "Failed to import function $($import.FullName): $_"
+    }
 }
 
-# Publicフォルダー内の関数のみを公開
-Export-ModuleMember -Function (Get-ChildItem -Path (Join-Path $PSScriptRoot 'Public') -Filter *.ps1 | ForEach-Object {
-    $content = Get-Content $_.FullName | Select-String -Pattern '^function\s+([^\s{]+)'
-    if ($content) { $content.Matches.Groups[1].Value }
-})
+# Public関数のエクスポート
+Export-ModuleMember -Function $Public.BaseName

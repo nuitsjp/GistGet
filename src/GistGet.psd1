@@ -23,7 +23,7 @@
     VariablesToExport = @()
 
     # スクリプトとアセンブリ
-    ScriptsToProcess = @()
+    ScriptsToProcess = @('Classes.ps1')
     RequiredAssemblies = @()
 
     # ディペンデンシー

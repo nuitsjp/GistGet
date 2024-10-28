@@ -35,12 +35,6 @@ InModuleScope GistGet {
             }
         }
 
-        BeforeEach {
-            if (Get-ItemProperty -Path "HKCU:\Environment" -Name $Global:GistGetGistId -ErrorAction SilentlyContinue) {
-                Remove-ItemProperty -Path "HKCU:\Environment" -Name $Global:GistGetGistId
-            }
-        }
-
         It "From File" {
             # Arrange: テストの準備
             

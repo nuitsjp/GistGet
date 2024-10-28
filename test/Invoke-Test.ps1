@@ -7,4 +7,6 @@ if (-not (Get-Module -Name Microsoft.WinGet.Client -ListAvailable)) {
     Install-Module -Name Microsoft.WinGet.Client -Force -Scope CurrentUser
 }
 
-Invoke-Pester -Name "Install-GistGetPackage Not Installed Tests"
+# Invoke-Pester -Name "Install-GistGetPackage Not Installed Tests"
+Import-Module -Name "$PSScriptRoot\..\src\GistGet.psd1" -Force
+Get-GistGetPackage
