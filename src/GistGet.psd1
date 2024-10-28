@@ -10,12 +10,12 @@
 
     # コマンドとエイリアスのエクスポート
     FunctionsToExport = @(
-        'Get-GistGetGistId',
+        'Set-GitHubToken',
+        'Get-GistFile',
+        'Set-GistFile',
         'Get-GistGetPackage',
         'Sync-GistGetPackage',
         'Install-GistGetPackage',
-        'Set-GistGetGistId',
-        'Set-GitHubToken',
         'Uninstall-GistGetPackage'
     )
     CmdletsToExport = @()
