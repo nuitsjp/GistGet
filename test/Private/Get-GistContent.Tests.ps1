@@ -10,7 +10,7 @@ InModuleScope GistGet {
             $gist = [GistFile]::new($gistId, $gistFileName)
 
             # Act: 関数を実行
-            $result = Get-GistContent -Gist $gist
+            $result = Get-GistContent -GistFile $gist
 
             # Assert: 結果が期待通りか確認
             $result | Should -Be "Second"

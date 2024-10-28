@@ -18,11 +18,7 @@ function Get-GistGetPackage {
         if (-not $GistFile) {
             $GistFile = Get-GistFile
         }
-        $gistId = $GistFile.Id
-        $gistFileName = $GistFile.FileName
-        Write-Verbose "Getting Gist for id:$gistId fileName:$gistFileName"
-        $remoteGist = Get-GitHubGist -Gist $gistId
-        $yaml = $remoteGist.files.$gistFileName.content
+        $yaml = Get-GistContent -GistFile $GistFile
     }
 
     return [GistGetPackage]::ParseYaml($yaml)

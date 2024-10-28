@@ -12,10 +12,10 @@ InModuleScope GistGet {
             $content = "Second Updated at $currentDateTime"
 
             # Act: 関数を実行
-            Set-GistContent -Gist $gist -Content $content
+            Set-GistContent -GistFile $gist -Content $content
 
             # Assert: 結果が期待通りか確認
-            $result = Get-GistContent -Gist $gist
+            $result = Get-GistContent -GistFile $gist
             $result | Should -Be $content
         }
 
