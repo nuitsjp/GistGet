@@ -7,7 +7,8 @@ function Find-Gist
     }
     else {
         # Gistの検索
-        $gists = Get-GitHubGist | Where-Object { $_.Description -like "$(Get-GistDescription)" }
+        $all = Get-GitHubGist
+        $gists = $all | Where-Object { $_.Description -like "$(Get-GistDescription)" }
 
         # 検索結果の数を取得
         $gistCount = if ($null -eq $gists) { 0 } else { @($gists).Count }
@@ -17,7 +18,15 @@ function Find-Gist
                 throw "Gist with ""$(Get-GistDescription)"" in the Gist description was not found."
             }
             1 {
-                return $gists[0].id
+                $id = $gists[0].id
+                $files = $gists[0].files
+                $fileNames = $files.PSObject.Properties.Name
+                $fileCount = @($fileNames).Count
+                if($fileCount -gt 1) {
+                    throw "Multiple files were found in the Gist with ""$(Get-GistDescription)"" set in the Gist description."
+                }
+                $fileName = $fileNames | Select-Object -First 1
+                return [Gist]::new($id, $fileName)
             }
             default {
                 throw "Multiple Gists were found with ""$(Get-GistDescription)"" set in the Gist description."

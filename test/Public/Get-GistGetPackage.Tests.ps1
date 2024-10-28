@@ -83,7 +83,7 @@ InModuleScope GistGet {
             # Arrange: テストの準備
     
             # Act: 関数を実行
-            $packages = Get-GistGetPackage -GistId "82b27147c684502b4f9c4488f9fe6fa9" -GistFileName "Test-Get-GistGetPackages.yaml"
+            $packages = Get-GistGetPackage -GistId "82b27147c684502b4f9c4488f9fe6fa9" -GistFileName "GistGet.yaml"
     
             # Assert: 結果が期待通りか確認
             $packages.Count | Should -Be 3

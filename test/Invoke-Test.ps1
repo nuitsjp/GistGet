@@ -7,4 +7,4 @@ if (-not (Get-Module -Name Microsoft.WinGet.Client -ListAvailable)) {
     Install-Module -Name Microsoft.WinGet.Client -Force -Scope CurrentUser
 }
 
-Invoke-Pester -Name "Find-Gist exist environment variables Tests"
+Invoke-Pester -Name "Find one Gist from description"
