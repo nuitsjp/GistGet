@@ -11,7 +11,6 @@
     # コマンドとエイリアスのエクスポート
     FunctionsToExport = @(
         'Set-GitHubToken',
-        'Get-GistGetPackage',
         'Sync-GistGetPackage',
         'Install-GistGetPackage',
         'Uninstall-GistGetPackage',
