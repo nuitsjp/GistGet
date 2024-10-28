@@ -2,15 +2,15 @@ function Set-GistContent {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [GistFile] $Gist,
+        [GistFile] $GistFile,
         [Parameter(Mandatory = $true)]
         [string] $Content
     )
 
     try {
         # ファイルの名前を取得
-        $gistId = $Gist.Id
-        $fileName = $Gist.FileName
+        $gistId = $GistFile.Id
+        $fileName = $GistFile.FileName
 
         # 更新用のハッシュテーブルを作成
         $updateHash = @{
@@ -25,7 +25,7 @@ function Set-GistContent {
     catch {
         if ($_.Exception.Response.StatusCode -eq 404) {
             # メッセージと内部例外を設定して例外をスロー
-            $message = "Gist '$GistId' is missing or you do not have permission to access it, if GistId is correct, please issue a token and set it up: https://github.com/nuitsjp/GistGet/blob/main/docs/Set-GitHubToken.md"
+            $message = "Gist '$($GistFile.Id)' is missing or you do not have permission to access it, if GistId is correct, please issue a token and set it up: https://github.com/nuitsjp/GistGet/blob/main/docs/Set-GitHubToken.md"
             throw New-Object System.Exception($message, $_.Exception)
         }
         else {

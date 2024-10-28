@@ -39,7 +39,7 @@ InModuleScope GistGet {
             # Assert: 結果が期待通りか確認
             $expected = Get-Content -Path "$PSScriptRoot\assets\test.yaml"
             Should -Invoke Set-GistContent -ParameterFilter {
-                $Gist -eq $gist -and
+                $GistFile -eq $gist -and
                 $Content -ne $expected
             }
         }

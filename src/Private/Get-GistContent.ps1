@@ -2,12 +2,12 @@ function Get-GistContent {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [GistFile] $Gist
+        [GistFile] $GistFile
     )
 
     # Get Gist information
-    $gistId = $Gist.Id
-    $gistFileName = $Gist.FileName
+    $gistId = $GistFile.Id
+    $gistFileName = $GistFile.FileName
     Write-Verbose "Getting Gist for id:$gistId fileName:$gistFileName"
     $remoteGist = Get-GitHubGist -Gist $gistId
     $file = $remoteGist.files.$gistFileName

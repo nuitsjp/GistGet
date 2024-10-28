@@ -1,7 +1,7 @@
 function Get-GistGetPackage {
     [CmdletBinding()]
     param(
-        [GistFile] $Gist,
+        [GistFile] $GistFile,
         [string] $Uri,
         [string] $Path
     )
@@ -14,10 +14,10 @@ function Get-GistGetPackage {
         Write-Verbose "Getting Gist from $Uri"
         $yaml = Invoke-RestMethod -Uri $Uri
     }
-    elseif($Gist)
+    elseif($GistFile)
     {
-        $gistId = $Gist.Id
-        $gistFileName = $Gist.FileName
+        $gistId = $GistFile.Id
+        $gistFileName = $GistFile.FileName
         Write-Verbose "Getting Gist for id:$gistId fileName:$gistFileName"
         $remoteGist = Get-GitHubGist -Gist $gistId
         $yaml = $remoteGist.files.$gistFileName.content
