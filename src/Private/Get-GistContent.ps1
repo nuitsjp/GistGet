@@ -2,20 +2,18 @@ function Get-GistContent {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [string] $GistId,
-        [string] $GistFileName
+        [Gist] $Gist
     )
 
     # Get Gist information
-    Write-Verbose "Getting Gist for $GistId"
-    $gist = Get-GitHubGist -Gist $GistId
+    $gistId = $Gist.Id
+    $gistFileName = $Gist.FileName
+    Write-Verbose "Getting Gist for id:$gistId fileName:$gistFileName"
+    $remoteGist = Get-GitHubGist -Gist $gistId
+    $file = $remoteGist.files.$gistFileName
+    if (-not $file) {
+        throw "The file $gistFileName was not found in the Gist with id $gistId."
+    }   
 
-    $fileName = $GistFileName
-    if (-not $fileName) {
-        # Get the first file if GistFileName is not specified
-        $fileName = $gist.files.PSObject.Properties.Name | Select-Object -First 1
-    }
-
-    # Get file contents
-    return $gist.files.$fileName.content
+    return $file.content
 }

@@ -2,22 +2,15 @@ function Set-GistContent {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [string] $GistId,
-        [string] $GistFileName,
+        [Gist] $Gist,
         [Parameter(Mandatory = $true)]
         [string] $Content
     )
 
     try {
         # ファイルの名前を取得
-        $fileName = $GistFileName
-        if (-not $fileName) {
-            # Gistの情報を取得
-            $gist = Get-GitHubGist -Gist $GistId
-
-            # Get the first file if GistFileName is not specified
-            $fileName = $gist.files.PSObject.Properties.Name | Select-Object -First 1
-        }
+        $gistId = $Gist.Id
+        $fileName = $Gist.FileName
 
         # 更新用のハッシュテーブルを作成
         $updateHash = @{
@@ -27,7 +20,7 @@ function Set-GistContent {
         }
 
         # Gistを更新
-        Set-GitHubGist -Gist $GistId -Update $updateHash
+        Set-GitHubGist -Gist $gistId -Update $updateHash
     }
     catch {
         if ($_.Exception.Response.StatusCode -eq 404) {
