@@ -27,8 +27,6 @@ InModuleScope GistGet {
         It "アンインストールされ、Gistからも削除されることを確認" {
             # Arrange: テストパラメータの設定
             $testParams = @{
-                GistId = "test-gist-id"
-                GistFileName = "test-gist-file-name"
                 Query = "test-query"
                 Command = "test-command"
                 Count = 1
@@ -46,10 +44,7 @@ InModuleScope GistGet {
             Uninstall-GistGetPackage @testParams
 
             # Assert: 結果が期待通りか確認
-            Should -Invoke Get-GistGetPackage -ParameterFilter {
-                $GistId -eq "test-gist-id" -and
-                $GistFileName -eq "test-gist-file-name"
-            }
+            Should -Invoke Get-GistGetPackage
 
             Should -Invoke Get-WinGetPackage -ParameterFilter {
                 $Query -eq "test-query" -and
@@ -70,8 +65,6 @@ InModuleScope GistGet {
             }
 
             Should -Invoke Set-GistGetPackages -ParameterFilter {
-                $GistId -eq "test-gist-id" -and
-                $GistFileName -eq "test-gist-file-name" -and
                 $Packages.Count -eq 1 -and
                 $Packages[0].Id -eq "NuitsJp.ClaudeToZenn" -and
                 $Packages[0].Uninstall -eq $true
@@ -105,7 +98,6 @@ InModuleScope GistGet {
         It "すべてのパラメータが正しく渡されることを確認" {
             # Arrange: テストパラメータの設定
             $testParams = @{
-                GistId = "test-gist-id"
                 Id = "NuitsJp.ClaudeToZenn"
             }
 
@@ -113,9 +105,7 @@ InModuleScope GistGet {
             Uninstall-GistGetPackage @testParams
 
             # Assert: 結果が期待通りか確認
-            Should -Invoke Get-GistGetPackage -ParameterFilter {
-                $GistId -eq "test-gist-id"
-            }
+            Should -Invoke Get-GistGetPackage
 
             Should -Invoke Get-WinGetPackage -ParameterFilter {
                 $Id -eq "NuitsJp.ClaudeToZenn"
@@ -153,7 +143,6 @@ InModuleScope GistGet {
         It "すべてのパラメータが正しく渡されることを確認" {
             # Arrange: テストパラメータの設定
             $testParams = @{
-                GistId = "test-gist-id"
                 Id = "NuitsJp.ClaudeToZenn"
             }
 
@@ -161,9 +150,7 @@ InModuleScope GistGet {
             Uninstall-GistGetPackage @testParams
 
             # Assert: 結果が期待通りか確認
-            Should -Invoke Get-GistGetPackage -ParameterFilter {
-                $GistId -eq "test-gist-id"
-            }
+            Should -Invoke Get-GistGetPackage
 
             Should -Invoke Get-WinGetPackage -ParameterFilter {
                 $Id -eq "NuitsJp.ClaudeToZenn"
@@ -172,7 +159,6 @@ InModuleScope GistGet {
             Should -Not -Invoke Uninstall-WinGetPackage
 
             Should -Invoke Set-GistGetPackages -ParameterFilter {
-                $GistId -eq "test-gist-id" -and
                 $Packages.Count -eq 1 -and
                 $Packages[0].Id -eq "NuitsJp.ClaudeToZenn" -and
                 $Packages[0].Uninstall -eq $true
@@ -203,7 +189,6 @@ InModuleScope GistGet {
         It "すべてのパラメータが正しく渡されることを確認" {
             # Arrange: テストパラメータの設定
             $testParams = @{
-                GistId = "test-gist-id"
                 Id = "NuitsJp.ClaudeToZenn"
             }
 
@@ -211,9 +196,7 @@ InModuleScope GistGet {
             Uninstall-GistGetPackage @testParams
 
             # Assert: 結果が期待通りか確認
-            Should -Invoke Get-GistGetPackage -ParameterFilter {
-                $GistId -eq "test-gist-id"
-            }
+            Should -Invoke Get-GistGetPackage
 
             Should -Invoke Get-WinGetPackage -ParameterFilter {
                 $Id -eq "NuitsJp.ClaudeToZenn"
