@@ -31,7 +31,8 @@ function Uninstall-GistGetPackage {
     }
 
     process {
-        $gistGetPackages = Get-GistGetPackage
+        $gist = Find-Gist
+        $gistGetPackages = Get-GistGetPackage -Gist $gist
 
         # Build parameter hashtable for Find-WinGetPackage
         $getParams = @{}
@@ -89,7 +90,7 @@ function Uninstall-GistGetPackage {
         }
 
         if ($isRemovedPackage) {
-            Set-GistGetPackages @packageParams -Packages $gistGetPackages
+            Set-GistGetPackages -Gist $gist -Packages $gistGetPackages
         }
     }
 
