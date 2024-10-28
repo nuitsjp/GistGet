@@ -5,6 +5,10 @@ InModuleScope GistGet {
     Describe "Install-GistGetPackage Not Installed Tests" {
         BeforeAll {
             # モックの準備
+            Mock Find-Gist {
+                return [Gist]::new("Foo", "Bar")
+            }
+
             Mock Get-GistGetPackage { 
                 return @()
             }
@@ -42,7 +46,11 @@ InModuleScope GistGet {
             Install-GistGetPackage @testParams
 
             # Assert: 結果が期待通りか確認
-            Should -Invoke Get-GistGetPackage
+            Should -Invoke Get-GistGetPackage -ParameterFilter {
+                $Gist -and
+                $Gist.Id -eq "Foo" -and
+                $Gist.FileName -eq "Bar"
+            }
 
             Should -Invoke Find-WinGetPackage -ParameterFilter {
                 $Query -eq "test-query" -and
@@ -63,10 +71,12 @@ InModuleScope GistGet {
             }
 
             Should -Invoke Set-GistGetPackages -ParameterFilter {
+                $Gist -and
+                $Gist.Id -eq "Foo" -and
+                $Gist.FileName -eq "Bar" -and
                 $Packages.Count -eq 1 -and
                 $Packages[0].Id -eq "NuitsJp.ClaudeToZenn"
             }
         }
-
     }
 }

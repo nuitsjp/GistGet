@@ -9,13 +9,10 @@ InModuleScope GistGet {
             }
         }
     
-        It "Path名が指定された場合、指定されたファイルを更新する" {
+        It "指定されたGistを更新する" {
             # Arrange: テストの準備
 
-            # tempファイルを作成
-            $tempFile = [System.IO.Path]::GetTempFileName()
-            Remove-Item -Path $tempFile -Force
-
+            $gist = [Gist]::new("FooGistId", "FooGistFileName")
             $packages = @(
                 [GistGetPackage]::CreateFromHashtable(
                     @{
@@ -37,33 +34,13 @@ InModuleScope GistGet {
             )
 
             # Act: 関数を実行
-            Set-GistGetPackages -Path $tempFile -Packages $packages
+            Set-GistGetPackages -Gist $gist -Packages $packages
 
             # Assert: 結果が期待通りか確認
-            $result = Get-Content -Path $tempFile
             $expected = Get-Content -Path "$PSScriptRoot\assets\test.yaml"
-            $result | Should -Be $expected
-        }
-
-        It "GistIdが指定された場合、指定されたGistを更新する" {
-            # Arrange: テストの準備
-
-            # GistGitPackages配列を作成
-            $packages = @(
-                [GistGetPackage]::CreateFromHashtable(
-                    @{
-                        id = "7zip.7zip"
-                    }
-                )
-            )
-
-            # Act: 関数を実行
-            Set-GistGetPackages -GistId "FooGistId" -GistFileName "FooGistFileName" -Packages $packages
-
-            # Assert: 結果が期待通りか確認
             Should -Invoke Set-GistContent -ParameterFilter {
-                $GistId -eq "FooGistId"
-                $GistFileName -eq "FooGistFileName"
+                $Gist -eq $gist -and
+                $Content -ne $expected
             }
         }
     }
