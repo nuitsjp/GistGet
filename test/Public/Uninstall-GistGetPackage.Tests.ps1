@@ -108,6 +108,10 @@ InModuleScope GistGet {
     
         It "すべてのパラメータが正しく渡されることを確認" {
             # Arrange: テストパラメータの設定
+            Mock Find-Gist {
+                return [Gist]::new("Foo", "Bar")
+            }
+
             $testParams = @{
                 Id = "NuitsJp.ClaudeToZenn"
             }
@@ -116,7 +120,11 @@ InModuleScope GistGet {
             Uninstall-GistGetPackage @testParams
 
             # Assert: 結果が期待通りか確認
-            Should -Invoke Get-GistGetPackage
+            Should -Invoke Get-GistGetPackage -ParameterFilter {
+                $Gist -and
+                $Gist.Id -eq "Foo" -and
+                $Gist.FileName -eq "Bar"
+            }
 
             Should -Invoke Get-WinGetPackage -ParameterFilter {
                 $Id -eq "NuitsJp.ClaudeToZenn"
@@ -133,6 +141,10 @@ InModuleScope GistGet {
     Describe "Uninstall-GistGetPackage インストールなし and Gistあり Tests" {
         BeforeAll {
             # モックの準備
+            Mock Find-Gist {
+                return [Gist]::new("Foo", "Bar")
+            }
+
             Mock Get-WinGetPackage { 
                 return @(
                 )
@@ -161,7 +173,11 @@ InModuleScope GistGet {
             Uninstall-GistGetPackage @testParams
 
             # Assert: 結果が期待通りか確認
-            Should -Invoke Get-GistGetPackage
+            Should -Invoke Get-GistGetPackage -ParameterFilter {
+                $Gist -and
+                $Gist.Id -eq "Foo" -and
+                $Gist.FileName -eq "Bar"
+            }
 
             Should -Invoke Get-WinGetPackage -ParameterFilter {
                 $Id -eq "NuitsJp.ClaudeToZenn"
@@ -170,6 +186,9 @@ InModuleScope GistGet {
             Should -Not -Invoke Uninstall-WinGetPackage
 
             Should -Invoke Set-GistGetPackages -ParameterFilter {
+                $Gist -and
+                $Gist.Id -eq "Foo" -and
+                $Gist.FileName -eq "Bar" -and
                 $Packages.Count -eq 1 -and
                 $Packages[0].Id -eq "NuitsJp.ClaudeToZenn" -and
                 $Packages[0].Uninstall -eq $true
@@ -180,6 +199,10 @@ InModuleScope GistGet {
     Describe "Uninstall-GistGetPackage インストールなし and Gistなし Tests" {
         BeforeAll {
             # モックの準備
+            Mock Find-Gist {
+                return [Gist]::new("Foo", "Bar")
+            }
+
             Mock Get-WinGetPackage { 
                 return @(
                 )
@@ -207,7 +230,11 @@ InModuleScope GistGet {
             Uninstall-GistGetPackage @testParams
 
             # Assert: 結果が期待通りか確認
-            Should -Invoke Get-GistGetPackage
+            Should -Invoke Get-GistGetPackage -ParameterFilter {
+                $Gist -and
+                $Gist.Id -eq "Foo" -and
+                $Gist.FileName -eq "Bar"
+            }
 
             Should -Invoke Get-WinGetPackage -ParameterFilter {
                 $Id -eq "NuitsJp.ClaudeToZenn"
