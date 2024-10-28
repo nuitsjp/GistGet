@@ -4,7 +4,7 @@ Import-Module -Name "$PSScriptRoot\..\..\src\GistGet.psd1" -Force
 InModuleScope GistGet {
     Describe "Get-UserEnvironmentVariable Tests" {
         BeforeEach {
-            [System.Environment]::SetEnvironmentVariable("GIST_GET_TEST", "FooBar", [System.EnvironmentVariableTarget]::User)
+            Set-ItemProperty -Path 'HKCU:\Environment' -Name "GIST_GET_TEST" -Value "FooBar"
         }
 
         It "ファイル名を指定しない場合、最初のファイルを取得する" {
@@ -20,7 +20,7 @@ InModuleScope GistGet {
 
         AfterEach {
             # 環境変数を削除する
-            [System.Environment]::SetEnvironmentVariable("GIST_GET_TEST", $null, [System.EnvironmentVariableTarget]::User)
+            Set-ItemProperty -Path 'HKCU:\Environment' -Name "GIST_GET_TEST" -Value $null
         }
     }
 }

@@ -5,5 +5,5 @@ function Get-UserEnvironmentVariable {
         [string] $Name
     )
 
-    return [System.Environment]::GetEnvironmentVariable($Name, [System.EnvironmentVariableTarget]::User)
+    return (Get-ItemProperty -Path 'HKCU:\Environment').$Name
 }

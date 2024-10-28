@@ -7,5 +7,5 @@ function Set-UserEnvironmentVariable {
         [string] $Value
     )
 
-    [System.Environment]::SetEnvironmentVariable($Name, $Value, [System.EnvironmentVariableTarget]::User)
+    Set-ItemProperty -Path 'HKCU:\Environment' -Name $Name -Value $Value
 }

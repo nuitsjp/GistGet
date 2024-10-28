@@ -5,7 +5,7 @@ InModuleScope GistGet {
     Describe "Set-UserEnvironmentVariable Tests" {
         BeforeEach {
             # 環境変数を削除する
-            [System.Environment]::SetEnvironmentVariable("GIST_GET_TEST", $null, [System.EnvironmentVariableTarget]::User)
+            Set-ItemProperty -Path 'HKCU:\Environment' -Name "GIST_GET_TEST" -Value $null
         }
 
         It "ファイル名を指定しない場合、最初のファイルを取得する" {
@@ -17,13 +17,13 @@ InModuleScope GistGet {
             $result = Set-UserEnvironmentVariable -Name $name -Value $value
 
             # Assert: 結果が期待通りか確認
-            $result = [System.Environment]::GetEnvironmentVariable($name, [System.EnvironmentVariableTarget]::User)
+            $result = (Get-ItemProperty -Path 'HKCU:\Environment').$name
             $result | Should -Be $value
         }
 
         AfterEach {
             # 環境変数を削除する
-            [System.Environment]::SetEnvironmentVariable("GIST_GET_TEST", $null, [System.EnvironmentVariableTarget]::User)
+            Set-ItemProperty -Path 'HKCU:\Environment' -Name "GIST_GET_TEST" -Value $null
         }
     }
 }
