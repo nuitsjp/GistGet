@@ -5,7 +5,7 @@ InModuleScope GistGet {
     Describe "Install-GistGetPackage Not Installed Tests" {
         BeforeAll {
             # モックの準備
-            Mock Find-Gist {
+            Mock Get-GistFile {
                 return [GistFile]::new("Foo", "Bar")
             }
 

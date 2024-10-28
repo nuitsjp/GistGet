@@ -31,7 +31,7 @@ function Uninstall-GistGetPackage {
     }
 
     process {
-        $gist = Find-Gist
+        $gist = Get-GistFile
         $gistGetPackages = Get-GistGetPackage -Gist $gist
 
         # Build parameter hashtable for Find-WinGetPackage

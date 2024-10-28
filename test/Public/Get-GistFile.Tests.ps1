@@ -2,7 +2,7 @@
 Import-Module -Name "$PSScriptRoot\..\..\src\GistGet.psd1" -Force
 
 InModuleScope GistGet {
-    Describe "Find-Gist exist environment variables Tests" {
+    Describe "Get-GistFile exist environment variables Tests" {
         BeforeAll {
             # モックの準備
             Mock Get-UserEnvironmentVariable { 
@@ -22,7 +22,7 @@ InModuleScope GistGet {
             # Arrange: テストの準備
 
             # Act: 関数を実行
-            $result = Find-Gist
+            $result = Get-GistFile
 
             # Assert: 結果が期待通りか確認
             $result | Should -Not -Be $null
@@ -63,7 +63,7 @@ InModuleScope GistGet {
             # Arrange: テストの準備
 
             # Act: 関数を実行
-            $result = Find-Gist
+            $result = Get-GistFile
 
             # Assert: 結果が期待通りか確認
             $result | Should -Not -Be $null
@@ -105,7 +105,7 @@ InModuleScope GistGet {
             # Arrange: テストの準備
 
             # Act: 関数を実行
-            { Find-Gist } | Should -Throw
+            { Get-GistFile } | Should -Throw
 
             # Assert: 結果が期待通りか確認
         }
@@ -144,7 +144,7 @@ InModuleScope GistGet {
             # Arrange: テストの準備
 
             # Act: 関数を実行
-            { Find-Gist } | Should -Throw
+            { Get-GistFile } | Should -Throw
 
             # Assert: 結果が期待通りか確認
         }

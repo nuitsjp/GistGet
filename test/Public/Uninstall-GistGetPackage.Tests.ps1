@@ -5,7 +5,7 @@ InModuleScope GistGet {
     Describe "Uninstall-GistGetPackage インストールあり and Gistあり Tests" {
         BeforeAll {
             # モックの準備
-            Mock Find-Gist {
+            Mock Get-GistFile {
                 return [GistFile]::new("Foo", "Bar")
             }
 
@@ -108,7 +108,7 @@ InModuleScope GistGet {
     
         It "すべてのパラメータが正しく渡されることを確認" {
             # Arrange: テストパラメータの設定
-            Mock Find-Gist {
+            Mock Get-GistFile {
                 return [GistFile]::new("Foo", "Bar")
             }
 
@@ -141,7 +141,7 @@ InModuleScope GistGet {
     Describe "Uninstall-GistGetPackage インストールなし and Gistあり Tests" {
         BeforeAll {
             # モックの準備
-            Mock Find-Gist {
+            Mock Get-GistFile {
                 return [GistFile]::new("Foo", "Bar")
             }
 
@@ -199,7 +199,7 @@ InModuleScope GistGet {
     Describe "Uninstall-GistGetPackage インストールなし and Gistなし Tests" {
         BeforeAll {
             # モックの準備
-            Mock Find-Gist {
+            Mock Get-GistFile {
                 return [GistFile]::new("Foo", "Bar")
             }
 

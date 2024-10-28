@@ -1,4 +1,4 @@
-function Find-Gist
+function Get-GistFile
 {
     $gistId = Get-UserEnvironmentVariable -Name $global:EnvironmentVariableNameGistId
     $fistFileName = Get-UserEnvironmentVariable -Name $global:EnvironmentVariableNameGistFileName
