@@ -7,7 +7,7 @@ Gist以外にも、Uriやファイルパスを利用することもできるた�
 WinGetのexport/importとは次の点で異なります。
 
 1. install/uninstall時に、設定がGistに同期されます
-2. installパラメーターを利用できます
+2. インストーラーにパラメーターを渡すことができます
 3. uninstallを同期することも可能です
 
 
@@ -19,7 +19,7 @@ PowerShell GalleryからModuleをインストールします。
 Install-Module GistGet
 ```
 
-[GitHubからGistを更新するためのトークンを取得し](docs/ja-jp/Set-GitHubToken.md)、設定します。
+[GitHubからGistを更新するためのトークンを取得](docs/ja-jp/Set-GitHubToken.md)し、設定します。
 
 ```pwsh
 Set-GitHubToken "<Your Access Token>"
@@ -58,7 +58,7 @@ Git.Git: {}
 
 このため別の端末でSync-GistGetPackageを実行することで、環境を容易に同期することが可能です。
 
-アンインストールも同期できます。
+インストール済みのパッケージをアンインストールします。
 
 ```pwsh
 Uninstall-GistGetPackage -Id Git.Git
@@ -88,7 +88,6 @@ winget uninstall --id Git.Git
 |--|--|
 |[Set-GitHubToken](docs/ja-jp/Set-GitHubToken.md)|インストールパッケージの定義Gistを取得・更新するためのGitHubトークンを設定します。|
 |[Sync-GistGetPackage](docs/ja-jp/Sync-GistGetPackage.md)|Gistの定義にローカルのパッケージを同期します。|
-|[Get-GistGetPackage](docs/ja-jp/Get-GistGetPackage.md)|Gistに定義されているパッケージの一覧を取得します。|
 |[Install-GistGetPackage]()|WinGetからパッケージをインストールし、合わせてGist上の定義ファイルを更新します。|
 |Uninstall-GistGetPackage|パッケージをアンインストールし、合わせてGist上のアンインストールをマークします。|
 |Get-GistFile|GistをGist descriptionではなくIdやファイル名から取得したい場合に、Idなどを設定します。|
