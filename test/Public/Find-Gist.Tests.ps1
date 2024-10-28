@@ -7,10 +7,10 @@ InModuleScope GistGet {
             # モックの準備
             Mock Get-UserEnvironmentVariable { 
                 param($Name)
-                if ($Name -eq "GIST_GET_GIST_ID") {
+                if ($Name -eq $global:EnvironmentVariableNameGistId) {
                     return 'Foo'
                 }
-                elseif ($Name -eq "GIST_GET_GIST_FILE_NAME") {
+                elseif ($Name -eq $global:EnvironmentVariableNameGistFileName) {
                     return 'Bar'
                 }
 

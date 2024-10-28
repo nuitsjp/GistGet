@@ -1,7 +1,8 @@
 function Find-Gist
 {
-    $gistId = Get-UserEnvironmentVariable -Name 'GIST_GET_GIST_ID'
-    $fistFileName = Get-UserEnvironmentVariable -Name 'GIST_GET_GIST_FILE_NAME'
+    $gistId = Get-UserEnvironmentVariable -Name $global:EnvironmentVariableNameGistId
+    $fistFileName = Get-UserEnvironmentVariable -Name $global:EnvironmentVariableNameGistFileName
+
     if($gistId -and $fistFileName) {
         return [Gist]::new($gistId, $fistFileName)
     }

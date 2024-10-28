@@ -3,6 +3,10 @@
 # エラーが発生した場合はスクリプトを停止
 $ErrorActionPreference = 'Stop'
 
+$global:EnvironmentVariableNameGistId = 'GIST_GET_GIST_ID'
+$global:EnvironmentVariableNameGistFileName = 'GIST_GET_GIST_FILE_NAME'
+
+
 # Check if WinGet is available
 try {
     $null = Get-Command winget -ErrorAction Stop
