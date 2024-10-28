@@ -16,11 +16,11 @@ function Get-GistGetPackage {
     }
     elseif($Gist)
     {
-        $GistId = $Gist.Id
-        $GistFileName = $Gist.FileName
-        Write-Verbose "Getting Gist for id:$GistId fileName:$GistFileName"
-        $remoteGist = Get-GitHubGist -Gist $GistId
-        $yaml = $remoteGist.files.$GistFileName.content
+        $gistId = $Gist.Id
+        $gistFileName = $Gist.FileName
+        Write-Verbose "Getting Gist for id:$gistId fileName:$gistFileName"
+        $remoteGist = Get-GitHubGist -Gist $gistId
+        $yaml = $remoteGist.files.$gistFileName.content
     }
     else {
         throw "Please specify a GistId, Uri or Path. Alternatively, you need to register the GistId in advance using Set-GistGetGistId."
