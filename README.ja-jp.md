@@ -30,8 +30,9 @@ Set-GitHubToken "<Your Access Token>"
 **このとき「Gist description...」に「GistGet」を設定します。** ファイル名は任意です。
 
 ```yaml
-- id: 7zip.7zip
-- id: Adobe.Acrobat.Reader.64-bit
+7zip.7zip: {}
+Microsoft.VisualStudioCode:
+  override: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
 ```
 
 Gistの定義に従ってパッケージを同期します。
@@ -49,9 +50,10 @@ Install-GistGetPackage -Id Git.Git
 GistGetのコマンドを通してインストールすると、Gist上の定義ファイルも更新されます。
 
 ```yaml
-- id: 7zip.7zip
-- id: Adobe.Acrobat.Reader.64-bit
-- id: Git.Git
+7zip.7zip: {}
+Microsoft.VisualStudioCode:
+  override: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
+Git.Git: {}
 ```
 
 このため別の端末でSync-GistGetPackageを実行することで、環境を容易に同期することが可能です。
@@ -65,9 +67,10 @@ Uninstall-GistGetPackage -Id Git.Git
 Gist上の定義ファイルも同期されます。
 
 ```yaml
-- id: 7zip.7zip
-- id: Adobe.Acrobat.Reader.64-bit
-- id: Git.Git
+7zip.7zip: {}
+Microsoft.VisualStudioCode:
+  override: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
+Git.Git:
   uninstall: true
 ```
 
@@ -88,5 +91,5 @@ winget uninstall --id Git.Git
 |[Get-GistGetPackage](docs/ja-jp/Get-GistGetPackage.md)|Gistに定義されているパッケージの一覧を取得します。|
 |[Install-GistGetPackage]()|WinGetからパッケージをインストールし、合わせてGist上の定義ファイルを更新します。|
 |Uninstall-GistGetPackage|パッケージをアンインストールし、合わせてGist上のアンインストールをマークします。|
-|Set-GistGetGistId|GistをGist descriptionではなくIdやファイル名から取得したい場合に、Idなどを設定します。|
-|Get-GistGetGistId|設定されているGistのIdなどを取得します。|
+|Get-GistFile|GistをGist descriptionではなくIdやファイル名から取得したい場合に、Idなどを設定します。|
+|Set-GistFile|設定されているGistのIdなどを取得します。|
