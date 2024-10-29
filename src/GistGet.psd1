@@ -14,6 +14,7 @@
         'Sync-GistGetPackage',
         'Install-GistGetPackage',
         'Uninstall-GistGetPackage',
+        'Update-GistGetPackage',
         'Get-GistFile',
         'Set-GistFile'
     )
