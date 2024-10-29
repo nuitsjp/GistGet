@@ -7,6 +7,7 @@ function Get-GistFile
         return [GistFile]::new($gistId, $fistFileName)
     }
     else {
+        Write-Host "Getting Gist file from the Gist description..."
         # Gistの検索
         $all = Get-GitHubGist
         $gists = $all | Where-Object { $_.Description -like "$(Get-GistDescription)" }
@@ -27,6 +28,8 @@ function Get-GistFile
                     throw "Multiple files were found in the Gist with ""$(Get-GistDescription)"" set in the Gist description."
                 }
                 $fileName = $fileNames | Select-Object -First 1
+
+                Write-Host "Gist file found. https://gist.github.com/nuitsjp/$($id)#file-$($fileName.Replace(".", "-"))"
                 return [GistFile]::new($id, $fileName)
             }
             default {

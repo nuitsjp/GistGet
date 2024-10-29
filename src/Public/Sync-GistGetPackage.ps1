@@ -12,8 +12,13 @@ function Sync-GistGetPackage {
     $packages = Get-GistGetPackage @packageParams
 
     # インストール済みのパッケージを取得
+    Write-Host "Getting installed packages..."
     $installedPackageIds = @{}
     Get-WinGetPackage | ForEach-Object { $installedPackageIds[$_.Id] = $true }
+
+    $installs = @()
+    $uninstalls = @()
+    $needRebootPackages = @()
     
     foreach ($package in $packages) {
         $packageId = $package.Id
@@ -21,23 +26,58 @@ function Sync-GistGetPackage {
             if ($installedPackageIds.ContainsKey($packageId)) {
                 # Uninstall the package if it exists
                 Write-Host "Uninstalling package $packageId"
-                Uninstall-WinGetPackage -Id $packageId
+                $uninstalled = Uninstall-WinGetPackage -Id $packageId
+                $uninstalls += $packageId
+                if ($uninstalled.RebootRequired) {
+                    $needRebootPackages += $packageId
+                }
             } else {
-                # Do nothing if the package does not exist
-                Write-Verbose "Package $packageId does not exist"
+                Write-Host "Package $packageId is not installed"
             }
         } else {
             if ($installedPackageIds.ContainsKey($packageId)) {
                 # Do nothing if the package already exists
-                Write-Verbose "Package $packageId already exists"
+                Write-Host "Package $packageId already installed"
             } else {
                 # Install the package if it does not exist
                 Write-Host "Installing package $packageId"
                 $findParams = $package.ToHashtable()
         
-                Install-WinGetPackage @findParams
+                $installed += Install-WinGetPackage @findParams
+                $installs += $packageId
+                if ($installed.RebootRequired) {
+                    $needRebootPackages += $packageId
+                }
             }
         }
     }
 
+    # $installedPackageIds にインストールしたパッケージがある場合、パッケージIDをすべて表示
+    if ($installs.Count -gt 0) {
+        Write-Host
+        Write-Host "Installed the following packages:" -ForegroundColor Cyan
+        $installs | ForEach-Object { Write-Host " - $_" -ForegroundColor Cyan }
+    }
+
+    # $uninstalledPackageIds にアンインストールしたパッケージがある場合、パッケージIDをすべて表示
+    if ($uninstalls.Count -gt 0) {
+        Write-Host
+        Write-Host "Uninstalled the following packages:" -ForegroundColor Cyan
+        $uninstalls | ForEach-Object { Write-Host " - $_" -ForegroundColor Cyan }
+    }
+
+    Write-Host
+
+    # $needRebootPackages にリブートが必要なパッケージがある場合、パッケージIDをすべて表示
+    if ($needRebootPackages.Count -gt 0) {
+        Write-Host "Reboot is required for the following packages:" -ForegroundColor Red
+        $needRebootPackages | ForEach-Object { Write-Host $_ -ForegroundColor Red }
+
+        # リブートするかどうかを確認
+        $reboot = Read-Host "Do you want to reboot now? (y/n)" -ForegroundColor Red
+        if ($reboot -eq "y") {
+            Write-Host "Rebooting..."
+            Restart-Computer -Force
+        }
+    }
 }
