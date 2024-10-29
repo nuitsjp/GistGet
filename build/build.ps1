@@ -3,8 +3,11 @@ param (
     [Parameter()]
     [string]$Configuration = 'Release',
     [Parameter()]
-    [string]$OutputPath = './Output'
+    [string]$OutputPath = (Join-Path $PSScriptRoot 'Output')
 )
+
+# スクリプトのルートディレクトリを取得
+$projectRoot = Split-Path -Parent $PSScriptRoot
 
 # Clean output directory
 if (Test-Path -Path $OutputPath) {
@@ -18,11 +21,11 @@ New-Item -ItemType Directory -Path $modulePath | Out-Null
 
 # Copy module files
 $filesToCopy = @(
-    'src/GistGet.psd1'
-    'src/GistGet.psm1'
-    'src/Classes.ps1'
-    'src/Public'
-    'src/Private'
+    (Join-Path $projectRoot 'src/GistGet.psd1')
+    (Join-Path $projectRoot 'src/GistGet.psm1')
+    (Join-Path $projectRoot 'src/Classes.ps1')
+    (Join-Path $projectRoot 'src/Public')
+    (Join-Path $projectRoot 'src/Private')
 )
 
 foreach ($file in $filesToCopy) {
@@ -31,7 +34,8 @@ foreach ($file in $filesToCopy) {
 
 # Run tests
 Write-Host "Running Pester tests..."
-$testResults = Invoke-Pester -Path "./test" -PassThru
+$testPath = Join-Path $projectRoot 'test'
+$testResults = Invoke-Pester -Path $testPath -PassThru
 
 if ($testResults.FailedCount -gt 0) {
     throw "Tests failed"
@@ -39,7 +43,8 @@ if ($testResults.FailedCount -gt 0) {
 
 # Create module package
 $nuspecPath = Join-Path -Path $OutputPath -ChildPath 'GistGet.nuspec'
-$manifest = Import-PowerShellDataFile -Path 'src/GistGet.psd1'
+$manifestPath = Join-Path $projectRoot 'src/GistGet.psd1'
+$manifest = Import-PowerShellDataFile -Path $manifestPath
 
 $nuspecContent = @"
 <?xml version="1.0"?>
