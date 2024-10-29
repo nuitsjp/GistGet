@@ -30,10 +30,8 @@ function Update-GistGetPackage {
                 } else {
                     # インストール済みのバージョンとGistGetPackageのバージョンが異なる場合は
                     # 置き換えるかどうかを確認する
-                    Write-Host "Version mismatch: $updatablePackageId installed version is $installedVersion, but GistGet version is $($gistGetPackage.Version)" -ForegroundColor Yellow
-                    Write-Host "Do you want to replace it? (y/n): " -ForegroundColor Yellow -NoNewline
-                    $replace = Read-Host
-                    if ($replace -eq "y") {
+                    $replace = Confirm-ReplacePackage -Id $updatablePackageId -InstalledVersion $installedVersion -GistGetVersion $gistGetPackage.Version
+                    if ($replace) {
                         # アンインストールしてアップデートする
                         $needUpdate = $false
                         Write-Host "Uninstall package $updatablePackageId"
