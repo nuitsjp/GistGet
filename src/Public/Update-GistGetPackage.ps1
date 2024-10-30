@@ -71,12 +71,9 @@ function Update-GistGetPackage {
 
     # $needRebootPackages にリブートが必要なパッケージがある場合、パッケージIDをすべて表示
     if ($needRebootPackageIds.Count -gt 0) {
-        Write-Host "Reboot is required for the following packages:" -ForegroundColor Red
-        $needRebootPackageIds | ForEach-Object { Write-Host $_ -ForegroundColor Red }
-
         # リブートするかどうかを確認
-        $reboot = Read-Host "Do you want to reboot now? (y/n)" -ForegroundColor Red
-        if ($reboot -eq "y") {
+        $reboot = Confirm-Reboot
+        if ($reboot) {
             Write-Host "Rebooting..."
             Restart-Computer -Force
         }

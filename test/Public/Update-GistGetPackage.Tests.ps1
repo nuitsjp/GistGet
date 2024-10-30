@@ -39,6 +39,10 @@ InModuleScope GistGet {
             }
             Mock Update-WinGetPackage { 
             }
+            Mock Confirm-Reboot{
+            }
+            Mock Restart-Computer {
+            }
         }
 
         It "アップデート 
@@ -71,6 +75,8 @@ InModuleScope GistGet {
                 $Force -eq $true
             }
             Should -Not -Invoke Update-WinGetPackage
+            Should -Not -Invoke Confirm-Reboot
+            Should -Not -Invoke Restart-Computer
         }
     }
 }
