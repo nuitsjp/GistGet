@@ -72,7 +72,7 @@ function Update-GistGetPackage {
     # $needRebootPackages にリブートが必要なパッケージがある場合、パッケージIDをすべて表示
     if ($needRebootPackageIds.Count -gt 0) {
         # リブートするかどうかを確認
-        $reboot = Confirm-Reboot
+        $reboot = Confirm-Reboot -PackageIds $needRebootPackageIds
         if ($reboot) {
             Write-Host "Rebooting..."
             Restart-Computer -Force
