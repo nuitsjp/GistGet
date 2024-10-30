@@ -30,7 +30,7 @@ Set-GitHubToken "<Your Access Token>"
 **このとき「Gist description...」に「GistGet」を設定します。** ファイル名は任意です。
 
 ```yaml
-7zip.7zip: {}
+7zip.7zip:
 Microsoft.VisualStudioCode:
   override: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
 ```
@@ -50,10 +50,10 @@ Install-GistGetPackage -Id Git.Git
 GistGetのコマンドを通してインストールすると、Gist上の定義ファイルも更新されます。
 
 ```yaml
-7zip.7zip: {}
+7zip.7zip:
 Microsoft.VisualStudioCode:
   override: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
-Git.Git: {}
+Git.Git:
 ```
 
 このため別の端末でSync-GistGetPackageを実行することで、環境を容易に同期することが可能です。
@@ -67,7 +67,7 @@ Uninstall-GistGetPackage -Id Git.Git
 Gist上の定義ファイルも同期されます。
 
 ```yaml
-7zip.7zip: {}
+7zip.7zip:
 Microsoft.VisualStudioCode:
   override: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
 Git.Git:
