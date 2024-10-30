@@ -24,6 +24,7 @@ InModuleScope GistGet {
             Mock Uninstall-WinGetPackage {}
             Mock Set-GistGetPackages {}
             Mock Write-Host {}
+            Mock Write-Warning {}
         }
     
         It "アンインストールされ、Gistからも削除されることを確認" {
@@ -101,6 +102,7 @@ InModuleScope GistGet {
             Mock Uninstall-WinGetPackage {}
             Mock Set-GistGetPackages {}
             Mock Write-Host {}
+            Mock Write-Warning {}
         }
     
         It "すべてのパラメータが正しく渡されることを確認" {
@@ -156,6 +158,7 @@ InModuleScope GistGet {
             Mock Uninstall-WinGetPackage {}
             Mock Set-GistGetPackages {}
             Mock Write-Host {}
+            Mock Write-Warning {}
         }
     
         It "すべてのパラメータが正しく渡されることを確認" {
@@ -208,11 +211,9 @@ InModuleScope GistGet {
                 )
             }
 
-            Mock Uninstall-WinGetPackage { 
-            }
-
-            Mock Set-GistGetPackages {
-            }
+            Mock Uninstall-WinGetPackage {}
+            Mock Set-GistGetPackages {}
+            Mock Write-Warning {}
         }
     
         It "すべてのパラメータが正しく渡されることを確認" {
