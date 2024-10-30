@@ -16,6 +16,7 @@ InModuleScope GistGet {
 
                 throw
             }
+            Mock Write-Host {}
         }
 
         It "環境変数が存在する場合、正しく取得されること" {
@@ -57,6 +58,7 @@ InModuleScope GistGet {
                 )
                 return $result
             }
+            Mock Write-Host {}
         }
 
         It "Gistの概要から1つだけGistが取得できた場合" {
@@ -99,6 +101,7 @@ InModuleScope GistGet {
                 )
                 return $result
             }
+            Mock Write-Host {}
         }
 
         It "Gistの概要から1つだけGistが取得できた場合" {
@@ -138,6 +141,7 @@ InModuleScope GistGet {
                 )
                 return $result
             }
+            Mock Write-Host {}
         }
 
         It "Gistの概要から1つだけGistが取得できた場合" {

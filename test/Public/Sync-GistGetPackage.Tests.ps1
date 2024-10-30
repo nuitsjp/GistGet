@@ -11,10 +11,9 @@ InModuleScope GistGet {
                 )
             }
     
-            Mock Uninstall-WinGetPackage { 
-            }
-            Mock Install-WinGetPackage { 
-            }
+            Mock Uninstall-WinGetPackage {}
+            Mock Install-WinGetPackage {}
+            Mock Write-Host {}
         }
     
         It "インストール -> インストール" {
@@ -47,13 +46,10 @@ InModuleScope GistGet {
     Describe "Sync-GistGetPackage Not Installed Tests" {
         BeforeAll {
             # モックの準備
-            Mock Get-WinGetPackage { 
-            }
-    
-            Mock Uninstall-WinGetPackage { 
-            }
-            Mock Install-WinGetPackage { 
-            }
+            Mock Get-WinGetPackage {}
+            Mock Uninstall-WinGetPackage {}
+            Mock Install-WinGetPackage {}
+            Mock Write-Host {}
         }
 
         It "未インストール -> インストール" {

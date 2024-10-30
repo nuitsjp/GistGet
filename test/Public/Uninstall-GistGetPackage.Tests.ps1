@@ -21,11 +21,9 @@ InModuleScope GistGet {
                 )
             }
 
-            Mock Uninstall-WinGetPackage { 
-            }
-
-            Mock Set-GistGetPackages {
-            }
+            Mock Uninstall-WinGetPackage {}
+            Mock Set-GistGetPackages {}
+            Mock Write-Host {}
         }
     
         It "アンインストールされ、Gistからも削除されることを確認" {
@@ -80,6 +78,7 @@ InModuleScope GistGet {
                 $Packages[0].Id -eq "NuitsJp.ClaudeToZenn" -and
                 $Packages[0].Uninstall -eq $true
             }
+            Mock Write-Host {}
         }
 
     }
@@ -99,11 +98,9 @@ InModuleScope GistGet {
                 )
             }
 
-            Mock Uninstall-WinGetPackage { 
-            }
-
-            Mock Set-GistGetPackages {
-            }
+            Mock Uninstall-WinGetPackage {}
+            Mock Set-GistGetPackages {}
+            Mock Write-Host {}
         }
     
         It "すべてのパラメータが正しく渡されることを確認" {
@@ -156,11 +153,9 @@ InModuleScope GistGet {
                 )
             }
 
-            Mock Uninstall-WinGetPackage { 
-            }
-
-            Mock Set-GistGetPackages {
-            }
+            Mock Uninstall-WinGetPackage {}
+            Mock Set-GistGetPackages {}
+            Mock Write-Host {}
         }
     
         It "すべてのパラメータが正しく渡されることを確認" {
