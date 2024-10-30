@@ -40,7 +40,7 @@ function Update-GistGetPackage {
                         $installed = Install-WinGetPackage -Id $updatablePackageId -Version $gistGetPackage.Version -Force
                         if ($installed.RebootRequired) {
                             # needRebootPackageIdsにすでに追加されている場合は追加しない
-                            if ($needRebootPackageIds -contains $updatablePackageId) {
+                            if ($needRebootPackageIds -notcontains $updatablePackageId) {
                                 $needRebootPackageIds += $updatablePackageId
                             }
                         }
