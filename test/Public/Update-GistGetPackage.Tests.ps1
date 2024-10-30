@@ -369,4 +369,63 @@ InModuleScope GistGet {
             Should -Not -Invoke Restart-Computer
         }
     }
+
+    Describe "Update-GistGetPackage Update, Exists, NotExists, False" {
+        BeforeAll {
+            # モックの準備
+            Mock Get-GistGetPackage {
+                $package = [GistGetPackage]::new('NuitsJp.ClaudeToZenn')
+                return @(
+                    $package
+                )
+            }
+
+            Mock Get-WinGetPackage { 
+                return @(
+                    [PSCustomObject]@{ 
+                        Id = 'NuitsJp.ClaudeToZenn'
+                        IsUpdateAvailable = $true
+                        InstalledVersion = '1.0.0'
+                    },
+                    [PSCustomObject]@{ 
+                        Id = 'Foo'
+                        IsUpdateAvailable = $false
+                        InstalledVersion = '0.9.0'
+                    }
+                )
+            }
+
+            Mock Confirm-ReplacePackage {}
+    
+            Mock Uninstall-WinGetPackage {}
+            Mock Install-WinGetPackage {}
+            Mock Update-WinGetPackage {
+                return [PSCustomObject]@{ RebootRequired = $false }
+            }
+            Mock Confirm-Reboot {}
+            Mock Restart-Computer {}
+        }
+
+        It "アップデート 
+        GistGetPackage:あり 
+        GistGetPackage.Version:なし 
+        Update.RebootRequired:False" {
+            # Arrange: テストの準備
+
+            # Act: 関数を実行
+            Update-GistGetPackage
+
+            # Assert: 結果が期待通りか確認
+            Should -Invoke Get-GistGetPackage
+            Should -Invoke Get-WinGetPackage
+            Should -Not -Invoke Confirm-ReplacePackage
+            Should -Not -Invoke Uninstall-WinGetPackage
+            Should -Not -Invoke Install-WinGetPackage
+            Should -Invoke Update-WinGetPackage -ParameterFilter {
+                $Id -eq 'NuitsJp.ClaudeToZenn'
+            }
+            Should -Not -Invoke Confirm-Reboot
+            Should -Not -Invoke Restart-Computer
+        }
+    }
 }
