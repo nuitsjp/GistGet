@@ -3,11 +3,7 @@ function Update-GistGetPackage {
     param(
     )
 
-    $packageParams = @{}
-    if ($Uri) { $packageParams['Uri'] = $Uri }
-    if ($Path) { $packageParams['Path'] = $Path }
-
-    [GistGetPackage[]] $gistGetPackages = Get-GistGetPackage @packageParams
+    [GistGetPackage[]] $gistGetPackages = Get-GistGetPackage
 
     # インストール済みのパッケージを取得
     Write-Host "Getting installed packages..."
