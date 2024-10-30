@@ -40,10 +40,9 @@ InModuleScope GistGet {
             }
             Mock Update-WinGetPackage { 
             }
-            Mock Confirm-Reboot{
-            }
-            Mock Restart-Computer {
-            }
+            Mock Confirm-Reboot{}
+            Mock Restart-Computer {}
+            Mock Write-Host {}
         }
 
         It "アップデート 
@@ -122,8 +121,8 @@ InModuleScope GistGet {
             Mock Confirm-Reboot{
                 return $true
             }
-            Mock Restart-Computer {
-            }
+            Mock Restart-Computer {}
+            Mock Write-Host {}
         }
 
         It "アップデート 
@@ -203,8 +202,8 @@ InModuleScope GistGet {
             Mock Confirm-Reboot{
                 return $true
             }
-            Mock Restart-Computer {
-            }
+            Mock Restart-Computer {}
+            Mock Write-Host {}
         }
 
         It "アップデート 
@@ -278,6 +277,7 @@ InModuleScope GistGet {
             Mock Update-WinGetPackage {}
             Mock Confirm-Reboot {}
             Mock Restart-Computer {}
+            Mock Write-Host {}
         }
 
         It "アップデート 
@@ -339,14 +339,11 @@ InModuleScope GistGet {
             Mock Uninstall-WinGetPackage { 
                 return [PSCustomObject]@{ RebootRequired = $false }
             }
-            Mock Install-WinGetPackage { 
-            }
-            Mock Update-WinGetPackage { 
-            }
-            Mock Confirm-Reboot{
-            }
-            Mock Restart-Computer {
-            }
+            Mock Install-WinGetPackage {}
+            Mock Update-WinGetPackage {}
+            Mock Confirm-Reboot{}
+            Mock Restart-Computer {}
+            Mock Write-Host {}
         }
 
         It "アップデート 
@@ -404,6 +401,7 @@ InModuleScope GistGet {
             }
             Mock Confirm-Reboot {}
             Mock Restart-Computer {}
+            Mock Write-Host {}
         }
 
         It "アップデート 
@@ -428,7 +426,6 @@ InModuleScope GistGet {
             Should -Not -Invoke Restart-Computer
         }
     }
-
 
     Describe "Update-GistGetPackage Update, Exists, NotExists, True, False" {
         BeforeAll {
@@ -466,6 +463,7 @@ InModuleScope GistGet {
                 return $false
             }
             Mock Restart-Computer {}
+            Mock Write-Host {}
         }
 
         It "アップデート 
@@ -491,6 +489,71 @@ InModuleScope GistGet {
                 $PackageIds -eq @('NuitsJp.ClaudeToZenn')
             }
             Should -Not -Invoke Restart-Computer
+        }
+    }
+
+    Describe "Update-GistGetPackage Update, Exists, NotExists, True, True" {
+        BeforeAll {
+            # モックの準備
+            Mock Get-GistGetPackage {
+                $package = [GistGetPackage]::new('NuitsJp.ClaudeToZenn')
+                return @(
+                    $package
+                )
+            }
+
+            Mock Get-WinGetPackage { 
+                return @(
+                    [PSCustomObject]@{ 
+                        Id = 'NuitsJp.ClaudeToZenn'
+                        IsUpdateAvailable = $true
+                        InstalledVersion = '1.0.0'
+                    },
+                    [PSCustomObject]@{ 
+                        Id = 'Foo'
+                        IsUpdateAvailable = $false
+                        InstalledVersion = '0.9.0'
+                    }
+                )
+            }
+
+            Mock Confirm-ReplacePackage {}
+    
+            Mock Uninstall-WinGetPackage {}
+            Mock Install-WinGetPackage {}
+            Mock Update-WinGetPackage {
+                return [PSCustomObject]@{ RebootRequired = $true }
+            }
+            Mock Confirm-Reboot {
+                return $true
+            }
+            Mock Restart-Computer {}
+            Mock Write-Host {}
+        }
+
+        It "アップデート 
+        GistGetPackage:あり 
+        GistGetPackage.Version:なし 
+        Update.RebootRequired:True
+        Confirm-Reboot:True" {
+            # Arrange: テストの準備
+
+            # Act: 関数を実行
+            Update-GistGetPackage
+
+            # Assert: 結果が期待通りか確認
+            Should -Invoke Get-GistGetPackage
+            Should -Invoke Get-WinGetPackage
+            Should -Not -Invoke Confirm-ReplacePackage
+            Should -Not -Invoke Uninstall-WinGetPackage
+            Should -Not -Invoke Install-WinGetPackage
+            Should -Invoke Update-WinGetPackage -ParameterFilter {
+                $Id -eq 'NuitsJp.ClaudeToZenn'
+            }
+            Should -Invoke Confirm-Reboot -ParameterFilter {
+                $PackageIds -eq @('NuitsJp.ClaudeToZenn')
+            }
+            Should -Invoke Restart-Computer
         }
     }
 }
