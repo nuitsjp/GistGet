@@ -81,12 +81,13 @@ class GistGetPackage {
                     $properties[$param] = $package.$param
                 }
             }
-            $values[$package.Id] = $properties
+            # プロパティが空の場合は明示的に$nullを設定
+            $values[$package.Id] = $properties.Count -eq 0 ? $null : $properties
         }
     
+        # ConvertTo-Yaml の出力から余分なスペースを削除
         return ConvertTo-Yaml $values
     }
-
 
     # 静的ファクトリーメソッド
     static [GistGetPackage[]] ParseYaml([string]$yaml) {

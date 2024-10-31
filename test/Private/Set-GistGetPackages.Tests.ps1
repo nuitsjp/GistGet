@@ -94,7 +94,7 @@ Describe "Set-GistGetPackages Tests" {
         }
 
         Context "複数パッケージの処理テスト" {
-            It "複数パッケージを正しくソートして処理できる" {
+            It "複数の空パッケージを正しくソートして処理できる" {
                 # Arrange
                 $packages = @(
                     [GistGetPackage]::new("ZPackage"),
@@ -108,9 +108,35 @@ Describe "Set-GistGetPackages Tests" {
                 # Assert
                 Should -Invoke Set-GistContent -Times 1 -Scope It
                 $expected = @(
-                    "APackage: {}",
-                    "MPackage: {}",
-                    "ZPackage: {}"
+                    "APackage: ",
+                    "MPackage: ",
+                    "ZPackage:"
+                ) -join "`n"
+                $actual = NormalizeLineEndings $script:lastContent
+                $actual | Should -Be $expected
+            }
+
+            It "プロパティの有無が混在するパッケージを正しく処理できる" {
+                # Arrange
+                $withVersion = [GistGetPackage]::new("APackage")
+                $withVersion.Version = "1.0.0"
+                
+                $packages = @(
+                    [GistGetPackage]::new("ZPackage"),
+                    $withVersion,
+                    [GistGetPackage]::new("MPackage")
+                )
+
+                # Act
+                Set-GistGetPackages -GistFile $testGist -Packages $packages
+
+                # Assert
+                Should -Invoke Set-GistContent -Times 1 -Scope It
+                $expected = @(
+                    "APackage:",
+                    "  version: 1.0.0",
+                    "MPackage: ",
+                    "ZPackage:"
                 ) -join "`n"
                 $actual = NormalizeLineEndings $script:lastContent
                 $actual | Should -Be $expected
