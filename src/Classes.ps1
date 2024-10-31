@@ -15,12 +15,15 @@ class GistGetPackage {
     [string]$Architecture = $null
     [string]$Custom = $null
     [bool]$Force = $false
+    [string]$Header = $null
     [string]$InstallerType = $null
     [string]$Locale = $null
+    [string]$Location = $null
     [string]$Log = $null
     [string]$Mode = $null
     [string]$Override = $null
     [string]$Scope = $null
+    [bool]$SkipDependencies = $false
     [string]$Version = $null
     [bool]$Confirm = $false
     [bool]$WhatIf = $false
@@ -32,12 +35,15 @@ class GistGetPackage {
         'architecture',
         'custom',
         'force',
+        'header',
         'installerType',
         'locale',
+        'location',
         'log',
         'mode',
         'override',
         'scope',
+        'skipDependencies',
         'version',
         'confirm',
         'whatIf',
@@ -102,7 +108,7 @@ class GistGetPackage {
         return $packages
     }
 
-    static [GistGetPackage] CreateFromHashtable([hashtable]$hash) {
+    static [GistGetPackage] FromHashtable([hashtable]$hash) {
         $package = [GistGetPackage]::new()
         foreach ($param in [GistGetPackage]::Parameters) {
             if ($hash.ContainsKey($param)) {

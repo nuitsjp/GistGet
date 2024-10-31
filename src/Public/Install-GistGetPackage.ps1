@@ -119,8 +119,35 @@ function Install-GistGetPackage {
 
                         # Gistパッケージリストに含まれていない場合は追加
                         if (-not ($gistGetPackages | Where-Object { $_.id -eq $package.Id })) {
-                            $gistGetPackages += [GistGetPackage]::new($package.Id)
-                            
+                            # Install-GistGetPackageの該当部分
+                            $gistGetPackage = @{
+                                id = $package.Id
+                                allowHashMismatch = $installParams.ContainsKey('AllowHashMismatch') -and $installParams['AllowHashMismatch']
+                                architecture = $installParams['Architecture']
+                                custom = $installParams['Custom']
+                                force = $installParams.ContainsKey('Force') -and $installParams['Force']
+                                header = $installParams['Header']
+                                installerType = $installParams['InstallerType']
+                                locale = $installParams['Locale']
+                                location = $installParams['Location']
+                                log = $installParams['Log']
+                                mode = $installParams['Mode']
+                                override = $installParams['Override']
+                                scope = $installParams['Scope']
+                                skipDependencies = $installParams.ContainsKey('SkipDependencies') -and $installParams['SkipDependencies']
+                                version = $installParams['Version']
+                            }
+
+                            # nullの値を持つキーを削除
+                            $filteredPackage = @{}
+                            foreach ($key in $gistGetPackage.Keys) {
+                                if ($null -ne $gistGetPackage[$key]) {
+                                    $filteredPackage[$key] = $gistGetPackage[$key]
+                                }
+                            }
+
+                            $gistGetPackages += [GistGetPackage]::FromHashtable($filteredPackage)
+
                             $isAppendPackage = $true
                             Write-Verbose "Added package $($package.Id) to Gist package list"
                         }

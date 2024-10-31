@@ -14,19 +14,19 @@ InModuleScope GistGet {
 
             $gist = [GistFile]::new("FooGistId", "FooGistFileName")
             $packages = @(
-                [GistGetPackage]::CreateFromHashtable(
+                [GistGetPackage]::FromHashtable(
                     @{
                         id = "Microsoft.VisualStudioCode.Insiders"
                         override = "/VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath"
                     }
                 ),
-                [GistGetPackage]::CreateFromHashtable(
+                [GistGetPackage]::FromHashtable(
                     @{
                         id = "Zoom.Zoom"
                         uninstall = $true
                     }
                 ),
-                [GistGetPackage]::CreateFromHashtable(
+                [GistGetPackage]::FromHashtable(
                     @{
                         id = "7zip.7zip"
                     }

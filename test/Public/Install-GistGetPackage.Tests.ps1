@@ -50,54 +50,80 @@ namespace Microsoft.WinGet.Client.Engine.PSObjects
             }
         }
 
-        Context "基本的な機能テスト" {
-            It "すべてのパラメータが正しく渡されることを確認" {
-                # Arrange
-                $testParams = @{
-                    Query = "test-query"
-                    Id = "TestPackage.Id"
-                    MatchOption = "Equals"
-                    Moniker = "test-moniker"
-                    Name = "test-name"
-                    Source = "test-source"
-                    Force = $true
-                    Mode = "Interactive"
-                }
-
-                # Act
-                Install-GistGetPackage @testParams -Confirm:$false
-
-                # Assert
-                Should -Invoke Find-WinGetPackage -ParameterFilter {
-                    $Query -eq "test-query" -and
-                    $Id -eq "TestPackage.Id" -and
-                    $MatchOption -eq "Equals" -and
-                    $Moniker -eq "test-moniker" -and
-                    $Name -eq "test-name" -and
-                    $Source -eq "test-source"
-                }
-
-                Should -Invoke Install-WinGetPackage -ParameterFilter {
-                    $Id -eq "TestPackage.Id" -and
-                    $Force -eq $true -and
-                    $Mode -eq "Interactive"
-                }
+        It "すべてのパラメータが正しく渡されることを確認" {
+            # Arrange
+            $testParams = @{
+                Query = "test-query"
+                Id = "TestPackage.Id"
+                MatchOption = "Equals"
+                Moniker = "test-moniker"
+                Name = "test-name"
+                Source = "test-source"
+                Force = $true
+                Mode = "Interactive"
+                SkipDependencies = $true
             }
-
-            It "PSCatalogPackageパラメーターセットが機能する" {
-                # Arrange
-                $mockPackage = New-Object Microsoft.WinGet.Client.Engine.PSObjects.PSCatalogPackage
-                $mockPackage.Id = "TestPackage.Id"
-                $mockPackage.Name = "Test Package"
-                $mockPackage.Version = "1.0.0"
-
-                # Act
-                Install-GistGetPackage -PSCatalogPackage $mockPackage -Confirm:$false
-
-                # Assert
-                Should -Invoke Install-WinGetPackage -ParameterFilter {
-                    $Id -eq "TestPackage.Id"
-                }
+    
+            # GistGetPackageのモックデータ
+            Mock Get-GistGetPackage {
+                [System.Collections.ArrayList]@()
+            }
+    
+            # Act
+            Install-GistGetPackage @testParams -Confirm:$false
+    
+            # Assert
+            Should -Invoke Find-WinGetPackage -ParameterFilter {
+                $Query -eq "test-query" -and
+                $Id -eq "TestPackage.Id" -and
+                $MatchOption -eq "Equals" -and
+                $Moniker -eq "test-moniker" -and
+                $Name -eq "test-name" -and
+                $Source -eq "test-source"
+            }
+    
+            Should -Invoke Install-WinGetPackage -ParameterFilter {
+                $Id -eq "TestPackage.Id" -and
+                $Force -eq $true -and
+                $Mode -eq "Interactive" -and
+                $SkipDependencies -eq $true
+            }
+    
+            Should -Invoke Set-GistGetPackages -ParameterFilter {
+                $Packages.Count -eq 1 -and
+                $Packages[0].Id -eq "TestPackage.Id" -and
+                $Packages[0].Force -eq $true -and
+                $Packages[0].Mode -eq "Interactive" -and
+                $Packages[0].SkipDependencies -eq $true
+            }
+        }
+    
+        It "PSCatalogPackageパラメーターセットが機能する" {
+            # Arrange
+            Mock Get-GistGetPackage {
+                [System.Collections.ArrayList]@()
+            }
+    
+            $mockPackage = New-Object Microsoft.WinGet.Client.Engine.PSObjects.PSCatalogPackage
+            $mockPackage.Id = "TestPackage.Id"
+            $mockPackage.Name = "Test Package"
+            $mockPackage.Version = "1.0.0"
+    
+            # Act
+            Install-GistGetPackage -PSCatalogPackage $mockPackage -Force -SkipDependencies -Confirm:$false
+    
+            # Assert
+            Should -Invoke Install-WinGetPackage -ParameterFilter {
+                $Id -eq "TestPackage.Id" -and
+                $Force -eq $true -and
+                $SkipDependencies -eq $true
+            }
+    
+            Should -Invoke Set-GistGetPackages -ParameterFilter {
+                $Packages.Count -eq 1 -and
+                $Packages[0].Id -eq "TestPackage.Id" -and
+                $Packages[0].Force -eq $true -and
+                $Packages[0].SkipDependencies -eq $true
             }
         }
 
