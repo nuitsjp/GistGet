@@ -2,80 +2,195 @@
 Import-Module -Name "$PSScriptRoot\..\..\src\GistGet.psd1" -Force
 
 InModuleScope GistGet {
-    Describe "Install-GistGetPackage Not Installed Tests" {
+    Describe "Install-GistGetPackage" {
         BeforeAll {
-            # モックの準備
+            # PSCatalogPackage名前空間とクラスを定義
+            $typeDef = @"
+namespace Microsoft.WinGet.Client.Engine.PSObjects
+{
+    public class PSCatalogPackage
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public string Version { get; set; }
+
+        public PSCatalogPackage() {}
+    }
+}
+"@
+            Add-Type -TypeDefinition $typeDef -ErrorAction SilentlyContinue
+
+            # 基本的なモックの準備
             Mock Get-GistFile {
-                return [GistFile]::new("Foo", "Bar")
+                [GistFile]::new("TestGistId", "packages.json")
             }
 
             Mock Get-GistGetPackage { 
-                return @()
+                @()
             }
 
             Mock Find-WinGetPackage { 
-                return @(
-                    [PSCustomObject]@{ Id = 'NuitsJp.ClaudeToZenn' }
+                @(
+                    [PSCustomObject]@{
+                        Id = 'TestPackage.Id'
+                        Name = 'Test Package'
+                        Version = '1.0.0'
+                    }
                 )
             }
 
-            Mock Install-WinGetPackage { 
-            }
-
-            Mock Set-GistGetPackages {
+            Mock Install-WinGetPackage { }
+            Mock Set-GistGetPackages { }
+            
+            # WinGetモジュールの存在確認用モック
+            Mock Get-Module { 
+                @{ Name = 'Microsoft.WinGet.Client' } 
+            } -ParameterFilter { 
+                $Name -eq 'Microsoft.WinGet.Client' -and $ListAvailable 
             }
         }
-    
-        It "すべてのパラメータが正しく渡されることを確認" {
-            # Arrange: テストパラメータの設定
-            $testParams = @{
-                Query = "test-query"
-                Command = "test-command"
-                Count = 1
-                Id = "NuitsJp.ClaudeToZenn"
-                MatchOption = "Equals"
-                Moniker = "test-moniker"
-                Name = "test-name"
-                Source = "test-source"
-                Tag = "test-tag"
-                Force = $true
-                Mode = "Interactive"
+
+        Context "基本的な機能テスト" {
+            It "すべてのパラメータが正しく渡されることを確認" {
+                # Arrange
+                $testParams = @{
+                    Query = "test-query"
+                    Id = "TestPackage.Id"
+                    MatchOption = "Equals"
+                    Moniker = "test-moniker"
+                    Name = "test-name"
+                    Source = "test-source"
+                    Force = $true
+                    Mode = "Interactive"
+                }
+
+                # Act
+                Install-GistGetPackage @testParams -Confirm:$false
+
+                # Assert
+                Should -Invoke Find-WinGetPackage -ParameterFilter {
+                    $Query -eq "test-query" -and
+                    $Id -eq "TestPackage.Id" -and
+                    $MatchOption -eq "Equals" -and
+                    $Moniker -eq "test-moniker" -and
+                    $Name -eq "test-name" -and
+                    $Source -eq "test-source"
+                }
+
+                Should -Invoke Install-WinGetPackage -ParameterFilter {
+                    $Id -eq "TestPackage.Id" -and
+                    $Force -eq $true -and
+                    $Mode -eq "Interactive"
+                }
             }
 
-            # Act: 関数を実行
-            Install-GistGetPackage @testParams
+            It "PSCatalogPackageパラメーターセットが機能する" {
+                # Arrange
+                $mockPackage = New-Object Microsoft.WinGet.Client.Engine.PSObjects.PSCatalogPackage
+                $mockPackage.Id = "TestPackage.Id"
+                $mockPackage.Name = "Test Package"
+                $mockPackage.Version = "1.0.0"
 
-            # Assert: 結果が期待通りか確認
-            Should -Invoke Get-GistGetPackage -ParameterFilter {
-                $GistFile -and
-                $GistFile.Id -eq "Foo" -and
-                $GistFile.FileName -eq "Bar"
+                # Act
+                Install-GistGetPackage -PSCatalogPackage $mockPackage -Confirm:$false
+
+                # Assert
+                Should -Invoke Install-WinGetPackage -ParameterFilter {
+                    $Id -eq "TestPackage.Id"
+                }
+            }
+        }
+
+        Context "パッケージ検索結果による動作テスト" {
+            It "パッケージが見つからない場合は警告を表示" {
+                # Arrange
+                Mock Find-WinGetPackage { return $null }
+
+                # Act
+                $warning = $null
+                Install-GistGetPackage -Query "nonexistent" -Confirm:$false -WarningVariable warning
+
+                # Assert
+                $warning | Should -Be "No packages found matching the specified criteria."
             }
 
-            Should -Invoke Find-WinGetPackage -ParameterFilter {
-                $Query -eq "test-query" -and
-                $Command -eq "test-command" -and
-                $Count -eq 1 -and
-                $Id -eq "NuitsJp.ClaudeToZenn" -and
-                $MatchOption -eq "Equals" -and
-                $Moniker -eq "test-moniker" -and
-                $Name -eq "test-name" -and
-                $Source -eq "test-source" -and
-                $Tag -eq "test-tag"
+            It "複数のパッケージが見つかった場合は警告を表示" {
+                # Arrange
+                Mock Find-WinGetPackage { 
+                    @(
+                        [PSCustomObject]@{ Id = 'Package1'; Name = 'Package 1'; Version = '1.0.0' },
+                        [PSCustomObject]@{ Id = 'Package2'; Name = 'Package 2'; Version = '1.0.0' }
+                    )
+                }
+
+                Mock Get-GistGetPackage {
+                    [System.Collections.ArrayList]@()
+                }
+
+                # Act & Assert
+                Install-GistGetPackage -Query "multiple" -Confirm:$false -WarningVariable warning -ErrorAction SilentlyContinue
+                $warning | Select-Object -First 1 | Should -Be "Multiple packages found:"
+            }
+        }
+
+        Context "エラーハンドリングテスト" {
+            It "WinGetモジュールが存在しない場合はエラーを投げる" {
+                # Arrange
+                Mock Get-Module { $null } -ParameterFilter { 
+                    $Name -eq 'Microsoft.WinGet.Client' -and $ListAvailable 
+                }
+
+                # Act & Assert
+                { Install-GistGetPackage -Query "test" } | 
+                    Should -Throw "Microsoft.WinGet.Client module is not installed*"
+
+                # Cleanup - モックを元に戻す
+                Mock Get-Module { 
+                    @{ Name = 'Microsoft.WinGet.Client' } 
+                } -ParameterFilter { 
+                    $Name -eq 'Microsoft.WinGet.Client' -and $ListAvailable 
+                }
             }
 
-            Should -Invoke Install-WinGetPackage -ParameterFilter {
-                $Id -eq "NuitsJp.ClaudeToZenn" -and
-                $Force -eq $true -and
-                $Mode -eq "Interactive"
+            It "インストール失敗時もGistは更新されない" {
+                # Arrange
+                Mock Install-WinGetPackage { throw "Installation failed" }
+
+                # Act & Assert
+                { Install-GistGetPackage -Id "TestPackage.Id" -Confirm:$false -ErrorAction Stop } | 
+                    Should -Throw "*Failed to install package*Installation failed*"
+                Should -Invoke Set-GistGetPackages -Times 0
+            }
+        }
+
+        Context "Gist管理機能のテスト" {
+            It "新しいパッケージがGistに追加される" {
+                # Arrange
+                Mock Get-GistGetPackage { [System.Collections.ArrayList]@() }
+                Mock Install-WinGetPackage { }
+
+                # Act
+                Install-GistGetPackage -Id "TestPackage.Id" -Confirm:$false
+
+                # Assert
+                Should -Invoke Set-GistGetPackages -ParameterFilter {
+                    $Packages.Count -eq 1 -and
+                    $Packages[0].Id -eq "TestPackage.Id"
+                }
+            }
+        }
+
+        Context "パラメーターバリデーションテスト" {
+            It "不正なArchitectureを指定するとエラーになる" {
+                # Act & Assert
+                { Install-GistGetPackage -Query "test" -Architecture "Invalid" -Confirm:$false } |
+                    Should -Throw "*Cannot validate argument on parameter 'Architecture'*"
             }
 
-            Should -Invoke Set-GistGetPackages -ParameterFilter {
-                $GistFile -and
-                $GistFile.Id -eq "Foo" -and
-                $GistFile.FileName -eq "Bar" -and
-                $Packages.Count -eq 1 -and
-                $Packages[0].Id -eq "NuitsJp.ClaudeToZenn"
+            It "不正なMatchOptionを指定するとエラーになる" {
+                # Act & Assert
+                { Install-GistGetPackage -Query "test" -MatchOption "Invalid" -Confirm:$false } |
+                    Should -Throw "*Cannot validate argument on parameter 'MatchOption'*"
             }
         }
     }
