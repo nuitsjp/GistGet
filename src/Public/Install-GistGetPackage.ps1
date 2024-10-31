@@ -119,9 +119,8 @@ function Install-GistGetPackage {
 
                         # Gistパッケージリストに含まれていない場合は追加
                         if (-not ($gistGetPackages | Where-Object { $_.id -eq $package.Id })) {
-                            $gistGetPackages += [PSCustomObject]@{
-                                id = $package.Id
-                            }
+                            $gistGetPackages += [GistGetPackage]::new($package.Id)
+                            
                             $isAppendPackage = $true
                             Write-Verbose "Added package $($package.Id) to Gist package list"
                         }

@@ -63,7 +63,7 @@ class GistGetPackage {
         return $hash
     }
 
-    static [string] ToYaml($packages) {
+    static [string] ToYaml([GistGetPackage[]]$packages) {
         $values = [ordered]@{}
 
         # $Packages を Id の昇順でソートしてyamlに変換
