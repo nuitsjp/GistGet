@@ -98,35 +98,6 @@ namespace Microsoft.WinGet.Client.Engine.PSObjects
             }
         }
     
-        It "PSCatalogPackageパラメーターセットが機能する" {
-            # Arrange
-            Mock Get-GistGetPackage {
-                [System.Collections.ArrayList]@()
-            }
-    
-            $mockPackage = New-Object Microsoft.WinGet.Client.Engine.PSObjects.PSCatalogPackage
-            $mockPackage.Id = "TestPackage.Id"
-            $mockPackage.Name = "Test Package"
-            $mockPackage.Version = "1.0.0"
-    
-            # Act
-            Install-GistGetPackage -PSCatalogPackage $mockPackage -Force -SkipDependencies -Confirm:$false
-    
-            # Assert
-            Should -Invoke Install-WinGetPackage -ParameterFilter {
-                $Id -eq "TestPackage.Id" -and
-                $Force -eq $true -and
-                $SkipDependencies -eq $true
-            }
-    
-            Should -Invoke Set-GistGetPackages -ParameterFilter {
-                $Packages.Count -eq 1 -and
-                $Packages[0].Id -eq "TestPackage.Id" -and
-                $Packages[0].Force -eq $true -and
-                $Packages[0].SkipDependencies -eq $true
-            }
-        }
-
         Context "パッケージ検索結果による動作テスト" {
             It "パッケージが見つからない場合は警告を表示" {
                 # Arrange

@@ -4,9 +4,6 @@ function Install-GistGetPackage {
         [Parameter(Position = 0, ParameterSetName = 'Query')]
         [string[]]$Query,
         
-        [Parameter(Position = 0, ParameterSetName = 'PSCatalogPackage', ValueFromPipeline = $true)]
-        [Microsoft.WinGet.Client.Engine.PSObjects.PSCatalogPackage]$PSCatalogPackage,
-        
         [switch]$AllowHashMismatch,
         [ValidateSet('Default', 'X86', 'Arm', 'X64', 'Arm64')]
         [string]$Architecture,
