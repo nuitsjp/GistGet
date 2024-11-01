@@ -190,5 +190,114 @@ namespace Microsoft.WinGet.Client.Engine.PSObjects
                     Should -Throw "*Cannot validate argument on parameter 'MatchOption'*"
             }
         }
+
+        Context "再起動要求のテスト" {
+            BeforeEach {
+                Mock Get-GistFile {
+                    [GistFile]::new("TestGistId", "packages.json")
+                }
+    
+                Mock Get-GistGetPackage { 
+                    @()
+                }
+    
+                Mock Set-GistGetPackages { }
+                Mock Restart-Computer { }
+            }
+    
+            It "再起動が必要なパッケージがある場合、確認プロンプトを表示" {
+                # Arrange
+                Mock Install-WinGetPackage {
+                    [PSCustomObject]@{
+                        Id = "TestPackage.Id"
+                        RebootRequired = $true
+                    }
+                }
+    
+                Mock Confirm-Reboot { return $false } -Verifiable
+    
+                Mock Find-WinGetPackage { 
+                    @(
+                        [PSCustomObject]@{
+                            Id = 'TestPackage.Id'
+                            Name = 'Test Package'
+                            Version = '1.0.0'
+                        }
+                    )
+                }
+    
+                # Act
+                Install-GistGetPackage -Query "test" -Confirm:$false
+    
+                # Assert
+                Should -Invoke Confirm-Reboot -ParameterFilter {
+                    $PackageIds -contains "TestPackage.Id"
+                }
+                Should -Invoke Restart-Computer -Times 0
+            }
+    
+            It "再起動が必要で確認にYesと答えた場合、再起動を実行" {
+                # Arrange
+                Mock Install-WinGetPackage {
+                    [PSCustomObject]@{
+                        Id = "TestPackage.Id"
+                        RebootRequired = $true
+                    }
+                }
+    
+                Mock Confirm-Reboot { return $true } -Verifiable
+    
+                Mock Find-WinGetPackage { 
+                    @(
+                        [PSCustomObject]@{
+                            Id = 'TestPackage.Id'
+                            Name = 'Test Package'
+                            Version = '1.0.0'
+                        }
+                    )
+                }
+    
+                # Act
+                Install-GistGetPackage -Query "test" -Confirm:$false
+    
+                # Assert
+                Should -Invoke Confirm-Reboot -Times 1 -ParameterFilter {
+                    $PackageIds.Count -eq 1 -and
+                    $PackageIds -contains 'TestPackage.Id'
+                }
+                Should -Invoke Restart-Computer -Times 1 -ParameterFilter {
+                    $Force -eq $true
+                }
+            }
+    
+            It "再起動が不要な場合、確認を表示しない" {
+                # Arrange
+                Mock Install-WinGetPackage {
+                    [PSCustomObject]@{
+                        Id = "TestPackage.Id"
+                        RebootRequired = $false
+                    }
+                }
+    
+                Mock Find-WinGetPackage { 
+                    @(
+                        [PSCustomObject]@{
+                            Id = 'TestPackage.Id'
+                            Name = 'Test Package'
+                            Version = '1.0.0'
+                        }
+                    )
+                }
+                Mock Confirm-Reboot {}
+                Mock Restart-Computer {}
+    
+                # Act
+                Install-GistGetPackage -Query "test" -Confirm:$false
+    
+                # Assert
+                Should -Invoke Confirm-Reboot -Times 0
+                Should -Invoke Restart-Computer -Times 0
+            }
+        }
     }
 }

@@ -102,6 +102,9 @@ function Install-GistGetPackage {
                 "Install package $($packagesToInstall[0].Name) ($($packagesToInstall[0].Id))"
             }
 
+            # 再起動が必要なパッケージを追跡するための配列
+            $packagesNeedingReboot = [System.Collections.ArrayList]@()
+
             if ($PSCmdlet.ShouldProcess($actionDescription, "Install")) {
                 # 新しく追加されたパッケージを追跡
                 [bool]$isAppendPackage = $false
@@ -111,8 +114,14 @@ function Install-GistGetPackage {
                     Write-Verbose "Installing package: $($package.Name) ($($package.Id)) version $($package.Version)"
                     
                     try {
-                        # パッケージIDを設定してインストール
-                        Install-WinGetPackage -Id $package.Id @installParams
+                        # パッケージをインストールして結果を取得
+                        $installResult = Install-WinGetPackage -Id $package.Id @installParams
+
+                        # 再起動が必要な場合はリストに追加
+                        if ($installResult.RebootRequired) {
+                            [void]$packagesNeedingReboot.Add($package.Id)
+                        }
+
 
                         # Gistパッケージリストに含まれていない場合は追加
                         if (-not ($gistGetPackages | Where-Object { $_.id -eq $package.Id })) {
@@ -159,6 +168,13 @@ function Install-GistGetPackage {
                 if ($isAppendPackage) {
                     Write-Verbose "Updating Gist with new package information"
                     Set-GistGetPackages -Gist $gist -Packages $gistGetPackages
+                }
+
+                # 再起動が必要なパッケージがある場合、確認して再起動
+                if ($packagesNeedingReboot.Count -gt 0) {
+                    if (Confirm-Reboot -PackageIds $packagesNeedingReboot) {
+                        Restart-Computer -Force
+                    }
                 }
             }
         }
