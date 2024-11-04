@@ -12,8 +12,8 @@ WinGetのexport/importとは次の点で異なります。
 
 # Table of Contents 
 
-- [Getting started](#Getting)
-- [Functions](#Functions)
+- [Getting started](#getting-started)
+- [Functions](#functions)
 
 # Getting started
 
