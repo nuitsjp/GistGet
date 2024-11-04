@@ -10,8 +10,12 @@ WinGetのexport/importとは次の点で異なります。
 2. インストーラーにパラメーターを渡すことができます
 3. uninstallを同期することも可能です
 
+# Table of Contents 
 
-# Introduction
+- [Getting started](#Getting)
+- [Functions](#Functions)
+
+# Getting started
 
 PowerShell GalleryからModuleをインストールします。
 
@@ -22,7 +26,7 @@ Install-Module GistGet
 [GitHubからGistを更新するためのトークンを取得](docs/ja-jp/Set-GitHubToken.md)し、設定します。
 
 ```pwsh
-Set-GitHubToken "<Your Access Token>"
+Set-GitHubToken github_pat_11AD3NELA0SGEHcrynCMSo...
 ```
 
 インストールリストをGistに作成します。 
@@ -39,6 +43,12 @@ Gistの定義に従ってパッケージを同期します。
 
 ```pwsh
 Sync-GistGetPackage
+```
+
+パッケージをすべてアップデート（wingetのupgrade）します。
+
+```pwsh
+Update-GistGetPackage
 ```
 
 新たなパッケージをインストールします。
