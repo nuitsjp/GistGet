@@ -95,5 +95,35 @@ InModuleScope GistGet {
                 Should -Not -Invoke Uninstall-WinGetPackage
             }
         }
+
+        It "引数未指定時にGet-GistFileが正しく呼ばれることを確認する" {
+            # Arrange: テストの準備
+            Mock Get-GistFile {
+                return @(
+                    [GistFile]::new('gistId', 'fileName')
+                )
+            }
+            Mock Get-GistGetPackage {
+                return @(
+                )
+            }
+            Mock Get-WinGetPackage {}
+            Mock Uninstall-WinGetPackage {}
+            Mock Install-WinGetPackage {}
+            Mock Write-Host {}
+
+            # Act: 関数を実行
+            Sync-GistGetPackage
+
+            # Assert: 結果が期待通りか確認
+            Should -Invoke Get-GistFile
+            Should -Invoke Get-GistGetPackage -ParameterFilter {
+                $GistFile.Id -eq 'gistId' -and
+                $GistFile.FileName -eq 'fileName'
+            }
+            Should -Invoke Get-WinGetPackage
+            Should -Not -Invoke Install-WinGetPackage
+            Should -Not -Invoke Uninstall-WinGetPackage
+        }
     }
 }

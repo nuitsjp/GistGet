@@ -29,31 +29,17 @@ function Sync-GistGetPackage {
     # Get package configuration
     $packageParams = @{}
     
-    # Default behavior: Use Gist with "GistGet" in description
-    if (-not $Uri -and -not $Path) {
-        Write-Verbose "No URI or Path specified. Searching for GistGet configuration..."
-        $gists = Get-Gist
-        $gistGetGist = $gists | Where-Object { $_.Description -like "*GistGet*" } | Select-Object -First 1
-        
-        if (-not $gistGetGist) {
-            throw "No Gist with 'GistGet' in description found. Please specify a URI or Path, or create a Gist with 'GistGet' in its description."
-        }
-        
-        Write-Verbose "Found GistGet configuration at: $($gistGetGist.HtmlUrl)"
-        $packageParams['Uri'] = $gistGetGist.HtmlUrl
-    }
     # Optional: Use custom URI or Path
-    elseif ($Uri) { 
+    if ($Uri) { 
         $packageParams['Uri'] = $Uri 
     }
     elseif ($Path) { 
         $packageParams['Path'] = $Path 
     }
-
-    # Rest of the existing code...
-    $packageParams = @{}
-    if ($Uri) { $packageParams['Uri'] = $Uri }
-    if ($Path) { $packageParams['Path'] = $Path }
+    # Default behavior: Use Gist with "GistGet" in description
+    else {
+        $packageParams['GistFile'] = Get-GistFile
+    }
 
     $packages = Get-GistGetPackage @packageParams
 
