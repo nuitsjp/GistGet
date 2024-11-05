@@ -24,7 +24,7 @@ PowerShell GalleryからModuleをインストールします。
 Install-Module GistGet
 ```
 
-[GitHubからGistを更新するためのトークンを取得](https://github.com/settings/personal-access-tokens/new)し、設定します。取得するトークンに必要な権限などはこちらを参照してください。
+[GitHubからGistを更新するためのトークンを取得](https://github.com/settings/personal-access-tokens/new)し、設定します。取得するトークンに必要な権限などは[こちら](https://github.com/nuitsjp/GistGet/blob/main/docs/ja-jp/Set-GitHubToken.md#%E5%89%B2%E3%82%8A%E5%BD%93%E3%81%A6%E6%A8%A9%E9%99%90)を参照してください。
 
 ```pwsh
 Set-GitHubToken github_pat_11AD3NELA0SGEHcrynCMSo...
