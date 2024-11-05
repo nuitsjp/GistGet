@@ -6,9 +6,10 @@ Gist以外にも、Uriやファイルパスを利用することもできるた�
 
 WinGetのexport/importとは次の点で異なります。
 
-1. install/uninstall時に、設定がGistに同期されます
-2. インストーラーにパラメーターを渡すことができます
-3. uninstallを同期することも可能です
+1. 定義ファイルをクラウド上（Gist, Web）で扱うことが最初から想定されている 
+2. インストーラーにパラメーターを渡すことができる
+3. install/uninstall時に、設定がGistに同期される
+4. uninstallを同期することも可能です
 
 # Table of Contents 
 

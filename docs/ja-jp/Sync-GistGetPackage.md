@@ -1,6 +1,6 @@
 # Sync-GistGetPackage
 
-GistGetのYAML定義ファイルを指定して、パッケージをインストール/アンインストールします。
+GistGetのYAML定義ファイルを指定して、パッケージを同期（インストール/アンインストール）します。
 
 ```pwsh
 Sync-GistGetPackage
@@ -35,7 +35,9 @@ customを指定することで、インストーラーに追加パラメータ�
 
 またuninstallにtrueを指定すると、Sync-GistGetPackageを実行した端末に、対象パッケージがインストールされていた場合は、アンインストールされます。
 
-このあたりが、WinGetとimportと比較し、とくに使い勝手が良い点です。
+[Uninstall-GistGetPackage](Uninstall-GistGetPackage.md)を利用すると、アンインストール時に自動的にuninstall: trueが設定されます。
+
+このあたりがWinGetのimportと比較し、とくに使い勝手が良い点です。
 
 ## Gist
 
@@ -45,29 +47,32 @@ customを指定することで、インストーラーに追加パラメータ�
 Sync-GistGetPackage
 ```
 
-GistのIdを指定することも可能です。この場合、そのGist内の先頭のファイルが利用されます。
+GistのIdとFileを明示的に指定することもできます。
 
 ```pwsh
-Sync-GistGetPackage -GistId <Your Gist Id>
+Set-GistFile -GistId 49990de4389f126d1f6d57c10c408a0c -File GistGet.yml
+Sync-GistGetPackage
 ```
 
-またファイル名を指定することも可能です。
-```pwsh
-Sync-GistGetPackage -GistId <Your Gist Id> -GistFileName <Gist File Name>
-```
+IdとFileを設定していない場合、Descriptionから対象のYAMLを探しに行くため、指定しておくことでやや体験が改善されます。
+
 
 ## Uri
 
 Web上に公開されているYAMLファイルを指定することが可能です。
 
 ```pwsh
-Sync-GistGetPackage -Uri <YAML Uri>
+Sync-GistGetPackage -Uri https://gist.githubusercontent.com/nuitsjp/49990de4389f126d1f6d57c10c408a0c/raw/73583e15d292e3a461abebc548a3e6820046e81a/GistGet.yml
 ```
+
+もちろんUriにはGist以外も指定することができます。
 
 ## File
 
-gitリポジトリーにファイルを登録しておき、それを利用して同期することも可能です。
+たとえばgitリポジトリーにファイルを登録しておき、それを利用して同期する様な運用も可能です。
 
 ```pwsh
-Sync-GistGetPackage -Path <YAML File Path>
+Sync-GistGetPackage -Path .\GistGet.yml
 ```
+
+特定のプロダクトで利用するパッケージを管理したい場合などで有用でしょう。
