@@ -1,28 +1,37 @@
-# Setting Up Gist Authentication Token
+# Set-GitHubToken
 
-[for Japanese](ja-jp/Set-GitHubToken.md)
+Set an authentication token when updating Gist.
 
-To perform Git updates, you need to set up an authentication token.
+```pwsh
+Set-GitHubToken github_pat_11AD3NELA0SGEHcrynCMSo...
+```
 
-You can generate a token from the link below:
+The token is [safely stored using "Set-GitHubAuthentication"](https://github.com/nuitsjp/GistGet/blob/37cc27b3cf0a23e63eb91497cadcdb5ccac9f66a/src/Public/Set-GitHubToken.ps1#L40) from GitHub's official PowerShell Module "PowerShellForGitHub".
+
+You can issue the token from the link below:
 
 - [https://github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new)
 
-Assign the minimum necessary permissions to the token.
+## Permissions
 
-Here, we assign the minimum permissions needed to use GistGet. If you intend to use PowerShellForGitHub for other purposes, make sure to assign the appropriate permissions.
+Assign only the minimum necessary permissions to the token.
 
-For repository access, assign the lowest level of permission, which is read access to public repositories.
+If you're only using PowerShellForGitHub for GistGet, assign the following permissions:
+
+- Public Repositories(read-only)
+- Account permissions - Gists Read and write
+
+The specific settings are as follows:
 
 ![](../images/repository-access.png)
 
-For Account permissions, assign Git Read and Write access.
 
 ![](../images/account-permissions.png)
 
-After assigning the required permissions, generate the token and set it up as shown below:
+After assigning the necessary permissions, issue the token and set it as follows.
 
-```pwsh
-Set-GitHubToken -Token "<Your Access Token>"
-```
+## Parameters
 
+|Parameter|Description|
+|--|--|
+|Token|Specify the GitHub Personal Access Token string.|
