@@ -163,14 +163,14 @@ function Install-GistGetPackage {
             # パッケージを検索
             $packagesToInstall = Find-WinGetPackage @findParams
 
-            if (-not $packagesToInstall) {
-                Write-Warning "No packages found matching the specified criteria."
-                return
-            }
-
             # Idパラメーターが指定されている場合、Idが完全に一致しないパッケージは除外する
             if ($Id) {
                 $packagesToInstall = $packagesToInstall | Where-Object { $_.Id -eq $Id }
+            }
+
+            if (-not $packagesToInstall) {
+                Write-Warning "No packages found matching the specified criteria."
+                return
             }
 
             # パッケージ情報の表示
