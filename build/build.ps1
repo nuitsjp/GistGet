@@ -9,68 +9,52 @@ param (
 # スクリプトのルートディレクトリを取得
 $projectRoot = Split-Path -Parent $PSScriptRoot
 
+# モジュールのバージョン情報
+$moduleVersion = "1.0.0"
+$requiredModules = @{
+    'powershell-yaml' = '0.4.7'
+    'PowerShellForGitHub' = '0.17.0'
+    'Microsoft.WinGet.Client' = '1.6.2'
+}
+
 # Clean output directory
 if (Test-Path -Path $OutputPath) {
     Remove-Item -Path $OutputPath -Recurse -Force
 }
 New-Item -ItemType Directory -Path $OutputPath | Out-Null
 
-# Create module directory structure
+# モジュールディレクトリ構造の作成
 $modulePath = Join-Path -Path $OutputPath -ChildPath 'GistGet'
-$toolsPath = Join-Path -Path $modulePath -ChildPath 'tools'
-New-Item -ItemType Directory -Path $modulePath | Out-Null
-New-Item -ItemType Directory -Path $toolsPath | Out-Null
+$modulePrivatePath = Join-Path -Path $modulePath -ChildPath 'Private'
+$modulePublicPath = Join-Path -Path $modulePath -ChildPath 'Public'
 
-# モジュールマニフェストの更新
-$manifestPath = Join-Path $projectRoot 'src/GistGet.psd1'
-$manifest = Import-PowerShellDataFile -Path $manifestPath
-
-# 更新された依存モジュール定義を作成
-$requiredModulesString = "@(
-    @{
-        ModuleName = 'powershell-yaml'
-        ModuleVersion = '0.4.7'
-    },
-    @{
-        ModuleName = 'PowerShellForGitHub'
-        ModuleVersion = '0.17.0'
-    },
-    @{
-        ModuleName = 'Microsoft.WinGet.Client'
-        ModuleVersion = '1.6.2'
-    }
-)"
-
-# マニフェストの内容を更新
-$manifestContent = Get-Content $manifestPath -Raw
-$manifestContent = $manifestContent -replace "RequiredModules\s*=\s*@\([^)]+\)", "RequiredModules = $requiredModulesString"
-
-# 新しいマニフェストファイルを作成
-$tempManifestPath = Join-Path $modulePath 'GistGet.psd1'
-$manifestContent | Set-Content $tempManifestPath -Encoding UTF8
-
-# Copy module files
-$filesToCopy = @(
-    (Join-Path $projectRoot 'src/GistGet.psm1')
-    (Join-Path $projectRoot 'src/Classes.ps1')
-)
-
-foreach ($file in $filesToCopy) {
-    Copy-Item -Path $file -Destination $modulePath
+foreach ($path in @($modulePath, $modulePrivatePath, $modulePublicPath)) {
+    New-Item -ItemType Directory -Path $path -Force | Out-Null
 }
 
-# Private/Publicスクリプトファイルをtoolsフォルダにコピー
-$sourceFolders = @(
-    (Join-Path $projectRoot 'src/Private'),
-    (Join-Path $projectRoot 'src/Public')
+# モジュールファイルのコピー
+$files = @{
+    'GistGet.psd1' = $modulePath
+    'GistGet.psm1' = $modulePath
+    'Classes.ps1' = $modulePath
+}
+
+foreach ($file in $files.Keys) {
+    $sourcePath = Join-Path $projectRoot 'src' $file
+    $destPath = $files[$file]
+    Copy-Item -Path $sourcePath -Destination $destPath
+}
+
+# Public/Private関数をコピー
+$functionFolders = @(
+    @{ Source = 'Private'; Target = $modulePrivatePath }
+    @{ Source = 'Public'; Target = $modulePublicPath }
 )
 
-foreach ($folder in $sourceFolders) {
-    if (Test-Path $folder) {
-        Get-ChildItem -Path $folder -Filter *.ps1 | ForEach-Object {
-            $destinationPath = Join-Path $toolsPath $_.Name
-            Copy-Item -Path $_.FullName -Destination $destinationPath
-        }
+foreach ($folder in $functionFolders) {
+    $sourcePath = Join-Path $projectRoot 'src' $folder.Source
+    if (Test-Path $sourcePath) {
+        Copy-Item -Path "$sourcePath\*.ps1" -Destination $folder.Target
     }
 }
 
@@ -83,38 +67,35 @@ if ($testResults.FailedCount -gt 0) {
     throw "Tests failed"
 }
 
-# Create module package
+# Create nuspec file
 $nuspecPath = Join-Path -Path $OutputPath -ChildPath 'GistGet.nuspec'
 $nuspecContent = @"
 <?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>GistGet</id>
-        <version>$($manifest.ModuleVersion)</version>
-        <authors>$($manifest.Author)</authors>
-        <owners>$($manifest.Author)</owners>
+        <version>$moduleVersion</version>
+        <authors>nuits.jp</authors>
+        <owners>nuits.jp</owners>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
-        <description>$($manifest.Description)</description>
-        <projectUrl>$($manifest.PrivateData.PSData.ProjectUri)</projectUrl>
+        <description>PowerShell module to manage WinGet package lists on Gist or Web or File.</description>
+        <projectUrl>https://github.com/nuitsjp/GistGet</projectUrl>
         <license type="expression">MIT</license>
-        <releaseNotes>$($manifest.PrivateData.PSData.ReleaseNotes)</releaseNotes>
-        <tags>$($manifest.PrivateData.PSData.Tags -join ' ')</tags>
+        <tags>WinGet GitHub Gist Package Management</tags>
         <dependencies>
-            <group targetFramework=".NETStandard2.0">
-                <dependency id="powershell-yaml" version="0.4.7" />
-                <dependency id="PowerShellForGitHub" version="0.17.0" />
-                <dependency id="Microsoft.WinGet.Client" version="1.6.2" />
-            </group>
+            <dependency id="powershell-yaml" version="$($requiredModules['powershell-yaml'])" />
+            <dependency id="PowerShellForGitHub" version="$($requiredModules['PowerShellForGitHub'])" />
+            <dependency id="Microsoft.WinGet.Client" version="$($requiredModules['Microsoft.WinGet.Client'])" />
         </dependencies>
     </metadata>
     <files>
-        <file src="GistGet\**" target="tools" />
-        <file src="..\README.md" target="docs\" />
-        <file src="..\LICENSE" target="tools\" />
+        <file src="GistGet\**\*.*" target="tools" />
+        <file src="..\README.md" target="content" />
+        <file src="..\LICENSE" target="content" />
     </files>
 </package>
 "@
 
-$nuspecContent | Out-File -FilePath $nuspecPath -Encoding UTF8 -NoNewline
+$nuspecContent | Out-File -FilePath $nuspecPath -Encoding UTF8
 
 Write-Host "Build completed successfully"

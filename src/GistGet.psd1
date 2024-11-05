@@ -28,9 +28,18 @@
 
     # ディペンデンシー
     RequiredModules = @(
-        'powershell-yaml',
-        'PowerShellForGitHub',
-        'Microsoft.WinGet.Client'
+        @{
+            ModuleName = 'powershell-yaml'
+            ModuleVersion = '0.4.7'
+        },
+        @{
+            ModuleName = 'PowerShellForGitHub'
+            ModuleVersion = '0.17.0'
+        },
+        @{
+            ModuleName = 'Microsoft.WinGet.Client'
+            ModuleVersion = '1.6.2'
+        }
     )
 
     # 言語とフォーマット

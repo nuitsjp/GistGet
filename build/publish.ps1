@@ -8,8 +8,18 @@ param (
     [switch]$WhatIf
 )
 
+# デフォルトエンコーディングをUTF-8に設定
+[System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+[System.Console]::InputEncoding = [System.Text.Encoding]::UTF8
+$PSDefaultParameterValues['*:Encoding'] = 'utf8'
+$OutputEncoding = [System.Text.Encoding]::UTF8
+
 $ErrorActionPreference = 'Stop'
 $VerbosePreference = 'Continue'
+
+# ロケール設定
+$env:DOTNET_CLI_LANGUAGE="en_US"
+$env:DOTNET_CLI_UI_LANGUAGE="en_US"
 
 # スクリプトのルートディレクトリを取得
 $projectRoot = Split-Path -Parent $PSScriptRoot
@@ -75,73 +85,65 @@ function Test-ModuleStructure {
     return $true
 }
 
-try {
-    # ログディレクトリの作成
-    if (-not (Test-Path $logPath)) {
-        New-Item -ItemType Directory -Path $logPath | Out-Null
-    }
-    
-    Write-Log "Starting module publishing process"
-    Write-Log "Configuration: $Configuration"
-    
-    # API Keyの取得と検証
-    Write-Log "Checking API Key..."
-    $apiKey = [Environment]::GetEnvironmentVariable('GIST_GET_API_KEY', 'User')
-    if ([string]::IsNullOrEmpty($apiKey)) {
-        throw "API Key not found. Please set the GIST_GET_API_KEY environment variable."
-    }
-    
-    # ビルドの実行
-    Write-Log "Executing build script..."
-    & $buildScript -Configuration $Configuration -OutputPath $outputPath
-    if ($LASTEXITCODE -ne 0) {
-        throw "Build failed with exit code $LASTEXITCODE"
-    }
-    
-    # モジュール構造のチェック
-    if (-not (Test-ModuleStructure -ModulePath $modulePath)) {
-        throw "Module structure validation failed"
-    }
+# ログディレクトリの作成
+if (-not (Test-Path $logPath)) {
+    New-Item -ItemType Directory -Path $logPath | Out-Null
+}
 
-    # マニフェストの読み込みと検証
-    Write-Log "Loading module manifest..."
-    $manifestPath = Join-Path $modulePath 'GistGet.psd1'
-    $manifest = Import-PowerShellDataFile -Path $manifestPath
-    $version = $manifest.ModuleVersion
-    Write-Log "Module version: $version"
-    
-    # 既存のモジュールのチェック
-    Write-Log "Checking existing module version..."
-    $existingModule = Find-Module -Name 'GistGet' -ErrorAction SilentlyContinue
-    if ($existingModule -and $existingModule.Version -ge [Version]$version) {
-        throw "Module version $version already exists in PowerShell Gallery. Please update the version number in $manifestPath"
-    }
-    
-    # モジュールの公開
-    Write-Log "Publishing module..."
-    if (-not $WhatIf) {
-        $publishParams = @{
-            Path = $modulePath
-            NuGetApiKey = $apiKey
-            Verbose = $true
-            ErrorAction = 'Stop'
-            Force = $true
-        }
-        
-        Publish-Module @publishParams
-        Write-Log "Module published successfully!" -Level 'SUCCESS'
-    } else {
-        Write-Log "WhatIf: Module would be published with version $version"
-    }
-    
-    Write-Host "Module published successfully!" -ForegroundColor Green
-    Write-Host "Version: $version"
-    Write-Host "Package: GistGet"
+Write-Log "Starting module publishing process"
+Write-Log "Configuration: $Configuration"
+
+# API Keyの取得と検証
+Write-Log "Checking API Key..."
+$apiKey = [Environment]::GetEnvironmentVariable('GIST_GET_API_KEY', 'User')
+if ([string]::IsNullOrEmpty($apiKey)) {
+    throw "API Key not found. Please set the GIST_GET_API_KEY environment variable."
 }
-catch {
-    $errorMessage = "Publishing failed: $($_.Exception.Message)"
-    Write-Log $errorMessage -Level 'ERROR'
-    Write-Log $_.Exception.StackTrace -Level 'ERROR'
-    Write-Error $errorMessage
-    exit 1
+
+# ビルドの実行
+Write-Log "Executing build script..."
+& $buildScript -Configuration $Configuration -OutputPath $outputPath
+if ($LASTEXITCODE -ne 0) {
+    throw "Build failed with exit code $LASTEXITCODE"
 }
+
+# モジュール構造のチェック
+if (-not (Test-ModuleStructure -ModulePath $modulePath)) {
+    throw "Module structure validation failed"
+}
+
+# マニフェストの読み込みと検証
+Write-Log "Loading module manifest..."
+$manifestPath = Join-Path $modulePath 'GistGet.psd1'
+$manifest = Import-PowerShellDataFile -Path $manifestPath
+$version = $manifest.ModuleVersion
+Write-Log "Module version: $version"
+
+# 既存のモジュールのチェック
+Write-Log "Checking existing module version..."
+$existingModule = Find-Module -Name 'GistGet' -ErrorAction SilentlyContinue
+if ($existingModule -and $existingModule.Version -ge [Version]$version) {
+    throw "Module version $version already exists in PowerShell Gallery. Please update the version number in $manifestPath"
+}
+
+# モジュールの公開
+Write-Log "Publishing module..."
+$publishParams = @{
+    Path = $modulePath
+    NuGetApiKey = $apiKey
+    Verbose = $true
+    ErrorAction = 'Stop'
+    Force = $true
+}
+if (-not $WhatIf) {
+    
+    Publish-Module @publishParams
+    Write-Log "Module published successfully!" -Level 'SUCCESS'
+} else {
+    Publish-Module @publishParams -WhatIf
+    Write-Log "WhatIf: Module would be published with version $version"
+}
+
+Write-Host "Module published successfully!" -ForegroundColor Green
+Write-Host "Version: $version"
+Write-Host "Package: GistGet"
