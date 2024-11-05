@@ -168,6 +168,11 @@ function Install-GistGetPackage {
                 return
             }
 
+            # Idパラメーターが指定されている場合、Idが完全に一致しないパッケージは除外する
+            if ($Id) {
+                $packagesToInstall = $packagesToInstall | Where-Object { $_.Id -eq $Id }
+            }
+
             # パッケージ情報の表示
             $packageInfo = $packagesToInstall | ForEach-Object {
                 "- $($_.Name) ($($_.Id)) Version: $($_.Version)"
