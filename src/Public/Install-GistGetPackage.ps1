@@ -1,4 +1,88 @@
 function Install-GistGetPackage {
+    <#
+    .SYNOPSIS
+        Installs WinGet packages.
+
+    .DESCRIPTION
+        Searches for and installs WinGet packages based on package ID or query.
+        Combines the functionality of Find-WinGetPackage and Install-WinGetPackage.
+
+    .PARAMETER Query
+        Specifies one or more strings to search for. Matches against PackageIdentifier, PackageName, Moniker, and Tags.
+
+    .PARAMETER AllowHashMismatch
+        Allows download even when SHA256 hash for installer or dependencies doesn't match.
+
+    .PARAMETER Architecture
+        Specifies processor architecture for the installer.
+        Allowed values: Default, X86, Arm, X64, Arm64
+
+    .PARAMETER Custom
+        Passes additional arguments to the installer.
+
+    .PARAMETER Force
+        Forces installation by skipping normal checks.
+
+    .PARAMETER Header
+        Custom HTTP header value passed to WinGet REST sources.
+
+    .PARAMETER Id
+        Specifies the package identifier.
+
+    .PARAMETER InstallerType
+        Specifies the type of installer to use.
+        Allowed values: Default, Inno, Wix, Msi, Nullsoft, Zip, Msix, Exe, Burn, MSStore, Portable
+
+    .PARAMETER Locale
+        Specifies installer locale in BCP47 format (e.g. en-US).
+
+    .PARAMETER Location
+        Specifies installation path for the package.
+
+    .PARAMETER Log
+        Specifies path for installer log file.
+
+    .PARAMETER MatchOption
+        Specifies package search match options.
+        Allowed values: Equals, EqualsCaseInsensitive, StartsWithCaseInsensitive, ContainsCaseInsensitive
+
+    .PARAMETER Mode
+        Specifies installer execution mode.
+        Allowed values: Default, Silent, Interactive
+
+    .PARAMETER Moniker
+        Specifies package moniker.
+
+    .PARAMETER Name
+        Specifies package name.
+
+    .PARAMETER Override
+        Overrides existing arguments passed to installer.
+
+    .PARAMETER Scope
+        Specifies installation scope.
+        Allowed values: Any, User, System, UserOrUnknown, SystemOrUnknown
+
+    .PARAMETER SkipDependencies
+        Skips installation of dependencies.
+
+    .PARAMETER Source
+        Specifies WinGet source to install package from.
+
+    .PARAMETER Version
+        Specifies package version to install.
+
+    .EXAMPLE
+        Install-GistGetPackage -Query "Microsoft PowerShell"
+        Searches for and installs PowerShell-related packages.
+
+    .EXAMPLE
+        Install-GistGetPackage -Id Microsoft.PowerShell -Version 7.4.0
+        Installs specific version of PowerShell.
+
+    .NOTES
+        Requires Microsoft.WinGet.Client module to be installed.
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'Query')]
     param(
         [Parameter(Position = 0, ParameterSetName = 'Query')]
