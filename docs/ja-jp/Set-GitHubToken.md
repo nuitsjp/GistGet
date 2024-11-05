@@ -12,6 +12,8 @@ Set-GitHubToken github_pat_11AD3NELA0SGEHcrynCMSo...
 
 - [https://github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new)
 
+## 割り当て権限
+
 トークンには、必要最低限の権限を割り当ててください。
 
 PowerShellForGitHubをGistGetにしか利用しないのであれば、下記の権限を割り当ててください。

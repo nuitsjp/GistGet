@@ -14,7 +14,7 @@ WinGetのexport/importとは次の点で異なります。
 
 - [Getting started](#getting-started)
 - [Functions](#functions)
-- [YAML定義](#yaml定義)
+- [YAML定義](docs/ja-jp/YAML-Definition.md)
 
 # Getting started
 
@@ -24,7 +24,7 @@ PowerShell GalleryからModuleをインストールします。
 Install-Module GistGet
 ```
 
-[GitHubからGistを更新するためのトークンを取得](docs/ja-jp/Set-GitHubToken.md)し、設定します。
+[GitHubからGistを更新するためのトークンを取得](https://github.com/settings/personal-access-tokens/new)し、設定します。取得するトークンに必要な権限などはこちらを参照してください。
 
 ```pwsh
 Set-GitHubToken github_pat_11AD3NELA0SGEHcrynCMSo...
@@ -104,5 +104,3 @@ winget uninstall --id Git.Git
 |Uninstall-GistGetPackage|パッケージをアンインストールし、合わせてGist上のアンインストールをマークします。|
 |Get-GistFile|GistをGist descriptionではなくIdやファイル名から取得したい場合に、Idなどを設定します。|
 |Set-GistFile|設定されているGistのIdなどを取得します。|
-
-# YAML定義

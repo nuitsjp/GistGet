@@ -12,7 +12,7 @@ GistGetでは定義ファイルを、[GistFile](#Gist)・[Uri](#Uri)・[ファ�
 
 ## YAML
 
-YAMLファイルは、つぎのように記述します。
+YAMLファイルは、つぎのように記述します。[YAML定義の詳細はこちら。](YAML-Definition.md)
 
 ```yaml
 7zip.7zip:
