@@ -14,6 +14,7 @@ WinGetのexport/importとは次の点で異なります。
 
 - [Getting started](#getting-started)
 - [Functions](#functions)
+- [YAML定義](#yaml定義)
 
 # Getting started
 
@@ -103,3 +104,5 @@ winget uninstall --id Git.Git
 |Uninstall-GistGetPackage|パッケージをアンインストールし、合わせてGist上のアンインストールをマークします。|
 |Get-GistFile|GistをGist descriptionではなくIdやファイル名から取得したい場合に、Idなどを設定します。|
 |Set-GistFile|設定されているGistのIdなどを取得します。|
+
+# YAML定義

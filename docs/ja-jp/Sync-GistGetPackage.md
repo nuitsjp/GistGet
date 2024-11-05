@@ -15,10 +15,10 @@ GistGetでは定義ファイルを、[GistFile](#Gist)・[Uri](#Uri)・[ファ�
 YAMLファイルは、つぎのように記述します。
 
 ```yaml
-- id: 7zip.7zip
-- id: Microsoft.VisualStudioCode
-  packageParameters: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
-- id: NuitsJp.ClaudeToZenn
+7zip.7zip:
+Microsoft.VisualStudioCode.Insiders:
+  custom: /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
+Zoom.Zoom:
   uninstall: true
 ```
 
@@ -31,9 +31,11 @@ PS D:\GistGet> winget search 7zip
 7-Zip             7zip.7zip              24.08              Moniker: 7zip winget
 ```
 
-packageParametersを指定することで、インストーラーにパラメーターを渡すことができます。WinGetと比較し、とくに使い勝手が良い点です。
+customを指定することで、インストーラーに追加パラメーターを渡すことができます。
 
-uninstallにtrueを指定すると、Sync-GistGetPackageを実行した端末に、対象パッケージがインストールされていた場合は、アンインストールされます。
+またuninstallにtrueを指定すると、Sync-GistGetPackageを実行した端末に、対象パッケージがインストールされていた場合は、アンインストールされます。
+
+このあたりが、WinGetとimportと比較し、とくに使い勝手が良い点です。
 
 ## Gist
 
