@@ -15,22 +15,52 @@ if (Test-Path -Path $OutputPath) {
 }
 New-Item -ItemType Directory -Path $OutputPath | Out-Null
 
-# Create module directory
+# Create module directory structure
 $modulePath = Join-Path -Path $OutputPath -ChildPath 'GistGet'
+$toolsPath = Join-Path -Path $modulePath -ChildPath 'tools'
 New-Item -ItemType Directory -Path $modulePath | Out-Null
+New-Item -ItemType Directory -Path $toolsPath | Out-Null
+
+# モジュールマニフェストの更新
+$manifestPath = Join-Path $projectRoot 'src/GistGet.psd1'
+$manifest = Import-PowerShellDataFile -Path $manifestPath
+
+# 依存モジュールのバージョン情報を取得して更新
+$updatedRequiredModules = @(
+    @{
+        ModuleName = 'powershell-yaml'
+        ModuleVersion = '0.4.7'  # 最新の安定バージョンに更新
+    },
+    @{
+        ModuleName = 'PowerShellForGitHub'
+        ModuleVersion = '0.17.0'  # 最新の安定バージョンに更新
+    },
+    @{
+        ModuleName = 'Microsoft.WinGet.Client'
+        ModuleVersion = '1.6.2'  # 最新の安定バージョンに更新
+    }
+)
+
+# 一時的なマニフェストファイルを作成
+$tempManifestPath = Join-Path $modulePath 'GistGet.psd1'
+$manifestContent = Get-Content $manifestPath -Raw
+$manifestContent = $manifestContent -replace "RequiredModules\s*=\s*@\([^)]+\)", "RequiredModules = @($($updatedRequiredModules | ForEach-Object { "@{ModuleName='$($_.ModuleName)';ModuleVersion='$($_.ModuleVersion)'}" } -join ','))"
+$manifestContent | Set-Content $tempManifestPath -Encoding UTF8
 
 # Copy module files
 $filesToCopy = @(
-    (Join-Path $projectRoot 'src/GistGet.psd1')
     (Join-Path $projectRoot 'src/GistGet.psm1')
     (Join-Path $projectRoot 'src/Classes.ps1')
-    (Join-Path $projectRoot 'src/Public')
-    (Join-Path $projectRoot 'src/Private')
 )
 
-foreach ($file in $filesToCopy) {
-    Copy-Item -Path $file -Destination $modulePath -Recurse
-}
+Copy-Item -Path $filesToCopy -Destination $modulePath
+
+# スクリプトファイルをtoolsフォルダにコピー
+Get-ChildItem -Path (Join-Path $projectRoot 'src/Private'), (Join-Path $projectRoot 'src/Public') -Filter *.ps1 -Recurse | 
+    ForEach-Object {
+        $destinationPath = Join-Path $toolsPath $_.Name
+        Copy-Item -Path $_.FullName -Destination $destinationPath
+    }
 
 # Run tests
 Write-Host "Running Pester tests..."
@@ -43,9 +73,6 @@ if ($testResults.FailedCount -gt 0) {
 
 # Create module package
 $nuspecPath = Join-Path -Path $OutputPath -ChildPath 'GistGet.nuspec'
-$manifestPath = Join-Path $projectRoot 'src/GistGet.psd1'
-$manifest = Import-PowerShellDataFile -Path $manifestPath
-
 $nuspecContent = @"
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
@@ -56,9 +83,21 @@ $nuspecContent = @"
         <owners>$($manifest.Author)</owners>
         <description>$($manifest.Description)</description>
         <projectUrl>$($manifest.PrivateData.PSData.ProjectUri)</projectUrl>
-        <licenseUrl>$($manifest.PrivateData.PSData.LicenseUri)</licenseUrl>
-        <tags>PowerShell Module WinGet GitHub Gist</tags>
+        <license type="expression">MIT</license>
+        <releaseNotes>$($manifest.PrivateData.PSData.ReleaseNotes)</releaseNotes>
+        <tags>$($manifest.PrivateData.PSData.Tags -join ' ')</tags>
+        <readme>docs\README.md</readme>
+        <dependencies>
+            <dependency id="powershell-yaml" version="0.4.7" />
+            <dependency id="PowerShellForGitHub" version="0.17.0" />
+            <dependency id="Microsoft.WinGet.Client" version="1.6.2" />
+        </dependencies>
     </metadata>
+    <files>
+        <file src="GistGet\**\*" target="content" />
+        <file src="..\README.md" target="docs\" />
+        <file src="..\LICENSE" target="content\LICENSE" />
+    </files>
 </package>
 "@
 
