@@ -76,3 +76,10 @@ Sync-GistGetPackage -Path .\GistGet.yml
 ```
 
 特定のプロダクトで利用するパッケージを管理したい場合などで有用でしょう。
+
+## Parameters
+
+|Parameter|説明|
+|--|--|
+|Uri|GistGetパッケージ構成を含むGist URLを指定します。未指定の場合、"GistGet"という説明を含む最初のGistが使用されます。|
+|Path|GistGetパッケージ構成を含むローカルファイルのパスを指定します。Uriパラメーターが優先されます。|

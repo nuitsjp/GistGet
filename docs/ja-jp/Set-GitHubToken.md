@@ -29,3 +29,10 @@ PowerShellForGitHubをGistGetにしか利用しないのであれば、下記の
 ![](../images/account-permissions.png)
 
 必要な権限を割り当てたらトークンを発行し、つぎのように呼び出して設定します。
+
+## Parameters
+
+|Parameter|説明|
+|--|--|
+|Token|GitHub Personal Access Token の文字列を指定します。|
+

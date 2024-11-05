@@ -1,10 +1,56 @@
 function Sync-GistGetPackage {
+    <#
+    .SYNOPSIS
+        Synchronizes WinGet packages with GistGet package configuration.
+
+    .DESCRIPTION
+        By default, synchronizes packages using the first found Gist with "GistGet" in its description.
+        Optionally, you can specify a custom Gist URL or local file path.
+
+    .PARAMETER Uri
+        Optional: Specifies a custom Gist URL containing the package configuration.
+
+    .PARAMETER Path
+        Optional: Specifies a custom local file path to the package configuration.
+
+    .EXAMPLE
+        Sync-GistGetPackage
+        Uses the default Gist with "GistGet" in its description.
+
+    #>
     [CmdletBinding()]
     param(
+        [Parameter(Mandatory=$false)]
         [string] $Uri,
+        [Parameter(Mandatory=$false)]
         [string] $Path
     )
 
+    # Get package configuration
+    $packageParams = @{}
+    
+    # Default behavior: Use Gist with "GistGet" in description
+    if (-not $Uri -and -not $Path) {
+        Write-Verbose "No URI or Path specified. Searching for GistGet configuration..."
+        $gists = Get-Gist
+        $gistGetGist = $gists | Where-Object { $_.Description -like "*GistGet*" } | Select-Object -First 1
+        
+        if (-not $gistGetGist) {
+            throw "No Gist with 'GistGet' in description found. Please specify a URI or Path, or create a Gist with 'GistGet' in its description."
+        }
+        
+        Write-Verbose "Found GistGet configuration at: $($gistGetGist.HtmlUrl)"
+        $packageParams['Uri'] = $gistGetGist.HtmlUrl
+    }
+    # Optional: Use custom URI or Path
+    elseif ($Uri) { 
+        $packageParams['Uri'] = $Uri 
+    }
+    elseif ($Path) { 
+        $packageParams['Path'] = $Path 
+    }
+
+    # Rest of the existing code...
     $packageParams = @{}
     if ($Uri) { $packageParams['Uri'] = $Uri }
     if ($Path) { $packageParams['Path'] = $Path }
