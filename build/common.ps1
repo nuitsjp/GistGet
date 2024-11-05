@@ -28,7 +28,7 @@ function Get-LatestReleaseVersion {
     # 最新バージョンを取得
     $latest = $versions | Sort-Object { $_.Version } -Descending | Select-Object -First 1
 
-    return $latest
+    return ($latest).Version.ToString()
 }
 
 # デフォルトエンコーディングをUTF-8に設定
@@ -36,6 +36,10 @@ function Get-LatestReleaseVersion {
 [System.Console]::InputEncoding = [System.Text.Encoding]::UTF8
 $PSDefaultParameterValues['*:Encoding'] = 'utf8'
 $OutputEncoding = [System.Text.Encoding]::UTF8
+
+# パッケージ作成時にen_USじゃないとエラーになるので、一時的に設定
+$env:DOTNET_CLI_LANGUAGE="en_US"
+$env:DOTNET_CLI_UI_LANGUAGE="en_US"
 
 $ErrorActionPreference = 'Stop'
 

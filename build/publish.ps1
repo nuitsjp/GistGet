@@ -58,7 +58,6 @@ Write-Log "Publishing module..."
 $publishParams = @{
     Path = $global:modulePath
     NuGetApiKey = $apiKey
-    Verbose = $true
     ErrorAction = 'Stop'
     Force = $true
 }

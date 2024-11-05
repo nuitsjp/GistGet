@@ -4,7 +4,7 @@ param (
 
 . $PSScriptRoot\common.ps1
 
-$ModuleVersion = (Get-LatestReleaseVersion).Version.ToString()
+$ModuleVersion = Get-LatestReleaseVersion
 
 # Run tests
 Write-Host "Running Pester tests..."
