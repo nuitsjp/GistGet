@@ -48,6 +48,12 @@ function Test-ModuleStructure {
 
     Write-Log "Checking module structure at $ModulePath"
 
+    # toolsフォルダのパスを取得
+    $toolsPath = Join-Path $ModulePath 'tools'
+    if (-not (Test-Path $toolsPath)) {
+        throw "Tools folder not found at: $toolsPath"
+    }
+
     # 必要なファイルの存在確認
     $requiredFiles = @(
         'GistGet.psd1',
@@ -55,14 +61,14 @@ function Test-ModuleStructure {
     )
 
     foreach ($file in $requiredFiles) {
-        $filePath = Join-Path $ModulePath $file
+        $filePath = Join-Path $toolsPath $file
         if (-not (Test-Path $filePath)) {
             throw "Required file not found: $file"
         }
     }
 
     # マニフェストの検証
-    $manifest = Import-PowerShellDataFile -Path (Join-Path $ModulePath 'GistGet.psd1')
+    $manifest = Import-PowerShellDataFile -Path (Join-Path $toolsPath 'GistGet.psd1')
     
     # 依存関係のバージョン確認
     if ($manifest.RequiredModules) {
@@ -76,9 +82,18 @@ function Test-ModuleStructure {
     # プライベートフォルダとパブリックフォルダの構造確認
     $folders = @('Private', 'Public')
     foreach ($folder in $folders) {
-        $folderPath = Join-Path $ModulePath $folder
+        $folderPath = Join-Path $toolsPath $folder
         if (-not (Test-Path $folderPath)) {
             Write-Log "WARNING: Recommended folder structure not found: $folder" -Level 'WARN'
+        }
+    }
+
+    # インストールスクリプトの確認
+    $installScripts = @('install.ps1', 'uninstall.ps1', 'init.ps1')
+    foreach ($script in $installScripts) {
+        $scriptPath = Join-Path $toolsPath $script
+        if (-not (Test-Path $scriptPath)) {
+            Write-Log "WARNING: Install script not found: $script" -Level 'WARN'
         }
     }
 
@@ -114,7 +129,7 @@ if (-not (Test-ModuleStructure -ModulePath $modulePath)) {
 
 # マニフェストの読み込みと検証
 Write-Log "Loading module manifest..."
-$manifestPath = Join-Path $modulePath 'GistGet.psd1'
+$manifestPath = Join-Path $modulePath 'tools' 'GistGet.psd1'  # toolsフォルダを追加
 $manifest = Import-PowerShellDataFile -Path $manifestPath
 $version = $manifest.ModuleVersion
 Write-Log "Module version: $version"
@@ -128,15 +143,16 @@ if ($existingModule -and $existingModule.Version -ge [Version]$version) {
 
 # モジュールの公開
 Write-Log "Publishing module..."
+$moduleToolsPath = Join-Path $modulePath 'tools'  # toolsフォルダのパスを取得
 $publishParams = @{
-    Path = $modulePath
+    Path = $moduleToolsPath  # toolsフォルダを指定
     NuGetApiKey = $apiKey
     Verbose = $true
     ErrorAction = 'Stop'
     Force = $true
 }
+
 if (-not $WhatIf) {
-    
     Publish-Module @publishParams
     Write-Log "Module published successfully!" -Level 'SUCCESS'
 } else {

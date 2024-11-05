@@ -1,7 +1,7 @@
 @{
     # モジュールの一般情報
     RootModule = 'GistGet.psm1'
-    ModuleVersion = '1.0.0'
+    ModuleVersion = '1.0.1'
     GUID = 'ca1583d5-836a-46bc-a39d-fa11d205b864'
     Author = 'nuits.jp'
     Copyright = '(c) nuits.jp. All rights reserved.'

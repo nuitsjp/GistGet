@@ -11,11 +11,6 @@ $projectRoot = Split-Path -Parent $PSScriptRoot
 
 # モジュールのバージョン情報
 $moduleVersion = "1.0.0"
-$requiredModules = @{
-    'powershell-yaml' = '0.4.7'
-    'PowerShellForGitHub' = '0.17.0'
-    'Microsoft.WinGet.Client' = '1.6.2'
-}
 
 # Clean output directory
 if (Test-Path -Path $OutputPath) {
@@ -25,36 +20,48 @@ New-Item -ItemType Directory -Path $OutputPath | Out-Null
 
 # モジュールディレクトリ構造の作成
 $modulePath = Join-Path -Path $OutputPath -ChildPath 'GistGet'
-$modulePrivatePath = Join-Path -Path $modulePath -ChildPath 'Private'
-$modulePublicPath = Join-Path -Path $modulePath -ChildPath 'Public'
+$moduleToolsPath = Join-Path -Path $modulePath -ChildPath 'tools'
+$moduleContentPath = Join-Path $modulePath 'content'
 
-foreach ($path in @($modulePath, $modulePrivatePath, $modulePublicPath)) {
+# ツールフォルダとサブフォルダの作成
+foreach ($path in @($modulePath, $moduleToolsPath, $moduleContentPath)) {
     New-Item -ItemType Directory -Path $path -Force | Out-Null
 }
 
+# Copy installation scripts
+$scriptsPath = Join-Path $PSScriptRoot 'scripts'
+@('install.ps1', 'uninstall.ps1', 'init.ps1') | ForEach-Object {
+    $scriptPath = Join-Path $scriptsPath $_
+    if (Test-Path $scriptPath) {
+        Copy-Item -Path $scriptPath -Destination $moduleToolsPath
+    }
+    else {
+        Write-Warning "Installation script not found: $_"
+    }
+}
+
 # モジュールファイルのコピー
-$files = @{
-    'GistGet.psd1' = $modulePath
-    'GistGet.psm1' = $modulePath
-    'Classes.ps1' = $modulePath
+$moduleFiles = @('GistGet.psd1', 'GistGet.psm1', 'Classes.ps1')
+foreach ($file in $moduleFiles) {
+    Copy-Item -Path (Join-Path $projectRoot "src\$file") -Destination $moduleToolsPath
 }
 
-foreach ($file in $files.Keys) {
-    $sourcePath = Join-Path $projectRoot 'src' $file
-    $destPath = $files[$file]
-    Copy-Item -Path $sourcePath -Destination $destPath
-}
+# Create function folders in tools directory
+$toolsPublicPath = Join-Path $moduleToolsPath 'Public'
+$toolsPrivatePath = Join-Path $moduleToolsPath 'Private'
+New-Item -ItemType Directory -Path $toolsPublicPath -Force | Out-Null
+New-Item -ItemType Directory -Path $toolsPrivatePath -Force | Out-Null
 
-# Public/Private関数をコピー
-$functionFolders = @(
-    @{ Source = 'Private'; Target = $modulePrivatePath }
-    @{ Source = 'Public'; Target = $modulePublicPath }
-)
-
-foreach ($folder in $functionFolders) {
-    $sourcePath = Join-Path $projectRoot 'src' $folder.Source
+# Copy Public and Private functions
+foreach ($folder in @(
+    @{ Source = 'Public'; Target = $toolsPublicPath },
+    @{ Source = 'Private'; Target = $toolsPrivatePath }
+)) {
+    $sourcePath = Join-Path $projectRoot "src\$($folder.Source)"
     if (Test-Path $sourcePath) {
-        Copy-Item -Path "$sourcePath\*.ps1" -Destination $folder.Target
+        Get-ChildItem -Path $sourcePath -Filter "*.ps1" | ForEach-Object {
+            Copy-Item -Path $_.FullName -Destination $folder.Target
+        }
     }
 }
 
@@ -80,18 +87,14 @@ $nuspecContent = @"
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>PowerShell module to manage WinGet package lists on Gist or Web or File.</description>
         <projectUrl>https://github.com/nuitsjp/GistGet</projectUrl>
+        <readme>docs\README.md</readme>
         <license type="expression">MIT</license>
         <tags>WinGet GitHub Gist Package Management</tags>
-        <dependencies>
-            <dependency id="powershell-yaml" version="$($requiredModules['powershell-yaml'])" />
-            <dependency id="PowerShellForGitHub" version="$($requiredModules['PowerShellForGitHub'])" />
-            <dependency id="Microsoft.WinGet.Client" version="$($requiredModules['Microsoft.WinGet.Client'])" />
-        </dependencies>
     </metadata>
     <files>
-        <file src="GistGet\**\*.*" target="tools" />
-        <file src="..\README.md" target="content" />
-        <file src="..\LICENSE" target="content" />
+        <file src="GistGet\**" target="tools" exclude="**\*.pdb"/>
+        <file src="..\README.md" target="docs\" />
+        <file src="..\LICENSE" target="content\" />
     </files>
 </package>
 "@
