@@ -1,4 +1,56 @@
 function Uninstall-GistGetPackage {
+    <#
+    .SYNOPSIS
+    Uninstalls packages based on specified criteria and updates the GistGet package list.
+
+    .DESCRIPTION
+    The Uninstall-GistGetPackage function uninstalls packages that match the specified criteria.
+    It also updates the GistGet package list by marking the uninstalled packages.
+
+    .PARAMETER Query
+    Specifies the query string to search for packages.
+
+    .PARAMETER Command
+    Specifies the command associated with the package.
+
+    .PARAMETER Count
+    Specifies the number of packages to return.
+
+    .PARAMETER Id
+    Specifies the ID of the package to uninstall.
+
+    .PARAMETER MatchOption
+    Specifies the match option for the query. Valid values are 'Equals', 'EqualsCaseInsensitive', 'StartsWithCaseInsensitive', and 'ContainsCaseInsensitive'.
+
+    .PARAMETER Moniker
+    Specifies the moniker of the package.
+
+    .PARAMETER Name
+    Specifies the name of the package.
+
+    .PARAMETER Source
+    Specifies the source of the package.
+
+    .PARAMETER Tag
+    Specifies the tag associated with the package.
+
+    .PARAMETER Force
+    Forces the uninstallation of the package.
+
+    .PARAMETER Mode
+    Specifies the mode of uninstallation. Valid values are 'Default', 'Silent', and 'Interactive'.
+
+    .EXAMPLE
+    Uninstall-GistGetPackage -Query "example" -Force
+
+    This command uninstalls packages that match the query "example" and forces the uninstallation.
+
+    .EXAMPLE
+    Uninstall-GistGetPackage -Id "packageId" -Mode "Silent"
+
+    This command uninstalls the package with the specified ID in silent mode.
+
+    #>
     [CmdletBinding()]
     param(
         [Parameter(Position = 0, ValueFromPipelineByPropertyName = $true)]
