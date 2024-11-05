@@ -1,28 +1,12 @@
 [CmdletBinding()]
 param (
     [Parameter()]
-    [ValidateSet('Debug', 'Release')]
-    [string]$Configuration = 'Release',
-    
-    [Parameter()]
     [switch]$WhatIf
 )
 
-# デフォルトエンコーディングをUTF-8に設定
-[System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-[System.Console]::InputEncoding = [System.Text.Encoding]::UTF8
-$PSDefaultParameterValues['*:Encoding'] = 'utf8'
-$OutputEncoding = [System.Text.Encoding]::UTF8
+. $PSScriptRoot\common.ps1
 
-$ErrorActionPreference = 'Stop'
-$VerbosePreference = 'Continue'
-
-# スクリプトのルートディレクトリを取得
-$projectRoot = Split-Path -Parent $PSScriptRoot
-$buildScript = Join-Path $projectRoot 'build' 'build.ps1'
-$outputPath = Join-Path $projectRoot 'build' 'Output'
-$modulePath = Join-Path $outputPath 'GistGet'
-$logPath = Join-Path $projectRoot 'logs'
+$logPath = Join-Path $global:projectRoot 'logs'
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $logFile = Join-Path $logPath "publish_$timestamp.log"
 
@@ -43,7 +27,6 @@ if (-not (Test-Path $logPath)) {
 }
 
 Write-Log "Starting module publishing process"
-Write-Log "Configuration: $Configuration"
 
 # API Keyの取得と検証
 Write-Log "Checking API Key..."
@@ -54,16 +37,13 @@ if ([string]::IsNullOrEmpty($apiKey)) {
 
 # ビルドの実行
 Write-Log "Executing build script..."
-& $buildScript -Configuration $Configuration -OutputPath $outputPath
+& $global:buildScript
 if ($LASTEXITCODE -ne 0) {
     throw "Build failed with exit code $LASTEXITCODE"
 }
 
-# モジュールマニフェストの読み込みと検証
-Write-Log "Loading module manifest..."
-$manifestPath = Join-Path $modulePath 'GistGet.psd1'
-$manifest = Test-ModuleManifest -Path $manifestPath -ErrorAction Stop
-$version = $manifest.Version
+# モジュールのバージョンを取得
+$version = Get-LatestReleaseVersion
 Write-Log "Module version: $version"
 
 # 既存のモジュールのチェック
@@ -76,7 +56,7 @@ if ($existingModule -and $existingModule.Version -ge $version) {
 # モジュールの公開
 Write-Log "Publishing module..."
 $publishParams = @{
-    Path = $modulePath
+    Path = $global:modulePath
     NuGetApiKey = $apiKey
     Verbose = $true
     ErrorAction = 'Stop'

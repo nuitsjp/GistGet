@@ -1,20 +1,14 @@
 [CmdletBinding()]
 param (
-    [Parameter()]
-    [string]$Configuration = 'Release',
-    [Parameter()]
-    [string]$OutputPath = (Join-Path $PSScriptRoot 'Output')
 )
 
-# モジュールのバージョン情報
-$moduleVersion = "1.0.0"
+. $PSScriptRoot\common.ps1
 
-# スクリプトのルートディレクトリを取得
-$projectRoot = Split-Path -Parent $PSScriptRoot
+$ModuleVersion = (Get-LatestReleaseVersion).Version.ToString()
 
 # Run tests
 Write-Host "Running Pester tests..."
-$testPath = Join-Path $projectRoot 'test'
+$testPath = Join-Path $global:projectRoot 'test'
 $testResults = Invoke-Pester -Path $testPath -PassThru
 
 if ($testResults.FailedCount -gt 0) {
@@ -23,25 +17,26 @@ if ($testResults.FailedCount -gt 0) {
 
 
 # Clean output directory
-if (Test-Path -Path $OutputPath) {
-    Remove-Item -Path $OutputPath -Recurse -Force
+if (Test-Path -Path $global:outputPath) {
+    Remove-Item -Path $global:outputPath -Recurse -Force
 }
-New-Item -ItemType Directory -Path $OutputPath | Out-Null
+New-Item -ItemType Directory -Path $global:outputPath | Out-Null
 
-# モジュールディレクトリ構造の作成
-$modulePath = Join-Path -Path $OutputPath -ChildPath 'GistGet'
-$srcPath = Join-Path -Path $projectRoot -ChildPath 'src'
+# モジュールファイルのコピー
+Copy-Item -Path $global:srcPath -Destination $global:modulePath -Recurse -Force
 
-Copy-Item -Path $srcPath -Destination $modulePath -Recurse -Force
+# モジュールのバージョン情報を更新
+$moduleManifestPath = Join-Path -Path $global:modulePath -ChildPath 'GistGet.psd1'
+(Get-Content -Path $moduleManifestPath) -replace 'ModuleVersion = ''1.0.0''', "ModuleVersion = '$ModuleVersion'" | Set-Content -Path $moduleManifestPath
 
 # Create nuspec file
-$nuspecPath = Join-Path -Path $modulePath -ChildPath 'GistGet.nuspec'
+$nuspecPath = Join-Path -Path $global:modulePath -ChildPath 'GistGet.nuspec'
 $nuspecContent = @"
 <?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>GistGet</id>
-        <version>$moduleVersion</version>
+        <version>$ModuleVersion</version>
         <authors>nuits.jp</authors>
         <owners>nuits.jp</owners>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
