@@ -24,7 +24,9 @@ Git.Git:
 インストール時にパラメーターを追加してインストールすることが可能です。
 
 ```pwsh
-Install-GistGetPackage -Id Microsoft.VisualStudioCode.Insiders -Custom "/VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath"
+Install-GistGetPackage `
+  -Id Microsoft.VisualStudioCode.Insiders `
+  -Custom "/VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath"
 ```
 
 インストール後:
