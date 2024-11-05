@@ -1,92 +1,96 @@
-# GistGetとは？
+# What is GistGet?
 
-GistGetはWinGetのインストールリストをGistで管理するためのPowerShell Moduleです。
+[Japanese](README.ja-jp.md)
 
-Gist以外にも、Uriやファイルパスを利用することもできるため、プロダクトの開発環境を整えるため、開発端末の設定を同期するといった使い方もできます。
+GistGet is a PowerShell Module for managing WinGet installation lists on Gist.
 
-WinGetのexport/importとは次の点で異なります。
+Besides Gist, you can also use Uri or file paths, making it possible to set up development environments for products and synchronize development terminal settings.
 
-1. install/uninstall時に、設定がGistに同期されます
-2. インストーラーにパラメーターを渡すことができます
-3. uninstallを同期することも可能です
+It differs from WinGet's export/import in the following ways:
+
+1. Definition files are designed to be handled on the cloud (Gist, Web) from the start
+2. Parameters can be passed to the installer
+3. Settings are synchronized with Gist during install/uninstall
+4. Uninstallation can also be synchronized
 
 # Table of Contents 
 
 - [Getting started](#getting-started)
 - [Functions](#functions)
+- [YAML Definition](docs/en-us/YAML-Definition.md)
 
 # Getting started
 
-PowerShell GalleryからModuleをインストールします。
+Install the Module from PowerShell Gallery.
 
 ```pwsh
 Install-Module GistGet
 ```
 
-[GitHubからGistを更新するためのトークンを取得](docs/ja-jp/Set-GitHubToken.md)し、設定します。
+[Get a token to update Gist from GitHub](https://github.com/settings/personal-access-tokens/new) and set it up. For required token permissions and other details, please refer to [here](https://github.com/nuitsjp/GistGet/blob/main/docs/en-us/Set-GitHubToken.md#permissions).
 
 ```pwsh
 Set-GitHubToken github_pat_11AD3NELA0SGEHcrynCMSo...
 ```
 
-インストールリストをGistに作成します。 
+Create an installation list in Gist.
 
-**このとき「Gist description...」に「GistGet」を設定します。** ファイル名は任意です。
+**Set "GistGet" in the "Gist description..."** The filename is arbitrary.
 
 ```yaml
 7zip.7zip:
-Microsoft.VisualStudioCode.Insiders:
-  custom: /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
+Microsoft.VisualStudioCode:
+  override: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
 ```
 
-Gistの定義に従ってパッケージを同期します。
+Synchronize packages according to the Gist definition.
 
 ```pwsh
 Sync-GistGetPackage
 ```
 
-パッケージをすべてアップデート（wingetのupgrade）します。
+Update all packages (winget upgrade).
 
 ```pwsh
 Update-GistGetPackage
 ```
 
-新たなパッケージをインストールします。
+Install a new package.
 
 ```pwsh
 Install-GistGetPackage -Id Git.Git
 ```
 
-GistGetのコマンドを通してインストールすると、Gist上の定義ファイルも更新されます。
+When installing through GistGet commands, the definition file on Gist is also updated.
 
 ```yaml
 7zip.7zip:
-Microsoft.VisualStudioCode.Insiders:
-  custom: /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
+Microsoft.VisualStudioCode:
+  override: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
 Git.Git:
 ```
 
-このため別の端末でSync-GistGetPackageを実行することで、環境を容易に同期することが可能です。
+This makes it easy to synchronize environments by running Sync-GistGetPackage on another terminal.
 
-インストール済みのパッケージをアンインストールします。
+Uninstall an installed package.
 
 ```pwsh
 Uninstall-GistGetPackage -Id Git.Git
 ```
 
-Gist上の定義ファイルも同期されます。
+The definition file on Gist is also synchronized.
 
 ```yaml
 7zip.7zip:
-Microsoft.VisualStudioCode.Insiders:
-  custom: /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
+Microsoft.VisualStudioCode:
+  override: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
 Git.Git:
   uninstall: true
 ```
 
-別の端末でSync-GistGetPackageを実行すると、その端末からもアンインストールされます。
+When you run Sync-GistGetPackage on another terminal, it will also be uninstalled from that terminal.
 
-アンインストールを同期したくない場合は、WinGetの標準コマンドを利用してください。
+If you don't want to synchronize uninstallation, use WinGet's standard command.
 
 ```pwsh
 winget uninstall --id Git.Git
@@ -94,83 +98,12 @@ winget uninstall --id Git.Git
 
 # Functions
 
-|Function|概略|
+|Function|Overview|
 |--|--|
-|[Set-GitHubToken](docs/ja-jp/Set-GitHubToken.md)|インストールパッケージの定義Gistを取得・更新するためのGitHubトークンを設定します。|
-|[Sync-GistGetPackage](docs/ja-jp/Sync-GistGetPackage.md)|Gistの定義にローカルのパッケージを同期します。|
-|[Update-GistGetPackage](docs/ja-jp/Update-GistGetPackage.md)|Gistの定義にローカルのパッケージを同期します。|
-|[Install-GistGetPackage](docs/ja-jp/Install-GistGetPackage.md)|WinGetからパッケージをインストールし、合わせてGist上の定義ファイルを更新します。|
-|Uninstall-GistGetPackage|パッケージをアンインストールし、合わせてGist上のアンインストールをマークします。|
-|Get-GistFile|GistをGist descriptionではなくIdやファイル名から取得したい場合に、Idなどを設定します。|
-|Set-GistFile|設定されているGistのIdなどを取得します。|
-
-
-
-
-
-
-| パラメータ名 | パラメータ型 | Find-WinGetPackage | Install-WinGetPackage | Update-WinGetPackage |
-|------------|-------------|-------------------|---------------------|-------------------|
-| Query | String[] | オプション | オプション | オプション |
-| Id | String | オプション | オプション | オプション |
-| Name | String | オプション | オプション | オプション |
-| Source | String | オプション | オプション | オプション |
-| Moniker | String | オプション | オプション | オプション |
-| MatchOption | Enum | オプション | オプション | オプション |
-| Command | String | オプション | - | - |
-| Count | UInt32 | オプション | - | - |
-| Tag | String | オプション | - | - |
-| AllowHashMismatch | SwitchParameter | - | オプション | オプション |
-| Architecture | Enum | - | オプション | オプション |
-| Custom | String | - | オプション | オプション |
-| Force | SwitchParameter | - | オプション | オプション |
-| Header | String | - | オプション | オプション |
-| InstallerType | Enum | - | オプション | オプション |
-| Locale | String | - | オプション | オプション |
-| Location | String | - | オプション | オプション |
-| Log | String | - | オプション | オプション |
-| Mode | Enum | - | オプション | オプション |
-| Override | String | - | オプション | オプション |
-| PSCatalogPackage | PSObject | - | オプション | オプション |
-| Scope | Enum | - | オプション | オプション |
-| SkipDependencies | SwitchParameter | - | オプション | オプション |
-| Version | String | - | オプション | オプション |
-| Confirm | SwitchParameter | - | オプション | オプション |
-| WhatIf | SwitchParameter | - | オプション | オプション |
-| IncludeUnknown | SwitchParameter | - | - | オプション |
-
-
-
-7zip.7zip: {}
-Adobe.Acrobat.Reader.64-bit: {}
-Amazon.Kindle: {}
-AntibodySoftware.WizTree: {}
-CoreyButler.NVMforWindows: {}
-CubeSoft.CubePDF: {}
-CubeSoft.CubePDFUtility: {}
-DeepL.DeepL: {}
-dotPDN.PaintDotNet: {}
-gerardog.gsudo: {}
-Git.Git: {}
-icsharpcode.ILSpy: {}
-IrfanSkiljan.IrfanView: {}
-JetBrains.Rider: {}
-JetBrains.Toolbox: {}
-LINQPad.LINQPad.7: {}
-Microsoft.AzureCLI: {}
-Microsoft.DevHome: {}
-Microsoft.PowerShell: {}
-Microsoft.PowerToys: {}
-Microsoft.SQLServerManagementStudio: {}
-Microsoft.VisualStudio.2022.Enterprise.Preview: {}
-Microsoft.VisualStudioCode.Insiders:
-  override: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
-Microsoft.WindowsTerminal: {}
-NickeManarin.ScreenToGif: {}
-NuitsJp.ClaudeToZenn:
-  uninstall: true
-OpenJS.NodeJS: {}
-SlackTechnologies.Slack: {}
-voidtools.Everything: {}
-WinMerge.WinMerge: {}
-Zoom.Zoom: {}
+|[Set-GitHubToken](docs/en-us/Set-GitHubToken.md)|Set GitHub token for retrieving and updating Gist definition of installation packages.|
+|[Sync-GistGetPackage](docs/en-us/Sync-GistGetPackage.md)|Synchronize local packages with Gist definition.|
+|[Update-GistGetPackage](docs/en-us/Update-GistGetPackage.md)|Synchronize local packages with Gist definition.|
+|[Install-GistGetPackage](docs/en-us/Install-GistGetPackage.md)|Install package from WinGet and update the definition file on Gist.|
+|[Uninstall-GistGetPackage](docs/en-us/Uninstall-GistGetPackage.md)|Uninstall package and mark uninstallation on Gist.|
+|[Set-GistFile](docs/en-us/Set-GistFile.md)|Set Id or filename when you want to get Gist from Id or filename instead of Gist description.|
+|[Get-GistFile](docs/en-us/Get-GistFile.md)|Get the configured Gist Id and other settings.|
