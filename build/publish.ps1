@@ -17,10 +17,6 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 $ErrorActionPreference = 'Stop'
 $VerbosePreference = 'Continue'
 
-# ロケール設定
-$env:DOTNET_CLI_LANGUAGE="en_US"
-$env:DOTNET_CLI_UI_LANGUAGE="en_US"
-
 # スクリプトのルートディレクトリを取得
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $buildScript = Join-Path $projectRoot 'build' 'build.ps1'
@@ -39,65 +35,6 @@ function Write-Log {
     $logMessage = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')|$Level|$Message"
     Write-Verbose $logMessage
     Add-Content -Path $logFile -Value $logMessage
-}
-
-function Test-ModuleStructure {
-    param(
-        [string]$ModulePath
-    )
-
-    Write-Log "Checking module structure at $ModulePath"
-
-    # toolsフォルダのパスを取得
-    $toolsPath = Join-Path $ModulePath 'tools'
-    if (-not (Test-Path $toolsPath)) {
-        throw "Tools folder not found at: $toolsPath"
-    }
-
-    # 必要なファイルの存在確認
-    $requiredFiles = @(
-        'GistGet.psd1',
-        'GistGet.psm1'
-    )
-
-    foreach ($file in $requiredFiles) {
-        $filePath = Join-Path $toolsPath $file
-        if (-not (Test-Path $filePath)) {
-            throw "Required file not found: $file"
-        }
-    }
-
-    # マニフェストの検証
-    $manifest = Import-PowerShellDataFile -Path (Join-Path $toolsPath 'GistGet.psd1')
-    
-    # 依存関係のバージョン確認
-    if ($manifest.RequiredModules) {
-        foreach ($module in $manifest.RequiredModules) {
-            if ($module -is [string]) {
-                Write-Log "WARNING: Module $module should specify required version" -Level 'WARN'
-            }
-        }
-    }
-
-    # プライベートフォルダとパブリックフォルダの構造確認
-    $folders = @('Private', 'Public')
-    foreach ($folder in $folders) {
-        $folderPath = Join-Path $toolsPath $folder
-        if (-not (Test-Path $folderPath)) {
-            Write-Log "WARNING: Recommended folder structure not found: $folder" -Level 'WARN'
-        }
-    }
-
-    # インストールスクリプトの確認
-    $installScripts = @('install.ps1', 'uninstall.ps1', 'init.ps1')
-    foreach ($script in $installScripts) {
-        $scriptPath = Join-Path $toolsPath $script
-        if (-not (Test-Path $scriptPath)) {
-            Write-Log "WARNING: Install script not found: $script" -Level 'WARN'
-        }
-    }
-
-    return $true
 }
 
 # ログディレクトリの作成
@@ -122,30 +59,24 @@ if ($LASTEXITCODE -ne 0) {
     throw "Build failed with exit code $LASTEXITCODE"
 }
 
-# モジュール構造のチェック
-if (-not (Test-ModuleStructure -ModulePath $modulePath)) {
-    throw "Module structure validation failed"
-}
-
-# マニフェストの読み込みと検証
+# モジュールマニフェストの読み込みと検証
 Write-Log "Loading module manifest..."
-$manifestPath = Join-Path $modulePath 'tools' 'GistGet.psd1'  # toolsフォルダを追加
-$manifest = Import-PowerShellDataFile -Path $manifestPath
-$version = $manifest.ModuleVersion
+$manifestPath = Join-Path $modulePath 'GistGet.psd1'
+$manifest = Test-ModuleManifest -Path $manifestPath -ErrorAction Stop
+$version = $manifest.Version
 Write-Log "Module version: $version"
 
 # 既存のモジュールのチェック
 Write-Log "Checking existing module version..."
 $existingModule = Find-Module -Name 'GistGet' -ErrorAction SilentlyContinue
-if ($existingModule -and $existingModule.Version -ge [Version]$version) {
+if ($existingModule -and $existingModule.Version -ge $version) {
     throw "Module version $version already exists in PowerShell Gallery. Please update the version number in $manifestPath"
 }
 
 # モジュールの公開
 Write-Log "Publishing module..."
-$moduleToolsPath = Join-Path $modulePath 'tools'  # toolsフォルダのパスを取得
 $publishParams = @{
-    Path = $moduleToolsPath  # toolsフォルダを指定
+    Path = $modulePath
     NuGetApiKey = $apiKey
     Verbose = $true
     ErrorAction = 'Stop'
