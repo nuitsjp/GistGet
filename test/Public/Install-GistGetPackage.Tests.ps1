@@ -4,6 +4,25 @@ Import-Module -Name "$PSScriptRoot\..\..\src\GistGet.psd1" -Force
 InModuleScope GistGet {
     Describe "Install-GistGetPackage" {
         BeforeAll {
+            # 共通のテストデータを定義
+            $script:testPackage = @{
+                Id = 'TestPackage.Id'
+                Name = 'Test Package'
+                Version = '1.0.0'
+            }
+
+            $script:testParams = @{
+                Query = "test-query"
+                Id = $testPackage.Id
+                MatchOption = "Equals"
+                Moniker = "test-moniker"
+                Name = "test-name"
+                Source = "test-source"
+                Force = $true
+                Mode = "Interactive"
+                SkipDependencies = $true
+            }
+
             # PSCatalogPackage名前空間とクラスを定義
             $typeDef = @"
 namespace Microsoft.WinGet.Client.Engine.PSObjects
@@ -20,94 +39,85 @@ namespace Microsoft.WinGet.Client.Engine.PSObjects
 "@
             Add-Type -TypeDefinition $typeDef -ErrorAction SilentlyContinue
 
-            # 基本的なモックの準備
-            Mock Get-GistFile {
-                [GistFile]::new("TestGistId", "packages.json")
-            }
+            # 基本的なモックの設定
+            function Set-DefaultMocks {
+                Mock Get-GistFile {
+                    [GistFile]::new("TestGistId", "packages.json")
+                }
 
-            Mock Get-GistGetPackage { 
-                @()
-            }
+                Mock Get-GistGetPackage { 
+                    [System.Collections.ArrayList]@()
+                }
 
-            Mock Find-WinGetPackage { 
-                @(
+                Mock Find-WinGetPackage { 
+                    [PSCustomObject]$script:testPackage
+                }
+
+                Mock Install-WinGetPackage {
                     [PSCustomObject]@{
-                        Id = 'TestPackage.Id'
-                        Name = 'Test Package'
-                        Version = '1.0.0'
+                        Id = $script:testPackage.Id
+                        RebootRequired = $false
                     }
-                )
+                }
+
+                Mock Set-GistGetPackages { }
+                Mock Restart-Computer { }
+                Mock Confirm-Reboot { $false }
+
+                # WinGetモジュールの存在確認用モック
+                Mock Get-Module { 
+                    @{ Name = 'Microsoft.WinGet.Client' } 
+                } -ParameterFilter { 
+                    $Name -eq 'Microsoft.WinGet.Client' -and $ListAvailable 
+                }
             }
 
-            Mock Install-WinGetPackage { }
-            Mock Set-GistGetPackages { }
-            
-            # WinGetモジュールの存在確認用モック
-            Mock Get-Module { 
-                @{ Name = 'Microsoft.WinGet.Client' } 
-            } -ParameterFilter { 
-                $Name -eq 'Microsoft.WinGet.Client' -and $ListAvailable 
-            }
+            # デフォルトのモックを設定
+            Set-DefaultMocks
+        }
+
+        BeforeEach {
+            # 各テストの前にモックをリセット
+            Set-DefaultMocks
         }
 
         It "すべてのパラメータが正しく渡されることを確認" {
-            # Arrange
-            $testParams = @{
-                Query = "test-query"
-                Id = "TestPackage.Id"
-                MatchOption = "Equals"
-                Moniker = "test-moniker"
-                Name = "test-name"
-                Source = "test-source"
-                Force = $true
-                Mode = "Interactive"
-                SkipDependencies = $true
-            }
-    
-            # GistGetPackageのモックデータ
-            Mock Get-GistGetPackage {
-                [System.Collections.ArrayList]@()
-            }
-    
             # Act
             Install-GistGetPackage @testParams -Confirm:$false
-    
+
             # Assert
             Should -Invoke Find-WinGetPackage -ParameterFilter {
-                $Query -eq "test-query" -and
-                $Id -eq "TestPackage.Id" -and
-                $MatchOption -eq "Equals" -and
-                $Moniker -eq "test-moniker" -and
-                $Name -eq "test-name" -and
-                $Source -eq "test-source"
+                $Query -eq $testParams.Query -and
+                $Id -eq $testParams.Id -and
+                $MatchOption -eq $testParams.MatchOption -and
+                $Moniker -eq $testParams.Moniker -and
+                $Name -eq $testParams.Name -and
+                $Source -eq $testParams.Source
             }
-    
+
             Should -Invoke Install-WinGetPackage -ParameterFilter {
-                $Id -eq "TestPackage.Id" -and
-                $Force -eq $true -and
-                $Mode -eq "Interactive" -and
-                $SkipDependencies -eq $true
+                $Id -eq $testParams.Id -and
+                $Force -eq $testParams.Force -and
+                $Mode -eq $testParams.Mode -and
+                $SkipDependencies -eq $testParams.SkipDependencies
             }
-    
+
             Should -Invoke Set-GistGetPackages -ParameterFilter {
                 $Packages.Count -eq 1 -and
-                $Packages[0].Id -eq "TestPackage.Id" -and
-                $Packages[0].Force -eq $true -and
-                $Packages[0].Mode -eq "Interactive" -and
-                $Packages[0].SkipDependencies -eq $true
+                $Packages[0].Id -eq $testParams.Id -and
+                $Packages[0].Force -eq $testParams.Force -and
+                $Packages[0].Mode -eq $testParams.Mode -and
+                $Packages[0].SkipDependencies -eq $testParams.SkipDependencies
             }
         }
-    
+
         Context "パッケージ検索結果による動作テスト" {
             It "パッケージが見つからない場合は警告を表示" {
                 # Arrange
-                Mock Find-WinGetPackage { return $null }
+                Mock Find-WinGetPackage { $null }
 
-                # Act
-                $warning = $null
+                # Act & Assert
                 Install-GistGetPackage -Query "nonexistent" -Confirm:$false -WarningVariable warning
-
-                # Assert
                 $warning | Should -Be "No packages found matching the specified criteria."
             }
 
@@ -115,13 +125,13 @@ namespace Microsoft.WinGet.Client.Engine.PSObjects
                 # Arrange
                 Mock Find-WinGetPackage { 
                     @(
-                        [PSCustomObject]@{ Id = 'Package1'; Name = 'Package 1'; Version = '1.0.0' },
-                        [PSCustomObject]@{ Id = 'Package2'; Name = 'Package 2'; Version = '1.0.0' }
+                        [PSCustomObject]$testPackage,
+                        [PSCustomObject]@{
+                            Id = 'Package2'
+                            Name = 'Package 2'
+                            Version = '1.0.0'
+                        }
                     )
-                }
-
-                Mock Get-GistGetPackage {
-                    [System.Collections.ArrayList]@()
                 }
 
                 # Act & Assert
@@ -140,13 +150,6 @@ namespace Microsoft.WinGet.Client.Engine.PSObjects
                 # Act & Assert
                 { Install-GistGetPackage -Query "test" } | 
                     Should -Throw "Microsoft.WinGet.Client module is not installed*"
-
-                # Cleanup - モックを元に戻す
-                Mock Get-Module { 
-                    @{ Name = 'Microsoft.WinGet.Client' } 
-                } -ParameterFilter { 
-                    $Name -eq 'Microsoft.WinGet.Client' -and $ListAvailable 
-                }
             }
 
             It "インストール失敗時もGistは更新されない" {
@@ -154,7 +157,7 @@ namespace Microsoft.WinGet.Client.Engine.PSObjects
                 Mock Install-WinGetPackage { throw "Installation failed" }
 
                 # Act & Assert
-                { Install-GistGetPackage -Id "TestPackage.Id" -Confirm:$false -ErrorAction Stop } | 
+                { Install-GistGetPackage -Id $testPackage.Id -Confirm:$false -ErrorAction Stop } | 
                     Should -Throw "*Failed to install package*Installation failed*"
                 Should -Invoke Set-GistGetPackages -Times 0
             }
@@ -162,17 +165,13 @@ namespace Microsoft.WinGet.Client.Engine.PSObjects
 
         Context "Gist管理機能のテスト" {
             It "新しいパッケージがGistに追加される" {
-                # Arrange
-                Mock Get-GistGetPackage { [System.Collections.ArrayList]@() }
-                Mock Install-WinGetPackage { }
-
                 # Act
-                Install-GistGetPackage -Id "TestPackage.Id" -Confirm:$false
+                Install-GistGetPackage -Id $testPackage.Id -Confirm:$false
 
                 # Assert
                 Should -Invoke Set-GistGetPackages -ParameterFilter {
                     $Packages.Count -eq 1 -and
-                    $Packages[0].Id -eq "TestPackage.Id"
+                    $Packages[0].Id -eq $testPackage.Id
                 }
             }
         }
@@ -192,108 +191,49 @@ namespace Microsoft.WinGet.Client.Engine.PSObjects
         }
 
         Context "再起動要求のテスト" {
-            BeforeEach {
-                Mock Get-GistFile {
-                    [GistFile]::new("TestGistId", "packages.json")
-                }
-    
-                Mock Get-GistGetPackage { 
-                    @()
-                }
-    
-                Mock Set-GistGetPackages { }
-                Mock Restart-Computer { }
-            }
-    
             It "再起動が必要なパッケージがある場合、確認プロンプトを表示" {
                 # Arrange
                 Mock Install-WinGetPackage {
                     [PSCustomObject]@{
-                        Id = "TestPackage.Id"
+                        Id = $testPackage.Id
                         RebootRequired = $true
                     }
                 }
-    
-                Mock Confirm-Reboot { return $false } -Verifiable
-    
-                Mock Find-WinGetPackage { 
-                    @(
-                        [PSCustomObject]@{
-                            Id = 'TestPackage.Id'
-                            Name = 'Test Package'
-                            Version = '1.0.0'
-                        }
-                    )
-                }
-    
+
                 # Act
                 Install-GistGetPackage -Query "test" -Confirm:$false
-    
+
                 # Assert
                 Should -Invoke Confirm-Reboot -ParameterFilter {
-                    $PackageIds -contains "TestPackage.Id"
+                    $PackageIds -contains $testPackage.Id
                 }
                 Should -Invoke Restart-Computer -Times 0
             }
-    
+
             It "再起動が必要で確認にYesと答えた場合、再起動を実行" {
                 # Arrange
                 Mock Install-WinGetPackage {
                     [PSCustomObject]@{
-                        Id = "TestPackage.Id"
+                        Id = $testPackage.Id
                         RebootRequired = $true
                     }
                 }
-    
-                Mock Confirm-Reboot { return $true } -Verifiable
-    
-                Mock Find-WinGetPackage { 
-                    @(
-                        [PSCustomObject]@{
-                            Id = 'TestPackage.Id'
-                            Name = 'Test Package'
-                            Version = '1.0.0'
-                        }
-                    )
-                }
-    
+                Mock Confirm-Reboot { $true }
+
                 # Act
                 Install-GistGetPackage -Query "test" -Confirm:$false
-    
+
                 # Assert
-                Should -Invoke Confirm-Reboot -Times 1 -ParameterFilter {
-                    $PackageIds.Count -eq 1 -and
-                    $PackageIds -contains 'TestPackage.Id'
-                }
+                Should -Invoke Confirm-Reboot -Times 1
                 Should -Invoke Restart-Computer -Times 1 -ParameterFilter {
                     $Force -eq $true
                 }
             }
-    
+
             It "再起動が不要な場合、確認を表示しない" {
-                # Arrange
-                Mock Install-WinGetPackage {
-                    [PSCustomObject]@{
-                        Id = "TestPackage.Id"
-                        RebootRequired = $false
-                    }
-                }
-    
-                Mock Find-WinGetPackage { 
-                    @(
-                        [PSCustomObject]@{
-                            Id = 'TestPackage.Id'
-                            Name = 'Test Package'
-                            Version = '1.0.0'
-                        }
-                    )
-                }
-                Mock Confirm-Reboot {}
-                Mock Restart-Computer {}
-    
                 # Act
                 Install-GistGetPackage -Query "test" -Confirm:$false
-    
+
                 # Assert
                 Should -Invoke Confirm-Reboot -Times 0
                 Should -Invoke Restart-Computer -Times 0
