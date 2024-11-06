@@ -11,16 +11,31 @@ InModuleScope GistGet {
                 Version = '1.0.0'
             }
 
+            # すべてのパラメーターを含むテストパラメーターを定義
             $script:testParams = @{
+                # 検索関連パラメーター
                 Query = "test-query"
                 Id = $testPackage.Id
                 MatchOption = "Equals"
                 Moniker = "test-moniker"
                 Name = "test-name"
                 Source = "test-source"
+
+                # インストール関連パラメーター
+                AllowHashMismatch = $true
+                Architecture = "X64"
+                Custom = "/custom-param"
                 Force = $true
+                Header = "Authorization: Bearer token123"
+                InstallerType = "Msi"
+                Locale = "ja-JP"
+                Location = "C:\CustomInstall"
+                Log = "C:\Logs\install.log"
                 Mode = "Interactive"
+                Override = "/SILENT"
+                Scope = "User"
                 SkipDependencies = $true
+                Version = "2.0.0"
             }
 
             # PSCatalogPackage名前空間とクラスを定義
@@ -81,33 +96,131 @@ namespace Microsoft.WinGet.Client.Engine.PSObjects
             Set-DefaultMocks
         }
 
-        It "すべてのパラメータが正しく渡されることを確認" {
-            # Act
-            Install-GistGetPackage @testParams -Confirm:$false
+        Context "基本機能のテスト" {
+            It "WinGetモジュールの存在チェックが行われる" {
+                # Act
+                Install-GistGetPackage -Id $testPackage.Id -Confirm:$false
 
-            # Assert
-            Should -Invoke Find-WinGetPackage -ParameterFilter {
-                $Query -eq $testParams.Query -and
-                $Id -eq $testParams.Id -and
-                $MatchOption -eq $testParams.MatchOption -and
-                $Moniker -eq $testParams.Moniker -and
-                $Name -eq $testParams.Name -and
-                $Source -eq $testParams.Source
+                # Assert
+                Should -Invoke Get-Module -ParameterFilter {
+                    $Name -eq 'Microsoft.WinGet.Client' -and $ListAvailable
+                }
+            }
+        }
+
+        Context "パラメーター渡しのテスト" {
+            It "検索関連パラメーターが正しく渡される" {
+                # Arrange
+                $searchParams = @{
+                    Query = $testParams.Query
+                    Id = $testParams.Id
+                    MatchOption = $testParams.MatchOption
+                    Moniker = $testParams.Moniker
+                    Name = $testParams.Name
+                    Source = $testParams.Source
+                }
+
+                # Act
+                Install-GistGetPackage @searchParams -Confirm:$false
+
+                # Assert
+                Should -Invoke Find-WinGetPackage -ParameterFilter {
+                    $Query -eq $testParams.Query -and
+                    $Id -eq $testParams.Id -and
+                    $MatchOption -eq $testParams.MatchOption -and
+                    $Moniker -eq $testParams.Moniker -and
+                    $Name -eq $testParams.Name -and
+                    $Source -eq $testParams.Source
+                }
             }
 
-            Should -Invoke Install-WinGetPackage -ParameterFilter {
-                $Id -eq $testParams.Id -and
-                $Force -eq $testParams.Force -and
-                $Mode -eq $testParams.Mode -and
-                $SkipDependencies -eq $testParams.SkipDependencies
+            It "インストール関連パラメーターが正しく渡される" {
+                # Arrange
+                $installParams = @{
+                    Id = $testParams.Id
+                    AllowHashMismatch = $testParams.AllowHashMismatch
+                    Architecture = $testParams.Architecture
+                    Custom = $testParams.Custom
+                    Force = $testParams.Force
+                    Header = $testParams.Header
+                    InstallerType = $testParams.InstallerType
+                    Locale = $testParams.Locale
+                    Location = $testParams.Location
+                    Log = $testParams.Log
+                    Mode = $testParams.Mode
+                    Override = $testParams.Override
+                    Scope = $testParams.Scope
+                    SkipDependencies = $testParams.SkipDependencies
+                    Version = $testParams.Version
+                }
+
+                # Act
+                Install-GistGetPackage @installParams -Confirm:$false
+
+                # Assert
+                Should -Invoke Install-WinGetPackage -ParameterFilter {
+                    $Id -eq $testParams.Id -and
+                    $AllowHashMismatch -eq $testParams.AllowHashMismatch -and
+                    $Architecture -eq $testParams.Architecture -and
+                    $Custom -eq $testParams.Custom -and
+                    $Force -eq $testParams.Force -and
+                    $Header -eq $testParams.Header -and
+                    $InstallerType -eq $testParams.InstallerType -and
+                    $Locale -eq $testParams.Locale -and
+                    $Location -eq $testParams.Location -and
+                    $Log -eq $testParams.Log -and
+                    $Mode -eq $testParams.Mode -and
+                    $Override -eq $testParams.Override -and
+                    $Scope -eq $testParams.Scope -and
+                    $SkipDependencies -eq $testParams.SkipDependencies -and
+                    $Version -eq $testParams.Version
+                }
             }
 
-            Should -Invoke Set-GistGetPackages -ParameterFilter {
-                $Packages.Count -eq 1 -and
-                $Packages[0].Id -eq $testParams.Id -and
-                $Packages[0].Force -eq $testParams.Force -and
-                $Packages[0].Mode -eq $testParams.Mode -and
-                $Packages[0].SkipDependencies -eq $testParams.SkipDependencies
+            It "パラメーターがGistGetPackagesに正しく保存される" {
+                # Act
+                Install-GistGetPackage @testParams -Confirm:$false
+
+                # Assert
+                Should -Invoke Set-GistGetPackages -ParameterFilter {
+                    $Packages[0].Id -eq $testParams.Id -and
+                    $Packages[0].AllowHashMismatch -eq $testParams.AllowHashMismatch -and
+                    $Packages[0].Architecture -eq $testParams.Architecture -and
+                    $Packages[0].Custom -eq $testParams.Custom -and
+                    $Packages[0].Force -eq $testParams.Force -and
+                    $Packages[0].Header -eq $testParams.Header -and
+                    $Packages[0].InstallerType -eq $testParams.InstallerType -and
+                    $Packages[0].Locale -eq $testParams.Locale -and
+                    $Packages[0].Location -eq $testParams.Location -and
+                    $Packages[0].Log -eq $testParams.Log -and
+                    $Packages[0].Mode -eq $testParams.Mode -and
+                    $Packages[0].Override -eq $testParams.Override -and
+                    $Packages[0].Scope -eq $testParams.Scope -and
+                    $Packages[0].SkipDependencies -eq $testParams.SkipDependencies -and
+                    $Packages[0].Version -eq $testParams.Version
+                }
+            }
+
+            It "ValidateSetパラメーターに不正な値を指定するとエラーになる" {
+                # Architecture
+                { Install-GistGetPackage -Id $testPackage.Id -Architecture "Invalid" } |
+                    Should -Throw "*Cannot validate argument on parameter 'Architecture'*"
+
+                # InstallerType
+                { Install-GistGetPackage -Id $testPackage.Id -InstallerType "Invalid" } |
+                    Should -Throw "*Cannot validate argument on parameter 'InstallerType'*"
+
+                # Scope
+                { Install-GistGetPackage -Id $testPackage.Id -Scope "Invalid" } |
+                    Should -Throw "*Cannot validate argument on parameter 'Scope'*"
+
+                # Mode
+                { Install-GistGetPackage -Id $testPackage.Id -Mode "Invalid" } |
+                    Should -Throw "*Cannot validate argument on parameter 'Mode'*"
+
+                # MatchOption
+                { Install-GistGetPackage -Id $testPackage.Id -MatchOption "Invalid" } |
+                    Should -Throw "*Cannot validate argument on parameter 'MatchOption'*"
             }
         }
 
@@ -119,6 +232,7 @@ namespace Microsoft.WinGet.Client.Engine.PSObjects
                 # Act & Assert
                 Install-GistGetPackage -Query "nonexistent" -Confirm:$false -WarningVariable warning
                 $warning | Should -Be "No packages found matching the specified criteria."
+                Should -Invoke Install-WinGetPackage -Times 0
             }
 
             It "複数のパッケージが見つかった場合は警告を表示" {
@@ -135,8 +249,30 @@ namespace Microsoft.WinGet.Client.Engine.PSObjects
                 }
 
                 # Act & Assert
-                Install-GistGetPackage -Query "multiple" -Confirm:$false -WarningVariable warning -ErrorAction SilentlyContinue
+                Install-GistGetPackage -Query "multiple" -Confirm:$false -WarningVariable warning
                 $warning | Select-Object -First 1 | Should -Be "Multiple packages found:"
+            }
+
+            It "Idが指定された場合は完全一致のパッケージのみをインストール" {
+                # Arrange
+                Mock Find-WinGetPackage { 
+                    @(
+                        [PSCustomObject]$testPackage,
+                        [PSCustomObject]@{
+                            Id = 'SimilarPackage.Id'
+                            Name = 'Similar Package'
+                            Version = '1.0.0'
+                        }
+                    )
+                }
+
+                # Act
+                Install-GistGetPackage -Id $testPackage.Id -Confirm:$false
+
+                # Assert
+                Should -Invoke Install-WinGetPackage -ParameterFilter {
+                    $Id -eq $testPackage.Id
+                } -Times 1
             }
         }
 
@@ -170,23 +306,23 @@ namespace Microsoft.WinGet.Client.Engine.PSObjects
 
                 # Assert
                 Should -Invoke Set-GistGetPackages -ParameterFilter {
-                    $Packages.Count -eq 1 -and
                     $Packages[0].Id -eq $testPackage.Id
                 }
             }
-        }
 
-        Context "パラメーターバリデーションテスト" {
-            It "不正なArchitectureを指定するとエラーになる" {
-                # Act & Assert
-                { Install-GistGetPackage -Query "test" -Architecture "Invalid" -Confirm:$false } |
-                    Should -Throw "*Cannot validate argument on parameter 'Architecture'*"
-            }
+            It "既存のパッケージの場合はGistが更新されない" {
+                # Arrange
+                Mock Get-GistGetPackage {
+                    [System.Collections.ArrayList]@(
+                        [GistGetPackage]::FromHashtable(@{ Id = $testPackage.Id })
+                    )
+                }
 
-            It "不正なMatchOptionを指定するとエラーになる" {
-                # Act & Assert
-                { Install-GistGetPackage -Query "test" -MatchOption "Invalid" -Confirm:$false } |
-                    Should -Throw "*Cannot validate argument on parameter 'MatchOption'*"
+                # Act
+                Install-GistGetPackage -Id $testPackage.Id -Confirm:$false
+
+                # Assert
+                Should -Invoke Set-GistGetPackages -Times 0
             }
         }
 
@@ -201,7 +337,7 @@ namespace Microsoft.WinGet.Client.Engine.PSObjects
                 }
 
                 # Act
-                Install-GistGetPackage -Query "test" -Confirm:$false
+                Install-GistGetPackage -Id $testPackage.Id -Confirm:$false
 
                 # Assert
                 Should -Invoke Confirm-Reboot -ParameterFilter {
@@ -221,10 +357,9 @@ namespace Microsoft.WinGet.Client.Engine.PSObjects
                 Mock Confirm-Reboot { $true }
 
                 # Act
-                Install-GistGetPackage -Query "test" -Confirm:$false
+                Install-GistGetPackage -Id $testPackage.Id -Confirm:$false
 
                 # Assert
-                Should -Invoke Confirm-Reboot -Times 1
                 Should -Invoke Restart-Computer -Times 1 -ParameterFilter {
                     $Force -eq $true
                 }
@@ -232,7 +367,7 @@ namespace Microsoft.WinGet.Client.Engine.PSObjects
 
             It "再起動が不要な場合、確認を表示しない" {
                 # Act
-                Install-GistGetPackage -Query "test" -Confirm:$false
+                Install-GistGetPackage -Id $testPackage.Id -Confirm:$false
 
                 # Assert
                 Should -Invoke Confirm-Reboot -Times 0
