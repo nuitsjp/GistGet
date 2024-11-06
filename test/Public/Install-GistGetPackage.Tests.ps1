@@ -61,9 +61,8 @@ namespace Microsoft.WinGet.Client.Engine.PSObjects
                 }
 
                 Mock Get-GistGetPackage { 
-                    [System.Collections.ArrayList]@()
+                    [GistGetPackage[]]@()
                 }
-
                 Mock Find-WinGetPackage { 
                     [PSCustomObject]$script:testPackage
                 }

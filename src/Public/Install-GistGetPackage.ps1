@@ -241,7 +241,7 @@ function Install-GistGetPackage {
                                 }
                             }
 
-                            $gistGetPackages += [GistGetPackage]::FromHashtable($filteredPackage)
+                            $gistGetPackages = @($gistGetPackages) + @([GistGetPackage]::FromHashtable($filteredPackage))
 
                             $isAppendPackage = $true
                             Write-Verbose "Added package $($package.Id) to Gist package list"
