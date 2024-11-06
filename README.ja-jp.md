@@ -38,7 +38,7 @@ Set-GitHubToken github_pat_11AD3NELA0SGEHcrynCMSo...
 ```yaml
 7zip.7zip:
 Microsoft.VisualStudioCode:
-  override: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
+  custom: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
 ```
 
 Gistの定義に従ってパッケージを同期します。
@@ -64,7 +64,7 @@ GistGetのコマンドを通してインストールすると、Gist上の定義
 ```yaml
 7zip.7zip:
 Microsoft.VisualStudioCode:
-  override: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
+  custom: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
 Git.Git:
 ```
 
@@ -81,7 +81,7 @@ Gist上の定義ファイルも同期されます。
 ```yaml
 7zip.7zip:
 Microsoft.VisualStudioCode:
-  override: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
+  custom: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
 Git.Git:
   uninstall: true
 ```

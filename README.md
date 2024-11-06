@@ -40,7 +40,7 @@ Create an installation list in Gist.
 ```yaml
 7zip.7zip:
 Microsoft.VisualStudioCode:
-  override: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
+  custom: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
 ```
 
 Synchronize packages according to the Gist definition.
@@ -66,7 +66,7 @@ When installing through GistGet commands, the definition file on Gist is also up
 ```yaml
 7zip.7zip:
 Microsoft.VisualStudioCode:
-  override: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
+  custom: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
 Git.Git:
 ```
 
@@ -83,7 +83,7 @@ The definition file on Gist is also synchronized.
 ```yaml
 7zip.7zip:
 Microsoft.VisualStudioCode:
-  override: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
+  custom: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
 Git.Git:
   uninstall: true
 ```
