@@ -212,41 +212,41 @@ function Install-GistGetPackage {
                         }
 
 
-                        # Gistパッケージリストに含まれていない場合は追加
-                        if (-not ($gistGetPackages | Where-Object { $_.id -eq $package.Id })) {
-                            # Install-GistGetPackageの該当部分
-                            $gistGetPackage = @{
-                                id = $package.Id
-                                allowHashMismatch = $installParams.ContainsKey('AllowHashMismatch') -and $installParams['AllowHashMismatch']
-                                architecture = $installParams['Architecture']
-                                custom = $installParams['Custom']
-                                force = $installParams.ContainsKey('Force') -and $installParams['Force']
-                                header = $installParams['Header']
-                                installerType = $installParams['InstallerType']
-                                locale = $installParams['Locale']
-                                location = $installParams['Location']
-                                log = $installParams['Log']
-                                mode = $installParams['Mode']
-                                override = $installParams['Override']
-                                scope = $installParams['Scope']
-                                skipDependencies = $installParams.ContainsKey('SkipDependencies') -and $installParams['SkipDependencies']
-                                version = $installParams['Version']
-                            }
+                        # 既存のパッケージを削除
+                        $gistGetPackages = @($gistGetPackages | Where-Object { $_.id -ne $package.Id })
 
-                            # nullの値を持つキーを削除
-                            $filteredPackage = @{}
-                            foreach ($key in $gistGetPackage.Keys) {
-                                if ($null -ne $gistGetPackage[$key]) {
-                                    $filteredPackage[$key] = $gistGetPackage[$key]
-                                }
-                            }
-
-                            $gistGetPackages = @($gistGetPackages) + @([GistGetPackage]::FromHashtable($filteredPackage))
-
-                            $isAppendPackage = $true
-                            Write-Verbose "Added package $($package.Id) to Gist package list"
+                        # 新しいパッケージを作成
+                        $gistGetPackage = @{
+                            id = $package.Id
+                            allowHashMismatch = $installParams.ContainsKey('AllowHashMismatch') -and $installParams['AllowHashMismatch']
+                            architecture = $installParams['Architecture']
+                            custom = $installParams['Custom']
+                            force = $installParams.ContainsKey('Force') -and $installParams['Force']
+                            header = $installParams['Header']
+                            installerType = $installParams['InstallerType']
+                            locale = $installParams['Locale']
+                            location = $installParams['Location']
+                            log = $installParams['Log']
+                            mode = $installParams['Mode']
+                            override = $installParams['Override']
+                            scope = $installParams['Scope']
+                            skipDependencies = $installParams.ContainsKey('SkipDependencies') -and $installParams['SkipDependencies']
+                            version = $installParams['Version']
                         }
-                    }
+
+                        # nullの値を持つキーを削除
+                        $filteredPackage = @{}
+                        foreach ($key in $gistGetPackage.Keys) {
+                            if ($null -ne $gistGetPackage[$key]) {
+                                $filteredPackage[$key] = $gistGetPackage[$key]
+                            }
+                        }
+
+                        # 新しいパッケージを追加
+                        $gistGetPackages = @($gistGetPackages) + @([GistGetPackage]::FromHashtable($filteredPackage))
+                        $isAppendPackage = $true
+
+                        Write-Verbose "Updated package $($package.Id) in Gist package list"                    }
                     catch {
                         Write-Error "Failed to install package $($package.Name) ($($package.Id)): $_"
                         continue

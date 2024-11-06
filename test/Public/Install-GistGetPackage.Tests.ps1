@@ -309,19 +309,54 @@ namespace Microsoft.WinGet.Client.Engine.PSObjects
                 }
             }
 
-            It "既存のパッケージの場合はGistが更新されない" {
+            It "既存のパッケージの場合は更新される" {
                 # Arrange
                 Mock Get-GistGetPackage {
                     [System.Collections.ArrayList]@(
-                        [GistGetPackage]::FromHashtable(@{ Id = $testPackage.Id })
+                        [GistGetPackage]::FromHashtable(@{ 
+                            Id = $testPackage.Id
+                            Architecture = "X86"  # 古い設定
+                        })
                     )
                 }
 
                 # Act
-                Install-GistGetPackage -Id $testPackage.Id -Confirm:$false
+                Install-GistGetPackage -Id $testPackage.Id -Architecture "X64" -Confirm:$false
 
                 # Assert
-                Should -Invoke Set-GistGetPackages -Times 0
+                Should -Invoke Set-GistGetPackages -ParameterFilter {
+                    ($Packages | Where-Object { $_.Id -eq $testPackage.Id }).Architecture -eq "X64"
+                } -Times 1
+            }
+
+            It "既存のパッケージが削除されて新しい設定で追加される" {
+                # Arrange
+                $oldSettings = @{
+                    Id = $testPackage.Id
+                    Architecture = "X86"
+                    Mode = "Silent"
+                }
+                Mock Get-GistGetPackage {
+                    [System.Collections.ArrayList]@(
+                        [GistGetPackage]::FromHashtable($oldSettings)
+                    )
+                }
+
+                $newSettings = @{
+                    Id = $testPackage.Id
+                    Architecture = "X64"
+                    Mode = "Interactive"
+                }
+
+                # Act
+                Install-GistGetPackage @newSettings -Confirm:$false
+
+                # Assert
+                Should -Invoke Set-GistGetPackages -ParameterFilter {
+                    $pkg = $Packages | Where-Object { $_.Id -eq $testPackage.Id }
+                    $pkg.Architecture -eq "X64" -and
+                    $pkg.Mode -eq "Interactive"
+                }
             }
         }
 
