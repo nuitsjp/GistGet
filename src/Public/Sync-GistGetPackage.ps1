@@ -75,7 +75,7 @@ function Sync-GistGetPackage {
                 Write-Host "Installing package $packageId"
                 $findParams = $package.ToHashtable()
         
-                $installed += Install-WinGetPackage @findParams
+                $installed = Install-WinGetPackage @findParams
                 $installs += $packageId
                 if ($installed.RebootRequired) {
                     $needRebootPackages += $packageId
