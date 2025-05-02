@@ -30,7 +30,7 @@
     RequiredModules = @(
         @{
             ModuleName = 'powershell-yaml'
-            ModuleVersion = '0.4.7'
+            ModuleVersion = '0.4.12'
         },
         @{
             ModuleName = 'PowerShellForGitHub'
@@ -38,7 +38,7 @@
         },
         @{
             ModuleName = 'Microsoft.WinGet.Client'
-            ModuleVersion = '1.6.2'
+            ModuleVersion = '1.10.340'
         }
     )
 
