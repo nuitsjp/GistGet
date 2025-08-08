@@ -6,14 +6,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 GistGet is a PowerShell module for managing WinGet installation lists on GitHub Gist. It synchronizes package definitions between local environments and cloud-stored YAML files, enabling consistent development environment setup across machines.
 
+The repository is organized with PowerShell code in the `powershell/` directory as preparation for future .NET 8 development (see README.md for .NET architecture plans).
+
 ## Core Architecture
 
 ### Module Structure
-- **Module Entry Point**: `src/GistGet.psm1` - Main module file that loads classes and functions
-- **Classes**: `src/Classes.ps1` - Contains `GistFile` and `GistGetPackage` classes with YAML serialization
-- **Public Functions**: `src/Public/` - User-facing cmdlets (Set-GitHubToken, Sync-GistGetPackage, Install-GistGetPackage, etc.)
-- **Private Functions**: `src/Private/` - Internal helper functions for Gist operations and environment management
-- **Module Manifest**: `src/GistGet.psd1` - Defines module metadata, exports, and dependencies
+- **Module Entry Point**: `powershell/src/GistGet.psm1` - Main module file that loads classes and functions
+- **Classes**: `powershell/src/Classes.ps1` - Contains `GistFile` and `GistGetPackage` classes with YAML serialization
+- **Public Functions**: `powershell/src/Public/` - User-facing cmdlets (Set-GitHubToken, Sync-GistGetPackage, Install-GistGetPackage, etc.)
+- **Private Functions**: `powershell/src/Private/` - Internal helper functions for Gist operations and environment management
+- **Module Manifest**: `powershell/src/GistGet.psd1` - Defines module metadata, exports, and dependencies
 
 ### Key Dependencies
 - `powershell-yaml` (0.4.12) - YAML parsing and generation
@@ -27,33 +29,37 @@ The `GistGetPackage` class represents WinGet packages with properties like Id, C
 
 ### Testing
 ```powershell
-# Run all tests
-.\test\Invoke-Test.ps1
+# Run all tests (from project root)
+.\powershell\test\Invoke-Test.ps1
 
 # Run specific test (from project root)
-Invoke-Pester -Path "test/Public/Install-GistGetPackage.Tests.ps1"
+Invoke-Pester -Path "powershell/test/Public/Install-GistGetPackage.Tests.ps1"
+
+# Run all tests using Pester directly
+$testPath = Join-Path (Get-Location) 'powershell\test'
+Invoke-Pester -Path $testPath
 ```
 
 ### Building
 ```powershell
 # Build module (runs tests, copies source to build/Output, updates version)
-.\build\build.ps1
+.\powershell\build\build.ps1
 ```
 
 ### Publishing
 ```powershell
 # Publish to PowerShell Gallery (requires GIST_GET_API_KEY environment variable)
-.\build\publish.ps1
+.\powershell\build\publish.ps1
 
 # Test publish (dry run)
-.\build\publish.ps1 -WhatIf
+.\powershell\build\publish.ps1 -WhatIf
 ```
 
 ## Code Patterns
 
 ### Function Organization
-- All public functions are in `src/Public/` and exported in the module manifest
-- Private helpers in `src/Private/` handle Gist operations, environment variables, and confirmation dialogs
+- All public functions are in `powershell/src/Public/` and exported in the module manifest
+- Private helpers in `powershell/src/Private/` handle Gist operations, environment variables, and confirmation dialogs
 - Functions follow PowerShell naming conventions: Verb-Noun pattern
 
 ### Error Handling
@@ -75,6 +81,10 @@ Package definitions are stored as YAML in Gist files. The `GistGetPackage` class
 
 Tests use Pester framework with:
 - Mock objects for external dependencies (WinGet, GitHub API)
-- Test asset YAML files in `test/*/assets/` directories
+- Test asset YAML files in `powershell/test/*/assets/` directories
 - Separate test files for each public function
 - Module import with `-Force` flag in test runner
+
+## Future Development Notes
+
+The repository is structured to support future .NET 8 development alongside the PowerShell module. The README.md contains detailed architectural plans for a .NET 8 implementation using WinGet COM API with OAuth Device Flow authentication for GitHub Gist synchronization.
