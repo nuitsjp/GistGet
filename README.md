@@ -21,14 +21,10 @@
   * COM 呼び出しはこのラッパー内で完結。
   * 必要に応じて CLI フォールバックレイヤーも設置。
 
-#### B. 同期ドメイン（SyncEngine）
+#### B. 同期ドメイン
 
-* Gist に保存された JSON/YAML → 差分計算 → COM API を用いて WinGet 操作を実行。
-* 同期対象:
-
-  * `packages.json`（export 互換）
-  * `sources.json`（source export）
-  * オプションで WinGet Configuration（YAML）
+* Gist に保存されたファイルをもとに設定を同期する
+* [PowerShell版](./powershell/)の実装に準拠する
 
 #### C. 認証（GitHub Gist への安全なアクセス）
 
@@ -46,52 +42,6 @@
 * アクセストークンは **Windows DPAPI** などでユーザー領域に暗号化保存。
 * トークンが未設定／期限切れの場合、自動トークン再取得（Device Flow 再実行）。
 
----
-
-### 3. 実装ステップ（ローディング順）
-
-| ステップ | 内容                                                                                                                             |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------ |
-| 1⃣   | .NET 8 プロジェクト設定 <br>– `net8.0-windows10.0.26100` ターゲット。                                                                        |
-| 2⃣   | WinGet COM ラッパー実装 <br>– NuGet 1.11.430 導入、`IWinGetClient` 層実装。                                                                 |
-| 3⃣   | OAuth Device Flow 機構追加 <br>– トークン取得（Device Flow）、トークン保存。                                                                       |
-| 4⃣   | Gist 操作モジュール <br>– 読み書き、JSON/YAML 操作。                                                                                          |
-| 5⃣   | SyncEngine 構築 <br>– 差分抽出と Plan → 実行。                                                                                           |
-| 6⃣   | E2E テスト整備 <br>– Windows Sandbox などで export/import/Azure 上でテスト。                                                                 |
-| 7⃣   | パッケージ化 <br>– self-contained 配布形式にまとめ、winget‑pkgs に公開マニフェスト PR。([Microsoft Learn][5], [Reddit][6], [GitHub][7], [nuget.org][2]) |
-
----
-
-### 4. 注意点と技術的検討
-
-* **App Installer（WinGet クライアント）依存**は継続（特に Server 環境）([Microsoft Learn][5])。
-* **ユーザーコンテキスト依存**: SYSTEM やサービスとしての利用には別対応が必要（後回し推奨）。
-* **API の互換性**: winget の更新により挙動が変わる可能性あり → **バージョン固定＋自動回帰テスト**が必要。
-* **Device Flow 固有エラー対策**: `interval` 調整、`slow_down` などのエラー処理必須([GitHub Docs][3])。
-
----
-
-### 5. 技術選定図案（簡易フロー図・モジュール構成）
-
-```
-[Entry Point / CLI]
-       │
-       ▼
-[AuthManager] ←─(DPAPI 保存)─←──[OAuth Device Flow]
-       │
-       ▼
-[GistStore] ←─(GitHub Gist API + Bearer Token)
-       │
-       ▼
-[SyncEngine] ── extract plan → calls → [WinGetClient (COM)]
-       │
-       ▼
-[WinGet COM API] (package install/export/configure)
-```
-
----
-
-ご希望があれば、この Canvas をもとに **README ドキュメントの Markdown 化**や **コード雛形生成**も可能です。どちらから進めましょうか？
 
 [1]: https://github.com/microsoft/winget-cli/issues/4320?utm_source=chatgpt.com "Issues with COM API and retrieving installed packages"
 [2]: https://www.nuget.org/packages/Microsoft.WindowsPackageManager.ComInterop?utm_source=chatgpt.com "Microsoft.WindowsPackageManager.ComInterop 1.11.430"
