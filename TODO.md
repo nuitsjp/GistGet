@@ -27,13 +27,19 @@ winget.exe完全準拠の.NET 8アプリケーション開発に向けた詳細�
 ```
 
 ### 詳細タスク
-- [ ] winget --help の全コマンド調査
-- [ ] 各コマンドの --help 詳細調査 (install, list, upgrade, source, settings等)
-- [ ] サブコマンド構造の完全マッピング (source add/list/update/remove等)
-- [ ] 引数の相互排他性調査 (--id vs --name vs --query)
-- [ ] 条件付きオプション調査 (--include-unknown requires --upgrade-available)
-- [ ] エラーパターン調査とメッセージカタログ作成
-- [ ] 実際のwinget.exeでのテストケース実行・検証
+- [x] winget --help の全コマンド調査
+- [x] 各コマンドの --help 詳細調査 (install, list, upgrade, source, settings等)
+- [x] サブコマンド構造の完全マッピング (source add/list/update/remove等)
+- [x] 引数の相互排他性調査 (--id vs --name vs --query)
+- [x] 条件付きオプション調査 (--include-unknown requires --upgrade-available)
+- [x] エラーパターン調査とメッセージカタログ作成
+- [x] 実際のwinget.exeでのテストケース実行・検証
+
+### 成果物（完了）
+- [x] `docs/winget-commands-spec.md` - 全18コマンド詳細仕様書作成完了
+- [x] `docs/winget-arguments-matrix.md` - 引数相互関係マトリックス作成完了
+- [x] `docs/winget-validation-rules.md` - バリデーションルール定義作成完了
+- [x] `docs/winget-examples.md` - 使用例集作成完了
 
 ---
 
@@ -200,7 +206,7 @@ winget.exe完全準拠の.NET 8アプリケーション開発に向けた詳細�
 ## 進捗管理
 
 ### 完了チェックリスト
-- [ ] フェーズ1: WinGetコマンド完全仕様書作成
+- [x] フェーズ1: WinGetコマンド完全仕様書作成
 - [ ] フェーズ2: カスタム引数パーサー実装
 - [ ] フェーズ3: COM APIラッパー実装
 - [ ] フェーズ4: Gist同期機能統合
