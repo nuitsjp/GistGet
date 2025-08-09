@@ -5,7 +5,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>NuitsJp.GistGet</AssemblyName>
+    <AssemblyName>GistGet</AssemblyName>
     <RootNamespace>NuitsJp.GistGet</RootNamespace>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageId>NuitsJp.GistGet</PackageId>

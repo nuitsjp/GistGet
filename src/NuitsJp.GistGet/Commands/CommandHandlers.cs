@@ -212,3 +212,101 @@ public class Dscv3CommandHandler : BaseCommandHandler
         return 0;
     }
 }
+
+#region Source Subcommand Handlers
+
+public class SourceAddCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Source add command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
+
+public class SourceListCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Source list command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
+
+public class SourceUpdateCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Source update command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
+
+public class SourceRemoveCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Source remove command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
+
+public class SourceResetCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Source reset command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
+
+public class SourceExportCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Source export command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
+
+#endregion
+
+#region Settings Subcommand Handlers
+
+public class SettingsExportCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Settings export command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
+
+public class SettingsSetCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Settings set command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
+
+public class SettingsResetCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Settings reset command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
+
+#endregion

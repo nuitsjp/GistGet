@@ -10,6 +10,7 @@ namespace NuitsJp.GistGet.ArgumentParser;
 /// </summary>
 public class WinGetArgumentParser : IWinGetArgumentParser
 {
+    private readonly ValidationEngine _validationEngine = new();
     public RootCommand BuildRootCommand()
     {
         var rootCommand = new RootCommand("WinGet-compatible package manager with GitHub Gist synchronization")
@@ -45,20 +46,8 @@ public class WinGetArgumentParser : IWinGetArgumentParser
 
     public ValidationResult ValidateArguments(ParseResult parseResult)
     {
-        var errors = new List<string>();
-        var warnings = new List<string>();
-
-        // Implement comprehensive validation logic based on winget specifications
-        ValidateMutualExclusivity(parseResult, errors);
-        ValidateConditionalRequirements(parseResult, errors);
-        ValidateOptionCombinations(parseResult, errors, warnings);
-
-        if (errors.Count > 0)
-        {
-            return ValidationResult.Failure(errors).WithWarnings(warnings);
-        }
-
-        return ValidationResult.Success().WithWarnings(warnings);
+        // Delegate to the comprehensive validation engine
+        return _validationEngine.ValidateCommand(parseResult);
     }
 
     private void AddGlobalOptions(RootCommand rootCommand)
@@ -307,12 +296,37 @@ public class WinGetArgumentParser : IWinGetArgumentParser
         return upgradeCommand;
     }
 
-    // Placeholder implementations for remaining commands
+    // Placeholder implementations for basic commands
     private Command BuildUninstallCommand() => new Command("uninstall", "Uninstall packages") { Handler = new UninstallCommandHandler() };
     private Command BuildSearchCommand() => new Command("search", "Search for packages") { Handler = new SearchCommandHandler() };
     private Command BuildShowCommand() => new Command("show", "Show package information") { Handler = new ShowCommandHandler() };
-    private Command BuildSourceCommand() => new Command("source", "Manage package sources") { Handler = new SourceCommandHandler() };
-    private Command BuildSettingsCommand() => new Command("settings", "Manage settings") { Handler = new SettingsCommandHandler() };
+    
+    private Command BuildSourceCommand()
+    {
+        var sourceCommand = new Command("source", "Manage package sources");
+
+        // Add source subcommands
+        sourceCommand.AddCommand(BuildSourceAddCommand());
+        sourceCommand.AddCommand(BuildSourceListCommand());
+        sourceCommand.AddCommand(BuildSourceUpdateCommand());
+        sourceCommand.AddCommand(BuildSourceRemoveCommand());
+        sourceCommand.AddCommand(BuildSourceResetCommand());
+        sourceCommand.AddCommand(BuildSourceExportCommand());
+
+        return sourceCommand;
+    }
+
+    private Command BuildSettingsCommand()
+    {
+        var settingsCommand = new Command("settings", "Manage settings");
+
+        // Add settings subcommands
+        settingsCommand.AddCommand(BuildSettingsExportCommand());
+        settingsCommand.AddCommand(BuildSettingsSetCommand());
+        settingsCommand.AddCommand(BuildSettingsResetCommand());
+
+        return settingsCommand;
+    }
     private Command BuildExportCommand() => new Command("export", "Export package list") { Handler = new ExportCommandHandler() };
     private Command BuildImportCommand() => new Command("import", "Import package list") { Handler = new ImportCommandHandler() };
     private Command BuildPinCommand() => new Command("pin", "Manage package pins") { Handler = new PinCommandHandler() };
@@ -324,64 +338,142 @@ public class WinGetArgumentParser : IWinGetArgumentParser
     private Command BuildFeaturesCommand() => new Command("features", "Manage experimental features") { Handler = new FeaturesCommandHandler() };
     private Command BuildDscv3Command() => new Command("dscv3", "DSC v3 resources") { Handler = new Dscv3CommandHandler() };
 
-    private void ValidateMutualExclusivity(ParseResult parseResult, List<string> errors)
+    #region Source Subcommands
+
+    private Command BuildSourceAddCommand()
     {
-        // Implement mutual exclusivity validation
-        // Example: --id, --name, --moniker, --query are mutually exclusive for install/upgrade
-        
-        var command = parseResult.CommandResult.Command;
-        if (command.Name == "install" || command.Name == "upgrade" || command.Name == "add" || command.Name == "update")
+        var addCommand = new Command("add", "Add a new source")
         {
-            var mutuallyExclusiveOptions = new[] { "--id", "--name", "--moniker", "--query" };
-            var presentOptions = mutuallyExclusiveOptions
-                .Where(opt => parseResult.HasOption(opt))
-                .ToList();
+            Handler = new SourceAddCommandHandler()
+        };
 
-            if (presentOptions.Count > 1)
-            {
-                errors.Add($"The following options are mutually exclusive: {string.Join(", ", presentOptions)}");
-            }
-        }
+        addCommand.AddOption(new Option<string>(
+            aliases: new[] { "--name", "-n" },
+            description: "Name to be given to the source") { IsRequired = true });
+
+        addCommand.AddOption(new Option<string>(
+            aliases: new[] { "--arg", "-a" },
+            description: "URL or path to the source") { IsRequired = true });
+
+        addCommand.AddOption(new Option<string>(
+            aliases: new[] { "--type", "-t" },
+            description: "Type of source"));
+
+        addCommand.AddOption(new Option<string>(
+            aliases: new[] { "--trust-level" },
+            description: "Trust level of the source"));
+
+        return addCommand;
     }
 
-    private void ValidateConditionalRequirements(ParseResult parseResult, List<string> errors)
+    private Command BuildSourceListCommand()
     {
-        // Implement conditional requirement validation
-        // Example: --include-unknown requires --upgrade-available for list command
-        
-        var command = parseResult.CommandResult.Command;
-        if (command.Name == "list" || command.Name == "ls")
+        return new Command("list", "List configured sources")
         {
-            if (parseResult.HasOption("--include-unknown") && !parseResult.HasOption("--upgrade-available"))
-            {
-                errors.Add("--include-unknown option requires --upgrade-available");
-            }
-        }
+            Handler = new SourceListCommandHandler()
+        };
     }
 
-    private void ValidateOptionCombinations(ParseResult parseResult, List<string> errors, List<string> warnings)
+    private Command BuildSourceUpdateCommand()
     {
-        // Implement validation for option combinations that are invalid or produce warnings
-        
-        var command = parseResult.CommandResult.Command;
-        if (command.Name == "install" || command.Name == "add")
+        var updateCommand = new Command("update", "Update source(s)")
         {
-            // Warning for potentially conflicting installation options
-            if (parseResult.HasOption("--interactive") && parseResult.HasOption("--silent"))
-            {
-                warnings.Add("Both --interactive and --silent specified; --interactive takes precedence");
-            }
-        }
-    }
-}
+            Handler = new SourceUpdateCommandHandler()
+        };
 
-// Extension methods for ParseResult
-public static class ParseResultExtensions
-{
-    public static bool HasOption(this ParseResult parseResult, string alias)
-    {
-        return parseResult.CommandResult.Children
-            .OfType<OptionResult>()
-            .Any(o => o.Option.Aliases.Contains(alias));
+        updateCommand.AddOption(new Option<string>(
+            aliases: new[] { "--name", "-n" },
+            description: "Name of the source to update"));
+
+        return updateCommand;
     }
+
+    private Command BuildSourceRemoveCommand()
+    {
+        var removeCommand = new Command("remove", "Remove a source")
+        {
+            Handler = new SourceRemoveCommandHandler()
+        };
+
+        removeCommand.AddOption(new Option<string>(
+            aliases: new[] { "--name", "-n" },
+            description: "Name of the source to remove") { IsRequired = true });
+
+        return removeCommand;
+    }
+
+    private Command BuildSourceResetCommand()
+    {
+        var resetCommand = new Command("reset", "Reset sources to default")
+        {
+            Handler = new SourceResetCommandHandler()
+        };
+
+        resetCommand.AddOption(new Option<bool>(
+            aliases: new[] { "--force" },
+            description: "Reset without confirmation"));
+
+        return resetCommand;
+    }
+
+    private Command BuildSourceExportCommand()
+    {
+        return new Command("export", "Export configured sources")
+        {
+            Handler = new SourceExportCommandHandler()
+        };
+    }
+
+    #endregion
+
+    #region Settings Subcommands
+
+    private Command BuildSettingsExportCommand()
+    {
+        var exportCommand = new Command("export", "Export current settings")
+        {
+            Handler = new SettingsExportCommandHandler()
+        };
+
+        exportCommand.AddOption(new Option<string>(
+            aliases: new[] { "--output", "-o" },
+            description: "Output file path"));
+
+        return exportCommand;
+    }
+
+    private Command BuildSettingsSetCommand()
+    {
+        var setCommand = new Command("set", "Set a configuration setting")
+        {
+            Handler = new SettingsSetCommandHandler()
+        };
+
+        setCommand.AddOption(new Option<string>(
+            aliases: new[] { "--name", "-n" },
+            description: "Name of the setting") { IsRequired = true });
+
+        setCommand.AddOption(new Option<string>(
+            aliases: new[] { "--value", "-v" },
+            description: "Value of the setting") { IsRequired = true });
+
+        return setCommand;
+    }
+
+    private Command BuildSettingsResetCommand()
+    {
+        var resetCommand = new Command("reset", "Reset settings to default")
+        {
+            Handler = new SettingsResetCommandHandler()
+        };
+
+        resetCommand.AddOption(new Option<string>(
+            aliases: new[] { "--name", "-n" },
+            description: "Name of the setting to reset"));
+
+        return resetCommand;
+    }
+
+    #endregion
+
 }

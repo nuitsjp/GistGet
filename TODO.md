@@ -67,15 +67,15 @@ winget.exe完全準拠の.NET 8アプリケーション開発に向けた詳細�
 - [x] プロジェクト構成とソリューション作成
 - [x] ConsoleAppFramework vs System.CommandLineの技術調査
 - [x] 基本コマンドルーティング実装 (install, list, upgrade)
-- [ ] オプションモデルクラス設計・実装 （進行中）
-- [ ] 相互排他性チェック機構実装
-- [ ] 条件付きバリデーション機構実装
+- [x] オプションモデルクラス設計・実装
+- [x] 相互排他性チェック機構実装
+- [x] 条件付きバリデーション機構実装
 - [x] エイリアス処理 (ls→list, add→install, update→upgrade)
-- [ ] サブコマンド階層処理 (source add, settings export)
+- [x] サブコマンド階層処理 (source add, settings export)
 - [ ] 包括的単体テストスイート作成
 - [ ] winget.exeとの動作比較テスト
 
-### 成果物（進行中）
+### 成果物（完了）
 - [x] `src/NuitsJp.GistGet.sln` - Visual Studioソリューション作成完了
 - [x] `src/NuitsJp.GistGet/` - メインプロジェクト構成完了
 - [x] `src/NuitsJp.GistGet.Tests/` - テストプロジェクト構成完了
@@ -83,10 +83,11 @@ winget.exe完全準拠の.NET 8アプリケーション開発に向けた詳細�
 - [x] System.CommandLineによる基本18コマンド構造実装完了
 - [x] コマンドエイリアス (add→install, ls→list, update→upgrade) 実装完了
 - [x] グローバルオプション実装完了
-- [x] 基本バリデーション機構実装開始
-- [ ] オプションモデルクラス完全実装
-- [ ] 複雑な相互排他性・条件付きバリデーション実装
-- [ ] サブコマンド階層構造実装
+- [x] **オプションモデルクラス完全実装** - 全主要コマンド対応
+- [x] **ValidationEngine実装** - 包括的引数バリデーションシステム
+- [x] **ValidationRules実装** - WinGet完全準拠バリデーションルール
+- [x] **相互排他性・条件付きバリデーション実装** - 完全なWinGet互換性
+- [x] **サブコマンド階層構造実装** - `source add/list/update/remove/reset/export`, `settings export/set/reset`
 
 ---
 
