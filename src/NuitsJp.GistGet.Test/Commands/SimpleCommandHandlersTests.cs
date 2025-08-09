@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Invocation;
 using NuitsJp.GistGet.Commands;
 using Shouldly;
 
@@ -16,10 +15,9 @@ public class SimpleCommandHandlersTests
     {
         // Arrange
         var handler = new InstallCommandHandler();
-        var context = CreateMockInvocationContext();
 
         // Act & Assert
-        var result = await handler.InvokeAsync(context);
+    var result = await handler.ExecuteAsync();
         result.ShouldBe(0);
     }
 
@@ -28,10 +26,9 @@ public class SimpleCommandHandlersTests
     {
         // Arrange
         var handler = new ListCommandHandler();
-        var context = CreateMockInvocationContext();
 
         // Act & Assert
-        var result = await handler.InvokeAsync(context);
+    var result = await handler.ExecuteAsync();
         result.ShouldBe(0);
     }
 
@@ -40,10 +37,9 @@ public class SimpleCommandHandlersTests
     {
         // Arrange
         var handler = new UpgradeCommandHandler();
-        var context = CreateMockInvocationContext();
 
         // Act & Assert
-        var result = await handler.InvokeAsync(context);
+    var result = await handler.ExecuteAsync();
         result.ShouldBe(0);
     }
 
@@ -52,10 +48,9 @@ public class SimpleCommandHandlersTests
     {
         // Arrange
         var handler = new SearchCommandHandler();
-        var context = CreateMockInvocationContext();
 
         // Act & Assert
-        var result = await handler.InvokeAsync(context);
+    var result = await handler.ExecuteAsync();
         result.ShouldBe(0);
     }
 
@@ -64,10 +59,9 @@ public class SimpleCommandHandlersTests
     {
         // Arrange
         var handler = new ShowCommandHandler();
-        var context = CreateMockInvocationContext();
 
         // Act & Assert
-        var result = await handler.InvokeAsync(context);
+    var result = await handler.ExecuteAsync();
         result.ShouldBe(0);
     }
 
@@ -76,10 +70,9 @@ public class SimpleCommandHandlersTests
     {
         // Arrange
         var handler = new ExportCommandHandler();
-        var context = CreateMockInvocationContext();
 
         // Act & Assert
-        var result = await handler.InvokeAsync(context);
+    var result = await handler.ExecuteAsync();
         result.ShouldBe(0);
     }
 
@@ -88,10 +81,9 @@ public class SimpleCommandHandlersTests
     {
         // Arrange
         var handler = new ImportCommandHandler();
-        var context = CreateMockInvocationContext();
 
         // Act & Assert
-        var result = await handler.InvokeAsync(context);
+    var result = await handler.ExecuteAsync();
         result.ShouldBe(0);
     }
 
@@ -105,10 +97,9 @@ public class SimpleCommandHandlersTests
     {
         // Arrange
         var handler = (BaseCommandHandler)Activator.CreateInstance(handlerType)!;
-        var context = CreateMockInvocationContext();
 
         // Act & Assert
-        var result = await handler.InvokeAsync(context);
+    var result = await handler.ExecuteAsync();
         result.ShouldBe(0);
     }
 
@@ -125,17 +116,5 @@ public class SimpleCommandHandlersTests
         typeof(BaseCommandHandler).IsAssignableFrom(typeof(ImportCommandHandler)).ShouldBeTrue();
     }
 
-    [Fact]
-    public void BaseCommandHandler_Should_Implement_ICommandHandler()
-    {
-        // Assert
-        typeof(ICommandHandler).IsAssignableFrom(typeof(BaseCommandHandler)).ShouldBeTrue();
-    }
-
-    private static InvocationContext CreateMockInvocationContext()
-    {
-        var command = new Command("test");
-        var parseResult = command.Parse(Array.Empty<string>());
-        return new InvocationContext(parseResult);
-    }
+    // No InvocationContext/ICommandHandler in v2 beta5/6 flow; handlers expose ExecuteAsync directly.
 }

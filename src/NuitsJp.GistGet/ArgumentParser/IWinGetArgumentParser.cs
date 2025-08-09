@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Parsing;
 
 namespace NuitsJp.GistGet.ArgumentParser;
 
@@ -13,7 +12,7 @@ public interface IWinGetArgumentParser
     /// Builds the root command with all WinGet subcommands and options
     /// </summary>
     /// <returns>Configured root command for System.CommandLine</returns>
-    RootCommand BuildRootCommand();
+    Command BuildRootCommand();
     
     /// <summary>
     /// Validates command arguments according to WinGet specifications

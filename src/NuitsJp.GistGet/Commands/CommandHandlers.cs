@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Invocation;
 using NuitsJp.GistGet.WinGetClient;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,7 +7,7 @@ namespace NuitsJp.GistGet.Commands;
 /// <summary>
 /// Base class for all command handlers providing common functionality
 /// </summary>
-public abstract class BaseCommandHandler : ICommandHandler
+public abstract class BaseCommandHandler
 {
     protected static IServiceProvider? ServiceProvider { get; set; }
     
@@ -17,13 +16,7 @@ public abstract class BaseCommandHandler : ICommandHandler
         ServiceProvider = serviceProvider;
     }
 
-    public abstract Task<int> InvokeAsync(InvocationContext context);
-    
-    // Synchronous invoke method required by ICommandHandler interface
-    public int Invoke(InvocationContext context)
-    {
-        return InvokeAsync(context).GetAwaiter().GetResult();
-    }
+    public abstract Task<int> ExecuteAsync();
 }
 
 /// <summary>
@@ -32,7 +25,7 @@ public abstract class BaseCommandHandler : ICommandHandler
 /// </summary>
 public class InstallCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Install command executed");
         
@@ -78,7 +71,7 @@ public class InstallCommandHandler : BaseCommandHandler
 /// </summary>
 public class ListCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("List command executed");
         // TODO: Implement actual listing logic
@@ -93,7 +86,7 @@ public class ListCommandHandler : BaseCommandHandler
 /// </summary>
 public class UpgradeCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Upgrade command executed");
         // TODO: Implement actual upgrade logic
@@ -105,7 +98,7 @@ public class UpgradeCommandHandler : BaseCommandHandler
 // Placeholder handlers for remaining commands
 public class UninstallCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Uninstall command executed");
         await Task.Delay(100);
@@ -115,7 +108,7 @@ public class UninstallCommandHandler : BaseCommandHandler
 
 public class SearchCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Search command executed");
         await Task.Delay(100);
@@ -125,7 +118,7 @@ public class SearchCommandHandler : BaseCommandHandler
 
 public class ShowCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Show command executed");
         await Task.Delay(100);
@@ -135,7 +128,7 @@ public class ShowCommandHandler : BaseCommandHandler
 
 public class SourceCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Source command executed");
         await Task.Delay(100);
@@ -145,7 +138,7 @@ public class SourceCommandHandler : BaseCommandHandler
 
 public class SettingsCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Settings command executed");
         await Task.Delay(100);
@@ -155,7 +148,7 @@ public class SettingsCommandHandler : BaseCommandHandler
 
 public class ExportCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Export command executed");
         await Task.Delay(100);
@@ -165,7 +158,7 @@ public class ExportCommandHandler : BaseCommandHandler
 
 public class ImportCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Import command executed");
         await Task.Delay(100);
@@ -175,7 +168,7 @@ public class ImportCommandHandler : BaseCommandHandler
 
 public class PinCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Pin command executed");
         await Task.Delay(100);
@@ -185,7 +178,7 @@ public class PinCommandHandler : BaseCommandHandler
 
 public class ConfigureCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Configure command executed");
         await Task.Delay(100);
@@ -195,7 +188,7 @@ public class ConfigureCommandHandler : BaseCommandHandler
 
 public class DownloadCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Download command executed");
         await Task.Delay(100);
@@ -205,7 +198,7 @@ public class DownloadCommandHandler : BaseCommandHandler
 
 public class RepairCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Repair command executed");
         await Task.Delay(100);
@@ -215,7 +208,7 @@ public class RepairCommandHandler : BaseCommandHandler
 
 public class HashCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Hash command executed");
         await Task.Delay(100);
@@ -225,7 +218,7 @@ public class HashCommandHandler : BaseCommandHandler
 
 public class ValidateCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Validate command executed");
         await Task.Delay(100);
@@ -235,7 +228,7 @@ public class ValidateCommandHandler : BaseCommandHandler
 
 public class FeaturesCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Features command executed");
         await Task.Delay(100);
@@ -245,7 +238,7 @@ public class FeaturesCommandHandler : BaseCommandHandler
 
 public class Dscv3CommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Dscv3 command executed");
         await Task.Delay(100);
@@ -257,7 +250,7 @@ public class Dscv3CommandHandler : BaseCommandHandler
 
 public class SourceAddCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Source add command executed");
         await Task.Delay(100);
@@ -267,7 +260,7 @@ public class SourceAddCommandHandler : BaseCommandHandler
 
 public class SourceListCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Source list command executed");
         await Task.Delay(100);
@@ -277,7 +270,7 @@ public class SourceListCommandHandler : BaseCommandHandler
 
 public class SourceUpdateCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Source update command executed");
         await Task.Delay(100);
@@ -287,7 +280,7 @@ public class SourceUpdateCommandHandler : BaseCommandHandler
 
 public class SourceRemoveCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Source remove command executed");
         await Task.Delay(100);
@@ -297,7 +290,7 @@ public class SourceRemoveCommandHandler : BaseCommandHandler
 
 public class SourceResetCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Source reset command executed");
         await Task.Delay(100);
@@ -307,7 +300,7 @@ public class SourceResetCommandHandler : BaseCommandHandler
 
 public class SourceExportCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Source export command executed");
         await Task.Delay(100);
@@ -321,7 +314,7 @@ public class SourceExportCommandHandler : BaseCommandHandler
 
 public class SettingsExportCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Settings export command executed");
         await Task.Delay(100);
@@ -331,7 +324,7 @@ public class SettingsExportCommandHandler : BaseCommandHandler
 
 public class SettingsSetCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Settings set command executed");
         await Task.Delay(100);
@@ -341,7 +334,7 @@ public class SettingsSetCommandHandler : BaseCommandHandler
 
 public class SettingsResetCommandHandler : BaseCommandHandler
 {
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> ExecuteAsync()
     {
         Console.WriteLine("Settings reset command executed");
         await Task.Delay(100);

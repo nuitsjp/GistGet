@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Parsing;
 using NuitsJp.GistGet.Commands;
 
 namespace NuitsJp.GistGet.ArgumentParser;
@@ -11,35 +10,33 @@ namespace NuitsJp.GistGet.ArgumentParser;
 public class WinGetArgumentParser : IWinGetArgumentParser
 {
     private readonly ValidationEngine _validationEngine = new();
-    public RootCommand BuildRootCommand()
+    public Command BuildRootCommand()
     {
-        var rootCommand = new RootCommand("WinGet-compatible package manager with GitHub Gist synchronization")
-        {
-            Name = "gistget"
-        };
+        // Use a named root command (Command) to allow Name to be "gistget" for tests
+        var rootCommand = new Command("gistget", "WinGet-compatible package manager with GitHub Gist synchronization");
 
         // Add global options that apply to all commands
         AddGlobalOptions(rootCommand);
 
         // Add primary commands
-        rootCommand.AddCommand(BuildInstallCommand());
-        rootCommand.AddCommand(BuildListCommand());
-        rootCommand.AddCommand(BuildUpgradeCommand());
-        rootCommand.AddCommand(BuildUninstallCommand());
-        rootCommand.AddCommand(BuildSearchCommand());
-        rootCommand.AddCommand(BuildShowCommand());
-        rootCommand.AddCommand(BuildSourceCommand());
-        rootCommand.AddCommand(BuildSettingsCommand());
-        rootCommand.AddCommand(BuildExportCommand());
-        rootCommand.AddCommand(BuildImportCommand());
-        rootCommand.AddCommand(BuildPinCommand());
-        rootCommand.AddCommand(BuildConfigureCommand());
-        rootCommand.AddCommand(BuildDownloadCommand());
-        rootCommand.AddCommand(BuildRepairCommand());
-        rootCommand.AddCommand(BuildHashCommand());
-        rootCommand.AddCommand(BuildValidateCommand());
-        rootCommand.AddCommand(BuildFeaturesCommand());
-        rootCommand.AddCommand(BuildDscv3Command());
+        rootCommand.Subcommands.Add(BuildInstallCommand());
+        rootCommand.Subcommands.Add(BuildListCommand());
+        rootCommand.Subcommands.Add(BuildUpgradeCommand());
+        rootCommand.Subcommands.Add(BuildUninstallCommand());
+        rootCommand.Subcommands.Add(BuildSearchCommand());
+        rootCommand.Subcommands.Add(BuildShowCommand());
+        rootCommand.Subcommands.Add(BuildSourceCommand());
+        rootCommand.Subcommands.Add(BuildSettingsCommand());
+        rootCommand.Subcommands.Add(BuildExportCommand());
+        rootCommand.Subcommands.Add(BuildImportCommand());
+        rootCommand.Subcommands.Add(BuildPinCommand());
+        rootCommand.Subcommands.Add(BuildConfigureCommand());
+        rootCommand.Subcommands.Add(BuildDownloadCommand());
+        rootCommand.Subcommands.Add(BuildRepairCommand());
+        rootCommand.Subcommands.Add(BuildHashCommand());
+        rootCommand.Subcommands.Add(BuildValidateCommand());
+        rootCommand.Subcommands.Add(BuildFeaturesCommand());
+    rootCommand.Subcommands.Add(BuildDscv3Command());
 
         return rootCommand;
     }
@@ -50,268 +47,192 @@ public class WinGetArgumentParser : IWinGetArgumentParser
         return _validationEngine.ValidateCommand(parseResult);
     }
 
-    private void AddGlobalOptions(RootCommand rootCommand)
+    private void AddGlobalOptions(Command rootCommand)
     {
-        // Use WinGet-specific global options that don't conflict with command-specific options
-        rootCommand.AddGlobalOption(new Option<bool>(
-            aliases: new[] { "--info" },
-            description: "Show general info"));
+        // Define options with bare names, add typical aliases starting with dashes
+        var info = new Option<bool>("info") { Description = "Show general info" };
+        info.Aliases.Add("--info");
+        rootCommand.Options.Add(info);
 
-        rootCommand.AddGlobalOption(new Option<bool>(
-            aliases: new[] { "--wait" },
-            description: "Prompts the user to press any key before exiting"));
+        var wait = new Option<bool>("wait") { Description = "Prompts the user to press any key before exiting" };
+        wait.Aliases.Add("--wait");
+        rootCommand.Options.Add(wait);
 
-        rootCommand.AddGlobalOption(new Option<bool>(
-            aliases: new[] { "--logs", "--open-logs" },
-            description: "Open the default logs location"));
+        var logs = new Option<bool>("logs") { Description = "Open the default logs location" };
+        logs.Aliases.Add("--logs");
+        rootCommand.Options.Add(logs);
 
-        rootCommand.AddGlobalOption(new Option<bool>(
-            aliases: new[] { "--verbose", "--verbose-logs" },
-            description: "Enables verbose logging"));
+        var openLogs = new Option<bool>("open-logs") { Description = "Open the default logs location" };
+        openLogs.Aliases.Add("--open-logs");
+        rootCommand.Options.Add(openLogs);
 
-        rootCommand.AddGlobalOption(new Option<bool>(
-            aliases: new[] { "--nowarn", "--ignore-warnings" },
-            description: "Ignores warning messages"));
+        var verbose = new Option<bool>("verbose") { Description = "Enables verbose logging" };
+        verbose.Aliases.Add("--verbose");
+        rootCommand.Options.Add(verbose);
 
-        rootCommand.AddGlobalOption(new Option<bool>(
-            aliases: new[] { "--disable-interactivity" },
-            description: "Disable interactive prompts"));
+        var verboseLogs = new Option<bool>("verbose-logs") { Description = "Enables verbose logging" };
+        verboseLogs.Aliases.Add("--verbose-logs");
+        rootCommand.Options.Add(verboseLogs);
 
-        rootCommand.AddGlobalOption(new Option<string?>(
-            aliases: new[] { "--proxy" },
-            description: "Set proxy to use for requests"));
+        var nowarn = new Option<bool>("nowarn") { Description = "Ignores warning messages" };
+        nowarn.Aliases.Add("--nowarn");
+        rootCommand.Options.Add(nowarn);
 
-        rootCommand.AddGlobalOption(new Option<bool>(
-            aliases: new[] { "--no-proxy" },
-            description: "Disable proxy usage"));
+        var ignoreWarnings = new Option<bool>("ignore-warnings") { Description = "Ignores warning messages" };
+        ignoreWarnings.Aliases.Add("--ignore-warnings");
+        rootCommand.Options.Add(ignoreWarnings);
+
+        var disableInteractivity = new Option<bool>("disable-interactivity") { Description = "Disable interactive prompts" };
+        disableInteractivity.Aliases.Add("--disable-interactivity");
+        rootCommand.Options.Add(disableInteractivity);
+
+        var proxy = new Option<string?>("proxy") { Description = "Set proxy to use for requests" };
+        proxy.Aliases.Add("--proxy");
+        rootCommand.Options.Add(proxy);
+
+        var noProxy = new Option<bool>("no-proxy") { Description = "Disable proxy usage" };
+        noProxy.Aliases.Add("--no-proxy");
+        rootCommand.Options.Add(noProxy);
     }
 
     private Command BuildInstallCommand()
     {
-        var installCommand = new Command("install", "Installs packages")
-        {
-            Handler = new InstallCommandHandler()
-        };
+        var installCommand = new Command("install", "Installs packages");
+        installCommand.SetAction(pr => new InstallCommandHandler().ExecuteAsync());
         
         // Add install command aliases
-        installCommand.AddAlias("add");
+        installCommand.Aliases.Add("add");
 
         // Package identification options (mutually exclusive)
-        installCommand.AddOption(new Option<string?>(
-            aliases: new[] { "-q", "--query" },
-            description: "Use the given query to search"));
+        installCommand.Options.Add(new Option<string?>("--query", "-q") { Description = "Use the given query to search" });
 
-        installCommand.AddOption(new Option<string?>(
-            aliases: new[] { "--id" },
-            description: "Filter results by id"));
+        installCommand.Options.Add(new Option<string?>("--id") { Description = "Filter results by id" });
 
-        installCommand.AddOption(new Option<string?>(
-            aliases: new[] { "--name" },
-            description: "Filter results by name"));
+        installCommand.Options.Add(new Option<string?>("--name") { Description = "Filter results by name" });
 
-        installCommand.AddOption(new Option<string?>(
-            aliases: new[] { "-m", "--moniker" },
-            description: "Filter results by moniker"));
+        installCommand.Options.Add(new Option<string?>("--moniker", "-m") { Description = "Filter results by moniker" });
 
         // Installation options
-        installCommand.AddOption(new Option<string?>(
-            aliases: new[] { "-v", "--version" },
-            description: "Use the specified version"));
+        installCommand.Options.Add(new Option<string?>("--version", "-v") { Description = "Use the specified version" });
 
-        installCommand.AddOption(new Option<string?>(
-            aliases: new[] { "-s", "--source" },
-            description: "Find package using the specified source"));
+        installCommand.Options.Add(new Option<string?>("--source", "-s") { Description = "Find package using the specified source" });
 
-        installCommand.AddOption(new Option<string?>(
-            aliases: new[] { "--scope" },
-            description: "Select install scope (user or machine)"));
+        installCommand.Options.Add(new Option<string?>("--scope") { Description = "Select install scope (user or machine)" });
 
-        installCommand.AddOption(new Option<bool>(
-            aliases: new[] { "-e", "--exact" },
-            description: "Find package using exact match"));
+        installCommand.Options.Add(new Option<bool>("--exact", "-e") { Description = "Find package using exact match" });
 
-        installCommand.AddOption(new Option<bool>(
-            aliases: new[] { "-i", "--interactive" },
-            description: "Request interactive installation"));
+        installCommand.Options.Add(new Option<bool>("--interactive", "-i") { Description = "Request interactive installation" });
 
-        installCommand.AddOption(new Option<bool>(
-            aliases: new[] { "-h", "--silent" },
-            description: "Request silent installation"));
+        installCommand.Options.Add(new Option<bool>("--silent", "-h") { Description = "Request silent installation" });
 
-        installCommand.AddOption(new Option<string?>(
-            aliases: new[] { "--locale" },
-            description: "Locale to use"));
+        installCommand.Options.Add(new Option<string?>("--locale") { Description = "Locale to use" });
 
-        installCommand.AddOption(new Option<string?>(
-            aliases: new[] { "-l", "--location" },
-            description: "Location to install to"));
+        installCommand.Options.Add(new Option<string?>("--location", "-l") { Description = "Location to install to" });
 
-        installCommand.AddOption(new Option<bool>(
-            aliases: new[] { "--override" },
-            description: "Override arguments to be passed to installer"));
+        installCommand.Options.Add(new Option<bool>("--override") { Description = "Override arguments to be passed to installer" });
 
-        installCommand.AddOption(new Option<bool>(
-            aliases: new[] { "--force" },
-            description: "Override installer hash check"));
+        installCommand.Options.Add(new Option<bool>("--force") { Description = "Override installer hash check" });
 
-        installCommand.AddOption(new Option<string?>(
-            aliases: new[] { "--architecture", "--arch" },
-            description: "Select the architecture"));
+        installCommand.Options.Add(new Option<string?>("--architecture", "--arch") { Description = "Select the architecture" });
 
-        installCommand.AddOption(new Option<string?>(
-            aliases: new[] { "--installer-type" },
-            description: "Select the installer type"));
+        installCommand.Options.Add(new Option<string?>("--installer-type") { Description = "Select the installer type" });
 
-        installCommand.AddOption(new Option<bool>(
-            aliases: new[] { "--accept-package-agreements" },
-            description: "Accept package agreements"));
+        installCommand.Options.Add(new Option<bool>("--accept-package-agreements") { Description = "Accept package agreements" });
 
-        installCommand.AddOption(new Option<bool>(
-            aliases: new[] { "--accept-source-agreements" },
-            description: "Accept source agreements"));
+        installCommand.Options.Add(new Option<bool>("--accept-source-agreements") { Description = "Accept source agreements" });
 
         return installCommand;
     }
 
     private Command BuildListCommand()
     {
-        var listCommand = new Command("list", "Display installed packages")
-        {
-            Handler = new ListCommandHandler()
-        };
+        var listCommand = new Command("list", "Display installed packages");
+        listCommand.SetAction(pr => new ListCommandHandler().ExecuteAsync());
 
         // Add list command alias
-        listCommand.AddAlias("ls");
+        listCommand.Aliases.Add("ls");
 
         // Filtering options
-        listCommand.AddOption(new Option<string?>(
-            aliases: new[] { "-q", "--query" },
-            description: "Use the given query to search"));
+        listCommand.Options.Add(new Option<string?>("--query", "-q") { Description = "Use the given query to search" });
 
-        listCommand.AddOption(new Option<string?>(
-            aliases: new[] { "--id" },
-            description: "Filter results by id"));
+        listCommand.Options.Add(new Option<string?>("--id") { Description = "Filter results by id" });
 
-        listCommand.AddOption(new Option<string?>(
-            aliases: new[] { "--name" },
-            description: "Filter results by name"));
+        listCommand.Options.Add(new Option<string?>("--name") { Description = "Filter results by name" });
 
-        listCommand.AddOption(new Option<string?>(
-            aliases: new[] { "-m", "--moniker" },
-            description: "Filter results by moniker"));
+        listCommand.Options.Add(new Option<string?>("--moniker", "-m") { Description = "Filter results by moniker" });
 
-        listCommand.AddOption(new Option<string?>(
-            aliases: new[] { "-s", "--source" },
-            description: "Filter results by source"));
+        listCommand.Options.Add(new Option<string?>("--source", "-s") { Description = "Filter results by source" });
 
-        listCommand.AddOption(new Option<string?>(
-            aliases: new[] { "--tag" },
-            description: "Filter results by tag"));
+        listCommand.Options.Add(new Option<string?>("--tag") { Description = "Filter results by tag" });
 
-        listCommand.AddOption(new Option<bool>(
-            aliases: new[] { "-e", "--exact" },
-            description: "Find package using exact match"));
+        listCommand.Options.Add(new Option<bool>("--exact", "-e") { Description = "Find package using exact match" });
 
-        listCommand.AddOption(new Option<bool>(
-            aliases: new[] { "--upgrade-available" },
-            description: "Filter by packages with upgrades available"));
+        listCommand.Options.Add(new Option<bool>("--upgrade-available") { Description = "Filter by packages with upgrades available" });
 
-        listCommand.AddOption(new Option<bool>(
-            aliases: new[] { "--include-unknown" },
-            description: "Include packages with unknown versions"));
+        listCommand.Options.Add(new Option<bool>("--include-unknown") { Description = "Include packages with unknown versions" });
 
         return listCommand;
     }
 
     private Command BuildUpgradeCommand()
     {
-        var upgradeCommand = new Command("upgrade", "Upgrades packages")
-        {
-            Handler = new UpgradeCommandHandler()
-        };
+        var upgradeCommand = new Command("upgrade", "Upgrades packages");
+        upgradeCommand.SetAction(pr => new UpgradeCommandHandler().ExecuteAsync());
 
         // Add upgrade command alias
-        upgradeCommand.AddAlias("update");
+        upgradeCommand.Aliases.Add("update");
 
         // Copy most options from install command since upgrade has similar options
         // Package identification options
-        upgradeCommand.AddOption(new Option<string?>(
-            aliases: new[] { "-q", "--query" },
-            description: "Use the given query to search"));
+        upgradeCommand.Options.Add(new Option<string?>("--query", "-q") { Description = "Use the given query to search" });
 
-        upgradeCommand.AddOption(new Option<string?>(
-            aliases: new[] { "--id" },
-            description: "Filter results by id"));
+        upgradeCommand.Options.Add(new Option<string?>("--id") { Description = "Filter results by id" });
 
-        upgradeCommand.AddOption(new Option<string?>(
-            aliases: new[] { "--name" },
-            description: "Filter results by name"));
+        upgradeCommand.Options.Add(new Option<string?>("--name") { Description = "Filter results by name" });
 
-        upgradeCommand.AddOption(new Option<string?>(
-            aliases: new[] { "-m", "--moniker" },
-            description: "Filter results by moniker"));
+        upgradeCommand.Options.Add(new Option<string?>("--moniker", "-m") { Description = "Filter results by moniker" });
 
         // Upgrade-specific options
-        upgradeCommand.AddOption(new Option<bool>(
-            aliases: new[] { "--all" },
-            description: "Upgrade all packages"));
+        upgradeCommand.Options.Add(new Option<bool>("--all") { Description = "Upgrade all packages" });
 
-        upgradeCommand.AddOption(new Option<bool>(
-            aliases: new[] { "--include-unknown" },
-            description: "Include packages with unknown versions"));
+        upgradeCommand.Options.Add(new Option<bool>("--include-unknown") { Description = "Include packages with unknown versions" });
 
         // Installation options
-        upgradeCommand.AddOption(new Option<string?>(
-            aliases: new[] { "-v", "--version" },
-            description: "Use the specified version"));
+        upgradeCommand.Options.Add(new Option<string?>("--version", "-v") { Description = "Use the specified version" });
 
-        upgradeCommand.AddOption(new Option<string?>(
-            aliases: new[] { "-s", "--source" },
-            description: "Find package using the specified source"));
+        upgradeCommand.Options.Add(new Option<string?>("--source", "-s") { Description = "Find package using the specified source" });
 
-        upgradeCommand.AddOption(new Option<bool>(
-            aliases: new[] { "-e", "--exact" },
-            description: "Find package using exact match"));
+        upgradeCommand.Options.Add(new Option<bool>("--exact", "-e") { Description = "Find package using exact match" });
 
-        upgradeCommand.AddOption(new Option<bool>(
-            aliases: new[] { "-i", "--interactive" },
-            description: "Request interactive installation"));
+        upgradeCommand.Options.Add(new Option<bool>("--interactive", "-i") { Description = "Request interactive installation" });
 
-        upgradeCommand.AddOption(new Option<bool>(
-            aliases: new[] { "-h", "--silent" },
-            description: "Request silent installation"));
+        upgradeCommand.Options.Add(new Option<bool>("--silent", "-h") { Description = "Request silent installation" });
 
-        upgradeCommand.AddOption(new Option<bool>(
-            aliases: new[] { "--force" },
-            description: "Override installer hash check"));
+        upgradeCommand.Options.Add(new Option<bool>("--force") { Description = "Override installer hash check" });
 
-        upgradeCommand.AddOption(new Option<bool>(
-            aliases: new[] { "--accept-package-agreements" },
-            description: "Accept package agreements"));
+        upgradeCommand.Options.Add(new Option<bool>("--accept-package-agreements") { Description = "Accept package agreements" });
 
-        upgradeCommand.AddOption(new Option<bool>(
-            aliases: new[] { "--accept-source-agreements" },
-            description: "Accept source agreements"));
+        upgradeCommand.Options.Add(new Option<bool>("--accept-source-agreements") { Description = "Accept source agreements" });
 
         return upgradeCommand;
     }
 
     // Placeholder implementations for basic commands
-    private Command BuildUninstallCommand() => new Command("uninstall", "Uninstall packages") { Handler = new UninstallCommandHandler() };
-    private Command BuildSearchCommand() => new Command("search", "Search for packages") { Handler = new SearchCommandHandler() };
-    private Command BuildShowCommand() => new Command("show", "Show package information") { Handler = new ShowCommandHandler() };
+    private Command BuildUninstallCommand() { var c = new Command("uninstall", "Uninstall packages"); c.SetAction(pr => new UninstallCommandHandler().ExecuteAsync()); return c; }
+    private Command BuildSearchCommand() { var c = new Command("search", "Search for packages"); c.SetAction(pr => new SearchCommandHandler().ExecuteAsync()); return c; }
+    private Command BuildShowCommand() { var c = new Command("show", "Show package information"); c.SetAction(pr => new ShowCommandHandler().ExecuteAsync()); return c; }
     
     private Command BuildSourceCommand()
     {
         var sourceCommand = new Command("source", "Manage package sources");
 
         // Add source subcommands
-        sourceCommand.AddCommand(BuildSourceAddCommand());
-        sourceCommand.AddCommand(BuildSourceListCommand());
-        sourceCommand.AddCommand(BuildSourceUpdateCommand());
-        sourceCommand.AddCommand(BuildSourceRemoveCommand());
-        sourceCommand.AddCommand(BuildSourceResetCommand());
-        sourceCommand.AddCommand(BuildSourceExportCommand());
+        sourceCommand.Subcommands.Add(BuildSourceAddCommand());
+        sourceCommand.Subcommands.Add(BuildSourceListCommand());
+        sourceCommand.Subcommands.Add(BuildSourceUpdateCommand());
+        sourceCommand.Subcommands.Add(BuildSourceRemoveCommand());
+        sourceCommand.Subcommands.Add(BuildSourceResetCommand());
+        sourceCommand.Subcommands.Add(BuildSourceExportCommand());
 
         return sourceCommand;
     }
@@ -321,107 +242,83 @@ public class WinGetArgumentParser : IWinGetArgumentParser
         var settingsCommand = new Command("settings", "Manage settings");
 
         // Add settings subcommands
-        settingsCommand.AddCommand(BuildSettingsExportCommand());
-        settingsCommand.AddCommand(BuildSettingsSetCommand());
-        settingsCommand.AddCommand(BuildSettingsResetCommand());
+        settingsCommand.Subcommands.Add(BuildSettingsExportCommand());
+        settingsCommand.Subcommands.Add(BuildSettingsSetCommand());
+        settingsCommand.Subcommands.Add(BuildSettingsResetCommand());
 
         return settingsCommand;
     }
-    private Command BuildExportCommand() => new Command("export", "Export package list") { Handler = new ExportCommandHandler() };
-    private Command BuildImportCommand() => new Command("import", "Import package list") { Handler = new ImportCommandHandler() };
-    private Command BuildPinCommand() => new Command("pin", "Manage package pins") { Handler = new PinCommandHandler() };
-    private Command BuildConfigureCommand() => new Command("configure", "Configure system") { Handler = new ConfigureCommandHandler() };
-    private Command BuildDownloadCommand() => new Command("download", "Download packages") { Handler = new DownloadCommandHandler() };
-    private Command BuildRepairCommand() => new Command("repair", "Repair packages") { Handler = new RepairCommandHandler() };
-    private Command BuildHashCommand() => new Command("hash", "Calculate file hash") { Handler = new HashCommandHandler() };
-    private Command BuildValidateCommand() => new Command("validate", "Validate manifests") { Handler = new ValidateCommandHandler() };
-    private Command BuildFeaturesCommand() => new Command("features", "Manage experimental features") { Handler = new FeaturesCommandHandler() };
-    private Command BuildDscv3Command() => new Command("dscv3", "DSC v3 resources") { Handler = new Dscv3CommandHandler() };
+    private Command BuildExportCommand() { var c = new Command("export", "Export package list"); c.SetAction(pr => new ExportCommandHandler().ExecuteAsync()); return c; }
+    private Command BuildImportCommand() { var c = new Command("import", "Import package list"); c.SetAction(pr => new ImportCommandHandler().ExecuteAsync()); return c; }
+    private Command BuildPinCommand() { var c = new Command("pin", "Manage package pins"); c.SetAction(pr => new PinCommandHandler().ExecuteAsync()); return c; }
+    private Command BuildConfigureCommand() { var c = new Command("configure", "Configure system"); c.SetAction(pr => new ConfigureCommandHandler().ExecuteAsync()); return c; }
+    private Command BuildDownloadCommand() { var c = new Command("download", "Download packages"); c.SetAction(pr => new DownloadCommandHandler().ExecuteAsync()); return c; }
+    private Command BuildRepairCommand() { var c = new Command("repair", "Repair packages"); c.SetAction(pr => new RepairCommandHandler().ExecuteAsync()); return c; }
+    private Command BuildHashCommand() { var c = new Command("hash", "Calculate file hash"); c.SetAction(pr => new HashCommandHandler().ExecuteAsync()); return c; }
+    private Command BuildValidateCommand() { var c = new Command("validate", "Validate manifests"); c.SetAction(pr => new ValidateCommandHandler().ExecuteAsync()); return c; }
+    private Command BuildFeaturesCommand() { var c = new Command("features", "Manage experimental features"); c.SetAction(pr => new FeaturesCommandHandler().ExecuteAsync()); return c; }
+    private Command BuildDscv3Command() { var c = new Command("dscv3", "DSC v3 resources"); c.SetAction(pr => new Dscv3CommandHandler().ExecuteAsync()); return c; }
 
     #region Source Subcommands
 
     private Command BuildSourceAddCommand()
     {
-        var addCommand = new Command("add", "Add a new source")
-        {
-            Handler = new SourceAddCommandHandler()
-        };
+        var addCommand = new Command("add", "Add a new source");
+        addCommand.SetAction(pr => new SourceAddCommandHandler().ExecuteAsync());
 
-        addCommand.AddOption(new Option<string>(
-            aliases: new[] { "--name", "-n" },
-            description: "Name to be given to the source") { IsRequired = true });
+        addCommand.Options.Add(new Option<string>("--name", "-n") { Description = "Name to be given to the source", Required = true });
 
-        addCommand.AddOption(new Option<string>(
-            aliases: new[] { "--arg", "-a" },
-            description: "URL or path to the source") { IsRequired = true });
+        addCommand.Options.Add(new Option<string>("--arg", "-a") { Description = "URL or path to the source", Required = true });
 
-        addCommand.AddOption(new Option<string>(
-            aliases: new[] { "--type", "-t" },
-            description: "Type of source"));
+        addCommand.Options.Add(new Option<string>("--type", "-t") { Description = "Type of source" });
 
-        addCommand.AddOption(new Option<string>(
-            aliases: new[] { "--trust-level" },
-            description: "Trust level of the source"));
+        addCommand.Options.Add(new Option<string>("--trust-level") { Description = "Trust level of the source" });
 
         return addCommand;
     }
 
     private Command BuildSourceListCommand()
     {
-        return new Command("list", "List configured sources")
-        {
-            Handler = new SourceListCommandHandler()
-        };
+        var list = new Command("list", "List configured sources");
+        list.SetAction(pr => new SourceListCommandHandler().ExecuteAsync());
+        return list;
     }
 
     private Command BuildSourceUpdateCommand()
     {
-        var updateCommand = new Command("update", "Update source(s)")
-        {
-            Handler = new SourceUpdateCommandHandler()
-        };
+        var updateCommand = new Command("update", "Update source(s)");
+        updateCommand.SetAction(pr => new SourceUpdateCommandHandler().ExecuteAsync());
 
-        updateCommand.AddOption(new Option<string>(
-            aliases: new[] { "--name", "-n" },
-            description: "Name of the source to update"));
+        updateCommand.Options.Add(new Option<string>("--name", "-n") { Description = "Name of the source to update" });
 
         return updateCommand;
     }
 
     private Command BuildSourceRemoveCommand()
     {
-        var removeCommand = new Command("remove", "Remove a source")
-        {
-            Handler = new SourceRemoveCommandHandler()
-        };
+        var removeCommand = new Command("remove", "Remove a source");
+        removeCommand.SetAction(pr => new SourceRemoveCommandHandler().ExecuteAsync());
 
-        removeCommand.AddOption(new Option<string>(
-            aliases: new[] { "--name", "-n" },
-            description: "Name of the source to remove") { IsRequired = true });
+        removeCommand.Options.Add(new Option<string>("--name", "-n") { Description = "Name of the source to remove", Required = true });
 
         return removeCommand;
     }
 
     private Command BuildSourceResetCommand()
     {
-        var resetCommand = new Command("reset", "Reset sources to default")
-        {
-            Handler = new SourceResetCommandHandler()
-        };
+        var resetCommand = new Command("reset", "Reset sources to default");
+        resetCommand.SetAction(pr => new SourceResetCommandHandler().ExecuteAsync());
 
-        resetCommand.AddOption(new Option<bool>(
-            aliases: new[] { "--force" },
-            description: "Reset without confirmation"));
+        resetCommand.Options.Add(new Option<bool>("--force") { Description = "Reset without confirmation" });
 
         return resetCommand;
     }
 
     private Command BuildSourceExportCommand()
     {
-        return new Command("export", "Export configured sources")
-        {
-            Handler = new SourceExportCommandHandler()
-        };
+        var export = new Command("export", "Export configured sources");
+        export.SetAction(pr => new SourceExportCommandHandler().ExecuteAsync());
+        return export;
     }
 
     #endregion
@@ -430,46 +327,32 @@ public class WinGetArgumentParser : IWinGetArgumentParser
 
     private Command BuildSettingsExportCommand()
     {
-        var exportCommand = new Command("export", "Export current settings")
-        {
-            Handler = new SettingsExportCommandHandler()
-        };
+        var exportCommand = new Command("export", "Export current settings");
+        exportCommand.SetAction(pr => new SettingsExportCommandHandler().ExecuteAsync());
 
-        exportCommand.AddOption(new Option<string>(
-            aliases: new[] { "--output", "-o" },
-            description: "Output file path"));
+        exportCommand.Options.Add(new Option<string>("--output", "-o") { Description = "Output file path" });
 
         return exportCommand;
     }
 
     private Command BuildSettingsSetCommand()
     {
-        var setCommand = new Command("set", "Set a configuration setting")
-        {
-            Handler = new SettingsSetCommandHandler()
-        };
+        var setCommand = new Command("set", "Set a configuration setting");
+        setCommand.SetAction(pr => new SettingsSetCommandHandler().ExecuteAsync());
 
-        setCommand.AddOption(new Option<string>(
-            aliases: new[] { "--name", "-n" },
-            description: "Name of the setting") { IsRequired = true });
+        setCommand.Options.Add(new Option<string>("--name", "-n") { Description = "Name of the setting", Required = true });
 
-        setCommand.AddOption(new Option<string>(
-            aliases: new[] { "--value", "-v" },
-            description: "Value of the setting") { IsRequired = true });
+        setCommand.Options.Add(new Option<string>("--value", "-v") { Description = "Value of the setting", Required = true });
 
         return setCommand;
     }
 
     private Command BuildSettingsResetCommand()
     {
-        var resetCommand = new Command("reset", "Reset settings to default")
-        {
-            Handler = new SettingsResetCommandHandler()
-        };
+        var resetCommand = new Command("reset", "Reset settings to default");
+        resetCommand.SetAction(pr => new SettingsResetCommandHandler().ExecuteAsync());
 
-        resetCommand.AddOption(new Option<string>(
-            aliases: new[] { "--name", "-n" },
-            description: "Name of the setting to reset"));
+        resetCommand.Options.Add(new Option<string>("--name", "-n") { Description = "Name of the setting to reset" });
 
         return resetCommand;
     }

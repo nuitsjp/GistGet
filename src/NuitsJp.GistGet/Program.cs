@@ -1,6 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Builder;
-using System.CommandLine.Parsing;
 using NuitsJp.GistGet.ArgumentParser;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -38,21 +36,21 @@ public class Program
         var argumentParser = host.Services.GetRequiredService<IWinGetArgumentParser>();
         
         // Create root command
-        var rootCommand = argumentParser.BuildRootCommand();
-        
-        // Build command line parser with custom configuration
-        var parser = new CommandLineBuilder(rootCommand)
-            .UseDefaults()
-            .UseExceptionHandler((exception, context) =>
-            {
-                var logger = host.Services.GetService<ILogger<Program>>();
-                logger?.LogError(exception, "Unhandled exception occurred");
-                Console.WriteLine($"Error: {exception.Message}");
-                context.ExitCode = 1;
-            })
-            .Build();
+    var rootCommand = argumentParser.BuildRootCommand();
 
-        // Parse and execute command
-        return await parser.InvokeAsync(args);
+        // v2: CommandLineConfiguration を使って実行
+        try
+        {
+            var config = new CommandLineConfiguration(rootCommand);
+            var parseResult = rootCommand.Parse(args, config);
+            return await parseResult.InvokeAsync();
+        }
+        catch (Exception exception)
+        {
+            var logger = host.Services.GetService<ILogger<Program>>();
+            logger?.LogError(exception, "Unhandled exception occurred");
+            Console.WriteLine($"Error: {exception.Message}");
+            return 1;
+        }
     }
 }
