@@ -2,6 +2,7 @@ using NuitsJp.GistGet.WinGetClient.Models;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using WinGetDeployment = Microsoft.Management.Deployment;
+using NuitsJp.GistGet.WinGetClient.Abstractions;
 
 namespace NuitsJp.GistGet.WinGetClient;
 
@@ -15,10 +16,17 @@ public class WinGetComClient : IWinGetClient, IDisposable
     private bool _isInitialized;
     private bool _comApiAvailable;
     private bool _disposed;
+    private readonly IProcessRunner _processRunner;
 
     public WinGetComClient(ILogger<WinGetComClient> logger)
+        : this(logger, new DefaultProcessRunner())
+    {
+    }
+
+    public WinGetComClient(ILogger<WinGetComClient> logger, IProcessRunner processRunner)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _processRunner = processRunner ?? throw new ArgumentNullException(nameof(processRunner));
     }
 
     public async Task<bool> InitializeAsync(CancellationToken cancellationToken = default)
@@ -238,19 +246,8 @@ public class WinGetComClient : IWinGetClient, IDisposable
     {
         try
         {
-            var startInfo = new ProcessStartInfo("winget", "--version")
-            {
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true
-            };
-
-            using var process = Process.Start(startInfo);
-            if (process == null) return false;
-
-            await process.WaitForExitAsync(cancellationToken);
-            return process.ExitCode == 0;
+            var result = await _processRunner.RunAsync("winget", "--version", cancellationToken: cancellationToken);
+            return result.ExitCode == 0;
         }
         catch
         {
@@ -268,20 +265,8 @@ public class WinGetComClient : IWinGetClient, IDisposable
     {
         try
         {
-            var startInfo = new ProcessStartInfo("winget", "--version")
-            {
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                CreateNoWindow = true
-            };
-
-            using var process = Process.Start(startInfo);
-            if (process == null) return null;
-
-            var output = process.StandardOutput.ReadToEnd().Trim();
-            process.WaitForExit();
-
-            return process.ExitCode == 0 ? output : null;
+            var result = _processRunner.RunAsync("winget", "--version").GetAwaiter().GetResult();
+            return result.ExitCode == 0 ? result.StandardOutput.Trim() : null;
         }
         catch
         {
@@ -293,20 +278,10 @@ public class WinGetComClient : IWinGetClient, IDisposable
     {
         try
         {
-            var startInfo = new ProcessStartInfo("where", "winget")
-            {
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                CreateNoWindow = true
-            };
-
-            using var process = Process.Start(startInfo);
-            if (process == null) return null;
-
-            var output = process.StandardOutput.ReadToEnd().Trim();
-            process.WaitForExit();
-
-            return process.ExitCode == 0 ? output.Split('\n')[0] : null;
+            var result = _processRunner.RunAsync("where", "winget").GetAwaiter().GetResult();
+            if (result.ExitCode != 0) return null;
+            var output = result.StandardOutput.Trim();
+            return output.Split('\n')[0];
         }
         catch
         {
@@ -506,10 +481,59 @@ public class WinGetComClient : IWinGetClient, IDisposable
         ExportOptions options,
         CancellationToken cancellationToken)
     {
-        // TODO: Implement CLI export
         _logger.LogInformation("Exporting packages using CLI to {OutputPath}", outputPath);
-        await Task.Delay(100, cancellationToken); // Placeholder
-        return OperationResult.Success($"Packages exported to {outputPath} via CLI", false);
+
+        // Build arguments
+        var args = new List<string> { "export" };
+        if (!string.IsNullOrWhiteSpace(options.Source))
+        {
+            args.Add($"--source \"{options.Source}\"");
+        }
+        args.Add($"-o \"{outputPath}\"");
+        if (options.IncludeVersions)
+        {
+            args.Add("--include-versions");
+        }
+        if (options.AcceptSourceAgreements)
+        {
+            args.Add("--accept-source-agreements");
+        }
+
+        var argLine = string.Join(" ", args);
+        try
+        {
+            var result = await _processRunner.RunAsync("winget", argLine, cancellationToken: cancellationToken);
+            if (result.ExitCode == 0)
+            {
+                return new OperationResult
+                {
+                    IsSuccess = true,
+                    ExitCode = 0,
+                    Message = $"Packages exported to {outputPath} via CLI",
+                    OutputLines = string.IsNullOrEmpty(result.StandardOutput) ? null : result.StandardOutput.Split(['\r','\n'], StringSplitOptions.RemoveEmptyEntries),
+                    ErrorLines = string.IsNullOrEmpty(result.StandardError) ? null : result.StandardError.Split(['\r','\n'], StringSplitOptions.RemoveEmptyEntries),
+                    ExecutionTime = result.Elapsed,
+                    UsedComApi = false
+                };
+            }
+
+            return new OperationResult
+            {
+                IsSuccess = false,
+                ExitCode = result.ExitCode,
+                Message = "winget export failed",
+                ErrorDetails = result.StandardError,
+                OutputLines = string.IsNullOrEmpty(result.StandardOutput) ? null : result.StandardOutput.Split(['\r','\n'], StringSplitOptions.RemoveEmptyEntries),
+                ErrorLines = string.IsNullOrEmpty(result.StandardError) ? null : result.StandardError.Split(['\r','\n'], StringSplitOptions.RemoveEmptyEntries),
+                ExecutionTime = result.Elapsed,
+                UsedComApi = false
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "winget export threw an exception");
+            return OperationResult.Failure("winget export threw an exception", exception: ex, usedComApi: false);
+        }
     }
 
     private async Task<OperationResult> ImportPackagesCliAsync(
