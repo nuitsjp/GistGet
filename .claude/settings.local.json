@@ -29,7 +29,10 @@
       "Bash(./GistGet.exe:*)",
       "Bash(rm:*)",
       "Bash(find:*)",
-      "Bash(dotnet add package:*)"
+      "Bash(dotnet add package:*)",
+      "Bash(dotnet test)",
+      "Bash(dotnet test:*)",
+      "Bash(del /Q \"ArgumentParser\\WinGetArgumentParserTests.cs\" \"ArgumentParser\\ValidationEngineTests.cs\" \"ArgumentParser\\OptionModels\\InstallOptionsTests.cs\" \"ArgumentParser\\OptionModels\\ListOptionsTests.cs\" \"WinGetClient\\WinGetComClientTests.cs\" \"Commands\\CommandHandlersTests.cs\" \"Integration\\CliFallbackTests.cs\")"
     ],
     "deny": []
   }
