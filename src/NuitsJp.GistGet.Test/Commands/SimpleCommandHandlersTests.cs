@@ -1,10 +1,9 @@
-using Xunit;
-using FluentAssertions;
-using NuitsJp.GistGet.Commands;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using NuitsJp.GistGet.Commands;
+using Shouldly;
 
-namespace NuitsJp.GistGet.Tests.Commands;
+namespace NuitsJp.GistGet.Test.Commands;
 
 /// <summary>
 /// Simple unit tests for CommandHandlers
@@ -21,7 +20,7 @@ public class SimpleCommandHandlersTests
 
         // Act & Assert
         var result = await handler.InvokeAsync(context);
-        result.Should().Be(0);
+        result.ShouldBe(0);
     }
 
     [Fact]
@@ -33,7 +32,7 @@ public class SimpleCommandHandlersTests
 
         // Act & Assert
         var result = await handler.InvokeAsync(context);
-        result.Should().Be(0);
+        result.ShouldBe(0);
     }
 
     [Fact]
@@ -45,7 +44,7 @@ public class SimpleCommandHandlersTests
 
         // Act & Assert
         var result = await handler.InvokeAsync(context);
-        result.Should().Be(0);
+        result.ShouldBe(0);
     }
 
     [Fact]
@@ -57,7 +56,7 @@ public class SimpleCommandHandlersTests
 
         // Act & Assert
         var result = await handler.InvokeAsync(context);
-        result.Should().Be(0);
+        result.ShouldBe(0);
     }
 
     [Fact]
@@ -69,7 +68,7 @@ public class SimpleCommandHandlersTests
 
         // Act & Assert
         var result = await handler.InvokeAsync(context);
-        result.Should().Be(0);
+        result.ShouldBe(0);
     }
 
     [Fact]
@@ -81,7 +80,7 @@ public class SimpleCommandHandlersTests
 
         // Act & Assert
         var result = await handler.InvokeAsync(context);
-        result.Should().Be(0);
+        result.ShouldBe(0);
     }
 
     [Fact]
@@ -93,7 +92,7 @@ public class SimpleCommandHandlersTests
 
         // Act & Assert
         var result = await handler.InvokeAsync(context);
-        result.Should().Be(0);
+        result.ShouldBe(0);
     }
 
     [Theory]
@@ -110,27 +109,27 @@ public class SimpleCommandHandlersTests
 
         // Act & Assert
         var result = await handler.InvokeAsync(context);
-        result.Should().Be(0);
+        result.ShouldBe(0);
     }
 
     [Fact]
     public void All_Command_Handlers_Should_Inherit_From_BaseCommandHandler()
     {
         // Arrange & Assert
-        typeof(InstallCommandHandler).Should().BeAssignableTo<BaseCommandHandler>();
-        typeof(ListCommandHandler).Should().BeAssignableTo<BaseCommandHandler>();
-        typeof(UpgradeCommandHandler).Should().BeAssignableTo<BaseCommandHandler>();
-        typeof(SearchCommandHandler).Should().BeAssignableTo<BaseCommandHandler>();
-        typeof(ShowCommandHandler).Should().BeAssignableTo<BaseCommandHandler>();
-        typeof(ExportCommandHandler).Should().BeAssignableTo<BaseCommandHandler>();
-        typeof(ImportCommandHandler).Should().BeAssignableTo<BaseCommandHandler>();
+        typeof(BaseCommandHandler).IsAssignableFrom(typeof(InstallCommandHandler)).ShouldBeTrue();
+        typeof(BaseCommandHandler).IsAssignableFrom(typeof(ListCommandHandler)).ShouldBeTrue();
+        typeof(BaseCommandHandler).IsAssignableFrom(typeof(UpgradeCommandHandler)).ShouldBeTrue();
+        typeof(BaseCommandHandler).IsAssignableFrom(typeof(SearchCommandHandler)).ShouldBeTrue();
+        typeof(BaseCommandHandler).IsAssignableFrom(typeof(ShowCommandHandler)).ShouldBeTrue();
+        typeof(BaseCommandHandler).IsAssignableFrom(typeof(ExportCommandHandler)).ShouldBeTrue();
+        typeof(BaseCommandHandler).IsAssignableFrom(typeof(ImportCommandHandler)).ShouldBeTrue();
     }
 
     [Fact]
     public void BaseCommandHandler_Should_Implement_ICommandHandler()
     {
         // Assert
-        typeof(BaseCommandHandler).Should().BeAssignableTo<ICommandHandler>();
+        typeof(ICommandHandler).IsAssignableFrom(typeof(BaseCommandHandler)).ShouldBeTrue();
     }
 
     private static InvocationContext CreateMockInvocationContext()

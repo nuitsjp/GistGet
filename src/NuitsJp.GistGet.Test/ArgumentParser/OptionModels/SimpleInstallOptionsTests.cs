@@ -1,8 +1,7 @@
-using Xunit;
-using FluentAssertions;
 using NuitsJp.GistGet.ArgumentParser.OptionModels;
+using Shouldly;
 
-namespace NuitsJp.GistGet.Tests.ArgumentParser.OptionModels;
+namespace NuitsJp.GistGet.Test.ArgumentParser.OptionModels;
 
 /// <summary>
 /// Simple unit tests for InstallOptions validation
@@ -17,7 +16,7 @@ public class SimpleInstallOptionsTests
         var options = new InstallOptions();
 
         // Assert
-        options.Should().NotBeNull();
+        options.ShouldNotBeNull();
     }
 
     [Fact]
@@ -32,9 +31,9 @@ public class SimpleInstallOptionsTests
         };
 
         // Assert
-        options.Id.Should().Be("Git.Git");
-        options.Silent.Should().BeTrue();
-        options.Force.Should().BeFalse();
+        options.Id.ShouldBe("Git.Git");
+        options.Silent.ShouldBeTrue();
+        options.Force.ShouldBeFalse();
     }
 
     [Fact]
@@ -47,8 +46,8 @@ public class SimpleInstallOptionsTests
         var result = options.ValidateOptions();
 
         // Assert
-        result.Should().NotBeNull();
-        result.Should().BeAssignableTo<List<string>>();
+        result.ShouldNotBeNull();
+        result.ShouldBeAssignableTo<List<string>>();
     }
 
     [Fact]
@@ -61,7 +60,7 @@ public class SimpleInstallOptionsTests
         var result = options.ValidateOptions();
 
         // Assert
-        result.Should().BeEmpty();
+        result.ShouldBeEmpty();
     }
 
     [Fact]
@@ -74,7 +73,7 @@ public class SimpleInstallOptionsTests
         var result = options.ValidateOptions();
 
         // Assert
-        result.Should().BeEmpty();
+        result.ShouldBeEmpty();
     }
 
     [Fact]
@@ -87,6 +86,6 @@ public class SimpleInstallOptionsTests
         var result = options.ValidateOptions();
 
         // Assert
-        result.Should().BeEmpty();
+        result.ShouldBeEmpty();
     }
 }

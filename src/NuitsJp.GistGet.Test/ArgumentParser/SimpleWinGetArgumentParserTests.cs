@@ -1,8 +1,7 @@
-using Xunit;
-using FluentAssertions;
 using NuitsJp.GistGet.ArgumentParser;
+using Shouldly;
 
-namespace NuitsJp.GistGet.Tests.ArgumentParser;
+namespace NuitsJp.GistGet.Test.ArgumentParser;
 
 /// <summary>
 /// Simple unit tests for WinGetArgumentParser
@@ -21,7 +20,7 @@ public class SimpleWinGetArgumentParserTests
     public void Should_Create_Parser_Successfully()
     {
         // Act & Assert
-        _parser.Should().NotBeNull();
+        _parser.ShouldNotBeNull();
     }
 
     [Fact]
@@ -31,8 +30,8 @@ public class SimpleWinGetArgumentParserTests
         var rootCommand = _parser.BuildRootCommand();
 
         // Assert
-        rootCommand.Should().NotBeNull();
-        rootCommand.Name.Should().Be("gistget");
+        rootCommand.ShouldNotBeNull();
+        rootCommand!.Name.ShouldBe("gistget");
     }
 
     [Fact]
@@ -42,13 +41,13 @@ public class SimpleWinGetArgumentParserTests
         var rootCommand = _parser.BuildRootCommand();
 
         // Assert
-        rootCommand.Subcommands.Should().NotBeEmpty();
-        
+        rootCommand.Subcommands.ShouldNotBeEmpty();
+
         var commandNames = rootCommand.Subcommands.Select(c => c.Name).ToList();
-        commandNames.Should().Contain("install");
-        commandNames.Should().Contain("list");
-        commandNames.Should().Contain("upgrade");
-        commandNames.Should().Contain("search");
+        commandNames.ShouldContain("install");
+        commandNames.ShouldContain("list");
+        commandNames.ShouldContain("upgrade");
+        commandNames.ShouldContain("search");
     }
 
     [Fact]
@@ -58,11 +57,11 @@ public class SimpleWinGetArgumentParserTests
         var rootCommand = _parser.BuildRootCommand();
 
         // Assert
-        rootCommand.Options.Should().NotBeEmpty();
-        
+        rootCommand.Options.ShouldNotBeEmpty();
+
         var optionNames = rootCommand.Options.Select(o => o.Name).ToList();
-        optionNames.Should().Contain("verbose-logs");
-        optionNames.Should().Contain("info");
+        optionNames.ShouldContain("verbose-logs");
+        optionNames.ShouldContain("info");
     }
 
     [Theory]
@@ -81,7 +80,7 @@ public class SimpleWinGetArgumentParserTests
 
         // Assert
         var commandNames = rootCommand.Subcommands.Select(c => c.Name).ToList();
-        commandNames.Should().Contain(commandName);
+        commandNames.ShouldContain(commandName);
     }
 
     [Fact]
@@ -92,13 +91,13 @@ public class SimpleWinGetArgumentParserTests
 
         // Assert
         var sourceCommand = rootCommand.Subcommands.FirstOrDefault(c => c.Name == "source");
-        sourceCommand.Should().NotBeNull();
-        sourceCommand.Subcommands.Should().NotBeEmpty();
-        
+        sourceCommand.ShouldNotBeNull();
+        sourceCommand!.Subcommands.ShouldNotBeEmpty();
+
         var sourceSubcommands = sourceCommand.Subcommands.Select(c => c.Name).ToList();
-        sourceSubcommands.Should().Contain("add");
-        sourceSubcommands.Should().Contain("list");
-        sourceSubcommands.Should().Contain("remove");
+        sourceSubcommands.ShouldContain("add");
+        sourceSubcommands.ShouldContain("list");
+        sourceSubcommands.ShouldContain("remove");
     }
 
     [Fact]
@@ -109,11 +108,11 @@ public class SimpleWinGetArgumentParserTests
 
         // Assert
         var settingsCommand = rootCommand.Subcommands.FirstOrDefault(c => c.Name == "settings");
-        settingsCommand.Should().NotBeNull();
-        settingsCommand.Subcommands.Should().NotBeEmpty();
-        
+        settingsCommand.ShouldNotBeNull();
+        settingsCommand!.Subcommands.ShouldNotBeEmpty();
+
         var settingsSubcommands = settingsCommand.Subcommands.Select(c => c.Name).ToList();
-        settingsSubcommands.Should().Contain("export");
-        settingsSubcommands.Should().Contain("reset");
+        settingsSubcommands.ShouldContain("export");
+        settingsSubcommands.ShouldContain("reset");
     }
 }
