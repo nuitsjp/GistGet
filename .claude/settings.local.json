@@ -28,7 +28,8 @@
       "Bash(dotnet build)",
       "Bash(./GistGet.exe:*)",
       "Bash(rm:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(dotnet add package:*)"
     ],
     "deny": []
   }

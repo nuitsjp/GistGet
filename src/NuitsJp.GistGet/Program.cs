@@ -21,6 +21,7 @@ public class Program
             .ConfigureServices((context, services) =>
             {
                 services.AddSingleton<IWinGetArgumentParser, WinGetArgumentParser>();
+                services.AddSingleton<NuitsJp.GistGet.WinGetClient.IWinGetClient, NuitsJp.GistGet.WinGetClient.WinGetComClient>();
                 services.AddLogging(builder =>
                 {
                     builder.AddConsole();
@@ -29,6 +30,9 @@ public class Program
             });
 
         using var host = hostBuilder.Build();
+        
+        // Set service provider for command handlers
+        NuitsJp.GistGet.Commands.BaseCommandHandler.SetServiceProvider(host.Services);
         
         // Get argument parser from DI container
         var argumentParser = host.Services.GetRequiredService<IWinGetArgumentParser>();
