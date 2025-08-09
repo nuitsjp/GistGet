@@ -18,9 +18,9 @@ GistGetは、WinGetの機能を.NET 8で実装し、GitHub Gistとの同期機�
 ├─────────────────────────────────────────┤
 │        WinGet Client Abstraction        │ IWinGetClient
 ├─────────────────────────────────────────┤
-│    COM API + CLI Fallback Layer        │ WinGetComClient
+│           COM API Layer                 │ WinGetComClient
 ├─────────────────────────────────────────┤
-│        Microsoft WinGet API             │ COM Interop + winget.exe
+│        Microsoft WinGet API             │ COM Interop
 └─────────────────────────────────────────┘
 ```
 
@@ -54,10 +54,10 @@ GistGetは、WinGetの機能を.NET 8で実装し、GitHub Gistとの同期機�
 
 ### 4. WinGetクライアント抽象化レイヤー
 
-**責務**: WinGet操作の統一インターフェースとフォールバック機構
+**責務**: WinGet操作の統一インターフェースとCOM API実装
 
 - **IWinGetClient**: 公開インターフェース
-- **WinGetComClient**: COM API + CLI フォールバック実装
+- **WinGetComClient**: COM API専用実装
 
 ### 5. データモデル
 
@@ -102,10 +102,10 @@ public abstract class BaseCommandHandler
 ```csharp
 public class WinGetComClient : IWinGetClient, IDisposable
 {
-    // COM API優先、CLI フォールバック
+    // COM API専用実装
     public async Task<OperationResult> InstallPackageAsync(InstallOptions options)
     
-    // 初期化とCOM API可用性チェック
+    // COM API初期化
     public async Task InitializeAsync()
 }
 ```
@@ -162,23 +162,10 @@ classDiagram
     class WinGetComClient {
         -_packageManager: PackageManager
         -_logger: ILogger
-        -_processRunner: IProcessRunner
         -_isInitialized: bool
-        -_comApiAvailable: bool
         +InitializeAsync() Task
         +InstallPackageAsync(InstallOptions options) Task~OperationResult~
-        +InstallPackageComAsync(InstallOptions options) Task~OperationResult~
-        +InstallPackageCliAsync(InstallOptions options) Task~OperationResult~
         +Dispose() void
-    }
-    
-    class IProcessRunner {
-        <<interface>>
-        +RunAsync(string fileName, string arguments) Task~ProcessResult~
-    }
-    
-    class DefaultProcessRunner {
-        +RunAsync(string fileName, string arguments) Task~ProcessResult~
     }
 
     Program --> IWinGetArgumentParser : uses
@@ -188,8 +175,6 @@ classDiagram
     BaseCommandHandler <|-- ListCommandHandler : extends
     BaseCommandHandler --> IWinGetClient : uses
     WinGetComClient ..|> IWinGetClient : implements
-    WinGetComClient --> IProcessRunner : uses
-    DefaultProcessRunner ..|> IProcessRunner : implements
 ```
 
 ### データモデル構造図
@@ -243,19 +228,11 @@ classDiagram
         +Exception: Exception
     }
     
-    class ProcessResult {
-        +ExitCode: int
-        +StandardOutput: string
-        +StandardError: string
-        +ExecutionTime: TimeSpan
-    }
-
     OperationResult --> ErrorDetails : contains
     IWinGetClient --> WinGetPackage : returns
     IWinGetClient --> InstallOptions : accepts
     IWinGetClient --> ListOptions : accepts
     IWinGetClient --> OperationResult : returns
-    IProcessRunner --> ProcessResult : returns
 ```
 
 ## 処理シーケンス図
@@ -270,7 +247,6 @@ sequenceDiagram
     participant Handler as InstallCommandHandler
     participant Client as WinGetComClient
     participant COM as COM API
-    participant CLI as winget.exe
 
     User->>Program: install --id Git.Git
     Program->>Parser: BuildRootCommand()
@@ -283,21 +259,20 @@ sequenceDiagram
     
     Handler->>Client: InstallPackageAsync(options)
     Client->>Client: EnsureInitializedAsync()
+    Client->>COM: InstallPackageAsync(options)
     
-    alt COM API利用可能
-        Client->>COM: InstallPackageAsync(options)
+    alt COM API成功
         COM-->>Client: OperationResult (Success)
-        Client-->>Handler: OperationResult
+        Client-->>Handler: OperationResult (Success)
+        Handler-->>Program: ExitCode = 0
+        Program-->>User: インストール完了
     else COM API失敗
-        Note over Client: COM API失敗、CLIフォールバックに切り替え
-        Client->>CLI: ExecuteWingetAsync("install", args)
-        CLI-->>Client: ProcessResult
-        Client->>Client: ParseCliOutput(result)
-        Client-->>Handler: OperationResult
+        COM-->>Client: Exception
+        Client->>Client: ErrorDetailsを作成
+        Client-->>Handler: OperationResult (Failed)
+        Handler-->>Program: ExitCode = 1
+        Program-->>User: 詳細エラーメッセージ
     end
-    
-    Handler-->>Program: ExitCode (0=Success)
-    Program-->>User: インストール完了
 ```
 
 ### アプリケーション初期化フロー
@@ -337,42 +312,32 @@ sequenceDiagram
     Note over Program: CommandHandler実行
 ```
 
-### COM API + CLI フォールバック機構
+### COM API 初期化と実行フロー
 
 ```mermaid
 sequenceDiagram
     participant Handler as CommandHandler
     participant Client as WinGetComClient
     participant COM as COM API
-    participant Process as IProcessRunner
-    participant CLI as winget.exe
 
     Handler->>Client: 操作要求 (例: InstallPackageAsync)
     Client->>Client: EnsureInitializedAsync()
     
-    alt 初期化成功 (_comApiAvailable = true)
+    alt COM API初期化成功
+        Note over Client: COM API利用可能
         Client->>COM: COM API呼び出し
-        alt COM API成功
+        alt COM API操作成功
             COM-->>Client: 結果
             Client-->>Handler: OperationResult (Success)
-        else COM API失敗 (COMException)
-            Note over Client: COM失敗を検出、CLIフォールバックに切り替え
-            Client->>Client: _comApiAvailable = false
-            Client->>Process: RunAsync("winget.exe", arguments)
-            Process->>CLI: プロセス実行
-            CLI-->>Process: ProcessResult
-            Process-->>Client: ProcessResult
-            Client->>Client: ParseCliOutput(result)
-            Client-->>Handler: OperationResult (Fallback)
+        else COM API操作失敗
+            COM-->>Client: Exception
+            Client->>Client: 詳細なErrorDetailsを作成
+            Client-->>Handler: OperationResult (Failed with Details)
         end
-    else 初期化失敗 (_comApiAvailable = false)
-        Note over Client: 最初からCLI実行
-        Client->>Process: RunAsync("winget.exe", arguments)
-        Process->>CLI: プロセス実行
-        CLI-->>Process: ProcessResult
-        Process-->>Client: ProcessResult
-        Client->>Client: ParseCliOutput(result)
-        Client-->>Handler: OperationResult (CLI Only)
+    else COM API初期化失敗
+        Note over Client: 環境設定不備
+        Client-->>Handler: WinGetInitializationException
+        Note over Handler: "WinGet COM APIが利用できません。\n環境設定を確認してください。"
     end
 ```
 
@@ -400,7 +365,14 @@ sequenceDiagram
         Handler->>Handler: 引数バリデーションエラー
         Handler-->>Program: ExitCode = 1
         Program-->>User: エラーメッセージ
-    else クライアントレベルエラー
+    else COM API初期化失敗
+        Handler->>Client: 操作実行
+        Client->>Client: COM API初期化試行
+        Note over Client: WinGet環境設定不備
+        Client-->>Handler: WinGetInitializationException
+        Handler-->>Program: ExitCode = 1
+        Program-->>User: "WinGet COM APIが利用できません。環境設定を確認してください。"
+    else COM API操作失敗
         Handler->>Client: 操作実行
         Client->>COM: COM API呼び出し
         COM-->>Client: Exception
@@ -425,10 +397,10 @@ sequenceDiagram
 - .NET Generic Hostによる統一されたDIコンテナ
 - インターフェース分離による疎結合設計
 
-### 2. ストラテジーパターン (COM + CLI フォールバック)
-- COM API利用可能時は高速なCOM API使用
-- COM API失敗時は自動的にCLI実行にフォールバック
-- 透明なフォールバック機構により可用性向上
+### 2. 例外処理パターン
+- COM API専用の明確なエラーハンドリング
+- 環境設定問題の明確な診断メッセージ
+- 段階的エラー回復とユーザーガイダンス
 
 ### 3. コマンドパターン
 - 各WinGetコマンドを独立したコマンドハンドラーとして実装
@@ -436,7 +408,7 @@ sequenceDiagram
 
 ### 4. アダプターパターン
 - Microsoft WindowsPackageManager COM APIをIWinGetClientに適合
-- CLI実行もCOM APIと同一インターフェースで利用可能
+- COM API専用の最適化されたインターフェース実装
 
 ## システム統合
 
@@ -451,9 +423,9 @@ sequenceDiagram
 - コマンド階層とサブコマンドサポート
 - 相互排他性とバリデーションルール
 
-### プロセス実行抽象化
-- IProcessRunner による外部プロセス実行の抽象化
-- テスト可能性向上とモック可能な設計
+### COM API専用最適化
+- ネイティブCOM API直接利用によるオーバーヘッド削減
+- プロセス間通信の削除による高速化
 
 ## エラーハンドリング戦略
 
@@ -462,28 +434,28 @@ sequenceDiagram
 2. **CommandHandler**: コマンド実行時の例外処理
 3. **WinGetComClient**: COM API/CLI実行の例外処理
 
-### フォールバック機構
-- COM API実行失敗時の自動CLI切り替え
-- 詳細なエラー情報（ErrorDetails）の提供
-- 段階的エラー回復（権限昇格要求等）
+### 明確なエラー処理
+- COM API失敗時の詳細な診断情報提供
+- 環境設定問題の明確な特定とガイダンス
+- デバッグ支援のための充実したログ情報
 
 ## ログとモニタリング
 
 ### 統合ログ基盤
 - Microsoft.Extensions.Logging使用
 - 構造化ログでの詳細な処理情報記録
-- COM API/CLI実行の透明性確保
+- COM API実行の透明性とデバッグ支援
 
 ### 診断情報
 - ClientInfo による実行環境情報取得
-- COM API/CLI可用性状況の把握
-- バージョン互換性チェック
+- COM API初期化状況の把握
+- WinGetバージョン互換性チェック
 
 ## セキュリティ考慮事項
 
-### プロセス実行セキュリティ
-- 外部プロセス（winget.exe）実行時の引数エスケープ
-- プロセス実行権限の最小化
+### COM APIセキュリティ
+- COM オブジェクト初期化の安全性確保
+- 適切なCOM リソース管理
 
 ### 入力検証
 - コマンドライン引数の厳密なバリデーション
@@ -491,9 +463,9 @@ sequenceDiagram
 
 ## パフォーマンス最適化
 
-### COM API優先戦略
-- ネイティブCOM API使用による高速化
-- プロセス起動オーバーヘッドの削減
+### COM API専用戦略
+- ネイティブCOM API直接利用による最適化
+- 外部プロセス不要による高速化とリソース効率
 
 ### 非同期処理
 - 全操作のTask-based Async Pattern対応
@@ -515,7 +487,7 @@ sequenceDiagram
 
 ### 設定可能性
 - 依存性注入による柔軟な構成変更
-- プロセス実行の抽象化によるテスト対応
+- COM API専用の最適化されたテスト支援
 
 ## 今後の拡張予定
 
