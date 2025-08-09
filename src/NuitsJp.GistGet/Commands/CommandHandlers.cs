@@ -1,0 +1,214 @@
+using System.CommandLine;
+using System.CommandLine.Invocation;
+
+namespace NuitsJp.GistGet.Commands;
+
+/// <summary>
+/// Base class for all command handlers providing common functionality
+/// </summary>
+public abstract class BaseCommandHandler : ICommandHandler
+{
+    public abstract Task<int> InvokeAsync(InvocationContext context);
+    
+    // Synchronous invoke method required by ICommandHandler interface
+    public int Invoke(InvocationContext context)
+    {
+        return InvokeAsync(context).GetAwaiter().GetResult();
+    }
+}
+
+/// <summary>
+/// Handler for the install command (and add alias)
+/// Implements package installation logic with WinGet compatibility
+/// </summary>
+public class InstallCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Install command executed");
+        // TODO: Implement actual installation logic
+        await Task.Delay(100); // Placeholder async operation
+        return 0;
+    }
+}
+
+/// <summary>
+/// Handler for the list command (and ls alias)
+/// Implements package listing logic with WinGet compatibility
+/// </summary>
+public class ListCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("List command executed");
+        // TODO: Implement actual listing logic
+        await Task.Delay(100); // Placeholder async operation
+        return 0;
+    }
+}
+
+/// <summary>
+/// Handler for the upgrade command (and update alias)
+/// Implements package upgrade logic with WinGet compatibility
+/// </summary>
+public class UpgradeCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Upgrade command executed");
+        // TODO: Implement actual upgrade logic
+        await Task.Delay(100); // Placeholder async operation
+        return 0;
+    }
+}
+
+// Placeholder handlers for remaining commands
+public class UninstallCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Uninstall command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
+
+public class SearchCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Search command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
+
+public class ShowCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Show command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
+
+public class SourceCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Source command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
+
+public class SettingsCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Settings command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
+
+public class ExportCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Export command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
+
+public class ImportCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Import command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
+
+public class PinCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Pin command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
+
+public class ConfigureCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Configure command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
+
+public class DownloadCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Download command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
+
+public class RepairCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Repair command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
+
+public class HashCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Hash command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
+
+public class ValidateCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Validate command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
+
+public class FeaturesCommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Features command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
+
+public class Dscv3CommandHandler : BaseCommandHandler
+{
+    public override async Task<int> InvokeAsync(InvocationContext context)
+    {
+        Console.WriteLine("Dscv3 command executed");
+        await Task.Delay(100);
+        return 0;
+    }
+}
