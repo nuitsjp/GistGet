@@ -216,19 +216,19 @@ add オプション:
 #### D. 引数処理アーキテクチャ設計
 
 ##### 技術的制約と解決方針
-- **ConsoleAppFramework制限**: 複雑なサブコマンド階層、条件付きオプション、相互排他性への対応困難
+- **System.CommandLine採用**: 複雑なサブコマンド階層、条件付きオプション、相互排他性への対応
 - **WinGet引数の特徴**: 階層サブコマンド (`source add`)、エイリアス、条件付きバリデーション
-- **解決方針**: ConsoleAppFramework + カスタム引数パーサーのハイブリッド実装
+- **解決方針**: System.CommandLineによる完全準拠実装
 
-##### カスタム引数パーサー設計
+##### 引数パーサー設計
 ```csharp
 // 引数解析フロー
 public class WinGetArgumentParser
 {
-    // 1. 基本コマンド識別 (ConsoleAppFramework)
+    // 1. 基本コマンド識別 (System.CommandLine)
     public ParsedCommand ParseCommand(string[] args);
     
-    // 2. WinGet固有引数解析 (カスタム実装)
+    // 2. WinGet固有引数解析
     public class InstallCommandOptions
     {
         // 相互排他性チェック
@@ -316,47 +316,44 @@ public interface IWinGetClient
     Task<ConfigureResult> ConfigureAsync(ConfigureOptions options);
 }
 
-// COM APIラッパー - 低レベル操作
-public interface IWinGetComClient
+// COM APIラッパー - Windows Package Manager COM API直接操作
+public class WinGetComClient : IWinGetClient
 {
-    Task<IInstallResult> InstallPackageAsync(PackageManager packageManager, InstallOptions options);
-    Task<IEnumerable<MatchResult>> SearchPackagesAsync(PackageManager packageManager, SearchOptions options);
-    Task<IEnumerable<CatalogPackage>> GetInstalledPackagesAsync(PackageManager packageManager);
-    // COM API直接操作...
-}
-
-// CLI フォールバック - COM API利用不可時
-public interface IWinGetCliClient  
-{
-    Task<ProcessResult> ExecuteWinGetAsync(string command, string[] arguments);
-    Task<T> ParseWinGetOutput<T>(ProcessResult result);
+    private readonly PackageManager _packageManager;
+    private readonly ILogger<WinGetComClient> _logger;
+    
+    public async Task<InstallAsync(InstallOptions options)
+    {
+        // COM API直接呼び出し
+        return await InstallPackageAsync(_packageManager, options);
+    }
+    
+    // 他のCOM API操作...
 }
 ```
 
-##### エラーハンドリングと復帰機構
+##### エラーハンドリング
 ```csharp
-public class WinGetClient : IWinGetClient
+public class WinGetComClient : IWinGetClient
 {
-    private readonly IWinGetComClient _comClient;
-    private readonly IWinGetCliClient _cliClient;
-    private readonly ILogger<WinGetClient> _logger;
+    private readonly ILogger<WinGetComClient> _logger;
     
     public async Task<InstallResult> InstallAsync(InstallOptions options)
     {
         try
         {
-            // 1. COM API優先実行
-            return await _comClient.InstallPackageAsync(options);
+            // COM API直接実行
+            return await _packageManager.InstallPackageAsync(options);
         }
-        catch (COMException comEx) when (IsComApiUnavailable(comEx))
+        catch (COMException comEx)
         {
-            // 2. CLI フォールバック
-            _logger.LogWarning("COM API失敗、CLIフォールバックに切り替え: {Error}", comEx.Message);
-            return await _cliClient.ExecuteInstallAsync(options);
+            // COM APIエラーの詳細ログ
+            _logger.LogError(comEx, "COM API呼び出しエラー: {Error}", comEx.Message);
+            throw new WinGetOperationException("パッケージのインストールに失敗しました", comEx);
         }
         catch (UnauthorizedAccessException authEx)
         {
-            // 3. 権限エラーの場合は管理者権限要求
+            // 権限エラーの場合は管理者権限要求
             throw new WinGetAuthorizationException("管理者権限が必要です", authEx);
         }
     }
@@ -397,16 +394,17 @@ public class WinGetClient : IWinGetClient
 **詳細な実装ロードマップは [TODO.md](./TODO.md) を参照してください。**
 
 #### 開発フェーズ概要
-1. **フェーズ1**: WinGetコマンド完全仕様書作成 【最優先】
-2. **フェーズ2**: カスタム引数パーサー実装  
-3. **フェーズ3**: COM APIラッパー実装
-4. **フェーズ4**: Gist同期機能統合
-5. **フェーズ5**: テストと品質保証
+1. **フェーズ1**: WinGetコマンド完全仕様書作成 ✅ 完了
+2. **フェーズ2**: カスタム引数パーサー実装 ✅ 完了
+3. **フェーズ3**: COM APIラッパー実装 ✅ 完了
+4. **フェーズ3.5**: アーキテクチャ簡素化 【最優先】
+5. **フェーズ4**: Gist同期機能統合
+6. **フェーズ5**: テストと品質保証
 
 #### 最優先事項
-- **ドキュメント作成**: WinGetコマンド仕様書が全ての基盤
-- **引数パーサー**: WinGet準拠が品質の核心  
-- **COM API安定性**: フォールバック機構で可用性確保
+- **アーキテクチャ簡素化**: CLIフォールバック削除による保守性向上
+- **COM API専用化**: 単一実装による品質向上
+- **コードベース最適化**: 30%のコード削減目標
 
 
 [1]: https://github.com/microsoft/winget-cli/issues/4320?utm_source=chatgpt.com "Issues with COM API and retrieving installed packages"
@@ -414,5 +412,7 @@ public class WinGetClient : IWinGetClient
 [3]: https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps?utm_source=chatgpt.com "Authorizing OAuth apps - GitHub Docs"
 [4]: https://docs.github.com/enterprise-cloud%40latest/apps/creating-github-apps/writing-code-for-a-github-app/building-a-cli-with-a-github-app?utm_source=chatgpt.com "Building a CLI with a GitHub App"
 [5]: https://learn.microsoft.com/en-us/windows/package-manager/winget/?utm_source=chatgpt.com "Use WinGet to install and manage applications"
+[6]: https://www.reddit.com/r/golang/comments/17m22mq/github_oauth2_device_flow_does_anyone_have_an/?utm_source=chatgpt.com "github oauth2 device flow. does anyone have an example?"
+[7]: https://github.com/microsoft/winget-cli/issues/4377?utm_source=chatgpt.com "WinRTAct.dll from Microsoft.WindowsPackageManager. ..."
 [6]: https://www.reddit.com/r/golang/comments/17m22mq/github_oauth2_device_flow_does_anyone_have_an/?utm_source=chatgpt.com "github oauth2 device flow. does anyone have an example?"
 [7]: https://github.com/microsoft/winget-cli/issues/4377?utm_source=chatgpt.com "WinRTAct.dll from Microsoft.WindowsPackageManager. ..."
