@@ -1,34 +1,23 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0-windows10.0.26100</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <AssemblyName>GistGet</AssemblyName>
-    <RootNamespace>NuitsJp.GistGet</RootNamespace>
-    <Platforms>x64</Platforms>
-    <PlatformTarget>x64</PlatformTarget>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <PackageId>NuitsJp.GistGet</PackageId>
-    <Product>NuitsJp.GistGet</Product>
-    <Description>A .NET 8 console application for managing WinGet installation lists on GitHub Gist with full winget.exe compatibility</Description>
-    <Copyright>Copyright © 2025</Copyright>
-    <Version>1.0.0</Version>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net8.0-windows10.0.26100</TargetFramework>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
 
-  <ItemGroup>
-    <PackageReference Include="ConsoleAppFramework" Version="5.2.4" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
-    <PackageReference Include="Microsoft.WindowsPackageManager.ComInterop" Version="1.11.430" />
-    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
-    <PackageReference Include="YamlDotNet" Version="16.2.1" />
-  </ItemGroup>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<PublishAot>true</PublishAot>
+		<InvariantGlobalization>true</InvariantGlobalization>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
+		<PackageReference Include="Microsoft.WindowsPackageManager.ComInterop" Version="1.11.430" />
+		<PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+	</ItemGroup>
 
 </Project>
