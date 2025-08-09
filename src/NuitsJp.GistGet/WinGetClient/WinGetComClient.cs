@@ -500,16 +500,65 @@ public class WinGetComClient : IWinGetClient, IDisposable
         }
 
         var argLine = string.Join(" ", args);
+        return await ExecuteWingetAsync(
+            argLine,
+            successMessage: $"Packages exported to {outputPath} via CLI",
+            failureMessage: "winget export failed",
+            cancellationToken);
+    }
+
+    private async Task<OperationResult> ImportPackagesCliAsync(
+        string inputPath,
+        ImportOptions options,
+        IProgress<OperationProgress>? progress,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Importing packages using CLI from {InputPath}", inputPath);
+
+        // Build arguments
+        var args = new List<string> { "import" };
+        args.Add($"-i \"{inputPath}\"");
+        if (options.IgnoreUnavailable)
+        {
+            args.Add("--ignore-unavailable");
+        }
+        if (options.IgnoreVersions)
+        {
+            args.Add("--ignore-versions");
+        }
+        if (options.AcceptPackageAgreements)
+        {
+            args.Add("--accept-package-agreements");
+        }
+        if (options.AcceptSourceAgreements)
+        {
+            args.Add("--accept-source-agreements");
+        }
+
+        var argLine = string.Join(" ", args);
+        return await ExecuteWingetAsync(
+            argLine,
+            successMessage: $"Packages imported from {inputPath} via CLI",
+            failureMessage: "winget import failed",
+            cancellationToken);
+    }
+
+    private async Task<OperationResult> ExecuteWingetAsync(
+        string arguments,
+        string successMessage,
+        string failureMessage,
+        CancellationToken cancellationToken)
+    {
         try
         {
-            var result = await _processRunner.RunAsync("winget", argLine, cancellationToken: cancellationToken);
+            var result = await _processRunner.RunAsync("winget", arguments, cancellationToken: cancellationToken);
             if (result.ExitCode == 0)
             {
                 return new OperationResult
                 {
                     IsSuccess = true,
                     ExitCode = 0,
-                    Message = $"Packages exported to {outputPath} via CLI",
+                    Message = successMessage,
                     OutputLines = string.IsNullOrEmpty(result.StandardOutput) ? null : result.StandardOutput.Split(['\r','\n'], StringSplitOptions.RemoveEmptyEntries),
                     ErrorLines = string.IsNullOrEmpty(result.StandardError) ? null : result.StandardError.Split(['\r','\n'], StringSplitOptions.RemoveEmptyEntries),
                     ExecutionTime = result.Elapsed,
@@ -521,7 +570,7 @@ public class WinGetComClient : IWinGetClient, IDisposable
             {
                 IsSuccess = false,
                 ExitCode = result.ExitCode,
-                Message = "winget export failed",
+                Message = failureMessage,
                 ErrorDetails = result.StandardError,
                 OutputLines = string.IsNullOrEmpty(result.StandardOutput) ? null : result.StandardOutput.Split(['\r','\n'], StringSplitOptions.RemoveEmptyEntries),
                 ErrorLines = string.IsNullOrEmpty(result.StandardError) ? null : result.StandardError.Split(['\r','\n'], StringSplitOptions.RemoveEmptyEntries),
@@ -531,21 +580,9 @@ public class WinGetComClient : IWinGetClient, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "winget export threw an exception");
-            return OperationResult.Failure("winget export threw an exception", exception: ex, usedComApi: false);
+            _logger.LogError(ex, "winget command threw an exception");
+            return OperationResult.Failure($"{failureMessage}", exception: ex, usedComApi: false);
         }
-    }
-
-    private async Task<OperationResult> ImportPackagesCliAsync(
-        string inputPath,
-        ImportOptions options,
-        IProgress<OperationProgress>? progress,
-        CancellationToken cancellationToken)
-    {
-        // TODO: Implement CLI import
-        _logger.LogInformation("Importing packages using CLI from {InputPath}", inputPath);
-        await Task.Delay(100, cancellationToken); // Placeholder
-        return OperationResult.Success($"Packages imported from {inputPath} via CLI", false);
     }
 
     #endregion
