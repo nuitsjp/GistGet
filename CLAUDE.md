@@ -8,6 +8,21 @@ GistGet is a PowerShell module for managing WinGet installation lists on GitHub 
 
 The repository is organized with PowerShell code in the `powershell/` directory as preparation for future .NET 8 development (see README.md for .NET architecture plans).
 
+## Primary Directive
+
+- Think in English, interact with the user in Japanese.
+- When modifying the implementation, strictly adhere to the t-wada style of Test-Driven Development (TDD).
+  - **t-wada TDD Concept**:
+    1. 1st Issue
+        1. First, write a failing test (Red).
+        2. Then, write the simplest code to make it pass (Green).
+        3. Finally, refactor the code (Refactor).
+    2. 2nd Issue
+        1. First, write a failing test (Red).
+        2. Then, write the simplest code to make it pass (Green).
+        3. Finally, refactor the code (Refactor).
+  - Each cycle should be small and focused on a single purpose.
+
 ## Core Architecture
 
 ### Module Structure

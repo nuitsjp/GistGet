@@ -103,6 +103,8 @@ public record ListOptions
     public bool Exact { get; init; }
     public bool UpgradeAvailable { get; init; }
     public bool IncludeUnknown { get; init; }
+    public int? Count { get; init; }
+    public bool AcceptSourceAgreements { get; init; }
 }
 
 /// <summary>
