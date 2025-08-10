@@ -1,7 +1,7 @@
 # GistGet .NET 8 実装ロードマップ
 
 ## 概要
-winget.exe完全準拠の.NET 8アプリケーション開発のロードマップ。現在は「COM API実装の完成とテスト基盤構築（フェーズ4）」を進行中。
+winget.exe完全準拠の.NET 8アプリケーション開発のロードマップ。t-wada式TDDに従い、各コマンドを全レイヤーで着実に実装します。
 
 ---
 
@@ -11,156 +11,194 @@ winget.exe完全準拠の.NET 8アプリケーション開発のロードマッ�
   - フェーズ2: カスタム引数パーサー（18コマンド完全実装）
   - フェーズ3: COM API基本統合
   - フェーズ3.5: アーキテクチャ簡素化（CLIフォールバック削除）
+  - フェーズ4: COM APIラッパー基本実装（WinGetComClient）
 - 🚨 進行中（最優先）
-  - フェーズ4: COM API実装の完成とテスト基盤構築
+  - フェーズ5: コマンド別TDD実装
 - ⏳ 未着手
-  - フェーズ5: Gist同期機能統合
-  - フェーズ6: プロダクション品質保証
-
-## 直近の最優先事項（フェーズ4）
-- COM API主要メソッドの実装完成
-- テスト基盤の構築（単体テスト・統合テスト）
-- エラーハンドリングとログの強化
-- パフォーマンス最適化
-
-## マイルストーン
-1. ✅ M1: ドキュメント完成
-2. ✅ M2: 引数パーサー完成（18コマンド）
-3. ✅ M3: COM API基本統合
-4. ✅ M3.5: アーキテクチャ簡素化
-5. 🚨 M4: COM API全機能実装（現在）
-6. ⏳ M5: Gist同期実装
-7. ⏳ M6: プロダクション品質達成
+  - フェーズ6: Gist同期機能統合
+  - フェーズ7: プロダクション品質保証
 
 ---
 
-# 実行手順（上から順に実行）
+## 📋 フェーズ5: コマンド別TDD実装（現在）
 
-## フェーズ4: COM API実装の完成とテスト基盤構築（現在進行中）
+### 🔴 共通実装ルール
 
-### 4.1 残りのCOM APIメソッド実装
+#### 1. 実装前のwinget動作確認
+各コマンド実装前に、実際のwingetで全パラメーターの動作を確認：
 
-#### 優先度1: 基本操作（必須）
-- [ ] `SearchPackagesAsync` - パッケージ検索
-  - [ ] FindPackagesOptionsの構築
-  - [ ] カタログ接続とクエリ実行
-  - [ ] 結果のマッピング（CatalogPackage → ドメインモデル）
-- [ ] `ListInstalledPackagesAsync` - インストール済み一覧
-  - [ ] ローカルカタログの取得
-  - [ ] フィルタリング条件の適用
-- [ ] `InstallPackageAsync` - パッケージインストール
-  - [ ] InstallOptionsの設定
-  - [ ] プログレス通知の実装
-  - [ ] インストール結果の処理
-
-#### 優先度2: 管理操作
-- [ ] `UpgradePackageAsync` - パッケージ更新
-- [ ] `UninstallPackageAsync` - パッケージ削除
-- [ ] `GetPackageDetailsAsync` - 詳細情報取得
-
-#### 優先度3: 高度な機能
-- [ ] `ExportPackagesAsync` - 設定エクスポート
-- [ ] `ImportPackagesAsync` - 設定インポート
-- [ ] `GetAvailableUpgradesAsync` - 更新可能パッケージ一覧
-
-### 4.2 テスト基盤構築
-
-#### 単体テスト
-```csharp
-// WinGetComClientTests.cs
-- [ ] InitializeAsync のテスト
-- [ ] SearchPackagesAsync のテスト（モック使用）
-- [ ] エラーハンドリングのテスト
-- [ ] リソース管理（Dispose）のテスト
+```powershell
+# コマンドヘルプで全オプション確認
+winget [command] -?
+# 各パラメーターの実動作確認と出力記録
 ```
 
-#### 統合テスト（Windows環境必須）
+#### 2. t-wada式TDDサイクル
+各機能の実装は以下の小さなサイクルで実施：
+
+```
+【Red-Green-Refactorサイクル】
+1. Red（赤）: 失敗するテストを書く
+   - 期待する動作を明確にテストコードで表現
+   - テストが失敗することを確認
+
+2. Green（緑）: テストを通す最小実装
+   - テストを通すための最小限のコードのみ記述
+   - 過度な設計や最適化は行わない
+
+3. Refactor（リファクタ）: コード整理
+   - テストが通る状態を維持しながらコードを改善
+   - 重複の除去、命名の改善、構造の整理
+```
+
+#### 3. レイヤー別実装順序
+1. **ArgumentParser**: 引数解析とバリデーション
+2. **CommandHandler**: ビジネスロジックとフロー制御
+3. **WinGetClient**: COM API呼び出し
+4. **Integration**: レイヤー間の結合
+5. **E2E**: エンドツーエンド動作確認
+
+#### 4. エイリアステスト戦略
 ```csharp
-// ComApiIntegrationTests.cs
+// 基底テストクラスでエイリアスをパラメータ化
+[Theory]
+[InlineData("list")]
+[InlineData("ls")]
+public async Task Command_WithAlias_ExecutesSameLogic(string commandAlias)
+{
+    // 共通のテストロジック
+}
+```
+
+---
+
+## 📦 Command 1: list / ls コマンド完全実装
+
+### 🎯 list コマンド仕様（実際のwinget list -?から取得）
+```
+使用法: winget list [[-q] <query>] [<options>]
+
+引数:
+  -q,--query                    リスト コマンドのフィルターとして使用されるクエリ
+
+オプション:
+  --id                          結果をパッケージ ID でフィルター処理します
+  --name                        結果をパッケージ名でフィルター処理します
+  --moniker                     結果をパッケージ モニカーでフィルター処理します
+  --tag                         結果をタグでフィルター処理します
+  --cmd,--command               結果をコマンドでフィルター処理します
+  -s,--source                   指定されたソースを使用してパッケージを検索します
+  -e,--exact                    完全一致を使用してパッケージを検索します
+  --scope                       使用するインストール スコープを選択します（user または machine）
+  -n,--count                    指定した数になるまで出力される項目数を制限します
+  --upgrade-available           アップグレードが利用可能なパッケージのみ表示します
+  -u,--unknown,--include-unknown アップグレード可能なリストに不明なバージョンを含めます
+  --pinned,--include-pinned     アップグレード可能なリストにピン留めされたパッケージを含めます
+  --header                      オプションの Windows-Package-Manager REST ソース HTTP ヘッダー
+  --authentication-mode         REST ソースの認証モードを指定します
+  --authentication-account      REST ソースの認証に使用するアカウントを指定します
+  --accept-source-agreements    ソース使用許諾契約に同意し、プロンプトを回避します
+  -?,--help                     このコマンドのヘルプを表示します
+  --wait                        任意のキーが押されるまでプロセスを終了する前に、プロンプトを表示します
+  --logs,--open-logs            既定のログの場所を開きます
+  --verbose,--verbose-logs      ログで詳細ログを有効にします（サポートを求める際に役立ちます）
+  --nowarn,--ignore-warnings    警告メッセージを表示しません
+  --disable-interactivity       対話形式のプロンプトを無効にします
+  --proxy                       ネットワーク プロキシを設定します
+  --no-proxy                    ネットワーク プロキシの使用を無効にします
+```
+
+**重要な動作仕様（実際のwinget動作から確認）**:
+- `--include-unknown`と`--include-pinned`は`--upgrade-available`がない場合エラー
+- `-n,--count`の範囲は1-1000（範囲外はエラー）
+- `--scope`の値は`user`または`machine`のみ（大文字小文字区別なし）
+- 複数のフィルターは AND 条件で結合される
+
+### 📐 Layer 1: ArgumentParser (WinGetArgumentParser)
+
+- [ ] 基本引数解析（引数なし、-q/--query）
+- [ ] フィルタオプション解析（--id, --name, --moniker, --tag, --cmd）
+- [ ] 追加オプション解析（-s, -e, --scope, -n）
+- [ ] アップグレード関連解析（--upgrade-available と依存オプション）
+- [ ] 認証オプション解析（--header, --authentication-*）
+- [ ] エイリアス動作確認（list vs ls）
+
+### 📐 Layer 2: CommandHandler (ListCommandHandler)
+
+- [ ] 基本実行フロー（IWinGetClient呼び出し）
+- [ ] フィルタ適用ロジック（複数フィルタの結合）
+- [ ] 結果表示フォーマット（テーブル形式、件数制限）
+- [ ] エラーハンドリング（例外処理、終了コード）
+
+### 📐 Layer 3: WinGetClient (WinGetComClient)
+
+- [ ] COM API初期化と接続
+- [ ] 基本リスト取得（全パッケージ、空リスト）
+- [ ] フィルタリング実装（ID、名前、完全一致）
+- [ ] ソースフィルタリング
+- [ ] アップグレード検出
+- [ ] パフォーマンス最適化（ページング、キャンセレーション）
+
+### 📐 Layer 4: Integration Tests
+
+- [ ] 実COM API結合テスト（SkippableFact使用）
+- [ ] winget.exe連携テスト（結果比較）
+
+### 📐 Layer 5: E2E Tests
+
+#### 実用的なE2Eテスト戦略
+```
+【組み合わせ爆発対策】
+1. 代表的なパラメーター組み合わせのみテスト
+2. 境界値テストに重点
+3. 実際のユーザーシナリオベース
+4. 条件付き実行（SkippableFact）で実行時間制御
+```
+
+- [ ] 基本シナリオテスト
+  - [ ] `E2E_List_NoArguments_ShowsAllPackages`
+  - [ ] `E2E_List_WithQuery_FiltersCorrectly`
+  - [ ] `E2E_List_WithIdExact_FindsSpecificPackage`
+- [ ] 重要な組み合わせテスト（5-10パターン）
+  - [ ] `E2E_List_QueryAndSource_CombinesFilters`
+  - [ ] `E2E_List_UpgradeAvailableWithUnknown_ShowsAll`
+  - [ ] `E2E_List_CountLimit_LimitsResults`
+- [ ] エイリアステスト
+  - [ ] `E2E_ListVsLs_ProduceSameOutput`
+- [ ] エラーシナリオテスト
+  - [ ] `E2E_List_InvalidCount_ShowsError`
+  - [ ] `E2E_List_ConflictingOptions_ShowsError`
+
+#### テスト組み合わせ選定基準
+```
+【高優先度】
+- 最も使用頻度の高い組み合わせ
+- エラーが発生しやすい境界値
+- 相互依存関係のあるオプション
+
+【除外対象】
+- 機能的に重複する組み合わせ
+- ArgumentParserで検証済みの組み合わせ
+- 実行時間が5秒以上かかる組み合わせ
+```
+
+#### パフォーマンス制御
+```csharp
 [SkippableFact]
-- [ ] 実際のCOM API初期化テスト
-- [ ] 実パッケージ検索テスト
-- [ ] インストール/アンインストールの往復テスト
+[Trait("Category", "E2E")]
+[Trait("ExecutionTime", "Fast")]  // 3秒以内
+public async Task E2E_List_BasicScenarios_FastExecution()
+{
+    Skip.IfNot(IsWinGetAvailable() && IsFastTestEnabled(), "高速テストモードのみ");
+    // 代表的なシナリオのみ
+}
+
+[SkippableFact]
+[Trait("Category", "E2E")]
+[Trait("ExecutionTime", "Slow")]  // 10秒以内
+public async Task E2E_List_ComplexScenarios_DetailedValidation()
+{
+    Skip.IfNot(IsWinGetAvailable() && IsSlowTestEnabled(), "詳細テストモード");
+    // 複雑な組み合わせテスト
+}
 ```
-
-### 4.3 エラーハンドリング強化
-- [ ] COM例外の適切なラッピング
-- [ ] ユーザーフレンドリーなエラーメッセージ
-- [ ] リトライロジック（一時的エラー対応）
-- [ ] 診断情報の充実
-
-### 4.4 パフォーマンス最適化
-- [ ] 非同期処理の最適化
-- [ ] キャッシング戦略（カタログ情報）
-- [ ] メモリ使用量の監視
-- [ ] COM呼び出しの最小化
-
----
-
-## フェーズ5: Gist同期機能統合
-
-### 5.1 基本設計
-```
-src/GistSync/
-├── IGistClient.cs              # Gist APIインターフェース
-├── GistClient.cs                # Gist API実装
-├── GistSyncService.cs           # 同期ロジック
-├── Authentication/
-│   ├── OAuthDeviceFlow.cs      # GitHub認証
-│   └── TokenManager.cs         # トークン管理
-└── Models/
-    ├── GistPackageList.cs       # パッケージリスト
-    └── SyncSettings.cs          # 同期設定
-```
-
-### 5.2 実装タスク
-- [ ] GitHub OAuth Device Flow認証
-- [ ] Gist CRUD操作
-- [ ] YAML形式でのパッケージリスト管理
-- [ ] 同期コマンドの追加（sync push/pull/status）
-- [ ] オフラインキャッシュ
-- [ ] 競合解決ロジック
-
----
-
-## フェーズ6: プロダクション品質保証
-
-### 6.1 テストカバレッジ
-- [ ] 単体テストカバレッジ 90%以上
-- [ ] 統合テスト（全コマンド）
-- [ ] E2Eテスト（実際の使用シナリオ）
-- [ ] パフォーマンステスト
-
-### 6.2 ドキュメント
-- [ ] APIドキュメント生成
-- [ ] ユーザーガイド
-- [ ] トラブルシューティングガイド
-- [ ] 貢献者ガイド
-
-### 6.3 CI/CD
-- [ ] GitHub Actions設定
-- [ ] 自動テスト実行
-- [ ] コードカバレッジレポート
-- [ ] リリース自動化
-
-### 6.4 配布
-- [ ] NuGetパッケージ化
-- [ ] インストーラー作成
-- [ ] Chocolatey/Scoopパッケージ
-- [ ] dotnet toolパッケージ
-
----
-
-## 参考リンク
-- [Microsoft.WindowsPackageManager.ComInterop](https://www.nuget.org/packages/Microsoft.WindowsPackageManager.ComInterop)
-- [WinGet CLI GitHub](https://github.com/microsoft/winget-cli)
-- [System.CommandLine](https://learn.microsoft.com/en-us/dotnet/standard/commandline/)
-- [GitHub OAuth Device Flow](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps#device-flow)
-
----
-
-## 変更履歴
-- 2024-12-XX: フェーズ3.5完了、アーキテクチャ簡素化実施
-- 2024-12-XX: フェーズ4開始、COM API実装継続
-- 2024-12-XX: TODO.md全面改訂、現状に合わせて更新
-- 2024-12-XX: アーキテクチャ情報をarchitecture.mdに移動、タスク管理に特化
