@@ -40,39 +40,7 @@ public class CommandService : ICommandService
             }
 
             var command = args[0].ToLowerInvariant();
-            var usesCom = command is "install" or "uninstall" or "upgrade";
-            var usesGist = command is "sync" or "export" or "import";
-
-
-
-            if (usesGist)
-            {
-                _logger.LogDebug("Routing to Gist service for command: {Command}", command);
-                return command switch
-                {
-                    "sync" => await _gistSyncService.SyncAsync(),
-                    "export" => await _gistSyncService.ExportAsync(),
-                    "import" => await _gistSyncService.ImportAsync(),
-                    _ => await _passthroughClient.ExecuteAsync(args)
-                };
-            }
-
-            if (usesCom)
-            {
-                _logger.LogDebug("Routing to COM client for command: {Command}", command);
-                await _winGetClient.InitializeAsync();
-                
-                return command switch
-                {
-                    "install" => await _winGetClient.InstallPackageAsync(args),
-                    "uninstall" => await _winGetClient.UninstallPackageAsync(args),
-                    "upgrade" => await _winGetClient.UpgradePackageAsync(args),
-                    _ => await _passthroughClient.ExecuteAsync(args)
-                };
-            }
-
-            _logger.LogDebug("Routing to passthrough client for command: {Command}", command);
-            return await _passthroughClient.ExecuteAsync(args);
+            return await RouteCommandAsync(command, args);
         }
         catch (System.Runtime.InteropServices.COMException comEx)
         {
@@ -94,6 +62,51 @@ public class CommandService : ICommandService
             _errorMessageService.HandleUnexpectedException(ex);
             return 1;
         }
+    }
+
+    private async Task<int> RouteCommandAsync(string command, string[] args)
+    {
+        var usesCom = command is "install" or "uninstall" or "upgrade";
+        var usesGist = command is "sync" or "export" or "import";
+
+        if (usesGist)
+        {
+            return await HandleGistCommandAsync(command);
+        }
+
+        if (usesCom)
+        {
+            return await HandleComCommandAsync(command, args);
+        }
+
+        _logger.LogDebug("Routing to passthrough client for command: {Command}", command);
+        return await _passthroughClient.ExecuteAsync(args);
+    }
+
+    private async Task<int> HandleGistCommandAsync(string command)
+    {
+        _logger.LogDebug("Routing to Gist service for command: {Command}", command);
+        return command switch
+        {
+            "sync" => await _gistSyncService.SyncAsync(),
+            "export" => await _gistSyncService.ExportAsync(),
+            "import" => await _gistSyncService.ImportAsync(),
+            _ => throw new ArgumentException($"Unsupported gist command: {command}")
+        };
+    }
+
+    private async Task<int> HandleComCommandAsync(string command, string[] args)
+    {
+        _logger.LogDebug("Routing to COM client for command: {Command}", command);
+        await _winGetClient.InitializeAsync();
+        
+        return command switch
+        {
+            "install" => await _winGetClient.InstallPackageAsync(args),
+            "uninstall" => await _winGetClient.UninstallPackageAsync(args),
+            "upgrade" => await _winGetClient.UpgradePackageAsync(args),
+            _ => throw new ArgumentException($"Unsupported COM command: {command}")
+        };
     }
 
 
