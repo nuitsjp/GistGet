@@ -155,7 +155,6 @@ public class WinGetComClient : IWinGetClient
                 var error = await process.StandardError.ReadToEndAsync();
                 await process.WaitForExitAsync();
                 
-                Console.Write(output);
                 if (!string.IsNullOrEmpty(error))
                     Console.Error.Write(error);
                 
@@ -239,7 +238,6 @@ public class WinGetComClient : IWinGetClient
                 var error = await process.StandardError.ReadToEndAsync();
                 await process.WaitForExitAsync();
                 
-                Console.Write(output);
                 if (!string.IsNullOrEmpty(error))
                     Console.Error.Write(error);
                 

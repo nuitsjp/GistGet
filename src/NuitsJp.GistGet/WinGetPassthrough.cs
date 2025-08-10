@@ -42,7 +42,6 @@ public class WinGetPassthrough : IWinGetPassthroughClient
             if (process == null)
             {
                 _logger.LogError("Failed to start winget.exe");
-                Console.WriteLine("Error: Failed to start winget.exe");
                 return 1;
             }
 
@@ -53,7 +52,6 @@ public class WinGetPassthrough : IWinGetPassthroughClient
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error executing winget.exe");
-            Console.WriteLine($"Error: {ex.Message}");
             return 1;
         }
     }
