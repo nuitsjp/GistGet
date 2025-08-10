@@ -13,6 +13,8 @@ public class WinGetPassthrough
         {
             FileName = "winget.exe",
             UseShellExecute = false,
+            RedirectStandardOutput = false,
+            RedirectStandardError = false
         };
 
         // 引数をそのまま渡す

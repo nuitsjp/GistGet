@@ -36,7 +36,15 @@
       "Bash(git restore:*)",
       "Bash(dotnet build:*)",
       "Bash(dotnet run:*)",
-      "Bash(./bin/Debug/net8.0-windows10.0.26100/win-x64/NuitsJp.GistGet.exe:*)"
+      "Bash(./bin/Debug/net8.0-windows10.0.26100/win-x64/NuitsJp.GistGet.exe:*)",
+      "Bash(./bin/Debug/net8.0-windows10.0.26100/win-x64/NuitsJp.GistGet.exe search notepad)",
+      "Bash(./bin/Debug/net8.0-windows10.0.26100/win-x64/NuitsJp.GistGet.exe list)",
+      "Bash(./bin/Debug/net8.0-windows10.0.26100/win-x64/NuitsJp.GistGet.exe install --id NonExistentPackage.Test)",
+      "Bash(true)",
+      "Bash(./bin/Debug/net8.0-windows10.0.26100/win-x64/NuitsJp.GistGet.exe show NonExistentPackage.Test)",
+      "Bash(echo $COLUMNS)",
+      "Bash(tput:*)",
+      "Bash(./bin/Debug/net8.0-windows10.0.26100/win-x64/NuitsJp.GistGet.exe list --count 3)"
     ],
     "deny": []
   }
