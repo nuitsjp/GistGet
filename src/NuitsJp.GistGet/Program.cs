@@ -14,6 +14,7 @@ var services = new ServiceCollection()
     })
     // Core services
     .AddSingleton<ICommandService, CommandService>()
+    .AddSingleton<IErrorMessageService, ErrorMessageService>()
     // WinGet clients
     .AddSingleton<IWinGetClient, WinGetComClient>()
     .AddSingleton<IWinGetPassthroughClient, WinGetPassthrough>()
@@ -38,8 +39,7 @@ try
 catch (Exception ex)
 {
     var logger = services.GetService<ILogger<Program>>();
-    logger?.LogError(ex, "Unhandled exception occurred");
-    Console.WriteLine($"Fatal error: {ex.Message}");
+    logger?.LogError(ex, "Unhandled exception occurred: {ErrorMessage}", ex.Message);
     return 1;
 }
 finally

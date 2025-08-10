@@ -12,17 +12,20 @@ public class CommandService : ICommandService
     private readonly IWinGetPassthroughClient _passthroughClient;
     private readonly IGistSyncService _gistSyncService;
     private readonly ILogger<CommandService> _logger;
+    private readonly IErrorMessageService _errorMessageService;
 
     public CommandService(
         IWinGetClient winGetClient,
         IWinGetPassthroughClient passthroughClient,
         IGistSyncService gistSyncService,
-        ILogger<CommandService> logger)
+        ILogger<CommandService> logger,
+        IErrorMessageService errorMessageService)
     {
         _winGetClient = winGetClient;
         _passthroughClient = passthroughClient;
         _gistSyncService = gistSyncService;
         _logger = logger;
+        _errorMessageService = errorMessageService;
     }
 
     public async Task<int> ExecuteAsync(string[] args)
@@ -40,48 +43,7 @@ public class CommandService : ICommandService
             var usesCom = command is "install" or "uninstall" or "upgrade";
             var usesGist = command is "sync" or "export" or "import";
 
-            // テスト用コマンドの追加
-            if (command == "test-list")
-            {
-                _logger.LogDebug("Executing test-list command");
-                await _winGetClient.InitializeAsync();
-                var packages = await ((WinGetComClient)_winGetClient).GetInstalledPackagesAsync();
-                
-                Console.WriteLine($"Found {packages.Count} installed packages:");
-                foreach (var (id, name, version) in packages.Take(10)) // 最初の10個を表示
-                {
-                    Console.WriteLine($"  {id} | {name} | {version}");
-                }
-                if (packages.Count > 10)
-                {
-                    Console.WriteLine($"  ... and {packages.Count - 10} more packages");
-                }
-                return 0;
-            }
 
-            if (command == "test-search")
-            {
-                if (args.Length < 2)
-                {
-                    Console.WriteLine("Usage: gistget test-search <query>");
-                    return 1;
-                }
-                
-                _logger.LogDebug("Executing test-search command");
-                await _winGetClient.InitializeAsync();
-                var packages = await ((WinGetComClient)_winGetClient).SearchPackagesAsync(args[1]);
-                
-                Console.WriteLine($"Found {packages.Count} packages matching '{args[1]}':");
-                foreach (var (id, name, version) in packages.Take(10)) // 最初の10個を表示
-                {
-                    Console.WriteLine($"  {id} | {name} | {version}");
-                }
-                if (packages.Count > 10)
-                {
-                    Console.WriteLine($"  ... and {packages.Count - 10} more packages");
-                }
-                return 0;
-            }
 
             if (usesGist)
             {
@@ -112,11 +74,27 @@ public class CommandService : ICommandService
             _logger.LogDebug("Routing to passthrough client for command: {Command}", command);
             return await _passthroughClient.ExecuteAsync(args);
         }
+        catch (System.Runtime.InteropServices.COMException comEx)
+        {
+            _errorMessageService.HandleComException(comEx);
+            return 1;
+        }
+        catch (HttpRequestException httpEx)
+        {
+            _errorMessageService.HandleNetworkException(httpEx);
+            return 1;
+        }
+        catch (InvalidOperationException invEx) when (invEx.Message.Contains("not found"))
+        {
+            _errorMessageService.HandlePackageNotFoundException(invEx);
+            return 1;
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error executing command");
-            Console.WriteLine($"Error: {ex.Message}");
+            _errorMessageService.HandleUnexpectedException(ex);
             return 1;
         }
     }
+
+
 }
