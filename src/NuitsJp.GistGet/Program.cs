@@ -1,5 +1,6 @@
 using System.CommandLine;
 using NuitsJp.GistGet.ArgumentParser;
+using NuitsJp.GistGet.WinGetClient;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -19,6 +20,7 @@ public class Program
             .ConfigureServices((context, services) =>
             {
                 services.AddSingleton<IWinGetArgumentParser, WinGetArgumentParser>();
+                services.AddSingleton<NuitsJp.GistGet.WinGetClient.Abstractions.IComInteropWrapper, NuitsJp.GistGet.WinGetClient.ComInteropWrapper>();
                 services.AddSingleton<NuitsJp.GistGet.WinGetClient.IWinGetClient, NuitsJp.GistGet.WinGetClient.WinGetComClient>();
                 services.AddLogging(builder =>
                 {
