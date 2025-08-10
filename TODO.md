@@ -19,8 +19,7 @@ winget.exe完全準拠の.NET 8アプリケーション開発のロードマッ�
 ## 直近の最優先事項（フェーズ3.5）
 - CLIフォールバック関連コードの削除
 - WinGetComClientの簡素化（フォールバックと不要分岐の撤去）
-- **IComInteropWrapperの削除・WinGetComClientの直接COMラップ化**
-- WinGetComClientのテスト容易性確保（必要ならPackageManagerのラッパー/モックのみ最小化）
+- COM APIテスト基盤の最小セット導入（IComInteropWrapper）
 - テストとドキュメントの整合更新
 
 ## マイルストーン
@@ -69,14 +68,14 @@ winget.exe完全準拠の.NET 8アプリケーション開発のロードマッ�
 - インターフェース整理
   - IWinGetClientから不要メソッドの削除
   - IWinGetCliClient/IProcessRunner関連の削除
-- **IComInteropWrapperの削除**
-  - WinGetComClientが直接COM API（PackageManager）を扱う形にリファクタ
-  - テスト時はPackageManagerの差し替え/モックで対応
+- COM APIテスト基盤の最小導入
+  - IComInteropWrapper（抽象化）を追加
+  - Moqで単体テスト可能に
 
 ### 3) 最小テスト追加（Red→Green→Refactor）
-- WinGetComClientの直接COMラップ化後の基本動作テスト
-- PackageManagerのモック/差し替えによるテスト容易性の検証
-- CLI分岐廃止確認
+- インターフェース導入（IComInteropWrapper）
+- ComInteropMockHelper（Moqセットアップ）
+- WinGetComClientの基本動作テスト（CLI分岐廃止確認）
 
 ### 4) ドキュメント更新
 - architecture.md（反映済み箇所の確認）
@@ -206,3 +205,61 @@ tests/TestData/
 - https://github.com/microsoft/winget-cli
 - https://learn.microsoft.com/en-us/dotnet/standard/commandline/
 - https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps
+
+---
+
+# GistGet Development TODO
+
+## 現在のフェーズ: アーキテクチャの簡素化とCOM API実装
+
+### 🔄 進行中のタスク
+
+#### 1. アーキテクチャの簡素化
+- [ ] `IComInteropWrapper`インターフェースを削除
+- [ ] `ComInteropWrapper`クラスを削除
+- [ ] `WinGetComClient`を直接`PackageManager`を使用するよう修正
+  - [ ] プロダクション用コンストラクタ（`PackageManager`を内部で生成）
+  - [ ] テスト用内部コンストラクタ（`PackageManager`を注入可能に）
+- [ ] 依存性注入の設定を更新（`ServiceCollectionExtensions.cs`）
+- [ ] 既存のテストを新しい構造に合わせて修正
+
+#### 2. COM API実装の完成
+- [ ] `SearchPackagesAsync`の実装
+  - [ ] `PackageCatalogReference`の取得
+  - [ ] 検索クエリの構築（`FindPackagesOptions`）
+  - [ ] 結果の変換（`CatalogPackage` → `WinGetPackage`）
+- [ ] `ListInstalledPackagesAsync`の実装
+  - [ ] インストール済みパッケージカタログの取得
+  - [ ] フィルタリング条件の適用
+  - [ ] 結果のマッピング
+- [ ] `InstallPackageAsync`の実装
+  - [ ] パッケージの検索と特定
+  - [ ] インストールオプションの設定
+  - [ ] 進捗状況のレポート
+- [ ] エラーハンドリングの強化
+  - [ ] COM例外の適切なキャッチと変換
+  - [ ] リトライロジックの実装（必要に応じて）
+
+### 📋 次のステップ
+
+1. **即座に実行すべきタスク**
+   - `IComInteropWrapper`と`ComInteropWrapper`を削除
+   - `WinGetComClient`のコンストラクタを修正
+   - DIコンテナの設定を更新
+
+2. **その後の優先タスク**
+   - 基本的なCOM API操作（Search, List, Install）の実装
+   - 単体テストの作成（モック化された`PackageManager`を使用）
+   - 統合テストの準備
+
+### 🎯 完了基準
+- [ ] 不要な抽象化レイヤーが削除されている
+- [ ] `WinGetComClient`が直接`PackageManager`を使用している
+- [ ] テスト可能な構造が維持されている（内部コンストラクタ経由）
+- [ ] 基本的なパッケージ操作が動作する
+- [ ] 適切なエラーハンドリングが実装されている
+
+### 📝 メモ
+- YAGNI原則に従い、現時点で必要ない抽象化は避ける
+- `PackageManager`のモックは、Microsoft.Management.Deployment の型を直接モックする
+- 将来的にCLIフォールバックが必要になった場合は、`IWinGetClient`レベルで切り替える
