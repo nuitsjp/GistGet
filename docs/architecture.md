@@ -22,6 +22,54 @@ GistGetは、WinGetの機能を.NET 8で実装し、GitHub Gistとの同期機�
 └─────────────────────────────────────────┘
 ```
 
+## 技術スタック
+
+### コアフレームワーク
+- **フレームワーク**: .NET 8
+- **引数パーサー**: System.CommandLine
+- **COM API**: Microsoft.WindowsPackageManager.ComInterop 1.11.430
+- **依存性注入**: Microsoft.Extensions.DependencyInjection
+- **ログ**: Microsoft.Extensions.Logging
+
+### テスト・品質保証
+- **テストフレームワーク**: xUnit
+- **モック**: Moq
+- **アサーション**: Shouldly
+- **ベンチマーク**: BenchmarkDotNet
+- **条件付きテスト**: SkippableFact（Xunit.SkippableFact）
+
+### 追加ライブラリ
+- **YAML処理**: YamlDotNet（Gist同期用）
+- **HTTP通信**: HttpClient（GitHub API用）
+- **暗号化**: Windows DPAPI（トークン保存用）
+
+## アーキテクチャ原則
+
+### 1. YAGNI原則の厳格な遵守
+- 不要な抽象化レイヤーを排除
+- 現在必要な機能のみを実装
+- 将来の拡張性よりも現在の単純性を優先
+
+### 2. COM APIの直接利用
+- 中間変換レイヤーを排除
+- Microsoft製の型をドメインオブジェクトとして直接使用
+- WinGetの薄いラッパーとしての本質に忠実
+
+### 3. テスト可能性の確保
+- 内部コンストラクタ経由でのテスト用依存性注入
+- COM API操作の適切なモック化
+- 環境依存テストの条件付き実行
+
+### 4. Microsoft製型の直接採用
+- `CatalogPackage`, `FindPackagesOptions`, `InstallResult`等の直接使用
+- 独自のドメインモデルへの変換を避ける
+- 型安全性とWinGet互換性の両立
+
+### 5. 単一責任の徹底
+- 各レイヤーの責務を明確に分離
+- 横断的関心事の適切な分離
+- コマンド単位での独立性確保
+
 ## コア・アーキテクチャ・コンポーネント
 
 ### 1. エントリポイント (Program.cs)
@@ -149,27 +197,23 @@ public interface IWinGetClient
 
 ### 1. 依存性注入パターン
 - .NET Generic Hostによる統一されたDIコンテナ
-- インターフェース分離による疎結合設計
-
-### 2. 依存性注入パターン
-- .NET Generic Hostによる統一されたDIコンテナ
 - 最小限のインターフェース分離（過度な抽象化を回避）
 
-### 3. 直接操作パターン
+### 2. 直接操作パターン
 - COM APIを直接呼び出し（中間レイヤーなし）
 - Microsoft製型をドメインオブジェクトとして採用
 - 薄いラッパーとしての本質に忠実
 
-### 4. 例外処理パターン
+### 3. 例外処理パターン
 - COM API専用の明確なエラーハンドリング
 - 環境設定問題の明確な診断メッセージ
 - 段階的エラー回復とユーザーガイダンス
 
-### 5. コマンドパターン
+### 4. コマンドパターン
 - 各WinGetコマンドを独立したコマンドハンドラーとして実装
 - 共通ベースクラスによる統一されたインターフェース
 
-### 6. 最小設計原則（YAGNI）
+### 5. 最小設計原則（YAGNI）
 - 必要最小限の抽象化のみ実装
 - 型変換レイヤーの完全削除
 - Microsoftの型定義を直接活用
@@ -222,6 +266,11 @@ public interface IWinGetClient
 - コマンドライン引数の厳密なバリデーション
 - ValidationEngineによるルールベース検証
 
+### 認証・認可（Gist同期）
+- GitHub OAuth Device Flow による安全な認証
+- Windows DPAPI による暗号化トークン保存
+- 最小権限の原則（Gistスコープのみ）
+
 ## パフォーマンス最適化
 
 ### COM API戦略
@@ -235,6 +284,46 @@ public interface IWinGetClient
 ### リソース管理
 - IDisposable による適切なリソース解放
 - COM オブジェクトの確実な解放
+
+### キャッシング戦略
+- パッケージカタログ情報の適切なキャッシュ
+- 頻繁なCOM API呼び出しの最小化
+- メモリ使用量とパフォーマンスのバランス
+
+## 既知の課題と対策
+
+| 課題 | 影響 | 対策 | 状態 |
+|------|------|------|------|
+| COM API Windows限定 | クロスプラットフォーム不可 | 要件として明記、Windows専用として受容 | 受容済 |
+| 管理者権限要求 | 一部操作で必要 | 昇格プロンプト実装、権限チェック | 対応予定 |
+| COM初期化失敗 | 環境依存エラー | 詳細な診断メッセージ、環境チェック | 実装済 |
+| パッケージマネージャー互換性 | バージョン差異によるAPI変更 | 最小バージョンチェック、互換性テスト | 対応予定 |
+| COM リソースリーク | メモリ使用量増加 | 適切なDispose実装、リソース監視 | 実装中 |
+| 大量パッケージ処理 | パフォーマンス劣化 | 非同期処理、ページング、進捗通知 | 対応予定 |
+
+## 将来の拡張性
+
+### Gist同期アーキテクチャ
+```
+src/GistSync/
+├── IGistClient.cs              # GitHub API抽象化
+├── GistClient.cs               # 実装
+├── Authentication/
+│   ├── OAuthDeviceFlow.cs      # OAuth認証
+│   └── TokenManager.cs         # トークン管理
+├── Models/
+│   ├── GistPackageList.cs      # パッケージリスト
+│   └── SyncSettings.cs         # 同期設定
+└── Services/
+    ├── GistSyncService.cs      # 同期ロジック
+    └── ConflictResolver.cs     # 競合解決
+```
+
+### 設計考慮事項
+- YAML形式でのパッケージリスト互換性
+- オフラインキャッシュとオンライン同期の両立
+- 複数デバイス間の競合解決戦略
+- PowerShell版との相互運用性確保
 
 ## COM API実装のテスト戦略
 

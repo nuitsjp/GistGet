@@ -151,30 +151,6 @@ src/GistSync/
 
 ---
 
-## 技術スタック（確定）
-- **フレームワーク**: .NET 8
-- **引数パーサー**: System.CommandLine
-- **COM API**: Microsoft.WindowsPackageManager.ComInterop 1.11.430
-- **テスト**: xUnit + Moq + Shouldly
-- **ベンチマーク**: BenchmarkDotNet
-- **ログ**: Microsoft.Extensions.Logging
-- **DI**: Microsoft.Extensions.DependencyInjection
-
-## アーキテクチャ原則（確定）
-- ✅ YAGNI原則の遵守（不要な抽象化を排除）
-- ✅ COM APIの直接利用（中間レイヤーなし）
-- ✅ Microsoft製の型をドメインモデルとして採用
-- ✅ テスト可能性の確保（内部コンストラクタ経由）
-- ✅ 薄いラッパーとしての本質に忠実
-
-## 既知の課題と対策
-| 課題 | 影響 | 対策 | 状態 |
-|------|------|------|------|
-| COM API Windows限定 | クロスプラットフォーム不可 | 要件として明記 | 受容済 |
-| 管理者権限要求 | 一部操作で必要 | 昇格プロンプト実装 | 対応予定 |
-| COM初期化失敗 | 環境依存エラー | 詳細な診断メッセージ | 実装済 |
-| パッケージマネージャー互換性 | バージョン差異 | 最小バージョンチェック | 対応予定 |
-
 ## 参考リンク
 - [Microsoft.WindowsPackageManager.ComInterop](https://www.nuget.org/packages/Microsoft.WindowsPackageManager.ComInterop)
 - [WinGet CLI GitHub](https://github.com/microsoft/winget-cli)
@@ -187,3 +163,4 @@ src/GistSync/
 - 2024-12-XX: フェーズ3.5完了、アーキテクチャ簡素化実施
 - 2024-12-XX: フェーズ4開始、COM API実装継続
 - 2024-12-XX: TODO.md全面改訂、現状に合わせて更新
+- 2024-12-XX: アーキテクチャ情報をarchitecture.mdに移動、タスク管理に特化

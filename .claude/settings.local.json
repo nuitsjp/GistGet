@@ -33,7 +33,8 @@
       "Bash(dotnet test)",
       "Bash(dotnet test:*)",
       "Bash(del /Q \"ArgumentParser\\WinGetArgumentParserTests.cs\" \"ArgumentParser\\ValidationEngineTests.cs\" \"ArgumentParser\\OptionModels\\InstallOptionsTests.cs\" \"ArgumentParser\\OptionModels\\ListOptionsTests.cs\" \"WinGetClient\\WinGetComClientTests.cs\" \"Commands\\CommandHandlersTests.cs\" \"Integration\\CliFallbackTests.cs\")",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(dotnet build:*)"
     ],
     "deny": []
   }

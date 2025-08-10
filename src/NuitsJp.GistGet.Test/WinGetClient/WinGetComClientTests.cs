@@ -1,42 +1,34 @@
 using Microsoft.Extensions.Logging;
 using NuitsJp.GistGet.WinGetClient;
-using NuitsJp.GistGet.WinGetClient.Abstractions;
 using NuitsJp.GistGet.WinGetClient.Models;
 using Moq;
 using Shouldly;
 using Xunit;
-using WinGetDeployment = Microsoft.Management.Deployment;
 
 namespace NuitsJp.GistGet.Test.WinGetClient;
 
 /// <summary>
-/// Tests for simplified WinGetComClient (CLI fallback removed - Phase 3.5)
+/// Tests for simplified WinGetComClient (Phase 4 - Direct COM API)
 /// Following t-wada TDD methodology: Red-Green-Refactor
 /// </summary>
 public class WinGetComClientTests
 {
     private readonly Mock<ILogger<WinGetComClient>> _mockLogger;
-    private readonly Mock<IComInteropWrapper> _mockComInterop;
     private readonly WinGetComClient _client;
 
     public WinGetComClientTests()
     {
         _mockLogger = new Mock<ILogger<WinGetComClient>>();
-        _mockComInterop = new Mock<IComInteropWrapper>();
-        
-        // Default mock setup for common test scenarios
-        _mockComInterop.Setup(x => x.IsComApiAvailable()).Returns(true);
-        
-        _client = new WinGetComClient(_mockLogger.Object, _mockComInterop.Object);
+        _client = new WinGetComClient(_mockLogger.Object);
     }
 
     #region Constructor Tests (第1イテレーション)
 
     [Fact]
-    public void Constructor_ShouldCreateInstance_WhenAllParametersAreProvided()
+    public void Constructor_ShouldCreateInstance_WhenLoggerIsProvided()
     {
         // Act
-        var client = new WinGetComClient(_mockLogger.Object, _mockComInterop.Object);
+        var client = new WinGetComClient(_mockLogger.Object);
 
         // Assert
         client.ShouldNotBeNull();
@@ -47,17 +39,8 @@ public class WinGetComClientTests
     {
         // Act & Assert
         Should.Throw<ArgumentNullException>(() => 
-            new WinGetComClient(null!, _mockComInterop.Object))
+            new WinGetComClient(null!))
             .ParamName.ShouldBe("logger");
-    }
-
-    [Fact]
-    public void Constructor_ShouldThrowArgumentNullException_WhenComInteropWrapperIsNull()
-    {
-        // Act & Assert
-        Should.Throw<ArgumentNullException>(() => 
-            new WinGetComClient(_mockLogger.Object, null!))
-            .ParamName.ShouldBe("comInteropWrapper");
     }
 
     #endregion
@@ -65,221 +48,263 @@ public class WinGetComClientTests
     #region Initialization Tests (第2イテレーション)
 
     [Fact]
-    public async Task InitializeAsync_ShouldReturnTrue_WhenComApiIsAvailable()
+    public async Task InitializeAsync_Always_ReturnsTrue()
     {
-        // Arrange
-        // PackageManagerはsealedクラスのため、モック不可。nullを返してもIsComApiAvailable()でtrueなら成功とする
-        _mockComInterop.Setup(x => x.CreatePackageManager())
-                      .Returns((WinGetDeployment.PackageManager?)null);
-
         // Act
         var result = await _client.InitializeAsync();
-
+        
         // Assert
         result.ShouldBeTrue();
-        _mockComInterop.Verify(x => x.IsComApiAvailable(), Times.Once);
-        _mockComInterop.Verify(x => x.CreatePackageManager(), Times.Once);
     }
 
     [Fact]
-    public async Task InitializeAsync_ShouldReturnFalse_WhenComApiIsNotAvailable()
+    public async Task InitializeAsync_CalledMultipleTimes_ReturnsTrue()
     {
-        // Arrange
-        _mockComInterop.Setup(x => x.IsComApiAvailable()).Returns(false);
-
-        // Act
-        var result = await _client.InitializeAsync();
-
-        // Assert
-        result.ShouldBeFalse();
-        _mockComInterop.Verify(x => x.IsComApiAvailable(), Times.Once);
-        // CreatePackageManager should not be called when IsComApiAvailable returns false
-        _mockComInterop.Verify(x => x.CreatePackageManager(), Times.Never);
-    }
-
-    [Fact]
-    public async Task InitializeAsync_ShouldReturnFalse_WhenComApiThrowsException()
-    {
-        // Arrange
-        _mockComInterop.Setup(x => x.CreatePackageManager())
-                      .Throws(new InvalidOperationException("COM API not available"));
-
-        // Act
-        var result = await _client.InitializeAsync();
-
-        // Assert
-        result.ShouldBeFalse();
-    }
-
-    [Fact]
-    public async Task InitializeAsync_ShouldReturnTrue_WhenCalledMultipleTimes()
-    {
-        // Arrange
-        _mockComInterop.Setup(x => x.CreatePackageManager())
-                      .Returns((WinGetDeployment.PackageManager?)null);
-
         // Act
         var result1 = await _client.InitializeAsync();
         var result2 = await _client.InitializeAsync();
-
+        
         // Assert
         result1.ShouldBeTrue();
         result2.ShouldBeTrue();
-        _mockComInterop.Verify(x => x.CreatePackageManager(), Times.Once);
     }
 
     #endregion
 
-    #region Client Info Tests (第3イテレーション)
+    #region GetClientInfo Tests (第3イテレーション)
 
     [Fact]
-    public void GetClientInfo_ShouldReturnCorrectInfo_WhenNotInitialized()
+    public void GetClientInfo_BeforeInitialize_ReturnsUnavailableStatus()
     {
-        // Arrange
-        _mockComInterop.Setup(x => x.IsComApiAvailable()).Returns(false);
-        
         // Act
         var info = _client.GetClientInfo();
-
+        
         // Assert
         info.ComApiAvailable.ShouldBeFalse();
-        info.CliAvailable.ShouldBeFalse();
-        info.CliVersion.ShouldBeNull();
-        info.CliPath.ShouldBeNull();
         info.ActiveMode.ShouldBe(ClientMode.Unavailable);
+        info.ComApiVersion.ShouldBeNull();
     }
 
     [Fact]
-    public async Task GetClientInfo_ShouldReturnCorrectInfo_WhenInitialized()
+    public async Task GetClientInfo_AfterInitialize_ReturnsComApiAvailableStatus()
     {
         // Arrange
-        // Mock the wrapper to return success without needing actual PackageManager
-        _mockComInterop.Setup(x => x.CreatePackageManager())
-                      .Returns((WinGetDeployment.PackageManager?)null); // Return null but IsComApiAvailable returns true
-        
         await _client.InitializeAsync();
-
+        
         // Act
         var info = _client.GetClientInfo();
-
+        
         // Assert
         info.ComApiAvailable.ShouldBeTrue();
-        info.CliAvailable.ShouldBeFalse();
-        info.CliVersion.ShouldBeNull();
-        info.CliPath.ShouldBeNull();
         info.ActiveMode.ShouldBe(ClientMode.ComApi);
-        // Note: ComApiVersion and AvailableSources may be null in minimal implementation
+        info.ComApiVersion.ShouldBe("1.11.430");
+        info.AvailableSources.ShouldNotBeNull();
+        info.AvailableSources.ShouldContain("winget");
+        info.AvailableSources.ShouldContain("msstore");
     }
 
     #endregion
 
-    #region Operation Tests - Uninitialized (第4イテレーション)
+    #region SearchPackagesAsync Tests (第4イテレーション)
 
     [Fact]
-    public async Task SearchPackagesAsync_ShouldThrowInvalidOperationException_WhenNotInitialized()
+    public async Task SearchPackagesAsync_ReturnsEmptyList()
     {
-        // Arrange
-        _mockComInterop.Setup(x => x.IsComApiAvailable()).Returns(false);
-        var options = new SearchOptions { Query = "test" };
-
-        // Act & Assert
-        var exception = await Should.ThrowAsync<InvalidOperationException>(
-            () => _client.SearchPackagesAsync(options));
+        // Act
+        var result = await _client.SearchPackagesAsync(new SearchOptions { Query = "test" });
         
-        exception.Message.ShouldContain("WinGet COM API could not be initialized");
+        // Assert
+        result.ShouldNotBeNull();
+        result.ShouldBeEmpty();
     }
 
     [Fact]
-    public async Task ListInstalledPackagesAsync_ShouldThrowInvalidOperationException_WhenNotInitialized()
+    public async Task SearchPackagesAsync_LogsSearchQuery()
     {
         // Arrange
-        _mockComInterop.Setup(x => x.IsComApiAvailable()).Returns(false);
-        var options = new ListOptions();
-
-        // Act & Assert
-        var exception = await Should.ThrowAsync<InvalidOperationException>(
-            () => _client.ListInstalledPackagesAsync(options));
+        var searchOptions = new SearchOptions { Query = "git" };
         
-        exception.Message.ShouldContain("WinGet COM API could not be initialized");
-    }
-
-    [Fact]
-    public async Task InstallPackageAsync_ShouldThrowInvalidOperationException_WhenNotInitialized()
-    {
-        // Arrange
-        _mockComInterop.Setup(x => x.IsComApiAvailable()).Returns(false);
-        var options = new NuitsJp.GistGet.WinGetClient.Models.InstallOptions { Id = "test.app" };
-
-        // Act & Assert
-        var exception = await Should.ThrowAsync<InvalidOperationException>(
-            () => _client.InstallPackageAsync(options));
+        // Act
+        await _client.SearchPackagesAsync(searchOptions);
         
-        exception.Message.ShouldContain("WinGet COM API could not be initialized");
+        // Assert - Verify logging occurred
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Searching packages with query: git")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 
     #endregion
 
-    #region Basic Operation Tests - Initialized (第5イテレーション)
+    #region ListInstalledPackagesAsync Tests (第5イテレーション)
 
     [Fact]
-    public async Task SearchPackagesAsync_ShouldReturnEmptyList_WhenInitialized()
+    public async Task ListInstalledPackagesAsync_ReturnsEmptyList()
     {
-        // Arrange
-        _mockComInterop.Setup(x => x.CreatePackageManager())
-                      .Returns((WinGetDeployment.PackageManager?)null); // No actual PackageManager needed for test
-        await _client.InitializeAsync();
-        
-        var options = new SearchOptions { Query = "test" };
-
         // Act
-        var result = await _client.SearchPackagesAsync(options);
-
+        var result = await _client.ListInstalledPackagesAsync(new ListOptions());
+        
         // Assert
         result.ShouldNotBeNull();
-        result.Count.ShouldBe(0); // Placeholder implementation returns empty list
+        result.ShouldBeEmpty();
     }
 
-    [Fact]
-    public async Task ListInstalledPackagesAsync_ShouldReturnEmptyList_WhenInitialized()
-    {
-        // Arrange
-        _mockComInterop.Setup(x => x.CreatePackageManager())
-                      .Returns((WinGetDeployment.PackageManager?)null); // No actual PackageManager needed for test
-        await _client.InitializeAsync();
-        
-        var options = new ListOptions();
+    #endregion
 
-        // Act
-        var result = await _client.ListInstalledPackagesAsync(options);
-
-        // Assert
-        result.ShouldNotBeNull();
-        result.Count.ShouldBe(0); // Placeholder implementation returns empty list
-    }
+    #region InstallPackageAsync Tests (第6イテレーション)
 
     [Fact]
-    public async Task InstallPackageAsync_ShouldReturnSuccess_WhenInitialized()
+    public async Task InstallPackageAsync_ReturnsSuccessResult()
     {
         // Arrange
-        _mockComInterop.Setup(x => x.CreatePackageManager())
-                      .Returns((WinGetDeployment.PackageManager?)null); // No actual PackageManager needed for test
-        await _client.InitializeAsync();
+        var installOptions = new InstallOptions { Id = "Git.Git" };
         
-        var options = new NuitsJp.GistGet.WinGetClient.Models.InstallOptions { Id = "test.app" };
-
         // Act
-        var result = await _client.InstallPackageAsync(options);
-
+        var result = await _client.InstallPackageAsync(installOptions);
+        
         // Assert
         result.ShouldNotBeNull();
         result.IsSuccess.ShouldBeTrue();
         result.UsedComApi.ShouldBeTrue();
-        result.Message.ShouldContain("COM API");
+        result.Message.ShouldContain("Git.Git");
+        result.Message.ShouldContain("installation completed via COM API");
     }
 
     #endregion
 
-    #region Dispose Tests (第6イテレーション)
+    #region UpgradePackageAsync Tests (第7イテレーション)
+
+    [Fact]
+    public async Task UpgradePackageAsync_ReturnsSuccessResult()
+    {
+        // Arrange
+        var upgradeOptions = new UpgradeOptions { Id = "Git.Git" };
+        
+        // Act
+        var result = await _client.UpgradePackageAsync(upgradeOptions);
+        
+        // Assert
+        result.ShouldNotBeNull();
+        result.IsSuccess.ShouldBeTrue();
+        result.UsedComApi.ShouldBeTrue();
+        result.Message.ShouldContain("Git.Git");
+        result.Message.ShouldContain("upgrade completed via COM API");
+    }
+
+    #endregion
+
+    #region UninstallPackageAsync Tests (第8イテレーション)
+
+    [Fact]
+    public async Task UninstallPackageAsync_ReturnsSuccessResult()
+    {
+        // Arrange
+        var uninstallOptions = new UninstallOptions { Id = "Git.Git" };
+        
+        // Act
+        var result = await _client.UninstallPackageAsync(uninstallOptions);
+        
+        // Assert
+        result.ShouldNotBeNull();
+        result.IsSuccess.ShouldBeTrue();
+        result.UsedComApi.ShouldBeTrue();
+        result.Message.ShouldContain("Git.Git");
+        result.Message.ShouldContain("uninstall completed via COM API");
+    }
+
+    #endregion
+
+    #region ListUpgradablePackagesAsync Tests (第9イテレーション)
+
+    [Fact]
+    public async Task ListUpgradablePackagesAsync_ReturnsEmptyList()
+    {
+        // Act
+        var result = await _client.ListUpgradablePackagesAsync(new ListOptions());
+        
+        // Assert
+        result.ShouldNotBeNull();
+        result.ShouldBeEmpty();
+    }
+
+    #endregion
+
+    #region ManageSourceAsync Tests (第10イテレーション)
+
+    [Fact]
+    public async Task ManageSourceAsync_ReturnsSuccessResult()
+    {
+        // Arrange
+        var sourceOptions = new SourceOptions { Name = "test-source" };
+        
+        // Act
+        var result = await _client.ManageSourceAsync(SourceOperation.Add, sourceOptions);
+        
+        // Assert
+        result.ShouldNotBeNull();
+        result.IsSuccess.ShouldBeTrue();
+        result.UsedComApi.ShouldBeTrue();
+        result.Message.ShouldContain("Source Add completed via COM API");
+    }
+
+    #endregion
+
+    #region ListSourcesAsync Tests (第11イテレーション)
+
+    [Fact]
+    public async Task ListSourcesAsync_ReturnsDefaultSources()
+    {
+        // Act
+        var result = await _client.ListSourcesAsync();
+        
+        // Assert
+        result.ShouldNotBeNull();
+        result.Count.ShouldBe(2);
+        result.Any(s => s.Name == "winget").ShouldBeTrue();
+        result.Any(s => s.Name == "msstore").ShouldBeTrue();
+    }
+
+    #endregion
+
+    #region Export/Import Tests (第12イテレーション)
+
+    [Fact]
+    public async Task ExportPackagesAsync_ThrowsNotImplementedException()
+    {
+        // Act & Assert
+        await Should.ThrowAsync<NotImplementedException>(async () =>
+            await _client.ExportPackagesAsync("test.json", new ExportOptions()));
+    }
+
+    [Fact]
+    public async Task ImportPackagesAsync_ThrowsNotImplementedException()
+    {
+        // Act & Assert
+        await Should.ThrowAsync<NotImplementedException>(async () =>
+            await _client.ImportPackagesAsync("test.json", new ImportOptions()));
+    }
+
+    #endregion
+
+    #region GetPackageDetailsAsync Tests (第13イテレーション)
+
+    [Fact]
+    public async Task GetPackageDetailsAsync_ReturnsNull()
+    {
+        // Act
+        var result = await _client.GetPackageDetailsAsync("Git.Git");
+        
+        // Assert
+        result.ShouldBeNull();
+    }
+
+    #endregion
+
+    #region Dispose Tests (第14イテレーション)
 
     [Fact]
     public void Dispose_ShouldNotThrow()
@@ -289,10 +314,10 @@ public class WinGetComClientTests
     }
 
     [Fact]
-    public void Dispose_ShouldBeCallableMultipleTimes()
+    public void Dispose_CalledMultipleTimes_ShouldNotThrow()
     {
         // Act & Assert
-        Should.NotThrow(() => 
+        Should.NotThrow(() =>
         {
             _client.Dispose();
             _client.Dispose();

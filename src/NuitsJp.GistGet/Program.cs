@@ -20,7 +20,6 @@ public class Program
             .ConfigureServices((context, services) =>
             {
                 services.AddSingleton<IWinGetArgumentParser, WinGetArgumentParser>();
-                services.AddSingleton<NuitsJp.GistGet.WinGetClient.Abstractions.IComInteropWrapper, NuitsJp.GistGet.WinGetClient.ComInteropWrapper>();
                 services.AddSingleton<NuitsJp.GistGet.WinGetClient.IWinGetClient, NuitsJp.GistGet.WinGetClient.WinGetComClient>();
                 services.AddLogging(builder =>
                 {
