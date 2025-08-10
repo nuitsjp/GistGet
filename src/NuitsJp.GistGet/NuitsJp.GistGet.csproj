@@ -11,9 +11,9 @@
 		<InvariantGlobalization>true</InvariantGlobalization>
 	</PropertyGroup>
 
-	<!-- MVP Phase 1: パッケージ参照は最小限 -->
-	<!-- <ItemGroup>
+	<!-- MVP Phase 2: COM API参照を追加 -->
+	<ItemGroup>
 		<PackageReference Include="Microsoft.WindowsPackageManager.ComInterop" Version="1.11.430" />
-	</ItemGroup> -->
+	</ItemGroup>
 
 </Project>
