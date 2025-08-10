@@ -5,13 +5,13 @@
 ### Phase 0: クリーンアップ ✅
 - [x] 既存の複雑な実装をすべて削除
 - [x] 最小限のプロジェクト構成に戻す
-- [ ] 不要なNuGetパッケージを削除
+- [x] 不要なNuGetパッケージを削除
 
-### Phase 1: 最小限のパススルー実装 (Day 1)
-- [ ] Program.cs - シンプルなエントリポイント（20行以内）
-- [ ] WinGetPassthrough.cs - winget.exe呼び出し（30行以内）
-- [ ] 動作確認: `gistget list` → `winget list` の出力が同じ
-- [ ] 動作確認: `gistget search git` → `winget search git` の出力が同じ
+### Phase 1: 最小限のパススルー実装 (Day 1) ✅
+- [x] Program.cs - シンプルなエントリポイント（20行以内）
+- [x] WinGetPassthrough.cs - winget.exe呼び出し（30行以内）
+- [x] 動作確認: `gistget list` → `winget list` の出力が同じ
+- [x] 動作確認: `gistget search git` → `winget search git` の出力が同じ
 
 ### Phase 2: コマンドルーティング追加 (Day 2)  
 - [ ] CommandRouter.cs - COM/パススルー判定ロジック（50行以内）
@@ -39,10 +39,10 @@
 
 ## 成功基準
 
-### Phase 1 完了基準
-- [ ] すべてのwingetコマンドがパススルーで動作
-- [ ] 出力がwingetと完全に一致
-- [ ] コード総量: 50行以内
+### Phase 1 完了基準 ✅
+- [x] すべてのwingetコマンドがパススルーで動作
+- [x] 出力がwingetと完全に一致
+- [x] コード総量: 50行以内（Program.cs: 13行 + WinGetPassthrough.cs: 28行 = 41行）
 
 ### Phase 2 完了基準  
 - [ ] install/uninstall/upgradeがCOM経由で動作
