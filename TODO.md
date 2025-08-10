@@ -1,265 +1,189 @@
 # GistGet .NET 8 実装ロードマップ
 
 ## 概要
-winget.exe完全準拠の.NET 8アプリケーション開発のロードマップ。現在は「CLIフォールバック削除とアーキテクチャ簡素化（フェーズ3.5）」を最優先で進行中。
+winget.exe完全準拠の.NET 8アプリケーション開発のロードマップ。現在は「COM API実装の完成とテスト基盤構築（フェーズ4）」を進行中。
 
 ---
 
 ## 🎯 現在の進捗サマリー
 - ✅ 完了
   - フェーズ1: WinGetコマンド完全仕様書
-  - フェーズ2: カスタム引数パーサー
-  - フェーズ3: COM APIラッパー統合
+  - フェーズ2: カスタム引数パーサー（18コマンド完全実装）
+  - フェーズ3: COM API基本統合
+  - フェーズ3.5: アーキテクチャ簡素化（CLIフォールバック削除）
 - 🚨 進行中（最優先）
-  - フェーズ3.5: CLIフォールバック削除とアーキテクチャ簡素化
+  - フェーズ4: COM API実装の完成とテスト基盤構築
 - ⏳ 未着手
-  - フェーズ4: Gist同期機能統合
-  - フェーズ5: テストと品質保証
+  - フェーズ5: Gist同期機能統合
+  - フェーズ6: プロダクション品質保証
 
-## 直近の最優先事項（フェーズ3.5）
-- CLIフォールバック関連コードの削除
-- WinGetComClientの簡素化（フォールバックと不要分岐の撤去）
-- COM APIテスト基盤の最小セット導入（IComInteropWrapper）
-- テストとドキュメントの整合更新
+## 直近の最優先事項（フェーズ4）
+- COM API主要メソッドの実装完成
+- テスト基盤の構築（単体テスト・統合テスト）
+- エラーハンドリングとログの強化
+- パフォーマンス最適化
 
 ## マイルストーン
 1. ✅ M1: ドキュメント完成
-2. ✅ M2: 引数パーサー完成
-3. ✅ M3: 基本5コマンド動作（install/list/upgrade/export/import）
-4. ✅ M4: 全18コマンド実装（COM APIラッパー完了）
-5. 🚨 M3.5: アーキテクチャ簡素化（現在）
+2. ✅ M2: 引数パーサー完成（18コマンド）
+3. ✅ M3: COM API基本統合
+4. ✅ M3.5: アーキテクチャ簡素化
+5. 🚨 M4: COM API全機能実装（現在）
 6. ⏳ M5: Gist同期実装
 7. ⏳ M6: プロダクション品質達成
 
 ---
 
-## 実施実績（簡素）
-- フェーズ1 成果物
-  - docs/*: 仕様書・相互関係・バリデーション・使用例 一式
-- フェーズ2 成果物
-  - src/*: 18コマンド、エイリアス/サブコマンド、バリデーション、テスト34件
-- フェーズ3 成果物
-  - src/WinGetClient/*: IWinGetClient, WinGetComClient, Models, DI拡張
-  - NuGet: Microsoft.WindowsPackageManager.ComInterop 1.11.430 統合済み
-
----
-
 # 実行手順（上から順に実行）
 
-## フェーズ3.5: CLIフォールバック削除とアーキテクチャ簡素化（最優先）
-- 目的: 複雑性/コード量/条件分岐を削減し、テスト容易性と保守性を向上
+## フェーズ4: COM API実装の完成とテスト基盤構築（現在進行中）
 
-### 1) 削除対象コンポーネント
+### 4.1 残りのCOM APIメソッド実装
+
+#### 優先度1: 基本操作（必須）
+- [ ] `SearchPackagesAsync` - パッケージ検索
+  - [ ] FindPackagesOptionsの構築
+  - [ ] カタログ接続とクエリ実行
+  - [ ] 結果のマッピング（CatalogPackage → ドメインモデル）
+- [ ] `ListInstalledPackagesAsync` - インストール済み一覧
+  - [ ] ローカルカタログの取得
+  - [ ] フィルタリング条件の適用
+- [ ] `InstallPackageAsync` - パッケージインストール
+  - [ ] InstallOptionsの設定
+  - [ ] プログレス通知の実装
+  - [ ] インストール結果の処理
+
+#### 優先度2: 管理操作
+- [ ] `UpgradePackageAsync` - パッケージ更新
+- [ ] `UninstallPackageAsync` - パッケージ削除
+- [ ] `GetPackageDetailsAsync` - 詳細情報取得
+
+#### 優先度3: 高度な機能
+- [ ] `ExportPackagesAsync` - 設定エクスポート
+- [ ] `ImportPackagesAsync` - 設定インポート
+- [ ] `GetAvailableUpgradesAsync` - 更新可能パッケージ一覧
+
+### 4.2 テスト基盤構築
+
+#### 単体テスト
+```csharp
+// WinGetComClientTests.cs
+- [ ] InitializeAsync のテスト
+- [ ] SearchPackagesAsync のテスト（モック使用）
+- [ ] エラーハンドリングのテスト
+- [ ] リソース管理（Dispose）のテスト
 ```
-削除:
-├── WinGetCliClient.cs
-├── Abstractions/
-│   ├── IProcessRunner.cs
-│   └── DefaultProcessRunner.cs
-└── Tests/
-    ├── WinGetCliClientTests.cs
-    └── ProcessRunnerTests.cs
+
+#### 統合テスト（Windows環境必須）
+```csharp
+// ComApiIntegrationTests.cs
+[SkippableFact]
+- [ ] 実際のCOM API初期化テスト
+- [ ] 実パッケージ検索テスト
+- [ ] インストール/アンインストールの往復テスト
 ```
 
-### 2) リファクタリングタスク
-- WinGetComClientの簡素化
-  - CLIフォールバックロジックの削除
-  - 例外処理・初期化フローの簡素化
-- インターフェース整理
-  - IWinGetClientから不要メソッドの削除
-  - IWinGetCliClient/IProcessRunner関連の削除
-- COM APIテスト基盤の最小導入
-  - IComInteropWrapper（抽象化）を追加
-  - Moqで単体テスト可能に
+### 4.3 エラーハンドリング強化
+- [ ] COM例外の適切なラッピング
+- [ ] ユーザーフレンドリーなエラーメッセージ
+- [ ] リトライロジック（一時的エラー対応）
+- [ ] 診断情報の充実
 
-### 3) 最小テスト追加（Red→Green→Refactor）
-- インターフェース導入（IComInteropWrapper）
-- ComInteropMockHelper（Moqセットアップ）
-- WinGetComClientの基本動作テスト（CLI分岐廃止確認）
-
-### 4) ドキュメント更新
-- architecture.md（反映済み箇所の確認）
-- README.md / API仕様の差分更新（CLI削除の明記）
-
-### 5) 期待される効果
-- コード量約30%削減、条件分岐大幅減、初期化負荷低下
-- 単一実装で保守容易化、テスト容易性/品質向上
+### 4.4 パフォーマンス最適化
+- [ ] 非同期処理の最適化
+- [ ] キャッシング戦略（カタログ情報）
+- [ ] メモリ使用量の監視
+- [ ] COM呼び出しの最小化
 
 ---
 
-## フェーズ4: Gist同期機能統合
-- 目的: PowerShell版機能との互換
-- 設計/構成
+## フェーズ5: Gist同期機能統合
+
+### 5.1 基本設計
 ```
 src/GistSync/
-├── IGistClient.cs
-├── GistClient.cs
-├── OAuthDeviceFlow.cs
-├── TokenManager.cs
-├── Models/
-│   ├── GistFile.cs
-│   └── SyncSettings.cs
-└── Extensions/
-    └── YamlSerializer.cs
+├── IGistClient.cs              # Gist APIインターフェース
+├── GistClient.cs                # Gist API実装
+├── GistSyncService.cs           # 同期ロジック
+├── Authentication/
+│   ├── OAuthDeviceFlow.cs      # GitHub認証
+│   └── TokenManager.cs         # トークン管理
+└── Models/
+    ├── GistPackageList.cs       # パッケージリスト
+    └── SyncSettings.cs          # 同期設定
 ```
-- 機能
-  - GitHub OAuth Device Flow
-  - Gist API CRUD
-  - DPAPI暗号化保存、環境変数（GIST_GET_*）
-  - YAML互換、リスト同期、オフラインキャッシュ、再試行
+
+### 5.2 実装タスク
+- [ ] GitHub OAuth Device Flow認証
+- [ ] Gist CRUD操作
+- [ ] YAML形式でのパッケージリスト管理
+- [ ] 同期コマンドの追加（sync push/pull/status）
+- [ ] オフラインキャッシュ
+- [ ] 競合解決ロジック
 
 ---
 
-## フェーズ5: テストと品質保証
-- 目的: プロダクション品質（安定性/性能/互換）
+## フェーズ6: プロダクション品質保証
 
-### テスト戦略
-```
-tests/
-├── Unit/
-│   ├── Commands/                  （既存: 34）
-│   └── WinGetClient/
-│       ├── WinGetComClientTests.cs
-│       ├── ComInteropWrapperTests.cs
-│       └── Helpers/
-│           └── ComInteropMockHelper.cs
-├── Integration/
-│   └── ComApiTests/
-│       ├── ComApiIntegrationTests.cs
-│       ├── ComApiTestFixture.cs
-│       └── SkippableFactAttribute.cs
-├── EndToEnd/
-│   ├── WinGetCompat/
-│   └── PowerShellCompat/
-├── Performance/
-│   ├── Benchmarks/
-│   │   ├── ComApiBenchmarks.cs
-│   │   └── BenchmarkConfig.cs
-│   └── LoadTests/
-└── Resources/
-    ├── ComResourceLeakTests.cs
-    └── DisposalTests.cs
-```
+### 6.1 テストカバレッジ
+- [ ] 単体テストカバレッジ 90%以上
+- [ ] 統合テスト（全コマンド）
+- [ ] E2Eテスト（実際の使用シナリオ）
+- [ ] パフォーマンステスト
 
-### 実装優先順位
-1) フェーズ3.5と並行
-- IComInteropWrapper 定義
-- ComInteropMockHelper 実装
-- 基本単体テスト移行
+### 6.2 ドキュメント
+- [ ] APIドキュメント生成
+- [ ] ユーザーガイド
+- [ ] トラブルシューティングガイド
+- [ ] 貢献者ガイド
 
-2) フェーズ3.5完了後
-- ComApiIntegrationTestFixture
-- SkippableFact導入
-- COM API統合テスト
+### 6.3 CI/CD
+- [ ] GitHub Actions設定
+- [ ] 自動テスト実行
+- [ ] コードカバレッジレポート
+- [ ] リリース自動化
 
-3) フェーズ4前
-- ベンチマーク
-- リソースリークテスト
-- CI/CD（GitHub Actions、Windowsランナー）
-
-### テストデータ管理
-```
-tests/TestData/
-├── Builders/
-│   ├── WinGetPackageBuilder.cs
-│   ├── InstallOptionsBuilder.cs
-│   └── OperationResultBuilder.cs
-├── Fixtures/
-│   ├── TestPackageData.json
-│   └── MockResponses.json
-└── Helpers/
-    ├── ComApiTestHelper.cs
-    └── AssertionExtensions.cs
-```
-
-### 品質ゲート
-- 単体テストカバレッジ 90%以上
-- COM APIモックテスト 100%実装
-- 統合テスト（Windows）実施
-- winget.exe互換性/PowerShell版相互運用
-- メモリ/COMリソース解放検証
-- 例外安全性、Windows 10/11動作確認
-- CI/CD（管理者権限テスト分離、定期ベンチ）
+### 6.4 配布
+- [ ] NuGetパッケージ化
+- [ ] インストーラー作成
+- [ ] Chocolatey/Scoopパッケージ
+- [ ] dotnet toolパッケージ
 
 ---
 
-## 技術的決定事項（要点）
-- 引数パーサー: System.CommandLine
-- COM API: Microsoft.WindowsPackageManager.ComInterop 1.11.430
-- フォールバック: CLI実行は廃止（COM専用化）
-- テスト: xUnit + Shouldly + Moq、SkippableFact
-- ベンチ: BenchmarkDotNet
-- プログレス通知: IProgress<OperationProgress>
+## 技術スタック（確定）
+- **フレームワーク**: .NET 8
+- **引数パーサー**: System.CommandLine
+- **COM API**: Microsoft.WindowsPackageManager.ComInterop 1.11.430
+- **テスト**: xUnit + Moq + Shouldly
+- **ベンチマーク**: BenchmarkDotNet
+- **ログ**: Microsoft.Extensions.Logging
+- **DI**: Microsoft.Extensions.DependencyInjection
 
-## アーキテクチャ簡素化の理由（抜粋）
-- 二重実装/複雑性/パフォーマンス/テスト困難の解消
-- 抽象化（IComInteropWrapper）でテスト容易性確保
+## アーキテクチャ原則（確定）
+- ✅ YAGNI原則の遵守（不要な抽象化を排除）
+- ✅ COM APIの直接利用（中間レイヤーなし）
+- ✅ Microsoft製の型をドメインモデルとして採用
+- ✅ テスト可能性の確保（内部コンストラクタ経由）
+- ✅ 薄いラッパーとしての本質に忠実
 
-## リスクと対策（抜粋）
-- COM/Windows依存 → 要件明記、条件付き統合テスト
-- 権限要求 → 昇格フロー整備
-- 互換性 → YAML形式統一
+## 既知の課題と対策
+| 課題 | 影響 | 対策 | 状態 |
+|------|------|------|------|
+| COM API Windows限定 | クロスプラットフォーム不可 | 要件として明記 | 受容済 |
+| 管理者権限要求 | 一部操作で必要 | 昇格プロンプト実装 | 対応予定 |
+| COM初期化失敗 | 環境依存エラー | 詳細な診断メッセージ | 実装済 |
+| パッケージマネージャー互換性 | バージョン差異 | 最小バージョンチェック | 対応予定 |
 
 ## 参考リンク
-- https://www.nuget.org/packages/Microsoft.WindowsPackageManager.ComInterop
-- https://github.com/microsoft/winget-cli
-- https://learn.microsoft.com/en-us/dotnet/standard/commandline/
-- https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps
+- [Microsoft.WindowsPackageManager.ComInterop](https://www.nuget.org/packages/Microsoft.WindowsPackageManager.ComInterop)
+- [WinGet CLI GitHub](https://github.com/microsoft/winget-cli)
+- [System.CommandLine](https://learn.microsoft.com/en-us/dotnet/standard/commandline/)
+- [GitHub OAuth Device Flow](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps#device-flow)
 
 ---
 
-# GistGet Development TODO
-
-## 現在のフェーズ: アーキテクチャの簡素化とCOM API実装
-
-### 🔄 進行中のタスク
-
-#### 1. アーキテクチャの簡素化
-- [ ] `IComInteropWrapper`インターフェースを削除
-- [ ] `ComInteropWrapper`クラスを削除
-- [ ] `WinGetComClient`を直接`PackageManager`を使用するよう修正
-  - [ ] プロダクション用コンストラクタ（`PackageManager`を内部で生成）
-  - [ ] テスト用内部コンストラクタ（`PackageManager`を注入可能に）
-- [ ] 依存性注入の設定を更新（`ServiceCollectionExtensions.cs`）
-- [ ] 既存のテストを新しい構造に合わせて修正
-
-#### 2. COM API実装の完成
-- [ ] `SearchPackagesAsync`の実装
-  - [ ] `PackageCatalogReference`の取得
-  - [ ] 検索クエリの構築（`FindPackagesOptions`）
-  - [ ] 結果の変換（`CatalogPackage` → `WinGetPackage`）
-- [ ] `ListInstalledPackagesAsync`の実装
-  - [ ] インストール済みパッケージカタログの取得
-  - [ ] フィルタリング条件の適用
-  - [ ] 結果のマッピング
-- [ ] `InstallPackageAsync`の実装
-  - [ ] パッケージの検索と特定
-  - [ ] インストールオプションの設定
-  - [ ] 進捗状況のレポート
-- [ ] エラーハンドリングの強化
-  - [ ] COM例外の適切なキャッチと変換
-  - [ ] リトライロジックの実装（必要に応じて）
-
-### 📋 次のステップ
-
-1. **即座に実行すべきタスク**
-   - `IComInteropWrapper`と`ComInteropWrapper`を削除
-   - `WinGetComClient`のコンストラクタを修正
-   - DIコンテナの設定を更新
-
-2. **その後の優先タスク**
-   - 基本的なCOM API操作（Search, List, Install）の実装
-   - 単体テストの作成（モック化された`PackageManager`を使用）
-   - 統合テストの準備
-
-### 🎯 完了基準
-- [ ] 不要な抽象化レイヤーが削除されている
-- [ ] `WinGetComClient`が直接`PackageManager`を使用している
-- [ ] テスト可能な構造が維持されている（内部コンストラクタ経由）
-- [ ] 基本的なパッケージ操作が動作する
-- [ ] 適切なエラーハンドリングが実装されている
-
-### 📝 メモ
-- YAGNI原則に従い、現時点で必要ない抽象化は避ける
-- `PackageManager`のモックは、Microsoft.Management.Deployment の型を直接モックする
-- 将来的にCLIフォールバックが必要になった場合は、`IWinGetClient`レベルで切り替える
+## 変更履歴
+- 2024-12-XX: フェーズ3.5完了、アーキテクチャ簡素化実施
+- 2024-12-XX: フェーズ4開始、COM API実装継続
+- 2024-12-XX: TODO.md全面改訂、現状に合わせて更新
