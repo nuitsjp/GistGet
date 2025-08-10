@@ -19,7 +19,8 @@ winget.exe完全準拠の.NET 8アプリケーション開発のロードマッ�
 ## 直近の最優先事項（フェーズ3.5）
 - CLIフォールバック関連コードの削除
 - WinGetComClientの簡素化（フォールバックと不要分岐の撤去）
-- COM APIテスト基盤の最小セット導入（IComInteropWrapper）
+- **IComInteropWrapperの削除・WinGetComClientの直接COMラップ化**
+- WinGetComClientのテスト容易性確保（必要ならPackageManagerのラッパー/モックのみ最小化）
 - テストとドキュメントの整合更新
 
 ## マイルストーン
@@ -68,14 +69,14 @@ winget.exe完全準拠の.NET 8アプリケーション開発のロードマッ�
 - インターフェース整理
   - IWinGetClientから不要メソッドの削除
   - IWinGetCliClient/IProcessRunner関連の削除
-- COM APIテスト基盤の最小導入
-  - IComInteropWrapper（抽象化）を追加
-  - Moqで単体テスト可能に
+- **IComInteropWrapperの削除**
+  - WinGetComClientが直接COM API（PackageManager）を扱う形にリファクタ
+  - テスト時はPackageManagerの差し替え/モックで対応
 
 ### 3) 最小テスト追加（Red→Green→Refactor）
-- インターフェース導入（IComInteropWrapper）
-- ComInteropMockHelper（Moqセットアップ）
-- WinGetComClientの基本動作テスト（CLI分岐廃止確認）
+- WinGetComClientの直接COMラップ化後の基本動作テスト
+- PackageManagerのモック/差し替えによるテスト容易性の検証
+- CLI分岐廃止確認
 
 ### 4) ドキュメント更新
 - architecture.md（反映済み箇所の確認）
