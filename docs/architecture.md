@@ -1,53 +1,272 @@
-# GistGet .NET アーキテクチャ設計書
+# GistGet アーキテクチャ設計
 
-## 概要
+## 0. MVP実装アーキテクチャ（現在のフェーズ）
 
-GistGetは、WinGetの機能を.NET 8で実装し、GitHub Gistとの同期機能を提供するツールです。本書では現在の実装アーキテクチャについて詳述します。
+### MVP設計方針
+- **最小限の実装**: 動作確認を最優先
+- **段階的改善**: 複雑性を後から追加
+- **直接的なコード**: 抽象化を避ける
 
-## アーキテクチャ全体像
+### MVP Phase 1: パススルーのみ（50行）
+```
+Program.cs (20行)
+  └→ WinGetPassthrough.cs (30行)
+       └→ winget.exe
+```
 
-本アプリケーションは、以下の主要レイヤーで構成されています：
+**Program.cs例:**
+```csharp
+// 最小限のエントリポイント
+class Program
+{
+    static async Task<int> Main(string[] args)
+    {
+        var passthrough = new WinGetPassthrough();
+        return await passthrough.ExecuteAsync(args);
+    }
+}
+```
+
+### MVP Phase 2: ルーティング追加（200行）
+```
+Program.cs
+  └→ CommandRouter.cs (50行)
+       ├→ WinGetComClient.cs (100行) [install/uninstall/upgrade]
+       │    └→ COM API
+       └→ WinGetPassthrough.cs (30行) [その他]
+            └→ winget.exe
+```
+
+**CommandRouter.cs例:**
+```csharp
+public class CommandRouter
+{
+    public async Task<int> RouteAsync(string[] args)
+    {
+        var command = args.FirstOrDefault();
+        
+        if (command is "install" or "uninstall" or "upgrade")
+        {
+            // COM経由
+            var comClient = new WinGetComClient();
+            return await comClient.ExecuteAsync(args);
+        }
+        else
+        {
+            // パススルー
+            var passthrough = new WinGetPassthrough();
+            return await passthrough.ExecuteAsync(args);
+        }
+    }
+}
+```
+
+### MVP Phase 3: Gistスタブ追加（250行）
+```
+Program.cs
+  └→ CommandRouter.cs
+       ├→ WinGetComClient.cs
+       │    └→ GistSyncStub.cs (30行) [ログ出力のみ]
+       └→ WinGetPassthrough.cs
+```
+
+**GistSyncStub.cs例:**
+```csharp
+public class GistSyncStub
+{
+    public void AfterInstall(string packageId)
+    {
+        Console.WriteLine($"[Gist] Updated: Added {packageId}");
+    }
+    
+    public void Sync()
+    {
+        Console.WriteLine("[Gist] Syncing from Gist... (stub)");
+        Console.WriteLine("[Gist] 3 packages would be installed");
+    }
+}
+```
+
+### MVP実装の利点
+
+1. **即座に動作確認可能** - 50行で基本動作
+2. **段階的に複雑性を追加** - 必要な部分だけ実装
+3. **失敗してもやり直しが簡単** - コード量が少ない
+4. **本質的な課題が見える** - 実際に動かして初めて分かる問題
+
+---
+
+## 1. 設計方針の変更
+
+### 従来の課題
+- WinGetの薄いラッパーとして実装し、すべてCOM呼び出しで代替しようと考えていた
+- しかし、search/listは結果を画面に表示するにあたってコンソールの幅を把握して表示を調整しており、簡単にラップすることが困難
+
+### 新方針：ハイブリッドアーキテクチャ
+- Gistで端末間の同期が必要な機能だけCOM経由で呼び出し
+- それ以外はバイパスしてwingetを呼ぶだけの方針に変更
+
+## 2. アーキテクチャ詳細
+
+### A. システム構成
 
 ```
 ┌─────────────────────────────────────────┐
 │            CLI Interface                 │ Program.cs
 ├─────────────────────────────────────────┤
-│        Argument Parser Layer            │ WinGetArgumentParser
-├─────────────────────────────────────────┤
-│         Command Handler Layer           │ BaseCommandHandler + 具象ハンドラ
-├─────────────────────────────────────────┤
-│         WinGet Client Layer            │ IWinGetClient → WinGetComClient
-├─────────────────────────────────────────┤
-│        Microsoft WinGet API            │ PackageManager (COM型を直接使用)
-└─────────────────────────────────────────┘
+│         Command Router                   │ コマンド分類・ルーティング
+├──────────────┬──────────────────────────┤
+│  COM利用     │    パススルー             │
+│  (Gist同期)  │    (表示・管理系)         │
+├──────────────┼──────────────────────────┤
+│ WinGet COM   │   WinGet CLI             │
+│   Client     │    Client                │
+├──────────────┼──────────────────────────┤
+│ COM API      │   winget.exe             │
+└──────────────┴──────────────────────────┘
 ```
 
-## 技術スタック
+### B. コマンドルーティング戦略
 
-### コアフレームワーク
-- **フレームワーク**: .NET 8
+```csharp
+public class CommandRouter
+{
+    private static readonly HashSet<string> GistSyncCommands = new()
+    {
+        "install", "uninstall", "upgrade",  // Gist定義更新
+        "sync", "export", "import"           // Gist同期専用
+    };
+    
+    private static readonly HashSet<string> PassthroughCommands = new()
+    {
+        "search",  // 表示が複雑
+        "list",    // コンソール幅依存
+        "show",    // 詳細表示
+        "source",  // 管理系
+        "settings" // 設定画面起動
+    };
+    
+    public async Task<int> RouteAsync(string[] args)
+    {
+        var command = args.FirstOrDefault()?.ToLower();
+        
+        if (GistSyncCommands.Contains(command))
+        {
+            // COM API経由で処理 + Gist同期
+            return await HandleGistSyncCommand(args);
+        }
+        else
+        {
+            // winget.exeへパススルー
+            return await PassthroughToWinGet(args);
+        }
+    }
+}
+```
+
+### C. ハイブリッド実装の利点
+
+1. **実装の簡素化**: 表示系の複雑な処理を再実装する必要がない
+2. **互換性の維持**: wingetの出力形式が完全に保たれる
+3. **保守性の向上**: wingetのアップデートに自動追従
+4. **開発効率**: Gist同期機能に集中できる
+
+### D. 最小限のCOM API実装
+
+```csharp
+public interface IWinGetClient
+{
+    // Gist同期に必要な機能のみ
+    Task<IReadOnlyList<InstalledPackage>> GetInstalledPackagesAsync();
+    Task<InstallResult> InstallPackageAsync(string packageId, string version = null);
+    Task<UninstallResult> UninstallPackageAsync(string packageId);
+    Task<UpgradeResult> UpgradePackageAsync(string packageId);
+    
+    // それ以外はwinget.exeへのパススルー
+    Task<int> PassthroughAsync(string[] args);
+}
+
+public class HybridWinGetClient : IWinGetClient
+{
+    private readonly IComApiClient _comClient;
+    private readonly IWinGetCliClient _cliClient;
+    
+    public async Task<IReadOnlyList<InstalledPackage>> GetInstalledPackagesAsync()
+    {
+        // COM API経由で正確なパッケージ情報を取得
+        return await _comClient.GetInstalledPackagesAsync();
+    }
+    
+    public async Task<int> PassthroughAsync(string[] args)
+    {
+        // search, show, list等の表示系コマンドは直接winget.exeへ
+        return await _cliClient.ExecuteAsync(args);
+    }
+}
+```
+
+## 3. Gist同期機能
+
+### A. 同期データ形式（PowerShell版準拠）
+
+```yaml
+# packages.yaml
+Packages:
+  - Id: Microsoft.VisualStudioCode
+    Version: 1.85.0  # バージョン固定（省略可）
+  - Id: Git.Git
+  - Id: Microsoft.PowerToys
+    Version: 0.76.0
+```
+
+### B. 同期パターン
+
+| コマンド | 同期方向 | 説明 |
+|----------|----------|------|
+| `sync` | Gist → Local | Gist定義にあってローカルにないパッケージをインストール |
+| `export` | Gist → Local | Gistから定義ファイルをダウンロード |
+| `import` | Local → Gist | 現在の環境をスキャンしてGistへアップロード |
+| `install/uninstall/upgrade` | Local → Gist | 操作後にGist定義を自動更新 |
+
+### C. GitHub認証フロー
+
+```
+1. device_code と verification_uri を取得
+   ↓
+2. ブラウザ起動してユーザー認証
+   ↓
+3. access_token をポーリングで取得
+   ↓
+4. Windows DPAPI で暗号化保存
+   ↓
+5. Gist API呼び出し（Authorization: Bearer <token>）
+```
+
+## 4. 実装計画
+
+### A. 開発フェーズ
+
+| フェーズ | 内容 | 期間 | 状態 |
+|---------|------|------|------|
+| **Phase 1** | CLIパススルー基盤構築 | 1日 | 予定 |
+| **Phase 2** | COM API最小実装（export/import用） | 3日 | 予定 |
+| **Phase 3** | Gist同期機能（OAuth認証含む） | 3日 | 予定 |
+| **Phase 4** | syncコマンド実装 | 2日 | 予定 |
+
+### B. 技術スタック
+
+- **フレームワーク**: .NET 8（自己完結型）
+- **COM API**: Microsoft.WindowsPackageManager.ComInterop
 - **引数パーサー**: System.CommandLine
-- **COM API**: Microsoft.WindowsPackageManager.ComInterop 1.11.430
-- **依存性注入**: Microsoft.Extensions.DependencyInjection
-- **ログ**: Microsoft.Extensions.Logging
-
-### テスト・品質保証
-- **テストフレームワーク**: xUnit
-- **モック**: Moq
-- **アサーション**: Shouldly
-- **ベンチマーク**: BenchmarkDotNet
-- **条件付きテスト**: SkippableFact（Xunit.SkippableFact）
-
-### 追加ライブラリ
-- **YAML処理**: YamlDotNet（Gist同期用）
 - **HTTP通信**: HttpClient（GitHub API用）
+- **YAML処理**: YamlDotNet（Gist同期用）
 - **暗号化**: Windows DPAPI（トークン保存用）
 
-## アーキテクチャ原則
+### C. パッケージ化
 
-### 1. YAGNI原則の厳格な遵守
-- 不要な抽象化レイヤーを排除
-- 現在必要な機能のみを実装
+- 自己完結型実行ファイル（.NET 8）
+- GitHub Actions による CI/CD
+- リリース時の自動ビルド・テスト
 - 将来の拡張性よりも現在の単純性を優先
 
 ### 2. COM APIの直接利用
