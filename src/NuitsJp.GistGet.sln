@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuitsJp.GistGet", "NuitsJp.GistGet\NuitsJp.GistGet.csproj", "{335CA17E-B6B6-405D-B071-E1F361CEEC64}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuitsJp.GistGet.Test", "NuitsJp.GistGet.Test\NuitsJp.GistGet.Test.csproj", "{3507652E-13E5-448A-8C5C-9F04A2CA1575}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuitsJp.GistGet.Tests", "..\tests\NuitsJp.GistGet.Tests\NuitsJp.GistGet.Tests.csproj", "{A871A949-825A-71CE-C4A8-ABABC9451464}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,10 @@ Global
 		{335CA17E-B6B6-405D-B071-E1F361CEEC64}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{335CA17E-B6B6-405D-B071-E1F361CEEC64}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{335CA17E-B6B6-405D-B071-E1F361CEEC64}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3507652E-13E5-448A-8C5C-9F04A2CA1575}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3507652E-13E5-448A-8C5C-9F04A2CA1575}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3507652E-13E5-448A-8C5C-9F04A2CA1575}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3507652E-13E5-448A-8C5C-9F04A2CA1575}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A871A949-825A-71CE-C4A8-ABABC9451464}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A871A949-825A-71CE-C4A8-ABABC9451464}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A871A949-825A-71CE-C4A8-ABABC9451464}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A871A949-825A-71CE-C4A8-ABABC9451464}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

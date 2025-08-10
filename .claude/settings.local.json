@@ -44,7 +44,20 @@
       "Bash(./bin/Debug/net8.0-windows10.0.26100/win-x64/NuitsJp.GistGet.exe show NonExistentPackage.Test)",
       "Bash(echo $COLUMNS)",
       "Bash(tput:*)",
-      "Bash(./bin/Debug/net8.0-windows10.0.26100/win-x64/NuitsJp.GistGet.exe list --count 3)"
+      "Bash(./bin/Debug/net8.0-windows10.0.26100/win-x64/NuitsJp.GistGet.exe list --count 3)",
+      "Bash(./src/NuitsJp.GistGet/bin/Debug/net8.0-windows10.0.26100/win-x64/NuitsJp.GistGet.exe install --id AkelPad.AkelPad)",
+      "Bash(Get-AppxPackage Microsoft.DesktopAppInstaller)",
+      "Bash(powershell:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:www.nuget.org)",
+      "Bash(./src/NuitsJp.GistGet/bin/Debug/net8.0-windows10.0.26100/win-x64/NuitsJp.GistGet.exe test-list)",
+      "Bash(./src/NuitsJp.GistGet/bin/Debug/net8.0-windows10.0.26100/win-x64/NuitsJp.GistGet.exe test-search git)",
+      "Bash(dotnet:*)",
+      "Bash(dotnet new:*)",
+      "Bash(dotnet sln add:*)",
+      "Bash(dotnet test:*)",
+      "Bash(dotnet add:*)"
     ],
     "deny": []
   }
