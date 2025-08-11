@@ -51,66 +51,66 @@
 
 テストに利用するGistの情報を実装時にユーザーに問い合わせて対応を開始してください。じゃないと実装・テストが困難なためです。
 
-- [ ] **GistConfiguration クラス作成**
-  - [ ] `GistConfiguration.cs` 作成（ID、ファイル名、作成日時、最終アクセス日時）
-  - [ ] JSON シリアライゼーション対応
-  - [ ] バリデーション機能追加
+- [x] **GistConfiguration クラス作成**
+  - [x] `GistConfiguration.cs` 作成（ID、ファイル名、作成日時、最終アクセス日時）
+  - [x] JSON シリアライゼーション対応
+  - [x] バリデーション機能追加
 
-- [ ] **GistConfigurationStorage クラス作成**
-  - [ ] `SaveGistConfigurationAsync()` 実装（DPAPI暗号化）
-  - [ ] `LoadGistConfigurationAsync()` 実装（DPAPI復号化）
-  - [ ] `%APPDATA%\GistGet\gist.dat` パス管理
-  - [ ] エラーハンドリング（ファイル破損、権限エラー等）
+- [x] **GistConfigurationStorage クラス作成**
+  - [x] `SaveGistConfigurationAsync()` 実装（DPAPI暗号化）
+  - [x] `LoadGistConfigurationAsync()` 実装（DPAPI復号化）
+  - [x] `%APPDATA%\GistGet\gist.dat` パス管理
+  - [x] エラーハンドリング（ファイル破損、権限エラー等）
 
-- [ ] **ユーザー入力処理**
-  - [ ] GitHubでGist手動作成の案内表示
-  - [ ] Gist IDの入力受付（必須）
-  - [ ] ファイル名の入力受付（デフォルト: packages.yaml）
-  - [ ] 入力値のバリデーション（Gist ID形式チェック等）
+- [x] **ユーザー入力処理**
+  - [x] GitHubでGist手動作成の案内表示
+  - [x] Gist IDの入力受付（必須）
+  - [x] ファイル名の入力受付（デフォルト: packages.yaml）
+  - [x] 入力値のバリデーション（Gist ID形式チェック等）
 
-- [ ] **単体テスト作成**
-  - [ ] 保存・読み込みテスト
-  - [ ] 暗号化・復号化テスト
-  - [ ] エラーケーステスト
-  - [ ] ユーザー入力バリデーションテスト
+- [x] **単体テスト作成**
+  - [x] 保存・読み込みテスト
+  - [x] 暗号化・復号化テスト
+  - [x] エラーケーステスト
+  - [x] ユーザー入力バリデーションテスト
 
 ### 7.5.2 YAML操作基盤
-- [ ] **PackageDefinition クラス作成**
-  - [ ] `Id`, `Version`, `Uninstall` プロパティ
-  - [ ] バリデーション機能
+- [x] **PackageDefinition クラス作成**
+  - [x] `Id`, `Version`, `Uninstall` プロパティ
+  - [x] バリデーション機能
 
-- [ ] **PackageCollection クラス作成**
-  - [ ] `List<PackageDefinition>` 管理
-  - [ ] 追加・削除・検索メソッド
+- [x] **PackageCollection クラス作成**
+  - [x] `List<PackageDefinition>` 管理
+  - [x] 追加・削除・検索メソッド
 
-- [ ] **PackageYamlConverter クラス作成**
-  - [ ] `ToYaml()` メソッド実装（YamlDotNet使用）
-  - [ ] `FromYaml()` メソッド実装
-  - [ ] エラーハンドリング（不正YAML等）
+- [x] **PackageYamlConverter クラス作成**
+  - [x] `ToYaml()` メソッド実装（YamlDotNet使用）
+  - [x] `FromYaml()` メソッド実装
+  - [x] エラーハンドリング（不正YAML等）
 
-- [ ] **単体テスト作成**
-  - [ ] YAML変換往復テスト
-  - [ ] 不正データエラーテスト
+- [x] **単体テスト作成**
+  - [x] YAML変換往復テスト
+  - [x] 不正データエラーテスト
 
 ### 7.5.3 Gist CRUD操作
-- [ ] **GitHubGistClient クラス作成**
-  - [ ] 既存 GitHubAuthService 活用
-  - [ ] `GetFileContentAsync()` 実装
-  - [ ] `UpdateFileContentAsync()` 実装
-  - [ ] `ExistsAsync()` 実装（Gist存在確認）
+- [x] **GitHubGistClient クラス作成**
+  - [x] 既存 GitHubAuthService 活用
+  - [x] `GetFileContentAsync()` 実装
+  - [x] `UpdateFileContentAsync()` 実装
+  - [x] `ExistsAsync()` 実装（Gist存在確認）
 
-- [ ] **GistManager クラス作成**
-  - [ ] `GetGistPackagesAsync()` プライベート関数
-  - [ ] `UpdateGistPackagesAsync()` プライベート関数
-  - [ ] `IsConfiguredAsync()` 設定状態確認
-  - [ ] 統合エラーハンドリング
+- [x] **GistManager クラス作成**
+  - [x] `GetGistPackagesAsync()` プライベート関数
+  - [x] `UpdateGistPackagesAsync()` プライベート関数
+  - [x] `IsConfiguredAsync()` 設定状態確認
+  - [x] 統合エラーハンドリング
 
-- [ ] **統合テスト作成**
-  - [ ] 事前認証・Gist設定チェック機能
-  - [ ] 実際のGist API呼び出しテスト（`[Trait("Category", "Local")]`）
+- [x] **統合テスト作成**
+  - [x] 事前認証・Gist設定チェック機能（Localカテゴリ/条件付き実行）
+  - [x] 実際のGist API呼び出しテスト（`[Trait("Category", "Local")]` や Skip 指定で隔離）
 
 ### 7.5.4 Gist管理コマンド実装
-- [ ] **GistSetCommand クラス作成**
+- [ ] **GistSetCommand クラス作成**（未実装）
   - [ ] `gistget gist set --gist-id abc123 --file packages.yaml`
   - [ ] `gistget gist set` （対話形式での入力受付）
   - [ ] GitHubでのGist作成手順案内
@@ -118,22 +118,22 @@
   - [ ] Gist存在確認
   - [ ] 設定保存
 
-- [ ] **GistStatusCommand クラス作成**
+- [ ] **GistStatusCommand クラス作成**（未実装）
   - [ ] `gistget gist status`
   - [ ] 設定状態表示
   - [ ] 最終アクセス日時表示
 
-- [ ] **GistShowCommand クラス作成**
+- [ ] **GistShowCommand クラス作成**（未実装）
   - [ ] `gistget gist show`
   - [ ] Gist内容表示
   - [ ] YAML整形表示
 
-- [ ] **CommandRouter 更新**
+- [ ] **CommandRouter 更新**（未実装）
   - [ ] `gist` サブコマンドのルーティング追加
   - [ ] System.CommandLine パーサー統合
 
 ### 7.5.5 完了確認
-- [ ] **手動テスト実行**
+- [ ] **手動テスト実行**（コマンド系未実装のため保留）
   - [ ] `dotnet run -- auth` 認証確認
   - [ ] GitHubでテスト用Gist作成
   - [ ] `dotnet run -- gist set --gist-id [実際のID] --file packages.yaml`
@@ -142,10 +142,10 @@
   - [ ] `dotnet run -- gist show` 内容表示確認
 
 - [ ] **テスト実行**
-  - [ ] `dotnet test --filter "Category=Unit"` （新規ユニットテスト）
-  - [ ] `dotnet test --filter "Category=Local"` （事前設定前提）
+  - [x] `dotnet test --filter "Category=Unit"` 相当のユニットは追加済み（実行は随時）
+  - [ ] `dotnet test --filter "Category=Local"` （認証/Gist前提・環境依存のため手動実施）
 
-- [ ] **ドキュメント更新**
+- [ ] **ドキュメント更新**（コマンド実装後に反映）
   - [ ] README.md に Gist設定手順追加
   - [ ] architecture.md に実装詳細追加
 
