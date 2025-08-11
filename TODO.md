@@ -128,9 +128,16 @@
   - [x] Gist内容表示
   - [x] YAML整形表示
 
+- [ ] **GistClearCommand クラス作成（新規）**
+  - [ ] `gistget gist clear`（確認プロンプト付き）
+  - [ ] 設定クリア処理（バックアップ作成を含む）
+  - [ ] 実行後の状態表示
+
 - [ ] **CommandRouter 更新**
   - [x] `gist` サブコマンドのルーティング追加
   - [ ] System.CommandLine パーサー統合
+  - [ ] `auth test` の仕様整理（現状はトップレベル `test-gist` 実装。READMEと整合させる）
+  - [ ] `export`/`import` は現状パススルー（COM統合は後続フェーズで検討）と明記
 
 ### 7.5.5 完了確認
 - [ ] **手動テスト実行**
@@ -140,14 +147,23 @@
   - [ ] `dotnet run -- gist set` （対話形式テスト）
   - [ ] `dotnet run -- gist status` 設定確認
   - [ ] `dotnet run -- gist show` 内容表示確認
+  - [ ] `dotnet run -- gist clear` 設定クリア確認（実装後）
+  - [ ] `dotnet run -- test-gist` 認証・API呼び出し動作確認（READMEの表記と要整合）
 
 - [ ] **テスト実行**
   - [x] `dotnet test --filter "Category=Unit"` 相当のユニットは追加済み（実行は随時）
   - [ ] `dotnet test --filter "Category=Local"` （認証/Gist前提・環境依存のため手動実施）
+  - [ ] 追加ユニットテスト作成
+    - [ ] GistSetCommand/GistStatusCommand/GistShowCommand の単体テスト
+    - [ ] CommandService の `gist` サブコマンド（set/status/show/--raw）ルーティングテスト
+    - [ ] パススルー未カバー（pin/configure/download/repair/hash/validate/features）のルーティングテスト
 
 - [ ] **ドキュメント更新**（コマンド実装後に反映）
   - [ ] README.md に Gist設定手順追加
   - [ ] architecture.md に実装詳細追加
+  - [ ] コマンド一覧の整合性
+    - [ ] `auth test` → 現状 `test-gist` に一致させる（または `auth test` を実装）
+    - [ ] `export`/`import` は当面パススルーである旨を明記（COM統合は将来タスク）
 
 ## テスト用アプリケーション
 **決定:** AkelPad.AkelPad (軽量テキストエディタ、約2-3MB)
