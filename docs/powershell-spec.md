@@ -37,3 +37,12 @@ GistGetプロジェクトのPowerShellモジュール仕様書です。このモ
 | 検証 | *パススルー* | validate | パススルー | - | 不要 | 低 | マニフェスト検証 |
 | 実験的機能 | *パススルー* | features | パススルー | - | 不要 | 低 | 実験的機能 |
 
+## パッケージ管理機能 詳細仕様
+
+パッケージ管理機能の詳細仕様については、以下の個別ドキュメントを参照してください：
+
+- **[Install-GistGetPackage](powershell/Install-GistGetPackage.md)** - パッケージインストール + Gist定義更新
+- **[Uninstall-GistGetPackage](powershell/Uninstall-GistGetPackage.md)** - パッケージアンインストール + Gist定義更新  
+- **[Update-GistGetPackage](powershell/Update-GistGetPackage.md)** - パッケージアップグレード + Gist定義更新
+- **[Sync-GistGetPackage](powershell/Sync-GistGetPackage.md)** - Gist定義パッケージをインストール（追加のみ）
+
