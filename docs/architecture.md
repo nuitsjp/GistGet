@@ -300,133 +300,133 @@ strategy:
 | **winget.exe** | 実行ファイル依存 | モック実装 | 高 |
 | **管理者権限** | CI環境で制限 | テスト分離 | 中 |
 
-### B. テスタビリティの改善
+### B. ビルド専用CI/CD戦略
 
 ```csharp
-// 依存性注入によるテスト可能な設計
-public interface IPackageManager
-{
-    Task<int> InstallAsync(string packageId);
-    Task<int> UninstallAsync(string packageId);
-}
-
-// 本番実装
-public class WinGetComManager : IPackageManager
-{
-    private readonly PackageManager _comApi;
-    // COM API実装
-}
-
-// テスト用モック
-public class MockPackageManager : IPackageManager
-{
-    public Dictionary<string, bool> InstalledPackages { get; }
-    // メモリ内実装
-}
-
-// CI環境での自動切り替え
-public static IServiceProvider ConfigureServices(bool isCI)
+// CI環境では実際のパッケージ操作を行わない
+public static IServiceProvider ConfigureServices(bool isCI = false)
 {
     var services = new ServiceCollection();
     
     if (isCI)
     {
-        services.AddSingleton<IPackageManager, MockPackageManager>();
-        services.AddSingleton<IAuthProvider, EnvironmentAuthProvider>();
+        // CI環境：ビルド検証のみ、実際の操作は行わない
+        services.AddSingleton<IPackageManager, NullPackageManager>();
+        services.AddSingleton<IAuthProvider, NullAuthProvider>();
     }
     else
     {
+        // ローカル環境：実際のCOM APIと認証を使用
         services.AddSingleton<IPackageManager, WinGetComManager>();
         services.AddSingleton<IAuthProvider, DeviceFlowAuthProvider>();
     }
     
     return services.BuildServiceProvider();
 }
-```
 
-### C. ビルドパイプライン最適化
-
-```yaml
-# マルチステージビルド
-stages:
-  - stage: Build
-    jobs:
-      - job: Compile
-        steps:
-          - task: DotNetCoreCLI@2
-            inputs:
-              command: 'build'
-              arguments: '--configuration Release'
-              
-  - stage: Test
-    dependsOn: Build
-    jobs:
-      - job: UnitTests
-        steps:
-          - script: dotnet test --filter "Category=Unit"
-            
-      - job: IntegrationTests
-        condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
-        steps:
-          - script: dotnet test --filter "Category=Integration"
-          
-  - stage: Package
-    condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/')
-    jobs:
-      - job: CreateExecutable
-        steps:
-          - script: |
-              dotnet publish -c Release -r win-x64 \
-                --self-contained \
-                -p:PublishSingleFile=true \
-                -p:IncludeNativeLibrariesForSelfExtract=true
-```
-
-### D. 環境別設定管理
-
-```json
-// appsettings.json
+// CI専用の何もしないプロバイダー
+public class NullPackageManager : IPackageManager
 {
-  "Environment": "Production",
-  "GitHub": {
-    "ApiUrl": "https://api.github.com",
-    "ClientId": "YOUR_CLIENT_ID"
-  }
-}
-
-// appsettings.CI.json
-{
-  "Environment": "CI",
-  "GitHub": {
-    "ApiUrl": "https://api.github.com",
-    "UseEnvironmentToken": true
-  },
-  "Testing": {
-    "UseMocks": true,
-    "SkipAdminTests": true
-  }
-}
-
-// appsettings.Development.json
-{
-  "Environment": "Development",
-  "GitHub": {
-    "ApiUrl": "https://api.github.com",
-    "ClientId": "DEV_CLIENT_ID"
-  },
-  "Logging": {
-    "LogLevel": {
-      "Default": "Debug"
+    public Task<int> InstallAsync(string packageId)
+    {
+        throw new NotSupportedException("CI環境ではパッケージ操作は実行されません");
     }
-  }
+}
+
+public class NullAuthProvider : IAuthProvider
+{
+    public Task<string?> GetTokenAsync()
+    {
+        throw new NotSupportedException("CI環境では認証は実行されません");
+    }
 }
 ```
 
-### E. 継続的デプロイメント
+### C. ビルドパイプライン（シンプル版）
 
 ```yaml
-# GitHub Releases への自動デプロイ
-- name: Create Release
+# ビルド検証のみ実施
+name: Build
+on: [push, pull_request]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      
+      - name: Restore
+        run: dotnet restore
+      
+      - name: Build
+        run: dotnet build --configuration Release
+      
+      - name: Unit Tests Only
+        run: dotnet test --filter "Category=Unit"
+```
+
+### D. ローカル開発重視のテスト戦略
+
+```bash
+# CI相当（ユニットテストのみ）
+dotnet test --filter "Category=Unit"
+
+# ローカル統合テスト（認証・COM API含む）
+dotnet test --filter "Category=Local"
+
+# 手動検証（実際のパッケージ操作）
+dotnet test --filter "Category=Manual"
+
+# 全テスト実行
+dotnet test
+```
+
+### E. リリースパイプライン（シンプル版）
+
+```yaml
+# GitHub Releases への自動デプロイ（ビルドのみ）
+name: Release
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      
+      - name: Build Release
+        run: |
+          dotnet publish -c Release -r win-x64 \
+            --self-contained -p:PublishSingleFile=true
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            src/NuitsJp.GistGet/bin/Release/net8.0/win-x64/publish/GistGet.exe
+```
+
+### F. 品質保証戦略
+
+| 段階 | 実行環境 | 対象テスト | 自動化レベル |
+|------|----------|-----------|-------------|
+| **CI/CD** | GitHub Actions | ビルド + ユニットテスト | 完全自動 |
+| **ローカル開発** | 開発PC | 統合テスト + COM API | 半自動 |
+| **リリース前** | 手動 | 実際のパッケージ操作 | 手動 |
+
+## 10. パフォーマンス最適化
   if: startsWith(github.ref, 'refs/tags/')
   uses: actions/create-release@v1
   with:
@@ -470,7 +470,140 @@ public async IAsyncEnumerable<Package> GetPackagesAsync()
 }
 ```
 
-## 11. 監視とログ
+## 11. 認証アーキテクチャ（シンプル戦略）
+
+### A. 事前認証済み前提の戦略
+
+```
+┌─────────────────────────────────────────┐
+│            AuthProvider                  │ 統一インターフェース
+├─────────────────────────────────────────┤
+│  既存のGitHubAuthService使用             │ すべての環境で共通
+├─────────────────────────────────────────┤
+│  • ローカル開発: gistget auth実行済み    │
+│  • テスト実行: gistget auth実行済み      │
+│  • CI/CD: 認証不要（ビルドのみ）         │
+└─────────────────────────────────────────┘
+```
+
+### B. 実装アプローチ（シンプル版）
+
+```csharp
+// 既存のGitHubAuthServiceをそのまま使用
+public class TestWithAuthentication
+{
+    private readonly IGitHubAuthService _authService;
+    
+    public TestWithAuthentication()
+    {
+        // DIコンテナから既存のサービスを取得
+        _authService = serviceProvider.GetRequiredService<IGitHubAuthService>();
+    }
+    
+    [Fact]
+    [Trait("Category", "Local")]
+    public async Task ExportCommand_ShouldWork()
+    {
+        // 事前認証チェック（失敗時はテストスキップ）
+        if (!await _authService.IsAuthenticatedAsync())
+        {
+            throw new SkipException("認証が必要です。'gistget auth' を先に実行してください。");
+        }
+        
+        // 実際のテスト実行
+        var exportCommand = new ExportCommand(_authService);
+        var result = await exportCommand.ExecuteAsync(new[] { "export" });
+        
+        result.Should().Be(0);
+    }
+}
+
+// ユニットテスト（認証不要）
+[Fact]
+[Trait("Category", "Unit")]
+public void ArgumentParsing_ShouldWork() 
+{
+    // 外部依存なし、認証不要
+    var parser = new ArgumentParser();
+    var result = parser.Parse(new[] { "export", "--output", "test.yaml" });
+    
+    result.Should().NotBeNull();
+}
+```
+
+### C. テスト実行フロー（事前認証済み前提）
+
+```bash
+# 1. 事前認証（一度のみ実行）
+gistget auth
+
+# 2. 認証状態確認
+gistget auth status
+# 出力例: "認証済み: nuitsjp (Atsushi Nakamura)"
+
+# 3. テスト実行
+dotnet test --filter "Category=Unit"     # 認証不要
+dotnet test --filter "Category=Local"    # 事前認証済み前提
+dotnet test                              # 全テスト
+
+# 認証が切れた場合のみ再実行
+gistget auth
+```
+
+### D. 環境別の想定
+
+| 環境 | 認証方式 | 実行前提 | テスト対象 |
+|------|----------|----------|-----------|
+| **ローカル開発** | Device Flow | `gistget auth`実行済み | Unit + Local |
+| **CI/CD** | なし | 認証不要 | Unitのみ |
+| **手動テスト** | Device Flow | `gistget auth`実行済み | 全テスト |
+
+## 13. セキュリティ考慮事項（認証拡張）
+
+### A. 認証方式別のセキュリティ
+
+| 認証方式 | セキュリティレベル | リスク | 対策 |
+|----------|------------------|-------|------|
+| **Device Flow** | 高 | ブラウザ依存 | HTTPS必須、トークン暗号化 |
+| **環境変数** | 中 | ログ漏洩 | CI専用、短期間使用 |
+| **モック** | 低 | テスト専用 | 本番環境で無効化 |
+
+### B. トークン管理
+
+```csharp
+// トークンの安全な取得
+public class SecureTokenManager
+{
+    public async Task<string> GetSecureTokenAsync()
+    {
+        // 1. 環境変数チェック（CI/CD）
+        var envToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
+        if (!string.IsNullOrEmpty(envToken))
+        {
+            LogTokenSource("Environment Variable");
+            return envToken;
+        }
+        
+        // 2. 暗号化ファイルチェック（ローカル）
+        var fileToken = await LoadEncryptedTokenAsync();
+        if (!string.IsNullOrEmpty(fileToken))
+        {
+            LogTokenSource("Encrypted File");
+            return fileToken;
+        }
+        
+        throw new UnauthorizedAccessException("認証が必要です。'gistget auth' を実行してください。");
+    }
+    
+    private void LogTokenSource(string source)
+    {
+        // セキュリティ: トークン自体はログに出力しない
+        _logger.LogInformation("認証トークンを取得しました（ソース: {Source}）", source);
+    }
+}
+```
+
+## 14. 監視とログ（認証関連拡張）
 
 ### A. 構造化ログ
 

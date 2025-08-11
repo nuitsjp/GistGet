@@ -49,7 +49,8 @@ gistget show --id Git.Git  # → winget show --id Git.Git
 | source | - | パススルー | - | 要管理者 | 低 | ソース管理 |
 | settings | config | パススルー | - | 不要 | 低 | 設定管理 |
 | pin | - | パススルー | - | 不要 | 低 | ローカルバージョン固定 |
-| **その他（パススルー）** |
+| **認証管理（GistGet独自実装）** |
+| auth | - | 独立実装 | - | 不要 | 最高 | GitHub認証・トークン管理 |
 | configure | - | パススルー | - | 要管理者 | 低 | システム構成 |
 | download | - | パススルー | - | 不要 | 低 | インストーラDL |
 | repair | - | パススルー | - | 要管理者 | 低 | パッケージ修復 |
@@ -106,12 +107,35 @@ Packages:
     Version: 0.76.0
 ```
 
-#### C. GitHub認証（OAuth Device Flow）
+#### C. GitHub認証（多層認証戦略）
 
-1. `device_code` と `verification_uri` を取得し、ブラウザを起動
-2. ユーザーが認証後、アプリは `access_token` をポーリングで取得
-3. 以降は `Authorization: Bearer <token>` で Gist API 呼び出し
-4. トークンは **Windows DPAPI** でユーザー領域に暗号化保存
+**ローカル開発（推奨）:**
+```bash
+# 初回のみ認証が必要
+gistget auth
+
+# 認証状態の確認
+gistget auth status
+
+# 認証のテスト（API呼び出し確認）
+gistget auth test
+```
+
+**CI/CD環境:**
+```yaml
+# GitHub Secretsに設定
+env:
+  GITHUB_TOKEN: ${{ secrets.GIST_ACCESS_TOKEN }}
+```
+
+**テスト環境:**
+- ユニットテスト: モック認証を自動使用
+- 統合テスト: `GITHUB_TOKEN`環境変数または事前認証要求
+
+**認証フロー:**
+1. ローカル開発: `gistget auth` で認証（一度のみ）
+2. CI/CD: 認証不要（ビルドのみ実行）
+3. テスト: ローカル環境で手動実行
 
 ---
 
@@ -150,41 +174,73 @@ Packages:
 | **WinGet依存** | Linux環境で実行不可 | モック実装・条件付きコンパイル | 中 |
 | **管理者権限** | CI環境で制限 | 権限不要テストの分離 | 中 |
 
-#### B. GitHub Actions設定（マルチOS戦略）
+#### C. GitHub Actions設定（ビルドのみ戦略）
 
 ```yaml
-# メインのCI/CDはLinux環境で実行（高速・低コスト）
-# Windows固有機能はローカルまたは手動トリガーで検証
+# CI/CDはビルド検証のみ実施
+# 実際のテストはローカル開発環境で実施
+
+name: Build
+on: [push, pull_request]
 
 jobs:
-  # Linux: コア機能とGist同期のテスト
-  test-core:
-    runs-on: ubuntu-latest  # 高速・安価
+  # クロスプラットフォームビルド検証
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     
-  # Windows: フル機能テスト（週次または手動）
-  build-windows:
-    runs-on: windows-latest
-    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      
+      - name: Restore dependencies
+        run: dotnet restore
+      
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+      
+      - name: Test (Unit only)
+        run: dotnet test --filter "Category=Unit" --no-build --configuration Release
 ```
 
-#### C. テスト戦略
+#### D. テスト戦略（ローカル開発重視）
 
 ```csharp
 // テストカテゴリによる分離
 [Fact]
-[Trait("Category", "Unit")]
-public void PassthroughCommand_ShouldWork() { }
+[Trait("Category", "Unit")]  // CI実行可能
+public void ArgumentParsing_ShouldWork() { }
 
 [Fact]
-[Trait("Category", "RequiresAdmin")]
-public void InstallCommand_RequiresElevation() { }
+[Trait("Category", "Local")]  // ローカルでのみ実行
+public async Task GistSync_ShouldWork() { }
 
 [Fact]
-[Trait("Category", "Integration")]
-public void GistSync_ShouldUpdatePackageList() { }
+[Trait("Category", "Manual")]  // 手動検証が必要
+public void InstallCommand_RequiresManualVerification() { }
 ```
 
-#### D. リリースパイプライン
+#### E. ローカル開発でのテスト実行
+
+```bash
+# CI相当（ユニットテストのみ）
+dotnet test --filter "Category=Unit"
+
+# ローカル統合テスト
+dotnet test --filter "Category=Local"
+
+# 手動検証が必要なテスト（実行後に手動確認）
+dotnet test --filter "Category=Manual"
+
+# 全テスト実行
+dotnet test
+```
+
+#### D. リリースパイプライン（ビルドのみ）
 
 ```yaml
 # .github/workflows/release.yml
@@ -197,6 +253,11 @@ jobs:
   release:
     runs-on: windows-latest
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      
       - name: Build Release
         run: |
           dotnet publish -c Release -r win-x64 \
@@ -208,6 +269,12 @@ jobs:
           files: |
             bin/Release/net8.0/win-x64/publish/GistGet.exe
 ```
+
+#### E. 品質保証戦略
+
+- **CI/CD**: ビルド検証とユニットテストのみ
+- **ローカル開発**: 統合テストと手動検証
+- **リリース前**: 手動での総合テスト実施
 
 ### 6. 開発ロードマップ
 

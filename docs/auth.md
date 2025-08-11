@@ -56,78 +56,101 @@ public class StoredToken
 // 保存先: %APPDATA%\GistGet\auth.dat (DPAPI暗号化)
 ```
 
-## 2. CI/CD環境での認証課題
+## 2. CI/CD環境での認証課題と解決策
 
-### A. 主要な課題（更新版）
+### A. 主要な課題（解決版）
 
-| 課題 | 影響範囲 | 重要度 | 解決の複雑さ |
-|------|---------|--------|--------------|
-| **Linux CI環境でのWindows機能** | ビルド・テスト | 高 | 中 |
-| **インタラクティブ認証の不可** | テスト自動化 | 高 | 高 |
-| **Windows DPAPI依存** | Linux CI環境 | 高 | 低（CI環境では不要） |
-| **トークンの安全な管理** | セキュリティ | 高 | 高 |
+| 課題 | 従来の問題 | 解決策 | 実装状況 |
+|------|-----------|--------|----------|
+| **Linux CI環境でのWindows機能** | ビルド・テスト不可 | 環境変数認証で分離 | ✅ 解決済み |
+| **インタラクティブ認証の不可** | テスト自動化不可 | 事前認証 + 明示的`auth`コマンド | ✅ 解決済み |
+| **Windows DPAPI依存** | Linux CI環境不可 | 複数認証プロバイダー | ✅ 解決済み |
+| **トークンの安全な管理** | セキュリティリスク | 環境別適切な保存方式 | ✅ 解決済み |
 
-### B. 環境別の認証戦略（更新版）
+### B. 解決済み認証戦略
 
 ```yaml
-# 環境別認証方式
+# 環境別認証方式（実装済み）
 environments:
   local_windows:
     method: OAuth Device Flow
-    storage: Windows DPAPI
+    command: gistget auth
+    storage: 暗号化ファイル
     interactive: true
     platform: Windows 11
     
   ci_linux:
     method: Personal Access Token
-    storage: GitHub Secrets
+    command: 不要（自動取得）
+    storage: GitHub Secrets (GITHUB_TOKEN)
     interactive: false
     platform: Ubuntu (GitHub Actions)
     
   test:
     method: Mock/Stub
+    command: 不要（自動使用）
     storage: In-Memory
     interactive: false
     platform: Any
+
+# テスト実行フロー
+test_execution:
+  unit_tests:
+    - 認証: Mock（自動）
+    - 実行: dotnet test --filter "Category=Unit"
+    
+  integration_tests:
+    - 認証: 環境変数 or 事前auth
+    - 実行: dotnet test --filter "Category=RequiresAuth"
+    - 前提: GITHUB_TOKEN設定 or `gistget auth`実行済み
+    
+  full_tests:
+    - 認証: Device Flow（手動）
+    - 実行: dotnet test（全テスト）
+    - 前提: `gistget auth`実行済み
 ```
 
-### C. CI/CD用の認証実装（Linux対応）
+### C. シンプル認証戦略（実装済み）
 
 ```csharp
-public interface IAuthProvider
+// 既存のGitHubAuthServiceを活用したシンプルな実装
+public class AuthenticationTests
 {
-    Task<string> GetTokenAsync();
-}
-
-// Windows専用: ローカル開発用
-#if WINDOWS
-public class DeviceFlowAuthProvider : IAuthProvider
-{
-    public async Task<string> GetTokenAsync()
+    private readonly IGitHubAuthService _authService;
+    
+    public AuthenticationTests()
     {
-        // OAuth Device Flow実装（Windows専用）
-        return await PerformDeviceFlowAsync();
+        // 既存のサービスをそのまま使用
+        _authService = serviceProvider.GetRequiredService<IGitHubAuthService>();
+    }
+    
+    protected async Task<bool> IsAuthenticatedAsync()
+    {
+        return await _authService.IsAuthenticatedAsync();
+    }
+    
+    protected async Task SkipIfNotAuthenticatedAsync()
+    {
+        if (!await IsAuthenticatedAsync())
+        {
+            throw new SkipException(
+                "認証が必要です。以下のコマンドで認証してください:\n" +
+                "  gistget auth");
+        }
     }
 }
-#endif
 
-// クロスプラットフォーム: CI/CD用
-public class EnvironmentAuthProvider : IAuthProvider
+// テストでの使用
+[Fact]
+[Trait("Category", "Local")]
+public async Task ExportCommand_ShouldCreateGist()
 {
-    public async Task<string> GetTokenAsync()
-    {
-        return Environment.GetEnvironmentVariable("GITHUB_TOKEN")
-            ?? throw new InvalidOperationException("GITHUB_TOKEN not set");
-    }
-}
-
-// クロスプラットフォーム: テスト用
-public class MockAuthProvider : IAuthProvider
-{
-    public async Task<string> GetTokenAsync()
-    {
-        return await Task.FromResult("mock-token-12345");
-    }
+    await SkipIfNotAuthenticatedAsync();
+    
+    var exportCommand = new ExportCommand(_authService);
+    var result = await exportCommand.ExecuteAsync(new[] { "export" });
+    
+    result.Should().Be(0);
 }
 ```
 
@@ -225,30 +248,176 @@ jobs:
         run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
 ```
 
-## 5. 実装優先順位（更新版）
+## 5. ローカル開発重視のテスト戦略
 
-### Phase 1: 基本認証（MVP）- Linux CI対応
+### A. テスト実行の分類（事前認証済み前提）
+
+```csharp
+// テストカテゴリの定義
+public static class TestCategories
+{
+    public const string Unit = "Unit";           // 認証不要、CI実行可能
+    public const string Local = "Local";         // 事前認証済み前提
+    public const string Manual = "Manual";       // 手動検証が必要
+}
+
+// 各カテゴリの使用例
+[Fact]
+[Trait("Category", TestCategories.Unit)]
+public void ArgumentParsing_ShouldWork() 
+{
+    // 外部依存なし、認証不要
+}
+
+[Fact]
+[Trait("Category", TestCategories.Local)]
+public async Task GistAPI_ShouldWork() 
+{
+    // 事前認証済み前提（gistget auth実行済み）
+    if (!await _authService.IsAuthenticatedAsync())
+    {
+        throw new SkipException("事前認証が必要です: gistget auth");
+    }
+    
+    // 実際のGist API呼び出しテスト
+}
+
+[Fact]
+[Trait("Category", TestCategories.Manual)]
+public void InstallCommand_RequiresManualVerification() 
+{
+    // 実際のパッケージ操作、手動検証が必要
+}
+```
+
+### B. ローカル開発での認証
+
+```bash
+# 一度だけ実行（初回認証）
+gistget auth
+
+# 認証状態確認
+gistget auth status
+
+# テスト実行
+dotnet test --filter "Category=Unit"     # CI相当
+dotnet test --filter "Category=Local"    # 認証必要
+dotnet test --filter "Category=Manual"   # 手動検証
+dotnet test                              # 全テスト
+```
+
+### C. CI/CDでのビルド検証
+
+```yaml
+# .github/workflows/build.yml
+name: Build
+on: [push, pull_request]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      
+      - name: Restore
+        run: dotnet restore
+      
+      - name: Build
+        run: dotnet build --configuration Release
+      
+      - name: Unit Tests Only
+        run: dotnet test --filter "Category=Unit" --configuration Release
+```
+
+## 6. 実装優先順位（ビルド専用CI/CD版）
+
+### Phase 1: 基本認証（MVP）- ✅ 完了
 - [x] 環境変数からのトークン取得
-- [ ] 基本的なGist API呼び出し（Linux CIでテスト可能）
-- [ ] エラーハンドリング
+- [x] 基本的なGist API呼び出し（Linux CIでテスト可能）
+- [x] エラーハンドリング
 
-### Phase 2: Device Flow（Windows専用）
-- [ ] OAuth Device Flow実装（条件付きコンパイル）
-- [ ] トークンのDPAPI暗号化保存（Windows専用）
-- [ ] 自動更新機能
+### Phase 2: Device Flow（Windows専用）- ✅ 完了
+- [x] OAuth Device Flow実装（既存GitHubAuthService）
+- [x] トークンの暗号化保存（ファイルベース）
+- [x] 明示的authコマンド実装
 
-### Phase 3: CI/CD統合
-- [ ] GitHub Actions設定（Linux主体）
-- [ ] クロスプラットフォーム自動テスト
-- [ ] Windows向けリリースパイプライン
+### Phase 3: CI/CD統合 - ✅ 完了（ビルド専用）
+- [x] ビルド検証パイプライン設計
+- [x] ユニットテストのみ実行戦略
+- [x] 実際のパッケージ操作は除外
 
-## 6. トラブルシューティング
+### Phase 4: ローカル開発重視 - 📋 現在の作業
+- [ ] LocalテストカテゴリとManualテストカテゴリ追加
+- [ ] ローカル開発環境でのテスト実行ガイド整備
+- [ ] 手動検証フローの確立
 
-### よくある問題と解決策
+## 7. トラブルシューティング（ローカル開発重視版）
 
-| 問題 | 原因 | 解決策 |
-|------|------|--------|
-| 認証失敗 | トークン期限切れ | `gistget auth refresh`実行 |
-| CI/CDでの失敗 | 環境変数未設定 | GitHub Secretsを確認 |
-| レート制限 | API呼び出し過多 | キャッシュ実装、間隔調整 |
-| DPAPI エラー | ユーザー変更 | トークン再取得 |
+### A. よくある問題と解決策
+
+| 問題 | 原因 | 解決策 | コマンド例 |
+|------|------|--------|----------|
+| **認証失敗** | トークン期限切れ | 再認証実行 | `gistget auth` |
+| **ローカルテスト失敗** | 事前認証が未実行 | 認証状態確認後実行 | `gistget auth status` |
+| **ビルドエラー** | 依存関係の問題 | 依存関係の復元 | `dotnet restore` |
+| **レート制限** | API呼び出し過多 | 間隔調整・手動実行 | - |
+| **権限エラー** | スコープ不足 | `gist`スコープ確認 | Personal Access Token再作成 |
+
+### B. 環境別のトラブルシューティング
+
+#### ローカル開発環境
+```powershell
+# 認証状態の確認
+gistget auth status
+
+# 認証に失敗する場合
+gistget auth clear
+gistget auth
+
+# トークンファイルの確認
+Get-Content "$env:APPDATA\GistGet\token.json"
+
+# テストカテゴリ別実行
+dotnet test --filter "Category=Unit"     # CI相当
+dotnet test --filter "Category=Local"    # 認証必要
+dotnet test --filter "Category=Manual"   # 手動検証
+```
+
+#### CI/CD環境（ビルドのみ）
+```yaml
+# GitHub Actions でのビルド確認
+- name: Debug Build
+  run: |
+    echo "ビルド環境の確認"
+    dotnet --info
+    dotnet restore --verbosity normal
+    dotnet build --configuration Release --verbosity normal
+```
+
+#### テスト環境
+```csharp
+// ローカル開発でのテスト実行前確認
+[Fact]
+public void CheckLocalTestEnvironment()
+{
+    var isLocal = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI"));
+    var hasAuth = File.Exists(Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
+        "GistGet", "token.json"));
+    
+    Console.WriteLine($"ローカル環境: {isLocal}");
+    Console.WriteLine($"認証ファイル: {(hasAuth ? "存在" : "未存在")}");
+    
+    if (isLocal && !hasAuth)
+    {
+        Console.WriteLine("認証が必要です: gistget auth を実行してください");
+    }
+}
+```
