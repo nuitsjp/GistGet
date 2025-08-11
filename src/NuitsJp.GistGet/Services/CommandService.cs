@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using NuitsJp.GistGet.Abstractions;
+using NuitsJp.GistGet.Commands;
 
 namespace NuitsJp.GistGet.Services;
 
@@ -13,6 +14,9 @@ public class CommandService : ICommandService
     private readonly IGistSyncService _gistSyncService;
     private readonly AuthCommand _authCommand;
     private readonly TestGistCommand _testGistCommand;
+    private readonly GistSetCommand _gistSetCommand;
+    private readonly GistStatusCommand _gistStatusCommand;
+    private readonly GistShowCommand _gistShowCommand;
     private readonly ILogger<CommandService> _logger;
     private readonly IErrorMessageService _errorMessageService;
 
@@ -22,6 +26,9 @@ public class CommandService : ICommandService
         IGistSyncService gistSyncService,
         AuthCommand authCommand,
         TestGistCommand testGistCommand,
+        GistSetCommand gistSetCommand,
+        GistStatusCommand gistStatusCommand,
+        GistShowCommand gistShowCommand,
         ILogger<CommandService> logger,
         IErrorMessageService errorMessageService)
     {
@@ -30,6 +37,9 @@ public class CommandService : ICommandService
         _gistSyncService = gistSyncService;
         _authCommand = authCommand;
         _testGistCommand = testGistCommand;
+        _gistSetCommand = gistSetCommand;
+        _gistStatusCommand = gistStatusCommand;
+        _gistShowCommand = gistShowCommand;
         _logger = logger;
         _errorMessageService = errorMessageService;
     }
@@ -76,6 +86,7 @@ public class CommandService : ICommandService
         var usesGist = command is "sync";  // export/importを除外
         var isAuthCommand = command is "auth";
         var isTestGistCommand = command is "test-gist";
+        var isGistSubCommand = command is "gist";
 
         if (isAuthCommand)
         {
@@ -85,6 +96,11 @@ public class CommandService : ICommandService
         if (isTestGistCommand)
         {
             return await _testGistCommand.ExecuteAsync();
+        }
+
+        if (isGistSubCommand)
+        {
+            return await HandleGistSubCommandAsync(args);
         }
 
         if (usesGist)
@@ -99,6 +115,80 @@ public class CommandService : ICommandService
 
         _logger.LogDebug("Routing to passthrough client for command: {Command}", command);
         return await _passthroughClient.ExecuteAsync(args);
+    }
+
+    private async Task<int> HandleGistSubCommandAsync(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            Console.WriteLine("Usage: gistget gist <command> [options]");
+            Console.WriteLine();
+            Console.WriteLine("Commands:");
+            Console.WriteLine("  set [--gist-id <id>] [--file <filename>]  - Gist設定を行います");
+            Console.WriteLine("  status                                     - 現在のGist設定状態を表示します");
+            Console.WriteLine("  show [--raw]                              - Gistの内容を表示します");
+            Console.WriteLine();
+            Console.WriteLine("Examples:");
+            Console.WriteLine("  gistget gist set --gist-id abc123 --file packages.yaml");
+            Console.WriteLine("  gistget gist set                  # 対話的に設定");
+            Console.WriteLine("  gistget gist status");
+            Console.WriteLine("  gistget gist show");
+            Console.WriteLine("  gistget gist show --raw          # Raw YAML形式で表示");
+            return 1;
+        }
+
+        var subCommand = args[1].ToLowerInvariant();
+        _logger.LogDebug("Routing to Gist sub-command: {SubCommand}", subCommand);
+
+        return subCommand switch
+        {
+            "set" => await HandleGistSetAsync(args),
+            "status" => await _gistStatusCommand.ExecuteAsync(),
+            "show" => await HandleGistShowAsync(args),
+            _ => await ShowGistSubCommandHelp(subCommand)
+        };
+    }
+
+    private async Task<int> HandleGistSetAsync(string[] args)
+    {
+        string? gistId = null;
+        string? fileName = null;
+
+        // 引数解析
+        for (int i = 2; i < args.Length; i++)
+        {
+            if (args[i] == "--gist-id" && i + 1 < args.Length)
+            {
+                gistId = args[i + 1];
+                i++; // Skip next argument
+            }
+            else if (args[i] == "--file" && i + 1 < args.Length)
+            {
+                fileName = args[i + 1];
+                i++; // Skip next argument
+            }
+        }
+
+        return await _gistSetCommand.ExecuteAsync(gistId, fileName);
+    }
+
+    private async Task<int> HandleGistShowAsync(string[] args)
+    {
+        var raw = args.Contains("--raw");
+        return await _gistShowCommand.ExecuteAsync(raw);
+    }
+
+    private Task<int> ShowGistSubCommandHelp(string invalidSubCommand)
+    {
+        Console.WriteLine($"Error: Unknown gist command '{invalidSubCommand}'");
+        Console.WriteLine();
+        Console.WriteLine("Available commands:");
+        Console.WriteLine("  set     - Gist設定を行います");
+        Console.WriteLine("  status  - 現在のGist設定状態を表示します");
+        Console.WriteLine("  show    - Gistの内容を表示します");
+        Console.WriteLine();
+        Console.WriteLine("Use 'gistget gist' for more information.");
+        return Task.FromResult(1);
     }
 
     private async Task<int> HandleGistCommandAsync(string command, string[] args)

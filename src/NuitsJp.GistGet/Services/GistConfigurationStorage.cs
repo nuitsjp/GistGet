@@ -1,0 +1,137 @@
+using System.Security.Cryptography;
+using NuitsJp.GistGet.Models;
+using NuitsJp.GistGet.Interfaces;
+
+namespace NuitsJp.GistGet.Services;
+
+public class GistConfigurationStorage : IGistConfigurationStorage
+{
+    private readonly string _filePath;
+
+    public string FilePath => _filePath;
+
+    public GistConfigurationStorage(string appDataDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(appDataDirectory))
+            throw new ArgumentException("App data directory cannot be null or empty", nameof(appDataDirectory));
+
+        _filePath = Path.Combine(appDataDirectory, "gist.dat");
+    }
+
+    public static GistConfigurationStorage CreateDefault()
+    {
+        var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        var gistGetDir = Path.Combine(appDataPath, "GistGet");
+        return new GistConfigurationStorage(gistGetDir);
+    }
+
+    public async Task SaveGistConfigurationAsync(GistConfiguration configuration)
+    {
+        if (configuration == null)
+            throw new ArgumentNullException(nameof(configuration));
+
+        configuration.Validate();
+
+        try
+        {
+            // ディレクトリが存在しない場合は作成
+            var directory = Path.GetDirectoryName(_filePath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            // JSON文字列に変換
+            var json = configuration.ToJson();
+            var jsonBytes = System.Text.Encoding.UTF8.GetBytes(json);
+
+            // DPAPI で暗号化（CurrentUser スコープ）
+            var encryptedBytes = ProtectedData.Protect(jsonBytes, null, DataProtectionScope.CurrentUser);
+
+            // ファイルに保存
+            await File.WriteAllBytesAsync(_filePath, encryptedBytes);
+        }
+        catch (CryptographicException ex)
+        {
+            throw new InvalidOperationException($"Failed to encrypt configuration: {ex.Message}", ex);
+        }
+        catch (IOException ex)
+        {
+            throw new InvalidOperationException($"Failed to save configuration file: {ex.Message}", ex);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            throw new InvalidOperationException($"Access denied when saving configuration: {ex.Message}", ex);
+        }
+    }
+
+    public async Task<GistConfiguration?> LoadGistConfigurationAsync()
+    {
+        if (!File.Exists(_filePath))
+            return null;
+
+        try
+        {
+            // 暗号化されたファイルを読み込み
+            var encryptedBytes = await File.ReadAllBytesAsync(_filePath);
+
+            // DPAPI で復号化
+            var jsonBytes = ProtectedData.Unprotect(encryptedBytes, null, DataProtectionScope.CurrentUser);
+            var json = System.Text.Encoding.UTF8.GetString(jsonBytes);
+
+            // JSON から GistConfiguration オブジェクトに変換
+            return GistConfiguration.FromJson(json);
+        }
+        catch (CryptographicException ex)
+        {
+            throw new InvalidOperationException($"Failed to decrypt configuration. The file may be corrupted or created by a different user: {ex.Message}", ex);
+        }
+        catch (IOException ex)
+        {
+            throw new InvalidOperationException($"Failed to read configuration file: {ex.Message}", ex);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            throw new InvalidOperationException($"Access denied when reading configuration: {ex.Message}", ex);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new InvalidOperationException($"Invalid configuration data: {ex.Message}", ex);
+        }
+    }
+
+    public async Task<bool> IsConfiguredAsync()
+    {
+        try
+        {
+            var config = await LoadGistConfigurationAsync();
+            return config != null;
+        }
+        catch
+        {
+            // ファイルが破損している場合や読み取れない場合は未設定として扱う
+            return false;
+        }
+    }
+
+    public async Task DeleteConfigurationAsync()
+    {
+        if (File.Exists(_filePath))
+        {
+            try
+            {
+                File.Delete(_filePath);
+            }
+            catch (IOException ex)
+            {
+                throw new InvalidOperationException($"Failed to delete configuration file: {ex.Message}", ex);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                throw new InvalidOperationException($"Access denied when deleting configuration: {ex.Message}", ex);
+            }
+        }
+
+        await Task.CompletedTask;
+    }
+}
