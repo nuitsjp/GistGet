@@ -35,6 +35,11 @@ Set-GitHubToken github_pat_11AD3NELA0SGEHcrynCMSo...
 
 **このとき「Gist description...」に「GistGet」を設定します。** ファイル名は任意です。
 
+**注意**: C#版GistGetを使用する場合は、作成したGistのIDとファイル名を記録しておく必要があります。C#版では以下のコマンドで設定します：
+```bash
+gistget gist set --gist-id [作成したGist ID] --file [ファイル名]
+```
+
 ```yaml
 7zip.7zip:
 Microsoft.VisualStudioCode:

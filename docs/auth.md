@@ -162,9 +162,20 @@ public async Task ExportCommand_ShouldCreateGist()
 # Gist操作に必要なスコープ
 scopes:
   - gist  # Gist の作成、読み取り、更新、削除のすべて
+
+# C#版GistGetの場合の追加要件
+prerequisites:
+  - GitHub Personal Access Token (gist スコープ)
+  - 対象Gistの事前作成とID取得
+  - ローカル環境でのGist設定実行
 ```
 
 **注意**: `gist`スコープ1つですべてのGist操作が可能です。`create:gist`のような細分化されたスコープは存在しません。
+
+**C#版GistGetの追加手順**:
+1. GitHub上でGistを手動作成（YAMLファイルを含む）
+2. 作成したGistのIDを取得（URLの末尾部分）
+3. `gistget gist set --gist-id [ID] --file [ファイル名]`で設定
 
 ### B. スコープの権限詳細
 

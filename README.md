@@ -38,9 +38,12 @@ gistget show --id Git.Git  # → winget show --id Git.Git
 | uninstall | remove, rm | COM利用 | 更新 | 要管理者 | 最高 | パッケージアンインストール + Gist定義更新 |
 | upgrade | update | COM利用 | 更新 | 要管理者 | 最高 | パッケージアップグレード + Gist定義更新 |
 | sync | - | COM利用 | 読込 | 要管理者 | 最高 | Gist定義パッケージをインストール（追加のみ） |
+| **Gist管理コマンド（新規追加）** |
+| gist set | - | 独立実装 | - | 不要 | 最高 | Gist情報設定（ID・ファイル名） |
+| gist status | - | 独立実装 | - | 不要 | 最高 | Gist設定状態確認 |
+| gist show | - | 独立実装 | 読込 | 不要 | 高 | Gist内容表示 |
+| gist clear | - | 独立実装 | - | 不要 | 中 | Gist設定クリア |
 | **Gist同期専用コマンド** |
-| export | - | COM利用 | 読込 | 不要 | 高 | Gistから定義ファイルをダウンロード |
-| import | - | COM利用 | 作成 | 不要 | 高 | 現在の環境をGistへアップロード |
 | **情報表示（パススルー）** |
 | list | ls | パススルー | - | 不要 | 中 | インストール済み表示 |
 | search | find | パススルー | - | 不要 | 低 | パッケージ検索 |
@@ -57,6 +60,8 @@ gistget show --id Git.Git  # → winget show --id Git.Git
 | hash | - | パススルー | - | 不要 | 低 | ハッシュ計算 |
 | validate | - | パススルー | - | 不要 | 低 | マニフェスト検証 |
 | features | - | パススルー | - | 不要 | 低 | 実験的機能 |
+| export | - | COM利用 | 読込 | 不要 | 高 | Gistから定義ファイルをダウンロード |
+| import | - | COM利用 | 作成 | 不要 | 高 | 現在の環境をGistへアップロード |
 
 #### B. Gist同期方式
 
@@ -72,6 +77,7 @@ gistget show --id Git.Git  # → winget show --id Git.Git
 - **パススルー**: 表示系・管理系はwinget.exeへ引数をそのまま渡して実行
 - **バージョン固定**: YAML定義内の`Version`フィールドで指定（Gist側で管理）
 - **認証**: OAuth Device Flowで自動実装（トークン設定コマンドは不要）
+- **Gist管理**: 事前設定前提（`gistget gist set`でGist ID・ファイル名を設定）
 
 ---
 
@@ -121,6 +127,47 @@ gistget auth status
 gistget auth test
 ```
 
+**Gist設定（ローカル開発・テスト用）:**
+```bash
+# GitHubでGist作成が必要（初回のみ）
+# 1. https://gist.github.com/ でGist作成
+# 2. packages.yaml ファイルを作成
+# 3. 基本的なパッケージ定義を記述
+
+# 対話形式でGist情報設定（推奨）
+gistget gist set
+
+# またはコマンドライン引数で直接設定
+gistget gist set --gist-id abc123456789 --file packages.yaml
+
+# Gist設定状態の確認
+gistget gist status
+
+# Gist内容の確認（設定テスト）
+gistget gist show
+```
+
+**初回セットアップの完全な手順:**
+```bash
+# 1. GitHub認証
+gistget auth
+
+# 2. GitHubでGist作成（ブラウザ）
+# https://gist.github.com/ にアクセス
+# ファイル名: packages.yaml
+# 内容例:
+# Packages:
+#   - Id: Git.Git
+#   - Id: Microsoft.VisualStudioCode
+
+# 3. Gist設定（GistGet側）
+gistget gist set  # 対話形式で案内
+
+# 4. 設定確認
+gistget gist status
+gistget gist show
+```
+
 **CI/CD環境:**
 ```yaml
 # GitHub Secretsに設定
@@ -148,7 +195,7 @@ env:
 - **引数パーサー**: System.CommandLine
 - **HTTP通信**: HttpClient（GitHub API用）
 - **YAML処理**: YamlDotNet（Gist同期用）
-- **暗号化**: Windows DPAPI（トークン保存用）
+- **暗号化**: Windows DPAPI（Gist設定・トークン保存用）
 
 #### B. MVP実装優先順位
 
