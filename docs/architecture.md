@@ -1,13 +1,17 @@
 # GistGet アーキテクチャ設計
 
+## アーキテクチャ設計概要
+
+-- ここから編集禁止 --
+
+1. セキュリティ設計: 認証方式と認証情報の保存、設定保管先のGist情報の設定と保管
+2. 論理構造設計: レイヤーモデルと、レイヤーの基本的な相互作用の設計
+3. テスト設計: 単体・結合テストの方式設計
+
+-- ここまで編集禁止 --
+
 ## 1. 現在の実装状態
 
-### 実装済み機能
-- ✅ WinGet CLIへのパススルー実装
-- ✅ COM API基盤の構築
-- ✅ 基本的なコマンドハンドラー構造
-- ⏳ Gist同期機能（未実装）
-- ⏳ CI/CDパイプライン（未実装）
 
 ### アーキテクチャ概要
 
@@ -106,27 +110,6 @@ public class ArgumentStrategy
 ### パススルー時の注意点
 
 **重要:** WinGetへのパススルー時は引数を**一切加工しない**
-- 引数の順序を維持
-- 大文字小文字を維持  
-- 特殊文字やエスケープを維持
-- 未知のオプションもそのまま渡す
-
-```csharp
-// ❌ 悪い例: 引数を解釈・加工してしまう
-public async Task<int> BadPassthrough(string[] args)
-{
-    var parsed = ParseArguments(args);  // 不要な解析
-    var reformatted = BuildWinGetArgs(parsed);  // 再構築で情報が失われる可能性
-    return await RunWinGet(reformatted);
-}
-
-// ✅ 良い例: 引数をそのまま渡す
-public async Task<int> GoodPassthrough(string[] args)
-{
-    // 引数配列をそのままwinget.exeに渡す
-    return await ProcessRunner.RunWinGetAsync(args);
-}
-```
 
 ## 3. 実行フローのシーケンス図
 
@@ -202,28 +185,6 @@ public class CommandRouter
 }
 ```
 
-### 主要コンポーネント
-
-#### Program.cs
-- アプリケーションのエントリポイント
-- コマンドライン引数をCommandRouterに渡す
-- 終了コードを返す
-
-#### CommandRouter
-- コマンドの分類とルーティング
-- 将来的にCOM APIとパススルーの振り分けを行う
-- 現在はすべてパススルー
-
-#### ProcessRunner
-- winget.exeの実行を管理
-- 標準出力/エラー出力の処理
-- プロセスの終了コード取得
-
-#### WinGetClient（部分実装）
-- COM APIのラッパー
-- PackageManagerの初期化と管理
-- 将来のGist同期用基盤
-
 ## 5. 技術スタック
 
 ### 現在使用中
@@ -281,15 +242,9 @@ public class CommandRouter
 
 ## 9. CI/CD環境での技術的課題
 
-### A. Windows依存性の課題
-
-```yaml
-# COM APIのWindows依存性への対処
-strategy:
-  matrix:
-    os: [windows-latest]  # Windows限定
-    dotnet: ['8.0.x']
-```
+- Windowsでのみ動作する機能が多いためCI/CDでテストは実施しない
+- CI/CDではビルドのみ実装
+- 将来的にリリースは対応したいが当面は未実施
 
 #### 課題と解決策
 
@@ -300,236 +255,24 @@ strategy:
 | **winget.exe** | 実行ファイル依存 | モック実装 | 高 |
 | **管理者権限** | CI環境で制限 | テスト分離 | 中 |
 
-### B. ビルド専用CI/CD戦略
-
-```csharp
-// CI環境では実際のパッケージ操作を行わない
-public static IServiceProvider ConfigureServices(bool isCI = false)
-{
-    var services = new ServiceCollection();
-    
-    if (isCI)
-    {
-        // CI環境：ビルド検証のみ、実際の操作は行わない
-        services.AddSingleton<IPackageManager, NullPackageManager>();
-        services.AddSingleton<IAuthProvider, NullAuthProvider>();
-    }
-    else
-    {
-        // ローカル環境：実際のCOM APIと認証を使用
-        services.AddSingleton<IPackageManager, WinGetComManager>();
-        services.AddSingleton<IAuthProvider, DeviceFlowAuthProvider>();
-    }
-    
-    return services.BuildServiceProvider();
-}
-
-// CI専用の何もしないプロバイダー
-public class NullPackageManager : IPackageManager
-{
-    public Task<int> InstallAsync(string packageId)
-    {
-        throw new NotSupportedException("CI環境ではパッケージ操作は実行されません");
-    }
-}
-
-public class NullAuthProvider : IAuthProvider
-{
-    public Task<string?> GetTokenAsync()
-    {
-        throw new NotSupportedException("CI環境では認証は実行されません");
-    }
-}
-```
-
-### C. ビルドパイプライン（シンプル版）
-
-```yaml
-# ビルド検証のみ実施
-name: Build
-on: [push, pull_request]
-
-jobs:
-  build:
-    strategy:
-      matrix:
-        os: [windows-latest, ubuntu-latest]
-    runs-on: ${{ matrix.os }}
-    
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-      
-      - name: Restore
-        run: dotnet restore
-      
-      - name: Build
-        run: dotnet build --configuration Release
-      
-      - name: Unit Tests Only
-        run: dotnet test --filter "Category=Unit"
-```
-
-### D. ローカル開発重視のテスト戦略
-
-```bash
-# CI相当（ユニットテストのみ）
-dotnet test --filter "Category=Unit"
-
-# ローカル統合テスト（認証・COM API含む）
-dotnet test --filter "Category=Local"
-
-# 手動検証（実際のパッケージ操作）
-dotnet test --filter "Category=Manual"
-
-# 全テスト実行
-dotnet test
-```
-
-### E. リリースパイプライン（シンプル版）
-
-```yaml
-# GitHub Releases への自動デプロイ（ビルドのみ）
-name: Release
-on:
-  push:
-    tags: ['v*']
-
-jobs:
-  release:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-      
-      - name: Build Release
-        run: |
-          dotnet publish -c Release -r win-x64 \
-            --self-contained -p:PublishSingleFile=true
-      
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            src/NuitsJp.GistGet/bin/Release/net8.0/win-x64/publish/GistGet.exe
-```
-
 ### F. 品質保証戦略
 
 | 段階 | 実行環境 | 対象テスト | 自動化レベル |
 |------|----------|-----------|-------------|
-| **CI/CD** | GitHub Actions | ビルド + ユニットテスト | 完全自動 |
+| **CI/CD** | GitHub Actions | ビルド | 完全自動 |
 | **ローカル開発** | 開発PC | 統合テスト + COM API | 半自動 |
 | **リリース前** | 手動 | 実際のパッケージ操作 | 手動 |
-
-## 10. パフォーマンス最適化
-  if: startsWith(github.ref, 'refs/tags/')
-  uses: actions/create-release@v1
-  with:
-    tag_name: ${{ github.ref }}
-    release_name: Release ${{ github.ref }}
-    draft: false
-    prerelease: false
-    
-- name: Upload Release Asset
-  uses: actions/upload-release-asset@v1
-  with:
-    upload_url: ${{ steps.create_release.outputs.upload_url }}
-    asset_path: ./bin/Release/net8.0/win-x64/publish/GistGet.exe
-    asset_name: GistGet.exe
-    asset_content_type: application/octet-stream
-```
-
-## 10. パフォーマンス最適化
-
-### A. 起動時間の改善
-
-```csharp
-// ReadyToRun による起動高速化
-// プロジェクトファイルに追加
-<PropertyGroup>
-  <PublishReadyToRun>true</PublishReadyToRun>
-  <TieredCompilation>true</TieredCompilation>
-</PropertyGroup>
-```
-
-### B. メモリ使用量の削減
-
-```csharp
-// 大量のパッケージリスト処理時のストリーミング
-public async IAsyncEnumerable<Package> GetPackagesAsync()
-{
-    await foreach (var package in _comApi.GetPackagesAsync())
-    {
-        yield return package;
-    }
-}
-```
 
 ## 11. 認証アーキテクチャ（シンプル戦略）
 
 ### A. 事前認証済み前提の戦略
 
-```
-┌─────────────────────────────────────────┐
-│            AuthProvider                  │ 統一インターフェース
-├─────────────────────────────────────────┤
-│  既存のGitHubAuthService使用             │ すべての環境で共通
-├─────────────────────────────────────────┤
-│  • ローカル開発: gistget auth実行済み    │
-│  • テスト実行: gistget auth実行済み      │
-│  • CI/CD: 認証不要（ビルドのみ）         │
-└─────────────────────────────────────────┘
-```
-
-### B. 実装アプローチ（シンプル版）
-
-```csharp
-// 既存のGitHubAuthServiceをそのまま使用
-public class TestWithAuthentication
-{
-    private readonly IGitHubAuthService _authService;
-    
-    public TestWithAuthentication()
-    {
-        // DIコンテナから既存のサービスを取得
-        _authService = serviceProvider.GetRequiredService<IGitHubAuthService>();
-    }
-    
-    [Fact]
-    [Trait("Category", "Local")]
-    public async Task ExportCommand_ShouldWork()
-    {
-        // 事前認証チェック（失敗時はテストスキップ）
-        if (!await _authService.IsAuthenticatedAsync())
-        {
-            throw new SkipException("認証が必要です。'gistget auth' を先に実行してください。");
-        }
-        
-        // 実際のテスト実行
-        var exportCommand = new ExportCommand(_authService);
-        var result = await exportCommand.ExecuteAsync(new[] { "export" });
-        
-        result.Should().Be(0);
-    }
-}
-
-// ユニットテスト（認証不要）
-[Fact]
-[Trait("Category", "Unit")]
-public void ArgumentParsing_ShouldWork() 
-{
-    // 外部依存なし、認証不要
-    var parser = new ArgumentParser();
-    var result = parser.Parse(new[] { "export", "--output", "test.yaml" });
-    
-    result.Should().NotBeNull();
-}
-```
+- AuthProvider: 統一インターフェース
+- 既存のGitHubAuthServiceを使用（すべての環境で共通）
+- 前提条件:
+    - ローカル開発: gistget auth を事前に実行
+    - テスト実行: gistget auth を事前に実行
+    - CI/CD: 認証不要（ビルドのみ）
 
 ### C. テスト実行フロー（事前認証済み前提）
 
@@ -542,65 +285,10 @@ gistget auth status
 # 出力例: "認証済み: nuitsjp (Atsushi Nakamura)"
 
 # 3. テスト実行
-dotnet test --filter "Category=Unit"     # 認証不要
-dotnet test --filter "Category=Local"    # 事前認証済み前提
 dotnet test                              # 全テスト
 
 # 認証が切れた場合のみ再実行
 gistget auth
-```
-
-### D. 環境別の想定
-
-| 環境 | 認証方式 | 実行前提 | テスト対象 |
-|------|----------|----------|-----------|
-| **ローカル開発** | Device Flow | `gistget auth`実行済み | Unit + Local |
-| **CI/CD** | なし | 認証不要 | Unitのみ |
-| **手動テスト** | Device Flow | `gistget auth`実行済み | 全テスト |
-
-## 13. セキュリティ考慮事項（認証拡張）
-
-### A. 認証方式別のセキュリティ
-
-| 認証方式 | セキュリティレベル | リスク | 対策 |
-|----------|------------------|-------|------|
-| **Device Flow** | 高 | ブラウザ依存 | HTTPS必須、トークン暗号化 |
-| **環境変数** | 中 | ログ漏洩 | CI専用、短期間使用 |
-| **モック** | 低 | テスト専用 | 本番環境で無効化 |
-
-### B. トークン管理
-
-```csharp
-// トークンの安全な取得
-public class SecureTokenManager
-{
-    public async Task<string> GetSecureTokenAsync()
-    {
-        // 1. 環境変数チェック（CI/CD）
-        var envToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
-        if (!string.IsNullOrEmpty(envToken))
-        {
-            LogTokenSource("Environment Variable");
-            return envToken;
-        }
-        
-        // 2. 暗号化ファイルチェック（ローカル）
-        var fileToken = await LoadEncryptedTokenAsync();
-        if (!string.IsNullOrEmpty(fileToken))
-        {
-            LogTokenSource("Encrypted File");
-            return fileToken;
-        }
-        
-        throw new UnauthorizedAccessException("認証が必要です。'gistget auth' を実行してください。");
-    }
-    
-    private void LogTokenSource(string source)
-    {
-        // セキュリティ: トークン自体はログに出力しない
-        _logger.LogInformation("認証トークンを取得しました（ソース: {Source}）", source);
-    }
-}
 ```
 
 ## 14. 監視とログ（認証関連拡張）
@@ -619,47 +307,26 @@ Log.Information("Installing package {PackageId} version {Version}",
     packageId, version);
 ```
 
-### B. テレメトリ（オプトイン）
-
-```csharp
-// Application Insights (オプトイン)
-if (Settings.EnableTelemetry)
-{
-    services.AddApplicationInsightsTelemetry();
-}
-```
-
 ## 12. Gist管理アーキテクチャ（新規追加）
 
 ### A. Gist管理基盤の設計
 
-```
-┌─────────────────────────────────────────┐
-│            GistManager                   │ Gist操作の統合管理
-├─────────────────────────────────────────┤
-│  - CRUD操作統合                          │
-│  - パッケージ変換管理                    │
-│  - エラーハンドリング                    │
-├─────────────────────────────────────────┤
-│         GistInfoStorage                  │ Gist設定の安全な保存
-├─────────────────────────────────────────┤
-│  - 暗号化保存（DPAPI）                   │
-│  - 設定情報管理                          │
-│  - 事前設定チェック                      │
-├─────────────────────────────────────────┤
-│       PackageYamlConverter               │ YAML ↔ C#オブジェクト変換
-├─────────────────────────────────────────┤
-│  - YamlDotNet活用                        │
-│  - PackageCollection管理                 │
-│  - バリデーション                        │
-├─────────────────────────────────────────┤
-│         GitHubGistClient                 │ GitHub Gist API
-├─────────────────────────────────────────┤
-│  - 既存のGitHubAuthService活用           │
-│  - Gist取得・更新・作成                  │
-│  - レート制限対応                        │
-└─────────────────────────────────────────┘
-```
+- GistManager（Gist操作の統合管理）
+    - CRUD操作の統合
+    - パッケージ変換管理
+    - エラーハンドリング
+- GistInfoStorage（Gist設定の安全な保存）
+    - 暗号化保存（DPAPI）
+    - 設定情報管理
+    - 事前設定チェック
+- PackageYamlConverter（YAML ↔ C#オブジェクト変換）
+    - YamlDotNet活用
+    - PackageCollection管理
+    - バリデーション
+- GitHubGistClient（GitHub Gist API）
+    - 既存のGitHubAuthService活用
+    - Gist取得・更新・作成
+    - レート制限対応
 
 ### B. Gist設定データ形式
 
