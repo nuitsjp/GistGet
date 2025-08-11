@@ -138,19 +138,37 @@ graph TB
 
 ### 3.1 テスト方式
 
-- テスト用ディレクトリは存在するが、テストファイルは未作成
-- テストフレームワークはxUnitを使用予定（.NET 8標準）
+**テスト実装の現状**:
+- テストプロジェクト: `tests/NuitsJp.GistGet.Tests/`
+- テストフレームワーク: xUnit + Moq + Shouldly
+- .NET 8 Windows 10環境（win-x64）での実行
+- 13個のテストファイル（各主要クラスをカバー）
+
+**テストファイル一覧**:
+- `CommandServiceTests.cs` - コマンドルーターのテスト
+- `GistConfigurationStorageTests.cs` - 設定保存のテスト
+- `GistConfigurationTests.cs` - 設定モデルのテスト
+- `WinGetComClientTests.cs` - WinGet COM APIのテスト
+- `RunnerApplicationTests.cs` - アプリケーションエントリポイントのテスト
+- `MockServices.cs` - テスト用モック実装
 
 ### 3.2 単体テスト設計
 
-| レイヤー | テスト対象 | テスト戦略 |
-|---------|-----------|-----------|
-| **Services** | ビジネスロジック | モックを使用した隔離テスト |
-| **Commands** | コマンド実装 | 入出力検証、エラーハンドリング |
-| **Models** | データモデル | プロパティ、バリデーション |
-| **Storage** | データ永続化 | 一時ファイルでの実際の暗号化テスト |
+**テストアーキテクチャ**:
 
-- 依存性注入によるテスト容易性
+| レイヤー | テスト対象 | 実装済みテスト | テスト戦略 |
+|---------|-----------|---------------|-----------|
+| **Services** | ビジネスロジック | `CommandServiceTests.cs`<br/>`GistManagerTests.cs` | Moqを使用した依存性隔離テスト |
+| **Models** | データモデル | `GistConfigurationTests.cs`<br/>`PackageDefinitionTests.cs`<br/>`PackageCollectionTests.cs` | プロパティ検証・バリデーション |
+| **Storage** | データ永続化 | `GistConfigurationStorageTests.cs` | 一時ファイルでのDPAPI暗号化テスト |
+| **Infrastructure** | 外部システム連携 | `WinGetComClientTests.cs`<br/>`GitHubGistClientTests.cs` | モック・スタブによる隔離テスト |
+| **Application** | アプリケーション制御 | `RunnerApplicationTests.cs` | エントリポイントの動作検証 |
+
+**モック戦略**:
+- `MockWinGetClient`: COM API呼び出しをモック化
+- `MockWinGetPassthroughClient`: winget.exe実行をモック化  
+- `MockGistSyncService`: Gist同期処理をモック化
+- Moqライブラリによる動的モック生成
 
 ### 3.3 結合テスト設計
 
@@ -172,19 +190,33 @@ graph TB
 
 ### 3.4 テスト実行環境
 
-- Windows COM API依存のため、GitHub ActionsではWindows環境が必須
-- winget.exe依存のため、フル機能テストはローカル環境のみ
-- 単体テストのみCI/CDで自動実行
+**技術的制約**:
+- ターゲット環境: `net8.0-windows10.0.26100` （Windows 10限定）
+- ランタイム: `win-x64` （64bit Windows専用）
+- COM API依存のため、CI/CD環境ではWindows Runnerが必須
 
-- ローカル開発環境
-  - 事前認証: `gistget auth`
-  - Gist設定: `gistget gist set`
-  - テスト実行: `dotnet test`
+**テスト実行戦略**:
 
-- テストデータ管理
-  - テスト用Gistは開発者個人のGitHubアカウント
-  - 機密データは環境変数で管理
-  - テスト後のクリーンアップ処理実装
+| テストタイプ | 実行環境 | 自動化レベル | 制約事項 |
+|-------------|----------|-------------|----------|
+| **単体テスト** | ローカル/CI | 完全自動化 | モック使用で外部依存なし |
+| **統合テスト** | ローカル環境のみ | 半自動化 | COM API・winget.exe依存 |
+| **E2Eテスト** | ローカル環境のみ | 手動実行 | 実際のGitHub API接続必要 |
+
+**ローカル開発環境での実行**:
+```bash
+# テスト実行コマンド
+dotnet test tests/NuitsJp.GistGet.Tests/
+
+# カバレッジ取得
+dotnet test --collect:"XPlat Code Coverage"
+```
+
+**前提条件**:
+- Windows 10/11 (Build 26100以降)
+- .NET 8 SDK
+- Visual Studio 2022またはVS Code
+- WinGet COM APIの利用可能な環境
 
 ## 4. 実装の特徴とアーキテクチャ原則
 
