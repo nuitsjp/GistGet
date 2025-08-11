@@ -68,21 +68,23 @@ sequenceDiagram
 
 ### 2.1 レイヤーモデル
 
+**シンプルな3層アーキテクチャ（推奨設計）**:
+
+- **プレゼンテーション層（Commands）**: UI制御とエントリポイント
+- **ビジネスロジック層（Services）**: ワークフロー制御とビジネスルール
+- **インフラストラクチャ層**: 外部システム連携とデータ永続化
+
 ```mermaid
 graph TB
     subgraph "プレゼンテーション層"
         CLI[コマンドライン<br/>インターフェース]
         Program[Program.cs<br/>エントリポイント]
+        Router[CommandRouter.cs<br/>ルーティング制御]
+        Commands[Commands/<br/>UI制御のみ]
     end
     
-    subgraph "アプリケーション層"
-        RunnerApp[RunnerApplication.cs<br/>実行制御]
-        CommandService[CommandService.cs<br/>コマンドルーター]
-        Commands[Commands/<br/>個別コマンド実装]
-    end
-    
-    subgraph "ドメイン層"
-        Services[Services/<br/>ビジネスロジック]
+    subgraph "ビジネスロジック層"
+        Services[Services/<br/>ワークフロー + ビジネスルール]
         Models[Models/<br/>データモデル]
     end
     
@@ -101,9 +103,8 @@ graph TB
     end
 
     CLI --> Program
-    Program --> RunnerApp
-    RunnerApp --> CommandService
-    CommandService --> Commands
+    Program --> Router
+    Router --> Commands
     Commands --> Services
     Services --> Models
     Services --> WinGetCOM
@@ -116,23 +117,199 @@ graph TB
     Storage --> FileSystem
 ```
 
-### 2.2 レイヤー間の基本的な相互作用
+**現在の4層アーキテクチャの問題点**:
+- ドメイン層が薄すぎて実質的な価値がない
+- Commands層とServices層の責務が曖昧
+- 過度な抽象化によるオーバーヘッド
 
-- 依存性注入による疎結合
-- コマンドルーティング戦略
+### 2.2 推奨設計での責務分離
 
-### 2.3 抽象化レイヤー
+#### CommandRouter（プレゼンテーション層）
+**責務**: コマンドルーティング制御
+- コマンドライン引数の最初の解析（どのコマンドか判定）
+- 適切なCommandへのルーティング
+- 共通エラーハンドリング（COM例外、ネットワーク例外等）
 
-- インターフェース定義
-  - コマンド実行の抽象化
-  - WinGet操作の抽象化
-  - GitHub認証の抽象化
-  - Gist同期の抽象化
-  - エラー処理の抽象化
-- 実装戦略の切り替え
-  - COM API優先、失敗時にwinget.exe実行にフォールバック
-  - テスト時はモック実装に差し替え可能
-  - 将来的な機能拡張に対応
+**推奨実装例**:
+```csharp
+public class CommandRouter  // 現在のCommandService.cs
+{
+    public async Task<int> ExecuteAsync(string[] args)
+    {
+        var command = args.FirstOrDefault()?.ToLowerInvariant();
+        
+        return command switch
+        {
+            "auth" => await _authCommand.ExecuteAsync(args),
+            "gist" => await HandleGistSubCommandAsync(args),
+            "sync" => await _syncCommand.ExecuteAsync(args),
+            _ => await _passthroughClient.ExecuteAsync(args) // winget.exeへ
+        };
+    }
+}
+```
+
+#### Commands（プレゼンテーション層）
+**責務**: UI制御に特化
+- コマンドライン引数解析・対話的入力処理
+- コンソール出力・エラーメッセージ表示
+- 実行結果（exit code）返却
+
+**推奨実装例**:
+```csharp
+public class GistSetCommand
+{
+    public async Task<int> ExecuteAsync(string? gistId, string? fileName)
+    {
+        try 
+        {
+            // UI制御のみ
+            var input = await CollectUserInputAsync(gistId, fileName);
+            
+            // ビジネスロジックに委譲
+            await _gistConfigService.ConfigureGistAsync(input);
+            
+            // UI表示のみ
+            DisplaySuccessMessage(input);
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            DisplayErrorMessage(ex);
+            return 1;
+        }
+    }
+}
+```
+
+#### Services（ビジネスロジック層）
+**責務**: ワークフロー制御 + ビジネスルール
+- 処理の流れ（ワークフロー）制御
+- ビジネスルール・バリデーション
+- Infrastructure層の組み合わせ利用
+
+**推奨実装例**:
+```csharp
+public class GistConfigService
+{
+    public async Task ConfigureGistAsync(GistConfigInput input)
+    {
+        // ワークフロー + ビジネスルール
+        ValidateBusinessRules(input);
+        await ValidateAuthentication();
+        await ValidateGistAccess(input.GistId);
+        await SaveConfiguration(input.ToConfig());
+    }
+    
+    private void ValidateBusinessRules(GistConfigInput input)
+    {
+        // ビジネスルールをここに集約
+        if (!IsValidGistId(input.GistId))
+            throw new BusinessRuleException("Invalid Gist ID");
+    }
+}
+```
+
+#### 依存関係の明確化
+```
+CLI引数 -> CommandRouter (ルーティング判定)
+            ↓
+         Commands (UI制御)
+            ↓  
+         Services (ビジネスロジック)
+            ↓
+         Infrastructure (外部システム)
+```
+
+**レイヤー間ルール**:
+- CommandRouter → Commands（ルーティング）
+- Commands → Services（UI制御がビジネスロジック呼び出し）
+- Services → Infrastructure（ビジネスロジックが外部システム利用）
+- Services ❌ Commands（逆方向依存の禁止）
+
+#### 現在の実装との差分
+**問題**: 
+- CommandServiceという名称がルーター機能を表現していない
+- Commandが複数Serviceを直接操作（オーケストレーション責務の混在）
+
+**解決**: 
+- CommandService → CommandRouterに名称変更
+- Serviceがワークフロー制御を担い、Commandは単純なUI制御のみ
+
+### 2.3 名前空間とレイヤーベース抽象化
+
+**現在の問題**: 単一`Abstractions`による過度な抽象化
+- 単一プロジェクトで外部公開しないのに全インターフェースを集約
+- レイヤー間の依存関係が不明確
+- インフラ層の縦割り不足（COM API、winget.exe、GitHub API、Storageが混在）
+
+**推奨設計**: レイヤーベース名前空間設計
+
+#### プレゼンテーション層
+```
+NuitsJp.GistGet.Presentation/
+├── ICommandRouter.cs (現在のICommandService)
+├── CommandRouter.cs
+├── IErrorMessageService.cs  
+├── ErrorMessageService.cs
+└── Commands/
+    ├── GistSetCommand.cs
+    └── [その他のCommand]
+```
+
+#### ビジネスロジック層
+```
+NuitsJp.GistGet.Business/
+├── IGistSyncService.cs
+├── GistSyncService.cs
+├── GistConfigService.cs (新規統合Service)
+└── Models/
+    ├── GistConfiguration.cs
+    └── [その他のModel]
+```
+
+#### インフラストラクチャ層（外部システム別縦割り）
+```
+NuitsJp.GistGet.Infrastructure/
+├── WinGet/
+│   ├── IWinGetClient.cs
+│   ├── WinGetComClient.cs
+│   ├── IWinGetPassthrough.cs
+│   └── WinGetPassthrough.cs
+├── GitHub/
+│   ├── IGitHubAuthService.cs
+│   ├── GitHubAuthService.cs
+│   ├── IGitHubGistClient.cs
+│   └── GitHubGistClient.cs
+└── Storage/
+    ├── IGistConfigurationStorage.cs
+    └── GistConfigurationStorage.cs
+```
+
+#### 設計原則
+
+1. **レイヤー内同居原則**: 各レイヤー内ではインターフェースと実装を同じ名前空間に配置
+   - プロジェクト規模的に分離のオーバーヘッドが不要
+   - 関連する定義が近接し、理解しやすい
+
+2. **インフラ層縦割り原則**: 外部システムごとに完全分離
+   - `WinGet/`: COM API + exe実行の両方を包含
+   - `GitHub/`: 認証 + Gist操作の両方を包含  
+   - `Storage/`: 設定ファイル管理
+
+3. **依存関係の明確化**: 各レイヤーは下位レイヤーのインターフェースのみに依存
+   ```
+   Presentation → Business → Infrastructure (WinGet/GitHub/Storage)
+   ```
+
+#### 現在の実装との差分
+**問題**: 
+- `Abstractions/`に全インターフェースが集約され、レイヤー構造が不明確
+- インフラ層で外部システムが混在
+
+**解決**: 
+- レイヤー別名前空間にインターフェース移動
+- インフラ層を外部システム別に再編成
 
 ## 3. テスト設計
 
@@ -152,23 +329,46 @@ graph TB
 - `RunnerApplicationTests.cs` - アプリケーションエントリポイントのテスト
 - `MockServices.cs` - テスト用モック実装
 
-### 3.2 単体テスト設計
+### 3.2 単体テスト設計（推奨アーキテクチャ対応）
 
-**テストアーキテクチャ**:
+**レイヤーベーステストアーキテクチャ**:
 
-| レイヤー | テスト対象 | 実装済みテスト | テスト戦略 |
-|---------|-----------|---------------|-----------|
-| **Services** | ビジネスロジック | `CommandServiceTests.cs`<br/>`GistManagerTests.cs` | Moqを使用した依存性隔離テスト |
-| **Models** | データモデル | `GistConfigurationTests.cs`<br/>`PackageDefinitionTests.cs`<br/>`PackageCollectionTests.cs` | プロパティ検証・バリデーション |
-| **Storage** | データ永続化 | `GistConfigurationStorageTests.cs` | 一時ファイルでのDPAPI暗号化テスト |
-| **Infrastructure** | 外部システム連携 | `WinGetComClientTests.cs`<br/>`GitHubGistClientTests.cs` | モック・スタブによる隔離テスト |
-| **Application** | アプリケーション制御 | `RunnerApplicationTests.cs` | エントリポイントの動作検証 |
+| レイヤー | テスト対象 | 推奨テスト構造 | テスト戦略 |
+|---------|-----------|----------------|-----------|
+| **Presentation** | UI制御・ルーティング | `Presentation/CommandRouterTests.cs`<br/>`Presentation/Commands/GistSetCommandTests.cs` | UI動作検証、引数解析テスト |
+| **Business** | ワークフロー・ビジネスルール | `Business/GistConfigServiceTests.cs`<br/>`Business/GistSyncServiceTests.cs` | ワークフロー統合テスト、下位層モック使用 |
+| **Infrastructure** | 外部システム連携 | `Infrastructure/WinGet/WinGetComClientTests.cs`<br/>`Infrastructure/GitHub/GitHubAuthServiceTests.cs`<br/>`Infrastructure/Storage/GistConfigurationStorageTests.cs` | 各外部システム別の隔離テスト |
 
-**モック戦略**:
-- `MockWinGetClient`: COM API呼び出しをモック化
-- `MockWinGetPassthroughClient`: winget.exe実行をモック化  
-- `MockGistSyncService`: Gist同期処理をモック化
-- Moqライブラリによる動的モック生成
+**t-wada式TDD原則に基づくテスト戦略**:
+
+#### Presentation層テスト
+- **責務**: UI制御のみのテスト
+- **依存**: Business層サービスをモック
+- **検証**: 入力処理、表示処理、終了コード
+
+#### Business層テスト  
+- **責務**: ワークフローとビジネスルールのテスト
+- **依存**: Infrastructure層をモック
+- **検証**: 処理順序、バリデーション、例外処理
+
+#### Infrastructure層テスト
+- **責務**: 外部システム連携の個別テスト
+- **依存**: 外部システムをモック/スタブ
+- **検証**: API呼び出し、データ変換、エラーハンドリング
+
+**名前空間ベースモック戦略**:
+```csharp
+// Infrastructure層モック（Business層テスト用）
+NuitsJp.GistGet.Tests.Mocks.Infrastructure/
+├── WinGet/MockWinGetClient.cs
+├── GitHub/MockGitHubAuthService.cs  
+└── Storage/MockGistConfigurationStorage.cs
+
+// Business層モック（Presentation層テスト用）
+NuitsJp.GistGet.Tests.Mocks.Business/
+├── MockGistConfigService.cs
+└── MockGistSyncService.cs
+```
 
 ### 3.3 結合テスト設計
 
