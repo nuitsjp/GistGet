@@ -37,8 +37,8 @@ gistget show --id Git.Git  # → winget show --id Git.Git
 | install | add | COM利用 | 更新 | 要管理者 | 最高 | パッケージインストール + Gist定義更新 |
 | uninstall | remove, rm | COM利用 | 更新 | 要管理者 | 最高 | パッケージアンインストール + Gist定義更新 |
 | upgrade | update | COM利用 | 更新 | 要管理者 | 最高 | パッケージアップグレード + Gist定義更新 |
-| **Gist同期専用コマンド** |
 | sync | - | COM利用 | 読込 | 要管理者 | 最高 | Gist定義パッケージをインストール（追加のみ） |
+| **Gist同期専用コマンド** |
 | export | - | COM利用 | 読込 | 不要 | 高 | Gistから定義ファイルをダウンロード |
 | import | - | COM利用 | 作成 | 不要 | 高 | 現在の環境をGistへアップロード |
 | **情報表示（パススルー）** |
