@@ -1,7 +1,6 @@
 using Shouldly;
 using Xunit;
-using NuitsJp.GistGet.Services;
-using NuitsJp.GistGet.Abstractions;
+using NuitsJp.GistGet.Infrastructure.GitHub;
 using Moq;
 using Microsoft.Extensions.Logging;
 

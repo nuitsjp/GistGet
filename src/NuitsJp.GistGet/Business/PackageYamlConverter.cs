@@ -3,7 +3,7 @@ using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 using NuitsJp.GistGet.Models;
 
-namespace NuitsJp.GistGet.Services;
+namespace NuitsJp.GistGet.Business;
 
 public class PackageYamlConverter
 {

@@ -1,4 +1,5 @@
-using NuitsJp.GistGet.Abstractions;
+using NuitsJp.GistGet.Infrastructure.WinGet;
+using NuitsJp.GistGet.Business;
 
 namespace NuitsJp.GistGet.Tests.Mocks;
 

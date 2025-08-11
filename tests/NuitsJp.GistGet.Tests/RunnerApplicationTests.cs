@@ -3,7 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NuitsJp.GistGet;
-using NuitsJp.GistGet.Abstractions;
+using NuitsJp.GistGet.Presentation;
 
 namespace NuitsJp.GistGet.Tests;
 
@@ -13,12 +13,12 @@ public class RunnerApplicationTests
     public async Task RunAsync_UsesCommandService_ReturnsExitCode()
     {
         // Arrange
-        var commandService = new Mock<ICommandService>();
+        var commandService = new Mock<ICommandRouter>();
         commandService.Setup(x => x.ExecuteAsync(It.IsAny<string[]>())).ReturnsAsync(0);
 
         var services = new ServiceCollection()
             .AddLogging(b => b.AddDebug())
-            .AddSingleton<ICommandService>(commandService.Object)
+            .AddSingleton<ICommandRouter>(commandService.Object)
             .BuildServiceProvider();
 
         var host = Mock.Of<IHost>(h => h.Services == services);

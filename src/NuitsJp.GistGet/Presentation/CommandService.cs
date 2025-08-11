@@ -1,13 +1,15 @@
 using Microsoft.Extensions.Logging;
-using NuitsJp.GistGet.Abstractions;
-using NuitsJp.GistGet.Commands;
+using NuitsJp.GistGet.Presentation;
+using NuitsJp.GistGet.Infrastructure.WinGet;
+using NuitsJp.GistGet.Business;
+using NuitsJp.GistGet.Presentation.Commands;
 
-namespace NuitsJp.GistGet.Services;
+namespace NuitsJp.GistGet.Presentation;
 
 /// <summary>
 /// コマンド実行サービス（アーキテクチャ改善版）
 /// </summary>
-public class CommandService : ICommandService
+public class CommandService : ICommandRouter
 {
     private readonly IWinGetClient _winGetClient;
     private readonly IWinGetPassthroughClient _passthroughClient;

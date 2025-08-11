@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
-using NuitsJp.GistGet.Abstractions;
+using NuitsJp.GistGet.Presentation;
 
-namespace NuitsJp.GistGet.Services;
+namespace NuitsJp.GistGet.Presentation;
 
 /// <summary>
 /// エラーメッセージ表示サービス（統一化された処理）

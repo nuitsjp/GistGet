@@ -1,10 +1,10 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using NuitsJp.GistGet.Abstractions;
+using NuitsJp.GistGet.Infrastructure.GitHub;
 using NuitsJp.GistGet.Models;
 using Octokit;
 
-namespace NuitsJp.GistGet.Services;
+namespace NuitsJp.GistGet.Infrastructure.GitHub;
 
 /// <summary>
 /// GitHub Device Flow認証サービス

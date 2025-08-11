@@ -1,8 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using NuitsJp.GistGet.Abstractions;
+using NuitsJp.GistGet.Business;
+using NuitsJp.GistGet.Infrastructure.GitHub;
+using NuitsJp.GistGet.Infrastructure.WinGet;
 
-namespace NuitsJp.GistGet.Services;
+namespace NuitsJp.GistGet.Business;
 
 /// <summary>
 /// Gist同期サービスの実装

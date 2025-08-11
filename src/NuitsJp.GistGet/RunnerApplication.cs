@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using NuitsJp.GistGet.Abstractions;
+using NuitsJp.GistGet.Presentation;
 
 namespace NuitsJp.GistGet;
 
@@ -16,7 +16,7 @@ public class RunnerApplication
 
         try
         {
-            var commandService = host.Services.GetRequiredService<ICommandService>();
+            var commandService = host.Services.GetRequiredService<ICommandRouter>();
 
             logger?.LogDebug("Starting GistGet with args: {Args}", string.Join(" ", args));
 

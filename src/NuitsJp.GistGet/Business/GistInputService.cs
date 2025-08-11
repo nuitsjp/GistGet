@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using NuitsJp.GistGet.Models;
 
-namespace NuitsJp.GistGet.Services;
+namespace NuitsJp.GistGet.Business;
 
 public class GistInputService
 {

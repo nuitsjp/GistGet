@@ -1,4 +1,4 @@
-namespace NuitsJp.GistGet.Abstractions;
+namespace NuitsJp.GistGet.Business;
 
 /// <summary>
 /// Gist同期サービスのインターフェース

@@ -1,7 +1,8 @@
 using Microsoft.Extensions.Logging;
-using NuitsJp.GistGet.Services;
+using NuitsJp.GistGet.Infrastructure.GitHub;
+using NuitsJp.GistGet.Business;
 
-namespace NuitsJp.GistGet.Commands;
+namespace NuitsJp.GistGet.Presentation.Commands;
 
 public class GistStatusCommand
 {

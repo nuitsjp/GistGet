@@ -1,9 +1,10 @@
 using Microsoft.Management.Deployment;
 using Microsoft.Extensions.Logging;
-using NuitsJp.GistGet.Abstractions;
+using NuitsJp.GistGet.Infrastructure.WinGet;
+using NuitsJp.GistGet.Business;
 using System.Security.Principal;
 
-namespace NuitsJp.GistGet;
+namespace NuitsJp.GistGet.Infrastructure.WinGet;
 
 /// <summary>
 /// WinGet COM APIクライアント実装（アーキテクチャ改善版）

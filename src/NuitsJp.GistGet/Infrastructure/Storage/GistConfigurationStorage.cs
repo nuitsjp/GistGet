@@ -1,8 +1,8 @@
 using System.Security.Cryptography;
 using NuitsJp.GistGet.Models;
-using NuitsJp.GistGet.Interfaces;
+using NuitsJp.GistGet.Infrastructure.Storage;
 
-namespace NuitsJp.GistGet.Services;
+namespace NuitsJp.GistGet.Infrastructure.Storage;
 
 public class GistConfigurationStorage : IGistConfigurationStorage
 {

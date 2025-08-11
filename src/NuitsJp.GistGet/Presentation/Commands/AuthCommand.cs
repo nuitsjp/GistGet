@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
-using NuitsJp.GistGet.Abstractions;
+using NuitsJp.GistGet.Infrastructure.GitHub;
 
-namespace NuitsJp.GistGet.Services;
+namespace NuitsJp.GistGet.Presentation.Commands;
 
 /// <summary>
 /// 認証コマンドの実装

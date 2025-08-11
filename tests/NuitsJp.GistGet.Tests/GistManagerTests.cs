@@ -1,9 +1,9 @@
 using Shouldly;
 using Xunit;
-using NuitsJp.GistGet.Services;
+using NuitsJp.GistGet.Business;
 using NuitsJp.GistGet.Models;
-using NuitsJp.GistGet.Interfaces;
-using NuitsJp.GistGet.Abstractions;
+using NuitsJp.GistGet.Infrastructure.Storage;
+using NuitsJp.GistGet.Infrastructure.GitHub;
 using Moq;
 using Microsoft.Extensions.Logging;
 

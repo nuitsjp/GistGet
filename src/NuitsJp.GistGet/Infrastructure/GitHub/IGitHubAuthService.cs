@@ -1,6 +1,6 @@
 using Octokit;
 
-namespace NuitsJp.GistGet.Abstractions;
+namespace NuitsJp.GistGet.Infrastructure.GitHub;
 
 /// <summary>
 /// GitHub認証サービスのインターフェース

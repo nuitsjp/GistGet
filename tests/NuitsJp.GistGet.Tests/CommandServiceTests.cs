@@ -1,12 +1,14 @@
 using Microsoft.Extensions.Logging;
-using NuitsJp.GistGet.Services;
 using NuitsJp.GistGet.Tests.Mocks;
-using NuitsJp.GistGet.Commands;
-using NuitsJp.GistGet.Interfaces;
+using NuitsJp.GistGet.Presentation.Commands;
 using Shouldly;
 using Xunit;
 using Moq;
-using NuitsJp.GistGet.Abstractions;
+using NuitsJp.GistGet.Presentation;
+using NuitsJp.GistGet.Business;
+using NuitsJp.GistGet.Infrastructure.WinGet;
+using NuitsJp.GistGet.Infrastructure.GitHub;
+using NuitsJp.GistGet.Infrastructure.Storage;
 
 namespace NuitsJp.GistGet.Tests;
 

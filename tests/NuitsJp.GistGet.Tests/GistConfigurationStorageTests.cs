@@ -1,7 +1,7 @@
 using Shouldly;
 using Xunit;
 using NuitsJp.GistGet.Models;
-using NuitsJp.GistGet.Services;
+using NuitsJp.GistGet.Infrastructure.Storage;
 
 namespace NuitsJp.GistGet.Tests;
 

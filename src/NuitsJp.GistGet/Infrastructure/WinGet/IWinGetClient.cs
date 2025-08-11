@@ -1,4 +1,4 @@
-namespace NuitsJp.GistGet.Abstractions;
+namespace NuitsJp.GistGet.Infrastructure.WinGet;
 
 /// <summary>
 /// WinGetクライアントのインターフェース

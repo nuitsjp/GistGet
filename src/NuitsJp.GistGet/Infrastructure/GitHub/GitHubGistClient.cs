@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Octokit;
 
-namespace NuitsJp.GistGet.Services;
+namespace NuitsJp.GistGet.Infrastructure.GitHub;
 
 public class GitHubGistClient
 {

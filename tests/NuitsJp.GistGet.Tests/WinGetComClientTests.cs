@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Logging;
-using NuitsJp.GistGet;
+using NuitsJp.GistGet.Infrastructure.WinGet;
 using NuitsJp.GistGet.Tests.Mocks;
 using Shouldly;
 using Xunit;

@@ -1,7 +1,7 @@
 using System.Diagnostics;
-using NuitsJp.GistGet.Abstractions;
+using NuitsJp.GistGet.Infrastructure.WinGet;
 
-namespace NuitsJp.GistGet.Infrastructure;
+namespace NuitsJp.GistGet.Infrastructure.WinGet;
 
 /// <summary>
 /// プロセス実行のラッパー実装

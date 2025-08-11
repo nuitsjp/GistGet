@@ -1,11 +1,13 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using NuitsJp.GistGet.Abstractions;
-using NuitsJp.GistGet.Commands;
-using NuitsJp.GistGet.Infrastructure;
-using NuitsJp.GistGet.Interfaces;
-using NuitsJp.GistGet.Services;
+using NuitsJp.GistGet.Presentation;
+using NuitsJp.GistGet.Business;
+using NuitsJp.GistGet.Infrastructure.WinGet;
+using NuitsJp.GistGet.Infrastructure.GitHub;
+using NuitsJp.GistGet.Infrastructure.Storage;
+
+using NuitsJp.GistGet.Presentation.Commands;
 
 namespace NuitsJp.GistGet;
 
@@ -27,7 +29,7 @@ public static class AppHost
                 });
 
                 // Core services
-                services.AddSingleton<ICommandService, CommandService>();
+                services.AddSingleton<ICommandRouter, CommandService>();
                 services.AddSingleton<IErrorMessageService, ErrorMessageService>();
 
                 // WinGet clients

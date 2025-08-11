@@ -1,6 +1,6 @@
 using NuitsJp.GistGet.Models;
 
-namespace NuitsJp.GistGet.Interfaces;
+namespace NuitsJp.GistGet.Infrastructure.Storage;
 
 public interface IGistConfigurationStorage
 {

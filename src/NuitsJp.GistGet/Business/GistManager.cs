@@ -1,8 +1,9 @@
 using Microsoft.Extensions.Logging;
 using NuitsJp.GistGet.Models;
-using NuitsJp.GistGet.Interfaces;
+using NuitsJp.GistGet.Infrastructure.Storage;
+using NuitsJp.GistGet.Infrastructure.GitHub;
 
-namespace NuitsJp.GistGet.Services;
+namespace NuitsJp.GistGet.Business;
 
 public class GistManager
 {

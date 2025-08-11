@@ -1,9 +1,9 @@
-namespace NuitsJp.GistGet.Abstractions;
+namespace NuitsJp.GistGet.Presentation;
 
 /// <summary>
-/// コマンド実行サービスのインターフェース
+/// コマンドルーティングサービスのインターフェース
 /// </summary>
-public interface ICommandService
+public interface ICommandRouter
 {
     /// <summary>
     /// コマンドライン引数を解析して適切なサービスにルーティングし、実行する

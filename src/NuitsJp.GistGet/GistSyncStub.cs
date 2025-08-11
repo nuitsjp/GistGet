@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Logging;
-using NuitsJp.GistGet.Abstractions;
+using NuitsJp.GistGet.Business;
 
 namespace NuitsJp.GistGet;
 

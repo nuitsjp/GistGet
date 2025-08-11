@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
-using NuitsJp.GistGet.Abstractions;
+using NuitsJp.GistGet.Infrastructure.WinGet;
 
-namespace NuitsJp.GistGet;
+namespace NuitsJp.GistGet.Infrastructure.WinGet;
 
 /// <summary>
 /// winget.exeへのパススルー実装（アーキテクチャ改善版）
