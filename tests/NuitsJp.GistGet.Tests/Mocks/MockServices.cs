@@ -35,6 +35,17 @@ public class MockWinGetClient : IWinGetClient
         LastArgs = args;
         return Task.FromResult(0);
     }
+
+    public Task<List<(string Id, string Name, string Version)>> GetInstalledPackagesAsync()
+    {
+        // テスト用のモックデータを返す
+        var packages = new List<(string Id, string Name, string Version)>
+        {
+            ("TestApp.TestApp", "Test Application", "1.0.0"),
+            ("AnotherApp.AnotherApp", "Another Application", "2.0.0")
+        };
+        return Task.FromResult(packages);
+    }
 }
 
 public class MockWinGetPassthroughClient : IWinGetPassthroughClient
@@ -52,8 +63,6 @@ public class MockGistSyncService : IGistSyncService
 {
     public string? LastCommand { get; private set; }
     public bool SyncStatePersisted { get; private set; } = false;
-    public bool ExportFileGenerated { get; private set; } = false;
-    public bool ImportFileProcessed { get; private set; } = false;
 
     public void AfterInstall(string packageId)
     {
@@ -63,22 +72,6 @@ public class MockGistSyncService : IGistSyncService
     public void AfterUninstall(string packageId)
     {
         // テスト用: 何もしない
-    }
-
-    public Task<int> ExportAsync()
-    {
-        LastCommand = "export";
-        // REFACTOR段階：より意味的な実装に改善
-        ExportFileGenerated = true;
-        return Task.FromResult(0);
-    }
-
-    public Task<int> ImportAsync()
-    {
-        LastCommand = "import";
-        // REFACTOR段階：より意味的な実装に改善
-        ImportFileProcessed = true;
-        return Task.FromResult(0);
     }
 
     public Task<int> SyncAsync()

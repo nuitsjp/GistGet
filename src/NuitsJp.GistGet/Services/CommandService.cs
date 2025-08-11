@@ -73,7 +73,7 @@ public class CommandService : ICommandService
     private async Task<int> RouteCommandAsync(string command, string[] args)
     {
         var usesCom = command is "install" or "uninstall" or "upgrade";
-        var usesGist = command is "sync" or "export" or "import";
+        var usesGist = command is "sync";  // export/importを除外
         var isAuthCommand = command is "auth";
         var isTestGistCommand = command is "test-gist";
 
@@ -89,7 +89,7 @@ public class CommandService : ICommandService
 
         if (usesGist)
         {
-            return await HandleGistCommandAsync(command);
+            return await HandleGistCommandAsync(command, args);
         }
 
         if (usesCom)
@@ -101,14 +101,12 @@ public class CommandService : ICommandService
         return await _passthroughClient.ExecuteAsync(args);
     }
 
-    private async Task<int> HandleGistCommandAsync(string command)
+    private async Task<int> HandleGistCommandAsync(string command, string[] args)
     {
         _logger.LogDebug("Routing to Gist service for command: {Command}", command);
         return command switch
         {
             "sync" => await _gistSyncService.SyncAsync(),
-            "export" => await _gistSyncService.ExportAsync(),
-            "import" => await _gistSyncService.ImportAsync(),
             _ => throw new ArgumentException($"Unsupported gist command: {command}")
         };
     }

@@ -30,6 +30,12 @@ public interface IWinGetClient
     /// <param name="args">アップグレード引数</param>
     /// <returns>実行結果コード</returns>
     Task<int> UpgradePackageAsync(string[] args);
+
+    /// <summary>
+    /// インストール済みパッケージ一覧を取得する
+    /// </summary>
+    /// <returns>パッケージ情報のリスト</returns>
+    Task<List<(string Id, string Name, string Version)>> GetInstalledPackagesAsync();
 }
 
 /// <summary>

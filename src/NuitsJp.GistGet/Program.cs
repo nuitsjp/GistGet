@@ -19,7 +19,7 @@ var services = new ServiceCollection()
     .AddSingleton<IWinGetClient, WinGetComClient>()
     .AddSingleton<IWinGetPassthroughClient, WinGetPassthrough>()
     // Gist services
-    .AddSingleton<IGistSyncService, GistSyncStub>()
+    .AddSingleton<IGistSyncService, GistSyncService>()
     // GitHub services
     .AddSingleton<IGitHubAuthService, GitHubAuthService>()
     .AddSingleton<AuthCommand>()

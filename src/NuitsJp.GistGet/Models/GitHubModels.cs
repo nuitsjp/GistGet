@@ -55,3 +55,23 @@ public class OAuthErrorResponse
     [JsonPropertyName("error_uri")]
     public string? ErrorUri { get; set; }
 }
+
+/// <summary>
+/// WinGetパッケージ情報
+/// </summary>
+public class WinGetPackage
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Version { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Gist用のパッケージリストコンテナ
+/// </summary>
+public class PackageList
+{
+    public List<WinGetPackage> Packages { get; set; } = new();
+    public DateTime ExportedAt { get; set; } = DateTime.UtcNow;
+    public string ExportedBy { get; set; } = "GistGet";
+}

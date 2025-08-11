@@ -23,15 +23,4 @@ public interface IGistSyncService
     /// <returns>実行結果コード</returns>
     Task<int> SyncAsync();
 
-    /// <summary>
-    /// Gistへエクスポートを実行する
-    /// </summary>
-    /// <returns>実行結果コード</returns>
-    Task<int> ExportAsync();
-
-    /// <summary>
-    /// Gistからインポートを実行する
-    /// </summary>
-    /// <returns>実行結果コード</returns>
-    Task<int> ImportAsync();
 }
