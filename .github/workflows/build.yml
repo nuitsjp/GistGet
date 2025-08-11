@@ -39,7 +39,7 @@ jobs:
           --logger "console;verbosity=detailed"
     
     - name: Upload test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-results-linux
@@ -85,7 +85,7 @@ jobs:
           -o ./publish
     
     - name: Upload Windows executable
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: gistget-win-x64
         path: ./publish/GistGet.exe
