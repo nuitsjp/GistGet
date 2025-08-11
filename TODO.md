@@ -7,176 +7,32 @@
 - **次フェーズ**: 具体的な手順チェックシート（実作業用）
 - **1フェーズ完了**: 次フェーズを詳細化し、完了フェーズに移動
 
-## ✅ 完了済みフェーズ
+## 🔒 セキュリティ強化タスク
 
-### Phase 0-7: MVP基盤完成
-- **基本実装**: パススルー、COM API基盤、コマンドルーティング
-- **テスト基盤**: xUnit + Shouldly、26テスト合格
-- **GitHub認証**: Device Flow認証完全動作確認
-- **アーキテクチャ**: DI、インターフェース分離、ログ機能
-- **実行ファイル**: GistGet.exe動作確認
-- **ドキュメント**: README.md、architecture.md整備
+### トークンのDPAPI暗号化
+- **現状**: GitHub認証トークンが平文で保存されている (`%APPDATA%\GistGet\token.json`)
+- **目標**: Windows DPAPI (Data Protection API) による暗号化保存
+- **実装箇所**: `GitHubAuthService.cs` の `SaveTokenAsync` / `LoadTokenAsync` メソッド
+- **優先度**: 高（セキュリティ脆弱性）
 
-## 📅 残りタスク（フェーズレベル）
+**実装手順**:
+- [ ] `System.Security.Cryptography.ProtectedData` を使用してトークンを暗号化
+- [ ] `DataProtectionScope.CurrentUser` での暗号化実装
+- [ ] 既存の平文トークンファイルからの移行処理
+- [ ] 復号化失敗時の再認証プロンプト機能
+- [ ] 暗号化保存のテストケース追加
 
-### Phase 7.5: Gist管理基盤実装
-- Gist設定の安全な保存・取得機能
-- YAML ↔ C#オブジェクト変換基盤
-- Gist CRUD操作のプライベート関数
-- 事前設定前提のテスト環境整備
+### トークンの定期的な更新機能
+- **現状**: 取得したトークンは無期限で使用される
+- **目標**: 定期的なトークンの更新によるセキュリティ向上
+- **実装箇所**: `GitHubAuthService.cs` および新規スケジューラー機能
+- **優先度**: 中（セキュリティ向上）
 
-### Phase 8: 引数処理戦略実装
-- コマンドルーティング判定改善
-- System.CommandLine導入
-- パススルー保証確保
+**実装手順**:
+- [ ] トークン有効期限チェック機能の実装
+- [ ] トークン更新（refresh）機能の調査・実装
+- [ ] バックグラウンドでの自動更新スケジューラー
+- [ ] 更新失敗時の再認証フロー
+- [ ] トークン更新のログ・通知機能
+- [ ] 設定可能な更新間隔（デフォルト30日）
 
-### Phase 9: 基本動作改善
-- エラーハンドリング統一
-- プログレス表示実装
-- 非管理者モード対応
-
-### Phase 10: Gist同期高度化
-- install/uninstall時の自動同期
-- 同期競合解決
-- 複数デバイス対応
-
-### Phase 11: 最適化・リリース準備
-- キャッシング機能
-- 並列処理
-- リリース品質向上
-
-## 🎯 次フェーズ詳細: Phase 7.5 Gist管理基盤実装
-
-### 7.5.1 Gist設定管理機能
-
-テストに利用するGistの情報を実装時にユーザーに問い合わせて対応を開始してください。じゃないと実装・テストが困難なためです。
-
-- [x] **GistConfiguration クラス作成**
-  - [x] `GistConfiguration.cs` 作成（ID、ファイル名、作成日時、最終アクセス日時）
-  - [x] JSON シリアライゼーション対応
-  - [x] バリデーション機能追加
-
-- [x] **GistConfigurationStorage クラス作成**
-  - [x] `SaveGistConfigurationAsync()` 実装（DPAPI暗号化）
-  - [x] `LoadGistConfigurationAsync()` 実装（DPAPI復号化）
-  - [x] `%APPDATA%\GistGet\gist.dat` パス管理
-  - [x] エラーハンドリング（ファイル破損、権限エラー等）
-
-- [x] **ユーザー入力処理**
-  - [x] GitHubでGist手動作成の案内表示
-  - [x] Gist IDの入力受付（必須）
-  - [x] ファイル名の入力受付（デフォルト: packages.yaml）
-  - [x] 入力値のバリデーション（Gist ID形式チェック等）
-
-- [x] **単体テスト作成**
-  - [x] 保存・読み込みテスト
-  - [x] 暗号化・復号化テスト
-  - [x] エラーケーステスト
-  - [x] ユーザー入力バリデーションテスト
-
-### 7.5.2 YAML操作基盤
-- [x] **PackageDefinition クラス作成**
-  - [x] `Id`, `Version`, `Uninstall` プロパティ
-  - [x] バリデーション機能
-
-- [x] **PackageCollection クラス作成**
-  - [x] `List<PackageDefinition>` 管理
-  - [x] 追加・削除・検索メソッド
-
-- [x] **PackageYamlConverter クラス作成**
-  - [x] `ToYaml()` メソッド実装（YamlDotNet使用）
-  - [x] `FromYaml()` メソッド実装
-  - [x] エラーハンドリング（不正YAML等）
-
-- [x] **単体テスト作成**
-  - [x] YAML変換往復テスト
-  - [x] 不正データエラーテスト
-
-### 7.5.3 Gist CRUD操作
-- [x] **GitHubGistClient クラス作成**
-  - [x] 既存 GitHubAuthService 活用
-  - [x] `GetFileContentAsync()` 実装
-  - [x] `UpdateFileContentAsync()` 実装
-  - [x] `ExistsAsync()` 実装（Gist存在確認）
-
-- [x] **GistManager クラス作成**
-  - [x] `GetGistPackagesAsync()` プライベート関数
-  - [x] `UpdateGistPackagesAsync()` プライベート関数
-  - [x] `IsConfiguredAsync()` 設定状態確認
-  - [x] 統合エラーハンドリング
-
-- [x] **統合テスト作成**
-  - [x] 事前認証・Gist設定チェック機能（Localカテゴリ/条件付き実行）
-  - [x] 実際のGist API呼び出しテスト（`[Trait("Category", "Local")]` や Skip 指定で隔離）
-
-### 7.5.4 Gist管理コマンド実装
-- [x] **GistSetCommand クラス作成**
-  - [x] `gistget gist set --gist-id abc123 --file packages.yaml`
-  - [x] `gistget gist set` （対話形式での入力受付）
-  - [x] GitHubでのGist作成手順案内
-  - [x] 認証チェック
-  - [x] Gist存在確認
-  - [x] 設定保存
-
-- [x] **GistStatusCommand クラス作成**
-  - [x] `gistget gist status`
-  - [x] 設定状態表示
-  - [x] 最終アクセス日時表示
-
-- [x] **GistShowCommand クラス作成**
-  - [x] `gistget gist show`
-  - [x] Gist内容表示
-  - [x] YAML整形表示
-
-- [ ] **GistClearCommand クラス作成（新規）**
-  - [ ] `gistget gist clear`（確認プロンプト付き）
-  - [ ] 設定クリア処理（バックアップ作成を含む）
-  - [ ] 実行後の状態表示
-
-- [ ] **CommandRouter 更新**
-  - [x] `gist` サブコマンドのルーティング追加
-  - [ ] System.CommandLine パーサー統合
-  - [ ] `auth test` の仕様整理（現状はトップレベル `test-gist` 実装。READMEと整合させる）
-  - [ ] `export`/`import` は現状パススルー（COM統合は後続フェーズで検討）と明記
-
-### 7.5.5 完了確認
-- [ ] **手動テスト実行**
-  - [ ] `dotnet run -- auth` 認証確認
-  - [ ] GitHubでテスト用Gist作成
-  - [ ] `dotnet run -- gist set --gist-id [実際のID] --file packages.yaml`
-  - [ ] `dotnet run -- gist set` （対話形式テスト）
-  - [ ] `dotnet run -- gist status` 設定確認
-  - [ ] `dotnet run -- gist show` 内容表示確認
-  - [ ] `dotnet run -- gist clear` 設定クリア確認（実装後）
-  - [ ] `dotnet run -- test-gist` 認証・API呼び出し動作確認（READMEの表記と要整合）
-
-- [ ] **テスト実行**
-  - [x] `dotnet test --filter "Category=Unit"` 相当のユニットは追加済み（実行は随時）
-  - [ ] `dotnet test --filter "Category=Local"` （認証/Gist前提・環境依存のため手動実施）
-  - [ ] 追加ユニットテスト作成
-    - [ ] GistSetCommand/GistStatusCommand/GistShowCommand の単体テスト
-    - [ ] CommandService の `gist` サブコマンド（set/status/show/--raw）ルーティングテスト
-    - [ ] パススルー未カバー（pin/configure/download/repair/hash/validate/features）のルーティングテスト
-
-- [ ] **ドキュメント更新**（コマンド実装後に反映）
-  - [ ] README.md に Gist設定手順追加
-  - [ ] architecture.md に実装詳細追加
-  - [ ] コマンド一覧の整合性
-    - [ ] `auth test` → 現状 `test-gist` に一致させる（または `auth test` を実装）
-    - [ ] `export`/`import` は当面パススルーである旨を明記（COM統合は将来タスク）
-
-## テスト用アプリケーション
-**決定:** AkelPad.AkelPad (軽量テキストエディタ、約2-3MB)
-- 理由: 軽量、高速インストール/アンインストール、システムへの影響が最小
-- 使用例: `gistget install --id AkelPad.AkelPad`, `gistget uninstall --id AkelPad.AkelPad`
-
-## 🔧 トラブルシューティング
-
-| 問題 | 解決策 |
-|------|--------|
-| 認証エラー | `dotnet run -- auth` で再認証 |
-| Gist設定エラー | `dotnet run -- gist status` で確認後再設定 |
-| Gist ID不明 | GitHubでGist作成後、URLからID取得 |
-| Gist作成方法不明 | `dotnet run -- gist set` で作成手順案内表示 |
-| テストスキップ | 事前認証・Gist設定の両方を実行 |
-| YAML解析エラー | Gist内容をブラウザで確認、手動修正 |
