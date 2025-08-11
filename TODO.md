@@ -110,30 +110,30 @@
   - [x] 実際のGist API呼び出しテスト（`[Trait("Category", "Local")]` や Skip 指定で隔離）
 
 ### 7.5.4 Gist管理コマンド実装
-- [ ] **GistSetCommand クラス作成**（未実装）
-  - [ ] `gistget gist set --gist-id abc123 --file packages.yaml`
-  - [ ] `gistget gist set` （対話形式での入力受付）
-  - [ ] GitHubでのGist作成手順案内
-  - [ ] 認証チェック
-  - [ ] Gist存在確認
-  - [ ] 設定保存
+- [x] **GistSetCommand クラス作成**
+  - [x] `gistget gist set --gist-id abc123 --file packages.yaml`
+  - [x] `gistget gist set` （対話形式での入力受付）
+  - [x] GitHubでのGist作成手順案内
+  - [x] 認証チェック
+  - [x] Gist存在確認
+  - [x] 設定保存
 
-- [ ] **GistStatusCommand クラス作成**（未実装）
-  - [ ] `gistget gist status`
-  - [ ] 設定状態表示
-  - [ ] 最終アクセス日時表示
+- [x] **GistStatusCommand クラス作成**
+  - [x] `gistget gist status`
+  - [x] 設定状態表示
+  - [x] 最終アクセス日時表示
 
-- [ ] **GistShowCommand クラス作成**（未実装）
-  - [ ] `gistget gist show`
-  - [ ] Gist内容表示
-  - [ ] YAML整形表示
+- [x] **GistShowCommand クラス作成**
+  - [x] `gistget gist show`
+  - [x] Gist内容表示
+  - [x] YAML整形表示
 
-- [ ] **CommandRouter 更新**（未実装）
-  - [ ] `gist` サブコマンドのルーティング追加
+- [ ] **CommandRouter 更新**
+  - [x] `gist` サブコマンドのルーティング追加
   - [ ] System.CommandLine パーサー統合
 
 ### 7.5.5 完了確認
-- [ ] **手動テスト実行**（コマンド系未実装のため保留）
+- [ ] **手動テスト実行**
   - [ ] `dotnet run -- auth` 認証確認
   - [ ] GitHubでテスト用Gist作成
   - [ ] `dotnet run -- gist set --gist-id [実際のID] --file packages.yaml`
