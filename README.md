@@ -6,13 +6,15 @@
 現在、最小限の動作確認を優先したMVP実装を進めています。
 
 **実装状況:**
-- [ ] Phase 1: パススルー実装（50行） - 作業中
-- [ ] Phase 2: COMルーティング（200行） - 未着手
+- [x] Phase 1: パススルー実装（50行） - ✅完了
+- [ ] Phase 2: COMルーティング（200行） - 作業中
 - [ ] Phase 3: Gistスタブ（250行） - 未着手
+
+**現在のバージョン:** v0.1.0-alpha
 
 **動作確認済みコマンド:**
 ```bash
-# Phase 1完了後に動作予定
+# Phase 1完了・動作確認済み
 gistget list            # → winget list
 gistget search git      # → winget search git
 gistget show --id Git.Git  # → winget show --id Git.Git
@@ -136,3 +138,106 @@ Packages:
 - **テスト**: xUnit, Moq, Shouldly
 - **CI/CD**: GitHub Actions
 - **パッケージ化**: 自己完結型実行ファイル
+
+### 5. CI/CD環境での課題と解決策
+
+#### A. 主要な課題（更新版）
+
+| 課題 | 影響 | 解決策 | 優先度 |
+|------|------|--------|--------|
+| **Linux CI環境** | Windows機能テスト不可 | コア機能とWindows機能を分離 | 高 |
+| **認証の自動化** | Gist API呼び出し | GitHub Secretsでトークン管理 | 高 |
+| **WinGet依存** | Linux環境で実行不可 | モック実装・条件付きコンパイル | 中 |
+| **管理者権限** | CI環境で制限 | 権限不要テストの分離 | 中 |
+
+#### B. GitHub Actions設定（マルチOS戦略）
+
+```yaml
+# メインのCI/CDはLinux環境で実行（高速・低コスト）
+# Windows固有機能はローカルまたは手動トリガーで検証
+
+jobs:
+  # Linux: コア機能とGist同期のテスト
+  test-core:
+    runs-on: ubuntu-latest  # 高速・安価
+    
+  # Windows: フル機能テスト（週次または手動）
+  build-windows:
+    runs-on: windows-latest
+    if: github.event_name == 'workflow_dispatch'
+```
+
+#### C. テスト戦略
+
+```csharp
+// テストカテゴリによる分離
+[Fact]
+[Trait("Category", "Unit")]
+public void PassthroughCommand_ShouldWork() { }
+
+[Fact]
+[Trait("Category", "RequiresAdmin")]
+public void InstallCommand_RequiresElevation() { }
+
+[Fact]
+[Trait("Category", "Integration")]
+public void GistSync_ShouldUpdatePackageList() { }
+```
+
+#### D. リリースパイプライン
+
+```yaml
+# .github/workflows/release.yml
+name: Release
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Build Release
+        run: |
+          dotnet publish -c Release -r win-x64 \
+            --self-contained -p:PublishSingleFile=true
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            bin/Release/net8.0/win-x64/publish/GistGet.exe
+```
+
+### 6. 開発ロードマップ
+
+#### バージョニング戦略
+- **v0.x.x**: アルファ版（開発中）
+- **v1.0.0-rc.x**: リリース候補版
+- **v1.0.0**: 最初の正式リリース（目標: 2024 Q2）
+
+#### Phase 1: MVP (v0.1.0 - v0.3.0)
+- ✅ パススルー実装
+- ⏳ COM APIルーティング
+- ⏳ 基本的なGist読み込み
+
+#### Phase 2: 認証とCI/CD (v0.4.0 - v0.6.0)
+- [ ] OAuth Device Flow（Windows）
+- [ ] GitHub Actions設定（Linux主体）
+- [ ] 自動テスト整備
+
+#### Phase 3: 完全なGist同期 (v0.7.0 - v0.9.0)
+- [ ] 双方向同期
+- [ ] 競合解決
+- [ ] バージョン管理
+
+#### Phase 4: 正式リリース準備 (v1.0.0-rc.x)
+- [ ] エラーメッセージ改善
+- [ ] プログレス表示
+- [ ] ドキュメント完成
+- [ ] パフォーマンス最適化
+
+#### Phase 5: 正式リリース (v1.0.0)
+- [ ] 安定版リリース
+- [ ] WinGetマニフェスト作成
+- [ ] 自動アップデート機能

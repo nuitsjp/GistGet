@@ -7,6 +7,7 @@
 - ✅ COM API基盤の構築
 - ✅ 基本的なコマンドハンドラー構造
 - ⏳ Gist同期機能（未実装）
+- ⏳ CI/CDパイプライン（未実装）
 
 ### アーキテクチャ概要
 
@@ -277,3 +278,220 @@ public class CommandRouter
 - エラーメッセージの改善
 - 非管理者モードでの動作改善
 - プログレス表示の実装
+
+## 9. CI/CD環境での技術的課題
+
+### A. Windows依存性の課題
+
+```yaml
+# COM APIのWindows依存性への対処
+strategy:
+  matrix:
+    os: [windows-latest]  # Windows限定
+    dotnet: ['8.0.x']
+```
+
+#### 課題と解決策
+
+| コンポーネント | 課題 | 解決策 | 実装難易度 |
+|---------------|------|--------|-----------|
+| **COM API** | Windows限定 | 条件付きコンパイル | 低 |
+| **DPAPI** | Windows限定 | 抽象化レイヤー | 中 |
+| **winget.exe** | 実行ファイル依存 | モック実装 | 高 |
+| **管理者権限** | CI環境で制限 | テスト分離 | 中 |
+
+### B. テスタビリティの改善
+
+```csharp
+// 依存性注入によるテスト可能な設計
+public interface IPackageManager
+{
+    Task<int> InstallAsync(string packageId);
+    Task<int> UninstallAsync(string packageId);
+}
+
+// 本番実装
+public class WinGetComManager : IPackageManager
+{
+    private readonly PackageManager _comApi;
+    // COM API実装
+}
+
+// テスト用モック
+public class MockPackageManager : IPackageManager
+{
+    public Dictionary<string, bool> InstalledPackages { get; }
+    // メモリ内実装
+}
+
+// CI環境での自動切り替え
+public static IServiceProvider ConfigureServices(bool isCI)
+{
+    var services = new ServiceCollection();
+    
+    if (isCI)
+    {
+        services.AddSingleton<IPackageManager, MockPackageManager>();
+        services.AddSingleton<IAuthProvider, EnvironmentAuthProvider>();
+    }
+    else
+    {
+        services.AddSingleton<IPackageManager, WinGetComManager>();
+        services.AddSingleton<IAuthProvider, DeviceFlowAuthProvider>();
+    }
+    
+    return services.BuildServiceProvider();
+}
+```
+
+### C. ビルドパイプライン最適化
+
+```yaml
+# マルチステージビルド
+stages:
+  - stage: Build
+    jobs:
+      - job: Compile
+        steps:
+          - task: DotNetCoreCLI@2
+            inputs:
+              command: 'build'
+              arguments: '--configuration Release'
+              
+  - stage: Test
+    dependsOn: Build
+    jobs:
+      - job: UnitTests
+        steps:
+          - script: dotnet test --filter "Category=Unit"
+            
+      - job: IntegrationTests
+        condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
+        steps:
+          - script: dotnet test --filter "Category=Integration"
+          
+  - stage: Package
+    condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/')
+    jobs:
+      - job: CreateExecutable
+        steps:
+          - script: |
+              dotnet publish -c Release -r win-x64 \
+                --self-contained \
+                -p:PublishSingleFile=true \
+                -p:IncludeNativeLibrariesForSelfExtract=true
+```
+
+### D. 環境別設定管理
+
+```json
+// appsettings.json
+{
+  "Environment": "Production",
+  "GitHub": {
+    "ApiUrl": "https://api.github.com",
+    "ClientId": "YOUR_CLIENT_ID"
+  }
+}
+
+// appsettings.CI.json
+{
+  "Environment": "CI",
+  "GitHub": {
+    "ApiUrl": "https://api.github.com",
+    "UseEnvironmentToken": true
+  },
+  "Testing": {
+    "UseMocks": true,
+    "SkipAdminTests": true
+  }
+}
+
+// appsettings.Development.json
+{
+  "Environment": "Development",
+  "GitHub": {
+    "ApiUrl": "https://api.github.com",
+    "ClientId": "DEV_CLIENT_ID"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Debug"
+    }
+  }
+}
+```
+
+### E. 継続的デプロイメント
+
+```yaml
+# GitHub Releases への自動デプロイ
+- name: Create Release
+  if: startsWith(github.ref, 'refs/tags/')
+  uses: actions/create-release@v1
+  with:
+    tag_name: ${{ github.ref }}
+    release_name: Release ${{ github.ref }}
+    draft: false
+    prerelease: false
+    
+- name: Upload Release Asset
+  uses: actions/upload-release-asset@v1
+  with:
+    upload_url: ${{ steps.create_release.outputs.upload_url }}
+    asset_path: ./bin/Release/net8.0/win-x64/publish/GistGet.exe
+    asset_name: GistGet.exe
+    asset_content_type: application/octet-stream
+```
+
+## 10. パフォーマンス最適化
+
+### A. 起動時間の改善
+
+```csharp
+// ReadyToRun による起動高速化
+// プロジェクトファイルに追加
+<PropertyGroup>
+  <PublishReadyToRun>true</PublishReadyToRun>
+  <TieredCompilation>true</TieredCompilation>
+</PropertyGroup>
+```
+
+### B. メモリ使用量の削減
+
+```csharp
+// 大量のパッケージリスト処理時のストリーミング
+public async IAsyncEnumerable<Package> GetPackagesAsync()
+{
+    await foreach (var package in _comApi.GetPackagesAsync())
+    {
+        yield return package;
+    }
+}
+```
+
+## 11. 監視とログ
+
+### A. 構造化ログ
+
+```csharp
+// Serilog による構造化ログ
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .WriteTo.Console()
+    .WriteTo.File("logs/gistget-.txt", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
+
+Log.Information("Installing package {PackageId} version {Version}", 
+    packageId, version);
+```
+
+### B. テレメトリ（オプトイン）
+
+```csharp
+// Application Insights (オプトイン)
+if (Settings.EnableTelemetry)
+{
+    services.AddApplicationInsightsTelemetry();
+}
+```
