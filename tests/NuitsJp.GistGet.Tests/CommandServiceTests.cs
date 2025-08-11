@@ -24,11 +24,21 @@ public class CommandServiceTests
         _mockPassthroughClient = new MockWinGetPassthroughClient();
         _mockGistSyncService = new MockGistSyncService();
         
+        // AuthCommandとTestGistCommandのモックを作成
+        var mockAuthService = new Mock<IGitHubAuthService>();
+        var authLogger = new Mock<ILogger<AuthCommand>>();
+        var authCommand = new AuthCommand(mockAuthService.Object, authLogger.Object);
+        
+        var testGistLogger = new Mock<ILogger<TestGistCommand>>();
+        var testGistCommand = new TestGistCommand(mockAuthService.Object, testGistLogger.Object);
+        
         var mockErrorMessageService = new Mock<IErrorMessageService>();
         _commandService = new CommandService(
             _mockWinGetClient,
             _mockPassthroughClient,
             _mockGistSyncService,
+            authCommand,
+            testGistCommand,
             _logger,
             mockErrorMessageService.Object);
     }
@@ -117,11 +127,21 @@ public class CommandServiceTests
         var comException = new System.Runtime.InteropServices.COMException("COM Error", -2147024891); // E_ACCESSDENIED
         mockWinGetClient.Setup(x => x.InitializeAsync()).ThrowsAsync(comException);
         
+        // AuthCommandとTestGistCommandのモックを作成
+        var mockAuthService = new Mock<IGitHubAuthService>();
+        var authLogger = new Mock<ILogger<AuthCommand>>();
+        var authCommand = new AuthCommand(mockAuthService.Object, authLogger.Object);
+        
+        var testGistLogger = new Mock<ILogger<TestGistCommand>>();
+        var testGistCommand = new TestGistCommand(mockAuthService.Object, testGistLogger.Object);
+        
         var mockErrorMessageService = new Mock<IErrorMessageService>();
         var service = new CommandService(
             mockWinGetClient.Object,
             mockPassthroughClient.Object,
             mockGistSyncService.Object,
+            authCommand,
+            testGistCommand,
             logger.Object,
             mockErrorMessageService.Object);
 
@@ -150,11 +170,21 @@ public class CommandServiceTests
         var packageNotFound = new InvalidOperationException("Package 'NonExistent.Package' not found");
         mockWinGetClient.Setup(x => x.InstallPackageAsync(It.IsAny<string[]>())).ThrowsAsync(packageNotFound);
         
+        // AuthCommandとTestGistCommandのモックを作成
+        var mockAuthService = new Mock<IGitHubAuthService>();
+        var authLogger = new Mock<ILogger<AuthCommand>>();
+        var authCommand = new AuthCommand(mockAuthService.Object, authLogger.Object);
+        
+        var testGistLogger = new Mock<ILogger<TestGistCommand>>();
+        var testGistCommand = new TestGistCommand(mockAuthService.Object, testGistLogger.Object);
+        
         var mockErrorMessageService = new Mock<IErrorMessageService>();
         var service = new CommandService(
             mockWinGetClient.Object,
             mockPassthroughClient.Object,
             mockGistSyncService.Object,
+            authCommand,
+            testGistCommand,
             logger.Object,
             mockErrorMessageService.Object);
 
@@ -183,11 +213,21 @@ public class CommandServiceTests
         var networkError = new HttpRequestException("Unable to connect to the remote server");
         mockWinGetClient.Setup(x => x.InstallPackageAsync(It.IsAny<string[]>())).ThrowsAsync(networkError);
         
+        // AuthCommandとTestGistCommandのモックを作成
+        var mockAuthService = new Mock<IGitHubAuthService>();
+        var authLogger = new Mock<ILogger<AuthCommand>>();
+        var authCommand = new AuthCommand(mockAuthService.Object, authLogger.Object);
+        
+        var testGistLogger = new Mock<ILogger<TestGistCommand>>();
+        var testGistCommand = new TestGistCommand(mockAuthService.Object, testGistLogger.Object);
+        
         var mockErrorMessageService = new Mock<IErrorMessageService>();
         var service = new CommandService(
             mockWinGetClient.Object,
             mockPassthroughClient.Object,
             mockGistSyncService.Object,
+            authCommand,
+            testGistCommand,
             logger.Object,
             mockErrorMessageService.Object);
 
