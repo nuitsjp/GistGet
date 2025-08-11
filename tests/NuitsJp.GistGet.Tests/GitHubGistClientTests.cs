@@ -1,6 +1,7 @@
 using Shouldly;
 using Xunit;
 using NuitsJp.GistGet.Services;
+using NuitsJp.GistGet.Abstractions;
 using Moq;
 using Microsoft.Extensions.Logging;
 
@@ -10,19 +11,20 @@ namespace NuitsJp.GistGet.Tests;
 public class GitHubGistClientTests
 {
     private readonly Mock<ILogger<GitHubGistClient>> _mockLogger;
-    private readonly Mock<GitHubAuthService> _mockAuthService;
+    private readonly GitHubAuthService _authService;
 
     public GitHubGistClientTests()
     {
         _mockLogger = new Mock<ILogger<GitHubGistClient>>();
-        _mockAuthService = new Mock<GitHubAuthService>(_mockLogger.Object);
+        var authLogger = new Mock<ILogger<GitHubAuthService>>();
+        _authService = new GitHubAuthService(authLogger.Object);
     }
 
     [Fact]
     public void Constructor_WithValidDependencies_ShouldInitializeCorrectly()
     {
         // Act & Assert
-        Should.NotThrow(() => new GitHubGistClient(_mockAuthService.Object, _mockLogger.Object));
+        Should.NotThrow(() => new GitHubGistClient(_authService, _mockLogger.Object));
     }
 
     [Fact]
@@ -36,14 +38,14 @@ public class GitHubGistClientTests
     public void Constructor_WithNullLogger_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        Should.Throw<ArgumentNullException>(() => new GitHubGistClient(_mockAuthService.Object, null!));
+        Should.Throw<ArgumentNullException>(() => new GitHubGistClient(_authService, null!));
     }
 
     [Fact]
     public async Task GetFileContentAsync_WithNullGistId_ShouldThrowArgumentException()
     {
         // Arrange
-        var client = new GitHubGistClient(_mockAuthService.Object, _mockLogger.Object);
+        var client = new GitHubGistClient(_authService, _mockLogger.Object);
 
         // Act & Assert
         await Should.ThrowAsync<ArgumentException>(() =>
@@ -54,7 +56,7 @@ public class GitHubGistClientTests
     public async Task GetFileContentAsync_WithEmptyGistId_ShouldThrowArgumentException()
     {
         // Arrange
-        var client = new GitHubGistClient(_mockAuthService.Object, _mockLogger.Object);
+        var client = new GitHubGistClient(_authService, _mockLogger.Object);
 
         // Act & Assert
         await Should.ThrowAsync<ArgumentException>(() =>
@@ -65,7 +67,7 @@ public class GitHubGistClientTests
     public async Task GetFileContentAsync_WithNullFileName_ShouldThrowArgumentException()
     {
         // Arrange
-        var client = new GitHubGistClient(_mockAuthService.Object, _mockLogger.Object);
+        var client = new GitHubGistClient(_authService, _mockLogger.Object);
 
         // Act & Assert
         await Should.ThrowAsync<ArgumentException>(() =>
@@ -76,7 +78,7 @@ public class GitHubGistClientTests
     public async Task GetFileContentAsync_WithEmptyFileName_ShouldThrowArgumentException()
     {
         // Arrange
-        var client = new GitHubGistClient(_mockAuthService.Object, _mockLogger.Object);
+        var client = new GitHubGistClient(_authService, _mockLogger.Object);
 
         // Act & Assert
         await Should.ThrowAsync<ArgumentException>(() =>
@@ -87,7 +89,7 @@ public class GitHubGistClientTests
     public async Task UpdateFileContentAsync_WithNullGistId_ShouldThrowArgumentException()
     {
         // Arrange
-        var client = new GitHubGistClient(_mockAuthService.Object, _mockLogger.Object);
+        var client = new GitHubGistClient(_authService, _mockLogger.Object);
 
         // Act & Assert
         await Should.ThrowAsync<ArgumentException>(() =>
@@ -98,7 +100,7 @@ public class GitHubGistClientTests
     public async Task UpdateFileContentAsync_WithNullContent_ShouldThrowArgumentException()
     {
         // Arrange
-        var client = new GitHubGistClient(_mockAuthService.Object, _mockLogger.Object);
+        var client = new GitHubGistClient(_authService, _mockLogger.Object);
 
         // Act & Assert
         await Should.ThrowAsync<ArgumentException>(() =>
@@ -109,7 +111,7 @@ public class GitHubGistClientTests
     public async Task ExistsAsync_WithNullGistId_ShouldThrowArgumentException()
     {
         // Arrange
-        var client = new GitHubGistClient(_mockAuthService.Object, _mockLogger.Object);
+        var client = new GitHubGistClient(_authService, _mockLogger.Object);
 
         // Act & Assert
         await Should.ThrowAsync<ArgumentException>(() => client.ExistsAsync(null!));
@@ -119,7 +121,7 @@ public class GitHubGistClientTests
     public async Task ExistsAsync_WithEmptyGistId_ShouldThrowArgumentException()
     {
         // Arrange
-        var client = new GitHubGistClient(_mockAuthService.Object, _mockLogger.Object);
+        var client = new GitHubGistClient(_authService, _mockLogger.Object);
 
         // Act & Assert
         await Should.ThrowAsync<ArgumentException>(() => client.ExistsAsync(""));
