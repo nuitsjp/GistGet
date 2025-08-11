@@ -48,7 +48,7 @@ public class SyncCommandTests
 
         // Assert
         result.ShouldBe(0);
-        
+
         // 新機能：同期状態の永続化をテスト（まだ実装されていない）
         mockGistSync.SyncStatePersisted.ShouldBeTrue(); // これは失敗するはず
     }

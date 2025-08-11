@@ -23,15 +23,15 @@ public class CommandServiceTests
         _mockWinGetClient = new MockWinGetClient();
         _mockPassthroughClient = new MockWinGetPassthroughClient();
         _mockGistSyncService = new MockGistSyncService();
-        
+
         // AuthCommandとTestGistCommandのモックを作成
         var mockAuthService = new Mock<IGitHubAuthService>();
         var authLogger = new Mock<ILogger<AuthCommand>>();
         var authCommand = new AuthCommand(mockAuthService.Object, authLogger.Object);
-        
+
         var testGistLogger = new Mock<ILogger<TestGistCommand>>();
         var testGistCommand = new TestGistCommand(mockAuthService.Object, testGistLogger.Object);
-        
+
         var mockErrorMessageService = new Mock<IErrorMessageService>();
         _commandService = new CommandService(
             _mockWinGetClient,
@@ -113,7 +113,7 @@ public class CommandServiceTests
     }
 
     // Phase 7.1: エラーハンドリング改善 - Red フェーズ（失敗するテストから開始）
-    
+
     [Fact]
     public async Task ExecuteAsync_ShouldDisplayUserFriendlyMessage_WhenWinGetClientThrowsComException()
     {
@@ -126,15 +126,15 @@ public class CommandServiceTests
         // COM例外をスローするように設定
         var comException = new System.Runtime.InteropServices.COMException("COM Error", -2147024891); // E_ACCESSDENIED
         mockWinGetClient.Setup(x => x.InitializeAsync()).ThrowsAsync(comException);
-        
+
         // AuthCommandとTestGistCommandのモックを作成
         var mockAuthService = new Mock<IGitHubAuthService>();
         var authLogger = new Mock<ILogger<AuthCommand>>();
         var authCommand = new AuthCommand(mockAuthService.Object, authLogger.Object);
-        
+
         var testGistLogger = new Mock<ILogger<TestGistCommand>>();
         var testGistCommand = new TestGistCommand(mockAuthService.Object, testGistLogger.Object);
-        
+
         var mockErrorMessageService = new Mock<IErrorMessageService>();
         var service = new CommandService(
             mockWinGetClient.Object,
@@ -152,12 +152,12 @@ public class CommandServiceTests
 
         // Assert
         result.ShouldBe(1); // エラー終了コード
-        
+
         // ErrorMessageServiceのHandleComExceptionが呼び出されることを確認
         mockErrorMessageService.Verify(x => x.HandleComException(comException), Times.Once);
     }
-    
-    [Fact] 
+
+    [Fact]
     public async Task ExecuteAsync_ShouldDisplayUserFriendlyMessage_WhenPackageNotFound()
     {
         // Arrange
@@ -169,15 +169,15 @@ public class CommandServiceTests
         // パッケージ未発見例外をスローするように設定
         var packageNotFound = new InvalidOperationException("Package 'NonExistent.Package' not found");
         mockWinGetClient.Setup(x => x.InstallPackageAsync(It.IsAny<string[]>())).ThrowsAsync(packageNotFound);
-        
+
         // AuthCommandとTestGistCommandのモックを作成
         var mockAuthService = new Mock<IGitHubAuthService>();
         var authLogger = new Mock<ILogger<AuthCommand>>();
         var authCommand = new AuthCommand(mockAuthService.Object, authLogger.Object);
-        
+
         var testGistLogger = new Mock<ILogger<TestGistCommand>>();
         var testGistCommand = new TestGistCommand(mockAuthService.Object, testGistLogger.Object);
-        
+
         var mockErrorMessageService = new Mock<IErrorMessageService>();
         var service = new CommandService(
             mockWinGetClient.Object,
@@ -195,11 +195,11 @@ public class CommandServiceTests
 
         // Assert
         result.ShouldBe(1); // エラー終了コード
-        
+
         // ErrorMessageServiceのHandlePackageNotFoundExceptionが呼び出されることを確認
         mockErrorMessageService.Verify(x => x.HandlePackageNotFoundException(packageNotFound), Times.Once);
     }
-    
+
     [Fact]
     public async Task ExecuteAsync_ShouldDisplayHelpfulErrorMessage_WhenNetworkError()
     {
@@ -212,15 +212,15 @@ public class CommandServiceTests
         // ネットワーク例外をスローするように設定
         var networkError = new HttpRequestException("Unable to connect to the remote server");
         mockWinGetClient.Setup(x => x.InstallPackageAsync(It.IsAny<string[]>())).ThrowsAsync(networkError);
-        
+
         // AuthCommandとTestGistCommandのモックを作成
         var mockAuthService = new Mock<IGitHubAuthService>();
         var authLogger = new Mock<ILogger<AuthCommand>>();
         var authCommand = new AuthCommand(mockAuthService.Object, authLogger.Object);
-        
+
         var testGistLogger = new Mock<ILogger<TestGistCommand>>();
         var testGistCommand = new TestGistCommand(mockAuthService.Object, testGistLogger.Object);
-        
+
         var mockErrorMessageService = new Mock<IErrorMessageService>();
         var service = new CommandService(
             mockWinGetClient.Object,
@@ -238,7 +238,7 @@ public class CommandServiceTests
 
         // Assert
         result.ShouldBe(1); // エラー終了コード
-        
+
         // ErrorMessageServiceのHandleNetworkExceptionが呼び出されることを確認
         mockErrorMessageService.Verify(x => x.HandleNetworkException(networkError), Times.Once);
     }

@@ -18,14 +18,14 @@ public class ErrorMessageService : IErrorMessageService
     public void HandleComException(System.Runtime.InteropServices.COMException comEx)
     {
         _logger.LogError(comEx, "COM API error occurred");
-        
+
         var userMessage = comEx.HResult switch
         {
             -2147024891 => "管理者権限が必要です。PowerShellを管理者として実行してください。",
             -2147023728 => "WinGet COM APIが利用できません。Windows Package Managerが正しくインストールされていることを確認してください。",
             _ => $"システムエラーが発生しました。詳細: {comEx.Message}"
         };
-        
+
         _logger.LogError("エラー: {UserMessage}", userMessage);
     }
 

@@ -117,7 +117,7 @@ public class CommandService : ICommandService
     {
         _logger.LogDebug("Routing to COM client for command: {Command}", command);
         await _winGetClient.InitializeAsync();
-        
+
         return command switch
         {
             "install" => await _winGetClient.InstallPackageAsync(args),

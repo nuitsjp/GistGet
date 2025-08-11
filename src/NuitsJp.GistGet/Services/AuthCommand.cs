@@ -26,13 +26,13 @@ public class AuthCommand
         {
             // サブコマンドの判定
             var subCommand = args.Length > 1 ? args[1].ToLower() : "";
-            
+
             switch (subCommand)
             {
                 case "status":
                     await _authService.ShowAuthStatusAsync();
                     return 0;
-                    
+
                 case "":
                 default:
                     // デフォルトは認証フロー実行

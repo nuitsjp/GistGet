@@ -14,7 +14,7 @@ public class GitHubAuthService : IGitHubAuthService
     private readonly ILogger<GitHubAuthService> _logger;
     private readonly string _tokenFilePath;
     private readonly HttpClient _httpClient;
-    
+
     // GitHub OAuth App設定 (GistGet独自OAuth App)
     private const string ClientId = "Ov23lihQJhLB6hCnEIvS"; // GistGet専用Client ID
     private const string AppName = "GistGet";
@@ -28,7 +28,7 @@ public class GitHubAuthService : IGitHubAuthService
         var gistGetDir = Path.Combine(appDataPath, "GistGet");
         Directory.CreateDirectory(gistGetDir);
         _tokenFilePath = Path.Combine(gistGetDir, "token.json");
-        
+
         _httpClient = new HttpClient();
         _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
         _httpClient.DefaultRequestHeaders.Add("User-Agent", AppName);
@@ -42,7 +42,7 @@ public class GitHubAuthService : IGitHubAuthService
         try
         {
             _logger.LogInformation("GitHub Device Flow認証を開始します...");
-            
+
             // Step 1: Device Codeの取得
             var deviceCodeResponse = await RequestDeviceCodeAsync();
             if (deviceCodeResponse == null)
@@ -50,7 +50,7 @@ public class GitHubAuthService : IGitHubAuthService
                 Console.WriteLine("Device Codeの取得に失敗しました。");
                 return false;
             }
-            
+
             Console.WriteLine("=== GitHub Device Flow 認証 ===");
             Console.WriteLine($"ブラウザで以下のURLを開いてください:");
             Console.WriteLine($"{deviceCodeResponse.VerificationUri}");
@@ -59,7 +59,7 @@ public class GitHubAuthService : IGitHubAuthService
             Console.WriteLine($"{deviceCodeResponse.UserCode}");
             Console.WriteLine();
             Console.WriteLine("認証を完了したら自動的に次に進みます...");
-            
+
             // ブラウザを自動で開く
             try
             {
@@ -73,7 +73,7 @@ public class GitHubAuthService : IGitHubAuthService
             {
                 _logger.LogWarning(ex, "ブラウザの自動起動に失敗しました");
             }
-            
+
             // Step 2: アクセストークンをポーリングで取得
             var accessToken = await PollForAccessTokenAsync(deviceCodeResponse);
             if (string.IsNullOrEmpty(accessToken))
@@ -81,10 +81,10 @@ public class GitHubAuthService : IGitHubAuthService
                 Console.WriteLine("認証がタイムアウトまたは失敗しました。");
                 return false;
             }
-            
+
             // Step 3: トークンを保存
             await SaveTokenAsync(accessToken);
-            
+
             // Step 4: 認証済みユーザー情報を表示
             var client = await GetAuthenticatedClientAsync();
             if (client != null)
@@ -92,7 +92,7 @@ public class GitHubAuthService : IGitHubAuthService
                 var user = await client.User.Current();
                 Console.WriteLine($"認証成功！ ユーザー: {user.Login} ({user.Name})");
             }
-            
+
             _logger.LogInformation("GitHub認証が正常に完了しました");
             return true;
         }
@@ -113,7 +113,7 @@ public class GitHubAuthService : IGitHubAuthService
         });
 
         var response = await _httpClient.PostAsync(DeviceCodeUrl, requestBody);
-        
+
         if (!response.IsSuccessStatusCode)
         {
             _logger.LogError("Device Code要求が失敗しました: {StatusCode}", response.StatusCode);
@@ -121,9 +121,9 @@ public class GitHubAuthService : IGitHubAuthService
         }
 
         var json = await response.Content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<DeviceCodeResponse>(json, new JsonSerializerOptions 
-        { 
-            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower 
+        return JsonSerializer.Deserialize<DeviceCodeResponse>(json, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
         });
     }
 
@@ -131,11 +131,11 @@ public class GitHubAuthService : IGitHubAuthService
     {
         var interval = deviceCode.Interval;
         var expiresAt = DateTime.UtcNow.AddSeconds(deviceCode.ExpiresIn);
-        
+
         while (DateTime.UtcNow < expiresAt)
         {
             await Task.Delay(TimeSpan.FromSeconds(interval));
-            
+
             var requestBody = new FormUrlEncodedContent(new[]
             {
                 new KeyValuePair<string, string>("client_id", ClientId),
@@ -145,26 +145,26 @@ public class GitHubAuthService : IGitHubAuthService
 
             var response = await _httpClient.PostAsync(AccessTokenUrl, requestBody);
             var json = await response.Content.ReadAsStringAsync();
-            
+
             if (response.IsSuccessStatusCode)
             {
-                var tokenResponse = JsonSerializer.Deserialize<AccessTokenResponse>(json, new JsonSerializerOptions 
-                { 
-                    PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower 
+                var tokenResponse = JsonSerializer.Deserialize<AccessTokenResponse>(json, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
                 });
-                
+
                 if (!string.IsNullOrEmpty(tokenResponse?.AccessToken))
                 {
                     return tokenResponse.AccessToken;
                 }
             }
-            
+
             // エラーレスポンスをチェック
-            var errorResponse = JsonSerializer.Deserialize<OAuthErrorResponse>(json, new JsonSerializerOptions 
-            { 
-                PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower 
+            var errorResponse = JsonSerializer.Deserialize<OAuthErrorResponse>(json, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
             });
-            
+
             if (errorResponse?.Error == "authorization_pending")
             {
                 // まだ認証されていない、続行
@@ -183,7 +183,7 @@ public class GitHubAuthService : IGitHubAuthService
                 break;
             }
         }
-        
+
         return null;
     }
 
@@ -196,7 +196,7 @@ public class GitHubAuthService : IGitHubAuthService
         {
             var client = await GetAuthenticatedClientAsync();
             if (client == null) return false;
-            
+
             // 簡単なAPI呼び出しでトークンの有効性を確認
             var user = await client.User.Current();
             return user != null;
@@ -216,12 +216,12 @@ public class GitHubAuthService : IGitHubAuthService
         {
             var token = await LoadTokenAsync();
             if (string.IsNullOrEmpty(token)) return null;
-            
+
             var client = new GitHubClient(new ProductHeaderValue(AppName))
             {
                 Credentials = new Credentials(token)
             };
-            
+
             return client;
         }
         catch (Exception ex)
@@ -268,7 +268,7 @@ public class GitHubAuthService : IGitHubAuthService
     private async Task<string?> LoadTokenAsync()
     {
         if (!File.Exists(_tokenFilePath)) return null;
-        
+
         try
         {
             var json = await File.ReadAllTextAsync(_tokenFilePath);

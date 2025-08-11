@@ -48,7 +48,7 @@ public class ExportCommandTests
 
         // Assert
         result.ShouldBe(0);
-        
+
         // 新機能：エクスポートファイル生成をテスト（まだ実装されていない）
         mockGistSync.ExportFileGenerated.ShouldBeTrue(); // これは失敗するはず
     }

@@ -7,7 +7,7 @@ using NuitsJp.GistGet.Services;
 
 // 依存性注入コンテナの構築
 var services = new ServiceCollection()
-    .AddLogging(builder => 
+    .AddLogging(builder =>
     {
         builder.AddConsole();
         builder.SetMinimumLevel(LogLevel.Information);
@@ -32,11 +32,11 @@ try
 {
     var commandService = services.GetRequiredService<ICommandService>();
     var logger = services.GetRequiredService<ILogger<Program>>();
-    
+
     logger.LogDebug("Starting GistGet with args: {Args}", string.Join(" ", args));
-    
+
     var exitCode = await commandService.ExecuteAsync(args);
-    
+
     logger.LogDebug("GistGet completed with exit code: {ExitCode}", exitCode);
     return exitCode;
 }

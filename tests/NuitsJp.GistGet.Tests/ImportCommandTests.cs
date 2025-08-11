@@ -48,7 +48,7 @@ public class ImportCommandTests
 
         // Assert
         result.ShouldBe(0);
-        
+
         // 新機能：インポートファイル処理をテスト（まだ実装されていない）
         mockGistSync.ImportFileProcessed.ShouldBeTrue(); // これは失敗するはず
     }
