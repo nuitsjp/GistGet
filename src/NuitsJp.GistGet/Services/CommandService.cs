@@ -11,6 +11,8 @@ public class CommandService : ICommandService
     private readonly IWinGetClient _winGetClient;
     private readonly IWinGetPassthroughClient _passthroughClient;
     private readonly IGistSyncService _gistSyncService;
+    private readonly AuthCommand _authCommand;
+    private readonly TestGistCommand _testGistCommand;
     private readonly ILogger<CommandService> _logger;
     private readonly IErrorMessageService _errorMessageService;
 
@@ -18,12 +20,16 @@ public class CommandService : ICommandService
         IWinGetClient winGetClient,
         IWinGetPassthroughClient passthroughClient,
         IGistSyncService gistSyncService,
+        AuthCommand authCommand,
+        TestGistCommand testGistCommand,
         ILogger<CommandService> logger,
         IErrorMessageService errorMessageService)
     {
         _winGetClient = winGetClient;
         _passthroughClient = passthroughClient;
         _gistSyncService = gistSyncService;
+        _authCommand = authCommand;
+        _testGistCommand = testGistCommand;
         _logger = logger;
         _errorMessageService = errorMessageService;
     }
@@ -68,6 +74,18 @@ public class CommandService : ICommandService
     {
         var usesCom = command is "install" or "uninstall" or "upgrade";
         var usesGist = command is "sync" or "export" or "import";
+        var isAuthCommand = command is "auth";
+        var isTestGistCommand = command is "test-gist";
+
+        if (isAuthCommand)
+        {
+            return await _authCommand.ExecuteAsync(args);
+        }
+
+        if (isTestGistCommand)
+        {
+            return await _testGistCommand.ExecuteAsync();
+        }
 
         if (usesGist)
         {

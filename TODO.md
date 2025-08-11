@@ -21,67 +21,86 @@
 
 ## 🚀 実装ロードマップ（順次実行）
 
-### Phase 7: 🔴 MVP必須: GitHub認証とGist API (最優先) ⏳
+### Phase 7: 🔴 MVP検証: GitHub認証とGist連携（手動テスト中心） ⏳
 
-**実装戦略:**
-- **Device Flow採用理由**: ブラウザー自動化不要、CI/CD対応可能、ヘッドレス環境対応
-- **MVP段階**: 手動検証とコラボレーションによる実装
-- **自動化段階**: Device Flowのポーリング処理により完全自動化可能
+**アプローチ: 実装→dotnet run→利用者検証の高速サイクル**
+- ⚡ **xUnitテストは後回し**（動作確認後に追加）
+- 🤝 **利用者への操作依頼を積極的に活用**
+- 🔄 **dotnet runで即座に動作確認**
 
-#### 7.1 GitHub Device Flow認証（手動検証OK）
-- [ ] **Red**: Device Flow認証フローのテスト作成
-  - [ ] デバイスコード取得のモックテスト
-  - [ ] ユーザーコード表示のテスト
-  - [ ] ポーリング処理のテスト
-- [ ] **Green**: 最小限の認証実装
-  - [ ] GitHub Device Flow API呼び出し
-  - [ ] コンソールへのユーザーコード表示
-  - [ ] 手動でのブラウザー認証（MVP段階）
-- [ ] **Refactor**: 認証フロー改善
-  - [ ] トークン保存・再利用
-  - [ ] エラーハンドリング
+#### Step 1: GitHub Device Flow認証 ✅
+- ✅ Octokit.NET追加、OAuth Device Flow実装完了
+- ✅ トークン保存・読み込み機能完了
+- ✅ 利用者認証確認済み（nuitsjp/Atsushi Nakamura）
 
-#### 7.2 Gist API基本操作（CRUD）
-- [ ] **Red**: Gist操作テスト作成
-  - [ ] Gist作成テスト
-  - [ ] Gist読み取りテスト
-  - [ ] Gist更新テスト
-- [ ] **Green**: Octokit.NET統合
-  - [ ] NuGetパッケージ追加
-  - [ ] 基本的なGist CRUD実装
-  - [ ] 手動検証による動作確認
-- [ ] **Refactor**: API呼び出しの抽象化
+#### Step 2: Gist読み取りテスト ✅
+- ✅ TestGistCommand実装完了
+- ✅ Gist API読み取り機能確認済み（63個のGist取得成功）
+- ✅ ユーザー情報・Gist詳細表示機能動作確認済み
 
-#### 7.3 YAML処理とGist同期
-- [ ] **Red**: YAML⇔Gist変換テスト
-  - [ ] パッケージリストのYAML化テスト
-  - [ ] YAMLからのパッケージ復元テスト
-- [ ] **Green**: YamlDotNet統合
-  - [ ] パッケージリストのシリアライズ
-  - [ ] Gistへの保存実装
-- [ ] **Refactor**: データモデル最適化
-
-#### 7.4 MVP統合テスト（手動検証含む）
-- [ ] **統合シナリオ**:
-  1. `gistget auth` - Device Flow認証（手動でブラウザー操作）
-  2. `gistget export` - 現在のパッケージリストをGistへ
-  3. `gistget import` - Gistからパッケージリスト取得
-  4. `gistget sync` - 双方向同期
-
-**自動化への移行計画:**
-```csharp
-// MVP段階（手動検証）
-Console.WriteLine($"ブラウザーで以下を開いてください: {verificationUri}");
-Console.WriteLine($"コードを入力: {userCode}");
-// 手動で認証完了を待つ
-
-// 自動化段階（Device Flowのポーリング）
-while (!authenticated) {
-    var response = await PollForToken(deviceCode);
-    if (response.IsAuthenticated) break;
-    await Task.Delay(interval);
-}
+#### Step 3: export実装（20分以内）
+```bash
+# インストール済みパッケージをGistへ
+dotnet run -- export
 ```
+**利用者への依頼:**
+1. GitHubのGistページを開いてください
+2. "winget-packages.yaml"という新しいGistが作成されたか確認
+3. 内容が正しいYAML形式か確認してください
+
+**実装内容:**
+- [ ] YamlDotNet追加 (`dotnet add package YamlDotNet`)
+- [ ] COM APIでパッケージ一覧取得
+- [ ] YAML形式に変換
+- [ ] Gistとして作成/更新
+
+#### Step 4: import実装（20分以内）
+```bash
+# 別のPCを想定したテスト
+dotnet run -- import --dry-run
+```
+**利用者への依頼:**
+1. インポートされるパッケージ一覧を確認してください
+2. 実際にインストールして良いパッケージか判断してください
+3. OKなら`--dry-run`なしで実行してください
+
+**実装内容:**
+- [ ] Gistから"winget-packages.yaml"取得
+- [ ] YAMLパース
+- [ ] `--dry-run`でリスト表示のみ
+- [ ] 実行時はwinget installを呼び出し
+
+#### Step 5: 統合動作確認（利用者主導）
+**利用者への実施依頼:**
+```bash
+# 1. 認証状態確認
+dotnet run -- auth status
+
+# 2. 新しいアプリをインストール
+dotnet run -- install --id AkelPad.AkelPad
+
+# 3. Gistへ自動同期されるか確認
+# （ブラウザでGist確認をお願いします）
+
+# 4. 別のアプリもテスト
+dotnet run -- install --id Microsoft.PowerToys
+
+# 5. 最終的なexport
+dotnet run -- export --verbose
+```
+
+**成功基準（利用者確認）:**
+- [ ] GitHub認証が完了する
+- [ ] Gistの作成/更新ができる
+- [ ] YAMLフォーマットが正しい
+- [ ] import時にパッケージがインストールされる
+
+### Phase 7.5: テスト追加（MVP確認後）
+**MVP動作確認後に実施:**
+- [ ] 認証フローのモックテスト作成
+- [ ] Gist API呼び出しのテスト
+- [ ] YAML変換のユニットテスト
+- [ ] 統合テストの追加
 
 ### Phase 8: 引数処理戦略の実装 (t-wada式TDD)
 - [ ] **8.1 ルーティング判定のみの実装**
@@ -141,9 +160,9 @@ while (!authenticated) {
 ```
 コンポーネント         | 現在 | MVP目標 | 最終目標 | 優先度
 ---------------------|------|---------|----------|--------
-GitHubAuthService    | 0%   | 60%     | 80%      | 最高
-GistApiClient        | 0%   | 70%     | 85%      | 最高
-YamlSerializer       | 0%   | 80%     | 90%      | 高
+GitHubAuthService    | 0%   | 手動検証 | 80%      | MVP後
+GistApiClient        | 0%   | 手動検証 | 85%      | MVP後
+YamlSerializer       | 0%   | 手動検証 | 90%      | MVP後
 ProcessRunner        | 60%  | 60%     | 80%      | 中
 CommandRouter        | 40%  | 40%     | 60%      | 低
 WinGetClient         | 30%  | 30%     | 60%      | 中
@@ -152,23 +171,24 @@ ArgumentStrategy     | 0%   | 50%     | 90%      | 中
 
 ### Device Flow自動化テスト戦略
 1. **MVP段階（Phase 7）**
-   - モックによる認証フロー検証
-   - 手動でのE2Eテスト（開発者コラボレーション）
+   - 手動検証のみ
+   - 利用者フィードバック重視
    - 成功/失敗パスの文書化
 
-2. **自動化段階（Phase 10以降）**
-   - GitHub APIのテストモード活用
+2. **自動化段階（Phase 7.5以降）**
+   - MVP確認後にテスト追加
    - CI/CDでのDevice Flowシミュレーション
    - 統合テストの完全自動化
 
 ## ✅ 開発方針
 
 ### MVP最優先事項
-- **GitHub認証なしではMVPとは言えない** ← 最重要認識
-- **手動検証でも良いので動作する実装を優先**
-- **完璧な自動化より、まず動くものを**
+- **動くコードを最速で** ← 最重要
+- **利用者フィードバックを即座に反映**
+- **テストは動作確認後に追加**
+- **dotnet runで即座に検証**
 
-### TDD原則（厳守）
+### TDD原則（Phase 8以降で厳守）
 - **Red-Green-Refactor サイクル厳守**
 - **各機能は失敗するテストから開始**
 - **最小限の実装でテストを通す**
@@ -176,19 +196,18 @@ ArgumentStrategy     | 0%   | 50%     | 90%      | 中
 - **1サイクルは小さく（1-2時間以内）**
 
 ### 避けるべきもの
-- テスト無しでの機能追加
-- 複数機能の同時実装
-- 大きすぎるテストケース
-- テスト通過前のリファクタリング
-- MVP段階での過度な自動化追求
+- MVP段階での過度なテスト作成
+- 完璧を求めすぎる
+- 利用者フィードバックの無視
+- 複雑な実装
 
 ## 📝 リリースチェックリスト
 
 ### v0.8.0 MVP（Phase 7完了時点）
-- [ ] GitHub Device Flow認証動作
-- [ ] Gist API基本操作確認
-- [ ] export/importコマンド動作
-- [ ] 手動E2Eテスト完了
+- [ ] GitHub Device Flow認証動作（利用者確認済み）
+- [ ] Gist API基本操作確認（利用者確認済み）
+- [ ] export/importコマンド動作（利用者確認済み）
+- [ ] 手動E2Eテスト完了（利用者実施）
 - [ ] 基本的なドキュメント
 
 ### v1.0.0 リリース基準

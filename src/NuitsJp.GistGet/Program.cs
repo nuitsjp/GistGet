@@ -20,6 +20,10 @@ var services = new ServiceCollection()
     .AddSingleton<IWinGetPassthroughClient, WinGetPassthrough>()
     // Gist services
     .AddSingleton<IGistSyncService, GistSyncStub>()
+    // GitHub services
+    .AddSingleton<IGitHubAuthService, GitHubAuthService>()
+    .AddSingleton<AuthCommand>()
+    .AddSingleton<TestGistCommand>()
     // Infrastructure
     .AddSingleton<IProcessWrapper, ProcessWrapper>()
     .BuildServiceProvider();
