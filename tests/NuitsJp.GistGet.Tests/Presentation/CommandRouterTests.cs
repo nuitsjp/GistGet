@@ -45,7 +45,6 @@ public class CommandRouterTests
             _mockPassthroughClient,
             _mockGistSyncService,
             null!, // authCommand - ルーティングテストでは使用しない
-            null!, // testGistCommand - ルーティングテストでは使用しない
             null!, // gistSetCommand - ルーティングテストでは使用しない
             null!, // gistStatusCommand - ルーティングテストでは使用しない
             null!, // gistShowCommand - ルーティングテストでは使用しない
@@ -277,6 +276,47 @@ public class CommandRouterTests
         // Assert - UI制御: 引数が正しく渡されること
         result.ShouldBe(0);
         _mockPassthroughClient.LastArgs.ShouldBe(allArgs);
+    }
+
+    #endregion
+
+    #region Gist Sub-Command Routing Tests (UI Control)
+
+    [Theory]
+    [InlineData("gist", "invalid-command")]
+    public async Task ExecuteAsync_ShouldShowHelp_WhenInvalidGistSubCommand(string command, string subCommand)
+    {
+        // Arrange - Presentation層: 無効なGistサブコマンドのUI制御テスト
+        var commandRouter = CreateCommandRouterForRoutingTests();
+        var args = new[] { command, subCommand };
+
+        // Act
+        var result = await commandRouter.ExecuteAsync(args);
+
+        // Assert - UI制御: ヘルプ表示時の終了コード検証
+        result.ShouldBe(1);
+        // 他のサービスは呼ばれない
+        _mockGistSyncService.LastCommand.ShouldBeNull();
+        _mockWinGetClient.LastCommand.ShouldBeNull();
+        _mockPassthroughClient.LastArgs.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldShowHelp_WhenGistCommandWithoutSubCommand()
+    {
+        // Arrange - Presentation層: Gistサブコマンド不足時のUI制御テスト
+        var commandRouter = CreateCommandRouterForRoutingTests();
+        var args = new[] { "gist" };
+
+        // Act
+        var result = await commandRouter.ExecuteAsync(args);
+
+        // Assert - UI制御: ヘルプ表示時の終了コード検証
+        result.ShouldBe(1);
+        // 他のサービスは呼ばれない
+        _mockGistSyncService.LastCommand.ShouldBeNull();
+        _mockWinGetClient.LastCommand.ShouldBeNull();
+        _mockPassthroughClient.LastArgs.ShouldBeNull();
     }
 
     #endregion

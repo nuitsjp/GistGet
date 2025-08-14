@@ -15,7 +15,6 @@ public class CommandRouter : ICommandRouter
     private readonly IWinGetPassthroughClient _passthroughClient;
     private readonly IGistSyncService _gistSyncService;
     private readonly AuthCommand _authCommand;
-    private readonly TestGistCommand _testGistCommand;
     private readonly GistSetCommand _gistSetCommand;
     private readonly GistStatusCommand _gistStatusCommand;
     private readonly GistShowCommand _gistShowCommand;
@@ -27,7 +26,6 @@ public class CommandRouter : ICommandRouter
         IWinGetPassthroughClient passthroughClient,
         IGistSyncService gistSyncService,
         AuthCommand authCommand,
-        TestGistCommand testGistCommand,
         GistSetCommand gistSetCommand,
         GistStatusCommand gistStatusCommand,
         GistShowCommand gistShowCommand,
@@ -38,7 +36,6 @@ public class CommandRouter : ICommandRouter
         _passthroughClient = passthroughClient;
         _gistSyncService = gistSyncService;
         _authCommand = authCommand;
-        _testGistCommand = testGistCommand;
         _gistSetCommand = gistSetCommand;
         _gistStatusCommand = gistStatusCommand;
         _gistShowCommand = gistShowCommand;
@@ -88,18 +85,12 @@ public class CommandRouter : ICommandRouter
         var usesGist = command is "sync";
         var usesPassthrough = command is "export" or "import" or "list" or "search" or "show";
         var isAuthCommand = command is "auth";
-        var isTestGistCommand = command is "test-gist";
         var isGistSubCommand = command is "gist";
 
 
         if (isAuthCommand)
         {
             return await _authCommand.ExecuteAsync(args);
-        }
-
-        if (isTestGistCommand)
-        {
-            return await _testGistCommand.ExecuteAsync();
         }
 
         if (isGistSubCommand)

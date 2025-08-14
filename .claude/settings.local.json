@@ -3,7 +3,9 @@
     "allow": [
       "Bash(git reset:*)",
       "Bash(git commit:*)",
-      "Bash(\"src\\NuitsJp.GistGet\\bin\\Debug\\net8.0-windows10.0.26100\\win-x64\\GistGet.exe\" auth)"
+      "Bash(\"src\\NuitsJp.GistGet\\bin\\Debug\\net8.0-windows10.0.26100\\win-x64\\GistGet.exe\" auth)",
+      "Bash(reportgenerator:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }

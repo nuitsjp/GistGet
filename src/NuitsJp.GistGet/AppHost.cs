@@ -46,7 +46,6 @@ public static class AppHost
 
                 // Commands
                 services.AddSingleton<AuthCommand>();
-                services.AddSingleton<TestGistCommand>();
                 services.AddSingleton<IGistConfigService, GistConfigService>();
                 services.AddSingleton<IGistManager, GistManager>();
                 services.AddSingleton<GistSetCommand>();

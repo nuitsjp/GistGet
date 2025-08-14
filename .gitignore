@@ -1,5 +1,6 @@
 .serena/
 .claude/settings.local.json
+coverage-report/
 
 [Oo]utput/
 
