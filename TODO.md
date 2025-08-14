@@ -18,6 +18,7 @@
 - **COM API制約調査完了**。UninstallPackageAsync未対応を公式仕様で確認、docs/architecture.mdに正式文書化。
 - **環境変数統一完了**。GITHUB_TOKEN → GIST_TOKEN への統一（ワークフロー・ドキュメント）。
 - **Phase 4 Presentation層テスト戦略完了**。CommandRouterTestsをt-wada式TDD対応で責務分離実装、UI制御・ルーティング・終了コード検証に特化。TestGistCommand不要コード削除、AuthCommandTests追加。カバレージ大幅改善：CommandRouter 74.4%、AuthCommand 89.4%。46テスト全成功。
+- **Phase 4 Business層テスト戦略完了**。Infrastructure層完全抽象化（IGitHubGistClient、IPackageYamlConverter）、t-wada式TDD対応でワークフロー・ビジネスルール検証に特化。GistConfigServiceTests、GistManagerTests追加。カバレージ劇的改善：全体36.3%、GistManager 94.9%、GistConfigService 100%。127テスト全成功。
 
 ### Phase 4: テスト戦略の層別分離
 - **現状**: 現在のテストは責務が混在（UI・ワークフロー・外部システム）
@@ -30,11 +31,11 @@
   - [x] Business層サービスを完全モック化
   - [x] 入力処理・表示処理・終了コードの検証に特化
   - [x] CommandRouterのルーティング機能テストを分離
-- [ ] Business層テスト戦略実装:
-  - [ ] ワークフローとビジネスルールのみをテスト対象
-  - [ ] Infrastructure層を完全モック化  
-  - [ ] 処理順序・バリデーション・例外処理の検証に特化
-  - [ ] 統合されたServiceクラスのワークフローテスト追加
+- [x] Business層テスト戦略実装:
+  - [x] ワークフローとビジネスルールのみをテスト対象
+  - [x] Infrastructure層を完全モック化（IGitHubGistClient、IPackageYamlConverter）  
+  - [x] 処理順序・バリデーション・例外処理の検証に特化
+  - [x] GistManager、GistConfigServiceのワークフローテスト追加
 - [ ] Infrastructure層テスト戦略実装:
   - [ ] 外部システム連携の個別テストに特化
   - [ ] 外部システムをモック/スタブ化
@@ -119,5 +120,5 @@
 - COM API: `install` 完全実装、`uninstall` はwinget.exe フォールバック（技術的制約）
 - Gist: 認証・設定コマンド実装済み、同期機能はスタブ
 - 認証: DPAPI暗号化保存、OAuth Device Flow
-- テスト: レイヤーベース構造で160テスト成功、11スキップ
+- テスト: レイヤーベース構造、t-wada式TDD対応。127テスト全成功。カバレージ36.3%（Business層完全カバレージ達成）
 - CI/CD: Windows専用、GIST_TOKEN統一済み

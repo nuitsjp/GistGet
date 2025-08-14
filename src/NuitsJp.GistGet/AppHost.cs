@@ -57,8 +57,8 @@ public static class AppHost
 
                 // Supporting services used by commands/managers
                 services.AddSingleton<GistInputService>();
-                services.AddSingleton<GitHubGistClient>();
-                services.AddSingleton<PackageYamlConverter>();
+                services.AddSingleton<IGitHubGistClient, GitHubGistClient>();
+                services.AddSingleton<IPackageYamlConverter, PackageYamlConverter>();
                 services.AddSingleton<GistManager>();
                 services.AddSingleton<IGistConfigurationStorage>(_ => GistConfigurationStorage.CreateDefault());
             })

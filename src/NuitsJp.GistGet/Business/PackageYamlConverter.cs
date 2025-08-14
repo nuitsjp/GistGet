@@ -5,7 +5,7 @@ using NuitsJp.GistGet.Models;
 
 namespace NuitsJp.GistGet.Business;
 
-public class PackageYamlConverter
+public class PackageYamlConverter : IPackageYamlConverter
 {
     private readonly ISerializer _serializer;
     private readonly IDeserializer _deserializer;

@@ -3,7 +3,7 @@ using Octokit;
 
 namespace NuitsJp.GistGet.Infrastructure.GitHub;
 
-public class GitHubGistClient
+public class GitHubGistClient : IGitHubGistClient
 {
     private readonly GitHubAuthService _authService;
     private readonly ILogger<GitHubGistClient> _logger;

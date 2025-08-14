@@ -7,15 +7,15 @@ namespace NuitsJp.GistGet.Business;
 
 public class GistManager : IGistManager
 {
-    private readonly GitHubGistClient _gistClient;
+    private readonly IGitHubGistClient _gistClient;
     private readonly IGistConfigurationStorage _storage;
-    private readonly PackageYamlConverter _yamlConverter;
+    private readonly IPackageYamlConverter _yamlConverter;
     private readonly ILogger<GistManager> _logger;
 
     public GistManager(
-        GitHubGistClient gistClient,
+        IGitHubGistClient gistClient,
         IGistConfigurationStorage storage,
-        PackageYamlConverter yamlConverter,
+        IPackageYamlConverter yamlConverter,
         ILogger<GistManager> logger)
     {
         _gistClient = gistClient ?? throw new ArgumentNullException(nameof(gistClient));

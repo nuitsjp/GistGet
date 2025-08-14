@@ -77,7 +77,7 @@ namespace NuitsJp.GistGet.Business.Services
             // URL形式の場合はIDを抽出
             if (gistIdOrUrl.Contains("gist.github.com"))
             {
-                var segments = gistIdOrUrl.Split('/');
+                var segments = gistIdOrUrl.TrimEnd('/').Split('/');
                 return segments.LastOrDefault();
             }
 
