@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NuitsJp.GistGet.Infrastructure.GitHub;
@@ -257,23 +258,57 @@ public class GitHubAuthService : IGitHubAuthService
         }
     }
 
-    private async Task SaveTokenAsync(string token)
+    public async Task SaveTokenAsync(string token)
     {
         var tokenData = new { AccessToken = token, CreatedAt = DateTime.UtcNow };
-        var json = JsonSerializer.Serialize(tokenData, new JsonSerializerOptions { WriteIndented = true });
+
+        // DPAPIで暗号化
+        var jsonBytes = System.Text.Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(tokenData));
+        var encryptedBytes = System.Security.Cryptography.ProtectedData.Protect(
+            jsonBytes,
+            null,
+            System.Security.Cryptography.DataProtectionScope.CurrentUser);
+
+        var encryptedData = new
+        {
+            EncryptedToken = Convert.ToBase64String(encryptedBytes),
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var json = System.Text.Json.JsonSerializer.Serialize(encryptedData, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
         await File.WriteAllTextAsync(_tokenFilePath, json);
-        _logger.LogInformation("アクセストークンを保存しました: {TokenPath}", _tokenFilePath);
+        _logger.LogInformation("アクセストークンを暗号化して保存しました: {TokenPath}", _tokenFilePath);
     }
 
-    private async Task<string?> LoadTokenAsync()
+    public async Task<string?> LoadTokenAsync()
     {
         if (!File.Exists(_tokenFilePath)) return null;
 
         try
         {
             var json = await File.ReadAllTextAsync(_tokenFilePath);
-            var tokenData = JsonSerializer.Deserialize<JsonElement>(json);
-            return tokenData.GetProperty("AccessToken").GetString();
+            var jsonElement = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(json);
+
+            // DPAPI暗号化形式のトークンを復号化
+            if (jsonElement.TryGetProperty("EncryptedToken", out var encryptedTokenProp))
+            {
+                var encryptedBytes = Convert.FromBase64String(encryptedTokenProp.GetString()!);
+                var decryptedBytes = System.Security.Cryptography.ProtectedData.Unprotect(
+                    encryptedBytes,
+                    null,
+                    System.Security.Cryptography.DataProtectionScope.CurrentUser);
+
+                var decryptedJson = System.Text.Encoding.UTF8.GetString(decryptedBytes);
+                var tokenData = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(decryptedJson);
+                return tokenData.GetProperty("AccessToken").GetString();
+            }
+
+            return null;
+        }
+        catch (System.Security.Cryptography.CryptographicException ex)
+        {
+            _logger.LogError(ex, "トークンの復号化に失敗しました。再認証が必要です。");
+            return null;
         }
         catch (Exception ex)
         {

@@ -8,18 +8,21 @@
 - **表現の統一**: 動詞始まり・1行・具体的成果物基準（例: 例外ポリシーのDR文書追加、テスト名変更）。
 - **用語と経路の一貫性**: `export/import` はパススルー、`sync` は内部YAML（Packages配列）準拠。README/Docs/コードを同時に更新。
 - **テスト配置の固定**: テストは `tests/NuitsJp.GistGet.Tests` に集約。命名・構造はレイヤ別。
+- **実装後の現状反映**: TODO実施完了後は必ず現状サマリと完了ログを更新し、実装状況をドキュメントに反映する。
 
 ## 🚦 次にやること（Start Here）
 
-1. DPAPI によるトークン暗号化（保存/復旧/再認証）を実装し単体テスト追加。
-2. `new-architecture.md` の重複情報を整理し、`architecture.md` への誘導を維持。
+1. レイヤーベーステスト構造への移行（`Tests/Infrastructure/GitHub/GitHubAuthServiceTests.cs` は実装済み）。
+2. `uninstall` の COM API 対応可否を確認し、不可なら正式にフォールバック設計を文書化。
+3. 環境変数名を `GIST_TOKEN` に統一（README/ワークフロー/コード）。
 
 ## 🧭 現状サマリ（README / docs 同期後）
 
 - パススルー: `list/search/show/export/import` は `WinGetPassthrough` で動作。`CommandRouter` 明示ルーティング実装済み。
 - COMクライアント: `Initialize` と `install` は COM 経由実装済み。`uninstall` は `IProcessWrapper` 経由フォールバック、`upgrade` は簡易実装。
 - Gist: `GistSyncService` はスタブ。`gist set/status/show` コマンドあり。YAML は配列スキーマ（`Packages: - Id: ...`）で統一。
-- 認証: `GitHubAuthService` あり。CI では `GIST_TOKEN` を使用する方針に更新（README 反映済み）。
+- 認証: `GitHubAuthService` でDPAPI暗号化保存実装済み。平文移行処理は削除済み。CI では `GIST_TOKEN` を使用する方針に更新（README 反映済み）。
+- テスト: DPAPIテスト4つ実装済み（`Tests/Infrastructure/GitHub/GitHubAuthServiceTests.cs`）。全テストスイート160成功、11スキップ。
 - CI: Windows のみを対象（`windows-latest`）。Release 成果物パス修正済み（README 反映済み）。
 
 ---
@@ -54,6 +57,7 @@
 - YAML（Packages配列）往復テスト追加完了。`PackageYamlConverterTests.cs`に空/単/複/任意項目有無の網羅的テスト追加。
 - Passthrough出力スナップショットテスト追加完了。`WinGetPassthroughTests.cs`新規作成、正規化・決定性検証実装。
 - GitHub Actions Windows専用固定完了。`build-windows-only.yml`作成、成果物パス検証追加。
+- **DPAPIトークン暗号化完了**。`GitHubAuthService`でDPAPI暗号化保存実装、平文移行処理削除、テスト4つ実装済み。
 
 追加の整合性タスク（高優先度）:
 - [ ] `uninstall` の COM API 対応可否を確認し、不可なら正式にフォールバック設計を文書化
@@ -73,9 +77,9 @@
   - [ ] `Tests/Business/` フォルダ作成  
     - [ ] `GistConfigServiceTests.cs` （新規統合Serviceテスト）
     - [ ] `GistSyncServiceTests.cs` 等のServiceテスト移動
-  - [ ] `Tests/Infrastructure/` フォルダ作成
+  - [x] `Tests/Infrastructure/` フォルダ作成 ✅ 実装済み
     - [ ] `WinGet/WinGetComClientTests.cs` 移動
-    - [ ] `GitHub/GitHubAuthServiceTests.cs` 移動  
+    - [x] `GitHub/GitHubAuthServiceTests.cs` 移動 ✅ 実装済み
     - [ ] `Storage/GistConfigurationStorageTests.cs` 移動
 - [ ] テスト名前空間の更新:
   - [ ] `NuitsJp.GistGet.Tests.Presentation`
@@ -138,18 +142,11 @@
 
 ## 🔒 セキュリティ強化タスク
 
-### トークンのDPAPI暗号化
-- **現状**: GitHub認証トークンが平文で保存されている (`%APPDATA%\GistGet\token.json`)
-- **目標**: Windows DPAPI (Data Protection API) による暗号化保存
-- **実装箇所**: `GitHubAuthService.cs` の `SaveTokenAsync` / `LoadTokenAsync` メソッド
-- **優先度**: 高（セキュリティ脆弱性）
-
-**実装手順**:
-- [ ] `System.Security.Cryptography.ProtectedData` を使用してトークンを暗号化
-- [ ] `DataProtectionScope.CurrentUser` での暗号化実装
-- [ ] 既存の平文トークンファイルからの移行処理
-- [ ] 復号化失敗時の再認証プロンプト機能
-- [ ] 暗号化保存のテストケース追加
+### 完了ログ（DPAPI暗号化）
+- **DPAPIトークン暗号化実装完了**。`System.Security.Cryptography.ProtectedData`でCurrentUserスコープ暗号化。
+- **平文移行処理削除完了**。レガシー対応コード削除、暗号化のみサポート。
+- **テスト実装完了**。4つのテストケース（暗号化保存、復号化読み込み、復号化失敗、ファイル不存在）すべて成功。
+- **ドキュメント更新完了**。`docs/architecture.md`でセキュリティ設計を最新状況に反映。
 
 ### 完了ログ（CI/CD とドキュメント整合）
 - GitHub Actions Windows専用固定完了。`build-windows-only.yml`作成、成果物パス検証追加。

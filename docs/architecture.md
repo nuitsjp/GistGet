@@ -43,7 +43,7 @@ sequenceDiagram
 ### 1.2 認証情報の保存
 
 - **保存場所**: `%APPDATA%\GistGet\token.json`
-- **暗号化**: 現在は平文保存（将来的にDPAPI対応予定）
+- **暗号化**: Windows DPAPI（CurrentUserスコープ）で暗号化保存
 - **権限**: CurrentUserスコープ（同じユーザーのみアクセス可能）
 
 ### 1.3 Gist設定の保管
@@ -55,14 +55,15 @@ sequenceDiagram
 ### 1.4 セキュリティ強化ポイント
 
 **現在の実装:**
-- トークンは平文保存（改善余地あり）
+- トークンはDPAPI暗号化保存済み（CurrentUserスコープ）
+- 復号化失敗時の再認証トリガー実装済み
 - Gist設定はDPAPI暗号化済み
 - ファイルアクセス権限によるユーザー隔離
 
 **将来の改善予定:**
-- トークンのDPAPI暗号化
 - トークンの定期的な更新機能
 - 不正アクセス検知機能
+- アクセストークンのスコープ制限強化
 
 ## 2. 論理構造設計
 
@@ -322,7 +323,8 @@ NuitsJp.GistGet.Infrastructure/
 - 13個のテストファイル（各主要クラスをカバー）
 
 **テストファイル一覧**:
-- `CommandServiceTests.cs` - コマンドルーターのテスト
+- `CommandRouterTests.cs` - コマンドルーターのテスト（旧CommandServiceTests.cs）
+- `Infrastructure/GitHub/GitHubAuthServiceTests.cs` - DPAPI暗号化テスト（新規追加）
 - `GistConfigurationStorageTests.cs` - 設定保存のテスト
 - `GistConfigurationTests.cs` - 設定モデルのテスト
 - `WinGetComClientTests.cs` - WinGet COM APIのテスト
@@ -355,6 +357,12 @@ NuitsJp.GistGet.Infrastructure/
 - **責務**: 外部システム連携の個別テスト
 - **依存**: 外部システムをモック/スタブ
 - **検証**: API呼び出し、データ変換、エラーハンドリング
+
+**DPAPI暗号化テスト（実装済み）**:
+- トークンのDPAPI暗号化保存テスト
+- 暗号化されたトークンの復号化読み込みテスト
+- 復号化失敗時のnull返却テスト
+- ファイル不存在時の処理テスト
 
 **名前空間ベースモック戦略**:
 ```csharp
