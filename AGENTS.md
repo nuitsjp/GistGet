@@ -1,5 +1,7 @@
 # Repository Guidelines
 
+ユーザーとの対話は日本語を用いる事。
+
 ## Project Structure & Module Organization
 - `src/NuitsJp.GistGet`: .NET 8 console app (WinGet-compatible CLI). Key areas: `ArgumentParser/` (System.CommandLine), `Commands/` (handlers), `WinGetClient/` (COM API + CLI fallback).
 - `src/NuitsJp.GistGet.Test`: xUnit test project organized by feature (ArgumentParser, Commands, WinGetClient).
