@@ -5,7 +5,7 @@ using NuitsJp.GistGet.Infrastructure.GitHub;
 
 namespace NuitsJp.GistGet.Business;
 
-public class GistManager
+public class GistManager : IGistManager
 {
     private readonly GitHubGistClient _gistClient;
     private readonly IGistConfigurationStorage _storage;

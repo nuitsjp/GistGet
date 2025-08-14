@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NuitsJp.GistGet.Presentation;
 using NuitsJp.GistGet.Business;
+using NuitsJp.GistGet.Business.Services;
 using NuitsJp.GistGet.Infrastructure.WinGet;
 using NuitsJp.GistGet.Infrastructure.GitHub;
 using NuitsJp.GistGet.Infrastructure.Storage;
@@ -29,7 +30,7 @@ public static class AppHost
                 });
 
                 // Core services
-                services.AddSingleton<ICommandRouter, CommandService>();
+                services.AddSingleton<ICommandRouter, CommandRouter>();
                 services.AddSingleton<IErrorMessageService, ErrorMessageService>();
 
                 // WinGet clients
@@ -46,6 +47,8 @@ public static class AppHost
                 // Commands
                 services.AddSingleton<AuthCommand>();
                 services.AddSingleton<TestGistCommand>();
+                services.AddSingleton<IGistConfigService, GistConfigService>();
+                services.AddSingleton<IGistManager, GistManager>();
                 services.AddSingleton<GistSetCommand>();
                 services.AddSingleton<GistStatusCommand>();
                 services.AddSingleton<GistShowCommand>();

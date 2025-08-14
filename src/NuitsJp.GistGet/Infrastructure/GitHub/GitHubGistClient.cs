@@ -22,7 +22,7 @@ public class GitHubGistClient
         try
         {
             var client = await _authService.GetAuthenticatedClientAsync();
-            var gist = await client.Gist.Get(gistId);
+            var gist = await client!.Gist.Get(gistId);
 
             if (gist?.Files == null || !gist.Files.ContainsKey(fileName))
             {
@@ -74,7 +74,7 @@ public class GitHubGistClient
                 Content = content
             });
 
-            await client.Gist.Edit(gistId, updateRequest);
+            await client!.Gist.Edit(gistId, updateRequest);
             _logger.LogInformation("Successfully updated file '{FileName}' in Gist {GistId}", fileName, gistId);
         }
         catch (NotFoundException ex)
@@ -101,7 +101,7 @@ public class GitHubGistClient
         try
         {
             var client = await _authService.GetAuthenticatedClientAsync();
-            await client.Gist.Get(gistId);
+            await client!.Gist.Get(gistId);
             return true;
         }
         catch (NotFoundException)

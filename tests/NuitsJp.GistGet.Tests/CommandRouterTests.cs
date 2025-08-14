@@ -9,27 +9,29 @@ using NuitsJp.GistGet.Business;
 using NuitsJp.GistGet.Infrastructure.WinGet;
 using NuitsJp.GistGet.Infrastructure.GitHub;
 using NuitsJp.GistGet.Infrastructure.Storage;
+using NuitsJp.GistGet.Business.Services;
 
 namespace NuitsJp.GistGet.Tests;
 
-public class CommandServiceTests
+public class CommandRouterTests
 {
-    private readonly ILogger<CommandService> _logger;
+    private readonly ILogger<CommandRouter> _logger;
     private readonly MockWinGetClient _mockWinGetClient;
     private readonly MockWinGetPassthroughClient _mockPassthroughClient;
     private readonly MockGistSyncService _mockGistSyncService;
-    private readonly CommandService _commandService;
+    private readonly CommandRouter _commandRouter;
     private readonly GitHubAuthService _concreteAuthService;
     private readonly GistInputService _gistInputService;
     private readonly IGistConfigurationStorage _mockStorage;
     private readonly GitHubGistClient _gistClient;
     private readonly GistManager _gistManager;
     private readonly PackageYamlConverter _packageYamlConverter;
+    private readonly Mock<IGistConfigService> _mockGistConfigService;
 
-    public CommandServiceTests()
+    public CommandRouterTests()
     {
         var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-        _logger = loggerFactory.CreateLogger<CommandService>();
+        _logger = loggerFactory.CreateLogger<CommandRouter>();
         _mockWinGetClient = new MockWinGetClient();
         _mockPassthroughClient = new MockWinGetPassthroughClient();
         _mockGistSyncService = new MockGistSyncService();
@@ -54,16 +56,18 @@ public class CommandServiceTests
         _packageYamlConverter = new PackageYamlConverter();
         _gistManager = new GistManager(_gistClient, _mockStorage, _packageYamlConverter, mockGistManagerLogger);
 
+        _mockGistConfigService = new Mock<IGistConfigService>();
+
         var gistSetLogger = Mock.Of<ILogger<GistSetCommand>>();
         var gistStatusLogger = Mock.Of<ILogger<GistStatusCommand>>();
         var gistShowLogger = Mock.Of<ILogger<GistShowCommand>>();
 
-        var mockGistSetCommand = new GistSetCommand(_concreteAuthService, _gistInputService, _mockStorage, _gistManager, gistSetLogger);
+        var mockGistSetCommand = new GistSetCommand(_mockGistConfigService.Object, gistSetLogger);
         var mockGistStatusCommand = new GistStatusCommand(_concreteAuthService, _gistInputService, _gistManager, gistStatusLogger);
         var mockGistShowCommand = new GistShowCommand(_concreteAuthService, _gistInputService, _gistManager, _packageYamlConverter, gistShowLogger);
 
         var mockErrorMessageService = new Mock<IErrorMessageService>();
-        _commandService = new CommandService(
+        _commandRouter = new CommandRouter(
             _mockWinGetClient,
             _mockPassthroughClient,
             _mockGistSyncService,
@@ -86,7 +90,7 @@ public class CommandServiceTests
         var args = new[] { command, "--id", "TestPackage" };
 
         // Act
-        var result = await _commandService.ExecuteAsync(args);
+        var result = await _commandRouter.ExecuteAsync(args);
 
         // Assert
         result.ShouldBe(0);
@@ -103,7 +107,7 @@ public class CommandServiceTests
         var args = new[] { command };
 
         // Act
-        var result = await _commandService.ExecuteAsync(args);
+        var result = await _commandRouter.ExecuteAsync(args);
 
         // Assert
         result.ShouldBe(0);
@@ -124,7 +128,7 @@ public class CommandServiceTests
         var args = new[] { command, "test-arg" };
 
         // Act
-        var result = await _commandService.ExecuteAsync(args);
+        var result = await _commandRouter.ExecuteAsync(args);
 
         // Assert
         result.ShouldBe(0);
@@ -138,7 +142,7 @@ public class CommandServiceTests
         var args = Array.Empty<string>();
 
         // Act
-        var result = await _commandService.ExecuteAsync(args);
+        var result = await _commandRouter.ExecuteAsync(args);
 
         // Assert
         result.ShouldBe(0);
@@ -154,7 +158,7 @@ public class CommandServiceTests
         var mockWinGetClient = new Mock<IWinGetClient>();
         var mockPassthroughClient = new Mock<IWinGetPassthroughClient>();
         var mockGistSyncService = new Mock<IGistSyncService>();
-        var logger = new Mock<ILogger<CommandService>>();
+        var logger = new Mock<ILogger<CommandRouter>>();
 
         // COM例外をスローするように設定
         var comException = new System.Runtime.InteropServices.COMException("COM Error", -2147024891); // E_ACCESSDENIED
@@ -185,12 +189,13 @@ public class CommandServiceTests
         var gistStatusLogger = Mock.Of<ILogger<GistStatusCommand>>();
         var gistShowLogger = Mock.Of<ILogger<GistShowCommand>>();
 
-        var mockGistSetCommand = new GistSetCommand(concreteAuthService, mockGistInputService, mockStorage, mockGistManager, gistSetLogger);
+        var mockGistConfigService = new Mock<IGistConfigService>();
+        var mockGistSetCommand = new GistSetCommand(mockGistConfigService.Object, gistSetLogger);
         var mockGistStatusCommand = new GistStatusCommand(concreteAuthService, mockGistInputService, mockGistManager, gistStatusLogger);
         var mockGistShowCommand = new GistShowCommand(concreteAuthService, mockGistInputService, mockGistManager, mockPackageYamlConverter, gistShowLogger);
 
         var mockErrorMessageService = new Mock<IErrorMessageService>();
-        var commandService = new CommandService(
+        var commandRouter = new CommandRouter(
             mockWinGetClient.Object,
             mockPassthroughClient.Object,
             mockGistSyncService.Object,
@@ -205,7 +210,7 @@ public class CommandServiceTests
         var args = new[] { "install", "--id", "TestPackage.Test" };
 
         // Act
-        var result = await commandService.ExecuteAsync(args);
+        var result = await commandRouter.ExecuteAsync(args);
 
         // Assert
         result.ShouldBe(1); // エラー終了コード
@@ -214,7 +219,7 @@ public class CommandServiceTests
         mockErrorMessageService.Verify(x => x.HandleComException(comException), Times.Once);
     }
 
-    private CommandService CreateCommandServiceForTesting(
+    private CommandRouter CreateCommandRouterForTesting(
         Mock<IWinGetClient> mockWinGetClient,
         Mock<IWinGetPassthroughClient> mockPassthroughClient,
         Mock<IGistSyncService> mockGistSyncService,
@@ -231,13 +236,14 @@ public class CommandServiceTests
         var gistStatusLogger = Mock.Of<ILogger<GistStatusCommand>>();
         var gistShowLogger = Mock.Of<ILogger<GistShowCommand>>();
 
-        var mockGistSetCommand = new GistSetCommand(_concreteAuthService, _gistInputService, _mockStorage, _gistManager, gistSetLogger);
+        var mockGistConfigService = new Mock<IGistConfigService>();
+        var mockGistSetCommand = new GistSetCommand(mockGistConfigService.Object, gistSetLogger);
         var mockGistStatusCommand = new GistStatusCommand(_concreteAuthService, _gistInputService, _gistManager, gistStatusLogger);
         var mockGistShowCommand = new GistShowCommand(_concreteAuthService, _gistInputService, _gistManager, _packageYamlConverter, gistShowLogger);
 
-        var logger = new Mock<ILogger<CommandService>>();
+        var logger = new Mock<ILogger<CommandRouter>>();
 
-        return new CommandService(
+        return new CommandRouter(
             mockWinGetClient.Object,
             mockPassthroughClient.Object,
             mockGistSyncService.Object,
@@ -257,7 +263,7 @@ public class CommandServiceTests
         var mockWinGetClient = new Mock<IWinGetClient>();
         var mockPassthroughClient = new Mock<IWinGetPassthroughClient>();
         var mockGistSyncService = new Mock<IGistSyncService>();
-        var logger = new Mock<ILogger<CommandService>>();
+        var logger = new Mock<ILogger<CommandRouter>>();
 
         // パッケージ未発見例外をスローするように設定
         var packageNotFound = new InvalidOperationException("Package 'NonExistent.Package' not found");
@@ -288,12 +294,13 @@ public class CommandServiceTests
         var gistStatusLogger = Mock.Of<ILogger<GistStatusCommand>>();
         var gistShowLogger = Mock.Of<ILogger<GistShowCommand>>();
 
-        var mockGistSetCommand = new GistSetCommand(concreteAuthService, mockGistInputService, mockStorage, mockGistManager, gistSetLogger);
+        var mockGistConfigService = new Mock<IGistConfigService>();
+        var mockGistSetCommand = new GistSetCommand(mockGistConfigService.Object, gistSetLogger);
         var mockGistStatusCommand = new GistStatusCommand(concreteAuthService, mockGistInputService, mockGistManager, gistStatusLogger);
         var mockGistShowCommand = new GistShowCommand(concreteAuthService, mockGistInputService, mockGistManager, mockPackageYamlConverter, gistShowLogger);
 
         var mockErrorMessageService = new Mock<IErrorMessageService>();
-        var service = new CommandService(
+        var service = new CommandRouter(
             mockWinGetClient.Object,
             mockPassthroughClient.Object,
             mockGistSyncService.Object,
@@ -324,7 +331,7 @@ public class CommandServiceTests
         var mockWinGetClient = new Mock<IWinGetClient>();
         var mockPassthroughClient = new Mock<IWinGetPassthroughClient>();
         var mockGistSyncService = new Mock<IGistSyncService>();
-        var logger = new Mock<ILogger<CommandService>>();
+        var logger = new Mock<ILogger<CommandRouter>>();
 
         // ネットワーク例外をスローするように設定
         var networkError = new HttpRequestException("Unable to connect to the remote server");
@@ -355,12 +362,13 @@ public class CommandServiceTests
         var gistStatusLogger = Mock.Of<ILogger<GistStatusCommand>>();
         var gistShowLogger = Mock.Of<ILogger<GistShowCommand>>();
 
-        var mockGistSetCommand = new GistSetCommand(concreteAuthService, mockGistInputService, mockStorage, mockGistManager, gistSetLogger);
+        var mockGistConfigService = new Mock<IGistConfigService>();
+        var mockGistSetCommand = new GistSetCommand(mockGistConfigService.Object, gistSetLogger);
         var mockGistStatusCommand = new GistStatusCommand(concreteAuthService, mockGistInputService, mockGistManager, gistStatusLogger);
         var mockGistShowCommand = new GistShowCommand(concreteAuthService, mockGistInputService, mockGistManager, mockPackageYamlConverter, gistShowLogger);
 
         var mockErrorMessageService = new Mock<IErrorMessageService>();
-        var commandService = new CommandService(
+        var commandRouter = new CommandRouter(
             mockWinGetClient.Object,
             mockPassthroughClient.Object,
             mockGistSyncService.Object,
@@ -375,7 +383,7 @@ public class CommandServiceTests
         var args = new[] { "install", "--id", "TestPackage.Test" };
 
         // Act
-        var result = await commandService.ExecuteAsync(args);
+        var result = await commandRouter.ExecuteAsync(args);
 
         // Assert
         result.ShouldBe(1); // エラー終了コード

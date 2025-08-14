@@ -28,7 +28,7 @@ public class GistConfigurationTests
     public void GistId_WhenNull_ShouldThrowArgumentException()
     {
         // Act & Assert
-        Should.Throw<ArgumentException>(() => new GistConfiguration(null, "packages.yaml"));
+        Should.Throw<ArgumentException>(() => new GistConfiguration(null!, "packages.yaml"));
     }
 
     [Fact]
@@ -42,7 +42,7 @@ public class GistConfigurationTests
     public void FileName_WhenNull_ShouldThrowArgumentException()
     {
         // Act & Assert
-        Should.Throw<ArgumentException>(() => new GistConfiguration("abc123", null));
+        Should.Throw<ArgumentException>(() => new GistConfiguration("abc123", null!));
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public class GistConfigurationTests
         // Assert
         json.ShouldNotBeNullOrEmpty();
         var deserialized = JsonSerializer.Deserialize<GistConfiguration>(json);
-        deserialized.GistId.ShouldBe(config.GistId);
+        deserialized!.GistId.ShouldBe(config.GistId);
         deserialized.FileName.ShouldBe(config.FileName);
         deserialized.CreatedAt.ShouldBeInRange(config.CreatedAt.AddMilliseconds(-1), config.CreatedAt.AddMilliseconds(1));
         deserialized.LastAccessedAt.ShouldBeInRange(config.LastAccessedAt.AddMilliseconds(-1), config.LastAccessedAt.AddMilliseconds(1));

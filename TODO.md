@@ -19,58 +19,71 @@ t_wada式TDDの徹底
 - **目標**: レイヤーベース名前空間設計への移行
 - **優先度**: 高（アーキテクチャ基盤整備）
 
-**実装手順**:
-- [ ] `Abstractions/`フォルダを解体
-- [ ] レイヤー別名前空間にインターフェース移動:
-  - [ ] `ICommandService` → `Presentation/ICommandRouter.cs`
-  - [ ] `IErrorMessageService` → `Presentation/IErrorMessageService.cs`
-  - [ ] `IGistSyncService` → `Business/IGistSyncService.cs`
-  - [ ] `IGitHubAuthService` → `Infrastructure/GitHub/IGitHubAuthService.cs`
-  - [ ] `IWinGetClient` → `Infrastructure/WinGet/IWinGetClient.cs`
-- [ ] インフラ層の外部システム別再編成:
-  - [ ] `Infrastructure/WinGet/` フォルダ作成・ファイル移動
-  - [ ] `Infrastructure/GitHub/` フォルダ作成・ファイル移動
-  - [ ] `Infrastructure/Storage/` フォルダ作成・ファイル移動
-- [ ] 名前空間変更に伴うusing文の更新
-- [ ] テストファイルの名前空間更新
-
-### Phase 2: アーキテクチャ層の再設計
+### Phase 2: アーキテクチャ層の再設計 【進行中 70%完了】
 - **現状**: 4層アーキテクチャ（プレゼンテーション・アプリケーション・ドメイン・インフラ）
 - **問題**: ドメイン層が薄すぎ、Commands/Services の責務が曖昧、名称がルーター機能を表現していない
 - **目標**: シンプルな3層アーキテクチャ（プレゼンテーション・ビジネスロジック・インフラ）
 - **優先度**: 中（保守性向上）
+- **進捗**: CommandRouter実装完了、GistSetCommandリファクタリング完了、GistConfigService実装完了
 
 **実装手順**:
-- [ ] CommandService → CommandRouterに名称変更（ルーティング機能を明確化）
-- [ ] Commands層の責務をUI制御のみに限定
-- [ ] Services層にワークフロー制御機能を統合
+- [x] CommandService → CommandRouterに名称変更（ルーティング機能を明確化）
+- [x] Commands層の責務をUI制御のみに限定（GistSetCommandリファクタリング完了）
+- [x] Services層にワークフロー制御機能を統合（GistConfigService実装完了）
 - [ ] 現在のGistInputService等の細分化されたServiceを統合
-- [ ] CommandからのService直接操作を廃止
+- [ ] CommandからのService直接操作を廃止（GistSetCommand以外の残りCommand対応）
 - [ ] 新しい責務分離に基づくテストケースの更新
 
 ### 具体的なリファクタリング対象
 
 #### GistSetCommand の責務分離
-**現在**:
+**完了**: GistSetCommandのリファクタリング済み
+**現在の実装**:
 ```csharp
-// Commands層がService操作を直接制御
-await _authService.IsAuthenticatedAsync();
-await _gistManager.ValidateGistAccessAsync(gistId);
-await _storage.SaveGistConfigurationAsync(config);
+// UI制御のみに特化（完了）
+var validatedGistId = await CollectGistIdAsync(gistId);
+var validatedFileName = CollectFileName(fileName);
+var request = new GistConfigRequest { GistId = validatedGistId, FileName = validatedFileName };
+var result = await _gistConfigService.ConfigureGistAsync(request);
+DisplaySuccessMessage(result.GistId!, result.FileName!);
 ```
 
-**目標**:
-```csharp
-// UI制御のみに特化
-var input = await CollectUserInputAsync(gistId, fileName);
-await _gistConfigService.ConfigureGistAsync(input);
-DisplaySuccessMessage();
-```
+**実装済み要素**:
+- [x] GistConfigService: Gist設定ワークフロー統合サービス
+- [x] GistConfigRequest/GistConfigResult: リクエスト・レスポンスモデル
+- [x] IGistManager: GistManagerのインターフェース抽出
+- [x] IGistConfigService: サービスのインターフェース
+- [x] GistSetCommand: UI制御のみの責務に限定
 
 #### Service統合案
-- `GistConfigService`: Gist設定のワークフロー全体
-- `GistSyncService`: Gist同期のワークフロー全体
-- `WinGetService`: WinGet操作のワークフロー全体
+- [x] `GistConfigService`: Gist設定のワークフロー全体（実装完了）
+- [ ] `GistSyncService`: Gist同期のワークフロー全体
+- [ ] `WinGetService`: WinGet操作のワークフロー全体
+
+### 現在の課題と次のステップ
+
+**Phase 2 残作業 (優先順位順)**:
+1. **DIコンテナエラー修正** (緊急)
+   - `AppHost.cs`でGistConfigServiceの依存関係設定が不完全
+   - GistSetCommandの新しい依存関係に対応するDI設定追加が必要
+   - 現在のテスト実行でDI関連エラーが発生する可能性
+
+2. **残りCommandクラスのリファクタリング** (高)
+   - GistStatusCommand, GistShowCommand, AuthCommand等
+   - 同様にUI制御のみに責務を限定し、ワークフローをサービス層に委譲
+
+3. **GistInputServiceの統合** (中)
+   - 現在GistConfigServiceに統合済みの機能の重複排除
+   - GistInputServiceの完全削除または責務明確化
+
+4. **テストファイルの更新** (低)
+   - 既存のテストがGistSetCommandの新しい依存関係に対応していない
+   - CommandRouterTestsの更新
+
+**技術的負債**:
+- GistConfigServiceでのMockable化対応（IGistManagerインターフェース作成済み）
+- t-wada式TDD適用の一部実装（GistConfigServiceでは実装済み）
+- 新旧アーキテクチャの並存状態による複雑性
 
 **Phase 1影響範囲** (名前空間再編成):
 - `Abstractions/` フォルダ: 完全解体

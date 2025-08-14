@@ -9,7 +9,7 @@ namespace NuitsJp.GistGet.Presentation;
 /// <summary>
 /// コマンド実行サービス（アーキテクチャ改善版）
 /// </summary>
-public class CommandService : ICommandRouter
+public class CommandRouter : ICommandRouter
 {
     private readonly IWinGetClient _winGetClient;
     private readonly IWinGetPassthroughClient _passthroughClient;
@@ -19,10 +19,10 @@ public class CommandService : ICommandRouter
     private readonly GistSetCommand _gistSetCommand;
     private readonly GistStatusCommand _gistStatusCommand;
     private readonly GistShowCommand _gistShowCommand;
-    private readonly ILogger<CommandService> _logger;
+    private readonly ILogger<CommandRouter> _logger;
     private readonly IErrorMessageService _errorMessageService;
 
-    public CommandService(
+    public CommandRouter(
         IWinGetClient winGetClient,
         IWinGetPassthroughClient passthroughClient,
         IGistSyncService gistSyncService,
@@ -31,7 +31,7 @@ public class CommandService : ICommandRouter
         GistSetCommand gistSetCommand,
         GistStatusCommand gistStatusCommand,
         GistShowCommand gistShowCommand,
-        ILogger<CommandService> logger,
+        ILogger<CommandRouter> logger,
         IErrorMessageService errorMessageService)
     {
         _winGetClient = winGetClient;
