@@ -5,7 +5,7 @@ using NuitsJp.GistGet.Tests.Mocks;
 using Shouldly;
 using Xunit;
 
-namespace NuitsJp.GistGet.Tests;
+namespace NuitsJp.GistGet.Tests.Infrastructure.WinGet;
 
 public class WinGetComClientTests
 {

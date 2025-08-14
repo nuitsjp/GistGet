@@ -2,7 +2,7 @@ using Shouldly;
 using Xunit;
 using NuitsJp.GistGet.Models;
 
-namespace NuitsJp.GistGet.Tests;
+namespace NuitsJp.GistGet.Tests.Business.Models;
 
 public class PackageDefinitionTests
 {

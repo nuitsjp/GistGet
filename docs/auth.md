@@ -82,7 +82,7 @@ environments:
   ci_linux:
     method: Personal Access Token
     command: 不要（自動取得）
-    storage: GitHub Secrets (GITHUB_TOKEN)
+    storage: GitHub Secrets (GIST_TOKEN)
     interactive: false
     platform: Ubuntu (GitHub Actions)
     
@@ -102,7 +102,7 @@ test_execution:
   integration_tests:
     - 認証: 環境変数 or 事前auth
     - 実行: dotnet test --filter "Category=RequiresAuth"
-    - 前提: GITHUB_TOKEN設定 or `gistget auth`実行済み
+    - 前提: GIST_TOKEN設定 or `gistget auth`実行済み
     
   full_tests:
     - 認証: Device Flow（手動）
@@ -226,7 +226,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     env:
-      GITHUB_TOKEN: ${{ secrets.GIST_ACCESS_TOKEN }}
+      GIST_TOKEN: ${{ secrets.GIST_ACCESS_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4

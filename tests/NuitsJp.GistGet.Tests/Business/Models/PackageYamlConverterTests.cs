@@ -3,7 +3,7 @@ using Xunit;
 using NuitsJp.GistGet.Models;
 using NuitsJp.GistGet.Business;
 
-namespace NuitsJp.GistGet.Tests;
+namespace NuitsJp.GistGet.Tests.Business.Models;
 
 public class PackageYamlConverterTests
 {

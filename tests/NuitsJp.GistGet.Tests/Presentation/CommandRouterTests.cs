@@ -11,7 +11,7 @@ using NuitsJp.GistGet.Infrastructure.GitHub;
 using NuitsJp.GistGet.Infrastructure.Storage;
 using NuitsJp.GistGet.Business.Services;
 
-namespace NuitsJp.GistGet.Tests;
+namespace NuitsJp.GistGet.Tests.Presentation;
 
 public class CommandRouterTests
 {

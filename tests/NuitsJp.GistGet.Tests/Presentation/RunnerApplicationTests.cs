@@ -5,7 +5,7 @@ using Moq;
 using NuitsJp.GistGet;
 using NuitsJp.GistGet.Presentation;
 
-namespace NuitsJp.GistGet.Tests;
+namespace NuitsJp.GistGet.Tests.Presentation;
 
 public class RunnerApplicationTests
 {

@@ -10,7 +10,7 @@ on:
 
 env:
   DOTNET_VERSION: '8.0.x'
-  GITHUB_TOKEN: ${{ secrets.GIST_ACCESS_TOKEN }}
+  GIST_TOKEN: ${{ secrets.GIST_ACCESS_TOKEN }}
 
 jobs:
   # Windows環境でのフルビルドとテスト（Windows専用）

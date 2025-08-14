@@ -4,7 +4,7 @@ using NuitsJp.GistGet.Infrastructure.GitHub;
 using Moq;
 using Microsoft.Extensions.Logging;
 
-namespace NuitsJp.GistGet.Tests;
+namespace NuitsJp.GistGet.Tests.Infrastructure.GitHub;
 
 [Trait("Category", "Local")]
 public class GitHubGistClientTests

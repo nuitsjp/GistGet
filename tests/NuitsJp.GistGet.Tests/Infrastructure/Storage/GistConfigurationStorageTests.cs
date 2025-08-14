@@ -3,7 +3,7 @@ using Xunit;
 using NuitsJp.GistGet.Models;
 using NuitsJp.GistGet.Infrastructure.Storage;
 
-namespace NuitsJp.GistGet.Tests;
+namespace NuitsJp.GistGet.Tests.Infrastructure.Storage;
 
 public class GistConfigurationStorageTests : IDisposable
 {

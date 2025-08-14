@@ -91,6 +91,7 @@ public class CommandRouter : ICommandRouter
         var isTestGistCommand = command is "test-gist";
         var isGistSubCommand = command is "gist";
 
+
         if (isAuthCommand)
         {
             return await _authCommand.ExecuteAsync(args);
@@ -105,6 +106,8 @@ public class CommandRouter : ICommandRouter
         {
             return await HandleGistSubCommandAsync(args);
         }
+
+
 
         if (usesGist)
         {
@@ -199,6 +202,8 @@ public class CommandRouter : ICommandRouter
         Console.WriteLine("Use 'gistget gist' for more information.");
         return Task.FromResult(1);
     }
+
+
 
     private async Task<int> HandleGistCommandAsync(string command, string[] args)
     {

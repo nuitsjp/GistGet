@@ -5,7 +5,7 @@ using NuitsJp.GistGet.Tests.Mocks;
 using Shouldly;
 using Xunit;
 
-namespace NuitsJp.GistGet.Tests;
+namespace NuitsJp.GistGet.Tests.Presentation.Commands;
 
 /// <summary>
 /// t-wada式TDD用UpgradeCommandテスト

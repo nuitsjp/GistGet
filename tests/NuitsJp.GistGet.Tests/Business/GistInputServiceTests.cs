@@ -5,7 +5,7 @@ using NuitsJp.GistGet.Models;
 using Moq;
 using System.IO;
 
-namespace NuitsJp.GistGet.Tests;
+namespace NuitsJp.GistGet.Tests.Business;
 
 public class GistInputServiceTests
 {

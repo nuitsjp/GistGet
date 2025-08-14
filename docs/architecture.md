@@ -426,6 +426,76 @@ dotnet test --collect:"XPlat Code Coverage"
 - Visual Studio 2022またはVS Code
 - WinGet COM APIの利用可能な環境
 
+## 3.5 WinGet COM API制約事項
+
+### 3.5.1 技術的制約の調査結果
+
+**WinGet COM API Uninstall機能対応状況**:
+
+**調査日**: 2025-01-14  
+**参照ドキュメント**: [`docs/winget-com-api-spec.md`](./winget-com-api-spec.md) - 公式COM API仕様書  
+
+#### 公式仕様での確認事項
+
+`Microsoft.Management.Deployment.PackageManager`クラス（公式仕様819-839行）:
+
+```csharp
+[contract(Microsoft.Management.Deployment.WindowsPackageManagerContract, 1)]
+runtimeclass PackageManager
+{
+    // インストール機能は明示的に定義されている
+    Windows.Foundation.IAsyncOperationWithProgress<InstallResult, InstallProgress> 
+        InstallPackageAsync(CatalogPackage package, InstallOptions options);
+    
+    // UninstallPackageAsyncメソッドは存在しない
+}
+```
+
+#### 技術的結論
+
+1. **Install機能**: COM API完全サポート (`InstallPackageAsync`)
+2. **Uninstall機能**: COM APIサポートなし  
+   - `UninstallPackageAsync`メソッドが公式仕様に存在しない
+   - 2024-2025年時点の最新ドキュメントでも未対応
+
+#### 設計的な示唆
+
+**興味深い点**: `PackageVersionMetadataField`列挙体（467-481行）では以下が定義されている:
+
+```csharp
+/// The standard uninstall command; which may be interactive
+StandardUninstallCommand,
+/// An uninstall command that should be non-interactive  
+SilentUninstallCommand,
+```
+
+これらのメタデータフィールドの存在から、**将来的にはCOM API経由でのUninstall機能追加が検討されている**可能性がある。
+
+### 3.5.2 現在の実装方針
+
+現在の`WinGetComClient.UninstallPackageAsync`実装は技術的制約に基づく**適切な設計判断**:
+
+#### ハイブリッド実装アプローチ
+
+| 機能 | 実装方式 | 理由 |
+|------|----------|------|
+| **Install** | COM API優先 → winget.exe フォールバック | COM API完全サポート |
+| **Uninstall** | 直接winget.exe実行 | COM APIサポートなし |
+| **Upgrade** | 簡易COM実装（将来改善予定） | 部分的サポート |
+
+#### Gistファイル同期の透過性
+
+**重要**: 実装方式によらずGistファイル同期は透過的に動作:
+- Install完了後: `_gistSyncService.AfterInstall(packageId)`  
+- Uninstall完了後: `_gistSyncService.AfterUninstall(packageId)`
+
+### 3.5.3 設計正当化
+
+1. **技術的制約の受容**: 公式仕様の限界を受け入れる現実的判断
+2. **ユーザー体験の統一**: winget.exeによる一貫した動作保証  
+3. **将来拡張への準備**: COM API拡張時の対応準備済み
+4. **機能の完全性**: Gist同期機能は全操作で透過的に動作
+
 ## 4. 実装の特徴とアーキテクチャ原則
 
 ### 4.1 設計原則

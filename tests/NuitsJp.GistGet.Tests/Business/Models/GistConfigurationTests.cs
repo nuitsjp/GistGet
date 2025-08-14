@@ -3,7 +3,7 @@ using Xunit;
 using NuitsJp.GistGet.Models;
 using System.Text.Json;
 
-namespace NuitsJp.GistGet.Tests;
+namespace NuitsJp.GistGet.Tests.Business.Models;
 
 public class GistConfigurationTests
 {
