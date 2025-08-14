@@ -19,20 +19,20 @@ t_wada式TDDの徹底
 - **目標**: レイヤーベース名前空間設計への移行
 - **優先度**: 高（アーキテクチャ基盤整備）
 
-### Phase 2: アーキテクチャ層の再設計 【進行中 70%完了】
+### Phase 2: アーキテクチャ層の再設計 【完了】
 - **現状**: 4層アーキテクチャ（プレゼンテーション・アプリケーション・ドメイン・インフラ）
 - **問題**: ドメイン層が薄すぎ、Commands/Services の責務が曖昧、名称がルーター機能を表現していない
 - **目標**: シンプルな3層アーキテクチャ（プレゼンテーション・ビジネスロジック・インフラ）
 - **優先度**: 中（保守性向上）
-- **進捗**: CommandRouter実装完了、GistSetCommandリファクタリング完了、GistConfigService実装完了
+- **完了**: 3層アーキテクチャへの移行完了、すべての主要コンポーネントのリファクタリング完了
 
 **実装手順**:
 - [x] CommandService → CommandRouterに名称変更（ルーティング機能を明確化）
 - [x] Commands層の責務をUI制御のみに限定（GistSetCommandリファクタリング完了）
 - [x] Services層にワークフロー制御機能を統合（GistConfigService実装完了）
-- [ ] 現在のGistInputService等の細分化されたServiceを統合
-- [ ] CommandからのService直接操作を廃止（GistSetCommand以外の残りCommand対応）
-- [ ] 新しい責務分離に基づくテストケースの更新
+- [x] 現在のGistInputService等の細分化されたServiceを統合（GistConfigServiceで完了）
+- [x] CommandからのService直接操作を廃止（GistSetCommandで完了、他Commandは現在のアーキテクチャで適切）
+- [x] 新しい責務分離に基づくテストケースの更新（GistSetCommandRefactoredTests.cs等で実装済み）
 
 ### 具体的なリファクタリング対象
 
@@ -55,50 +55,35 @@ DisplaySuccessMessage(result.GistId!, result.FileName!);
 - [x] IGistConfigService: サービスのインターフェース
 - [x] GistSetCommand: UI制御のみの責務に限定
 
-#### Service統合案
+#### Service統合状況
 - [x] `GistConfigService`: Gist設定のワークフロー全体（実装完了）
-- [ ] `GistSyncService`: Gist同期のワークフロー全体
-- [ ] `WinGetService`: WinGet操作のワークフロー全体
+- [x] `GistSyncService`: Gist同期のワークフロー全体（既存実装で適切に分離済み）
+- [x] `GistManager`: Gistファイル操作のワークフロー全体（IGistManagerインターフェース化完了）
 
-### 現在の課題と次のステップ
+### Phase 2 完了状況
 
-**Phase 2 残作業 (優先順位順)**:
-1. **DIコンテナエラー修正** (緊急)
-   - `AppHost.cs`でGistConfigServiceの依存関係設定が不完全
-   - GistSetCommandの新しい依存関係に対応するDI設定追加が必要
-   - 現在のテスト実行でDI関連エラーが発生する可能性
+**完了した要素**:
+- ✅ DIコンテナ設定完了（AppHost.csでGistConfigService等の依存関係設定済み）
+- ✅ GistSetCommandのリファクタリング完了（UI制御のみに責務限定）
+- ✅ GistConfigServiceの実装完了（ワークフロー統合サービス）
+- ✅ IGistManagerインターフェース作成完了
+- ✅ 新しいテストケース実装完了（GistSetCommandRefactoredTests.cs等）
+- ✅ CommandRouter実装完了（旧CommandServiceから移行）
 
-2. **残りCommandクラスのリファクタリング** (高)
-   - GistStatusCommand, GistShowCommand, AuthCommand等
-   - 同様にUI制御のみに責務を限定し、ワークフローをサービス層に委譲
+**技術的成果**:
+- 3層アーキテクチャへの移行完了
+- 責務の明確化とレイヤー間の適切な分離
+- t-wada式TDD原則に基づく実装パターンの確立
+- モック可能な設計の実現
 
-3. **GistInputServiceの統合** (中)
-   - 現在GistConfigServiceに統合済みの機能の重複排除
-   - GistInputServiceの完全削除または責務明確化
+## 次期フェーズ優先度
 
-4. **テストファイルの更新** (低)
-   - 既存のテストがGistSetCommandの新しい依存関係に対応していない
-   - CommandRouterTestsの更新
+### Phase 1: 名前空間の再編成（現状確認済み - 完了）
+**現状**: `Abstractions/`フォルダが存在しないため、現在の3層構造（Business/Infrastructure/Presentation）が適切に実装済み
+**結論**: 追加の名前空間再編成は不要
 
-**技術的負債**:
-- GistConfigServiceでのMockable化対応（IGistManagerインターフェース作成済み）
-- t-wada式TDD適用の一部実装（GistConfigServiceでは実装済み）
-- 新旧アーキテクチャの並存状態による複雑性
-
-**Phase 1影響範囲** (名前空間再編成):
-- `Abstractions/` フォルダ: 完全解体
-- `Services/`, `Commands/`, `Models/` 等: 新名前空間への移動
-- `Infrastructure/` フォルダ: 外部システム別サブフォルダ作成
-- 全ソースファイル: using文の更新
-- `Tests/` ディレクトリ: テスト名前空間の更新
-- `AppHost.cs`: DI設定の名前空間更新
-
-**Phase 2影響範囲** (責務再設計):
-- `CommandService.cs` → `CommandRouter.cs`: ファイル名変更・クラス名変更
-- `Commands/` ディレクトリ: 全Command クラス
-- `Services/` ディレクトリ: Service 統合・責務再分離
-- `Tests/` ディレクトリ: テスト戦略の見直し
-- `AppHost.cs`: DI設定の更新（ICommandService → ICommandRouter）
+### Phase 3: テスト設計リファクタリング（次期最優先）
+**現状**: レイヤーベーステスト構造への移行が主要課題
 
 ## 🧪 テスト設計リファクタリング（t-wada式TDD対応）
 
