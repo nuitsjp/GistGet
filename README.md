@@ -6,9 +6,9 @@
 現在、最小限の動作確認を優先したMVP実装を進めています。
 
 **実装状況:**
-- [x] Phase 1: パススルー実装（50行） - ✅完了
-- [ ] Phase 2: COMルーティング（200行） - 作業中
-- [ ] Phase 3: Gistスタブ（250行） - 未着手
+- [x] Phase 1: パススルー実装 - ✅完了
+- [ ] Phase 2: COMルーティング - 作業中
+- [x] Phase 3: Gistスタブ - スタブ作成済み
 
 **現在のバージョン:** v0.1.0-alpha
 
@@ -60,8 +60,8 @@ gistget show --id Git.Git  # → winget show --id Git.Git
 | hash | - | パススルー | - | 不要 | 低 | ハッシュ計算 |
 | validate | - | パススルー | - | 不要 | 低 | マニフェスト検証 |
 | features | - | パススルー | - | 不要 | 低 | 実験的機能 |
-| export | - | COM利用 | 読込 | 不要 | 高 | Gistから定義ファイルをダウンロード |
-| import | - | COM利用 | 作成 | 不要 | 高 | 現在の環境をGistへアップロード |
+| export | - | パススルー | 作成 | 不要 | 高 | 現在の環境をファイルへ書き出し（winget passthrough） |
+| import | - | パススルー | 読込 | 不要 | 高 | 定義ファイルからインストール（winget passthrough） |
 
 #### B. Gist同期方式
 
@@ -73,10 +73,10 @@ gistget show --id Git.Git  # → winget show --id Git.Git
 
 #### C. 実装方針
 
-- **COM利用**: Gist同期が必要なコマンドはCOM API経由で実装し、操作後に自動的にGist定義を更新
+- **COM利用**: Gist同期が必要なコマンド（install/uninstall/upgrade）はCOM API経由で実装し、操作後に自動的にGist定義を更新
 - **パススルー**: 表示系・管理系はwinget.exeへ引数をそのまま渡して実行
 - **バージョン固定**: YAML定義内の`Version`フィールドで指定（Gist側で管理）
-- **認証**: OAuth Device Flowで自動実装（トークン設定コマンドは不要）
+- **認証**: ローカルは OAuth Device Flow、CI は環境変数 `GIST_TOKEN`。手動でトークンを貼り付ける操作は不要。`auth` は起動・状態確認用に提供。
 - **Gist管理**: 事前設定前提（`gistget gist set`でGist ID・ファイル名を設定）
 
 ---
@@ -170,9 +170,9 @@ gistget gist show
 
 **CI/CD環境:**
 ```yaml
-# GitHub Secretsに設定
+# GitHub Secretsに設定（CIはデバイスフローを使わずトークンを使用）
 env:
-  GITHUB_TOKEN: ${{ secrets.GIST_ACCESS_TOKEN }}
+  GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
 ```
 
 **テスト環境:**
@@ -233,10 +233,7 @@ on: [push, pull_request]
 jobs:
   # クロスプラットフォームビルド検証
   build:
-    strategy:
-      matrix:
-        os: [windows-latest, ubuntu-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
     
     steps:
       - uses: actions/checkout@v4
@@ -314,7 +311,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            bin/Release/net8.0/win-x64/publish/GistGet.exe
+            bin/Release/net8.0-windows10.0.26100/win-x64/publish/GistGet.exe
 ```
 
 #### E. 品質保証戦略

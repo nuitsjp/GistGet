@@ -1,15 +1,34 @@
 # GistGet TODO List
 
-## 最優先ルール
+## 🧱 グランドルール（維持方針）
 
-t_wada式TDDの徹底
+- **単一の正本**: 仕様は `docs/architecture.md` を正とし、本TODOはそれに整合。差異が生じたら先にドキュメントを更新。
+- **完了の最小化**: 完了済みの詳細手順は削除し、1〜3行の「完了ログ」に集約（必要ならPR/コミットへのリンクのみ）。
+- **Start Here の明示**: 冒頭に「次にやること（Start Here）」を常設し、着手順の分かる5〜10項目に限定。
+- **表現の統一**: 動詞始まり・1行・具体的成果物基準（例: 例外ポリシーのDR文書追加、テスト名変更）。
+- **用語と経路の一貫性**: `export/import` はパススルー、`sync` は内部YAML（Packages配列）準拠。README/Docs/コードを同時に更新。
+- **テスト配置の固定**: テストは `tests/NuitsJp.GistGet.Tests` に集約。命名・構造はレイヤ別。
 
-## 📋 運用ルール
+## 🚦 次にやること（Start Here）
 
-- **完了済みフェーズ**: 何をしたかの記録（変更不要）
-- **残りタスク**: フェーズレベルの大まかな計画（全体把握用）
-- **次フェーズ**: 具体的な手順チェックシート（実作業用）
-- **1フェーズ完了**: 次フェーズを詳細化し、完了フェーズに移動
+1. CommandRouter に `export/import` のパススルー明示ルーティングを追加し、E2Eスモークを作成。
+2. WinGetComClient の winget.exe フォールバックを `IProcessWrapper` 経由に統一（直 `Process.Start` 排除）。
+3. 例外と終了コードのポリシーを策定し `docs/architecture.md` にDRとして追記。
+4. YAML（Packages配列）往復テストを追加（空/単/複/任意項目有無）。
+5. Passthrough 出力のスナップショットテスト（正規化差分ゼロ）を追加。
+6. GitHub Actions を Windows 専用に固定し、成果物パスを検証（READMEと一致）。
+7. DPAPI によるトークン暗号化（保存/復旧/再認証）を実装し単体テスト追加。
+8. `new-architecture.md` の重複情報を整理し、`architecture.md` への誘導を維持。
+
+## 🧭 現状サマリ（README / docs 同期後）
+
+- パススルー: `list/search/show` は `WinGetPassthrough` で動作。`CommandRouter` 実装済み。
+- COMクライアント: `Initialize` と `install` は COM 経由実装済み。`uninstall` は winget.exe フォールバック、`upgrade` は簡易実装。
+- Gist: `GistSyncService` はスタブ。`gist set/status/show` コマンドあり。YAML は配列スキーマ（`Packages: - Id: ...`）で統一。
+- 認証: `GitHubAuthService` あり。CI では `GIST_TOKEN` を使用する方針に更新（README 反映済み）。
+- CI: Windows のみを対象（`windows-latest`）。Release 成果物パス修正済み（README 反映済み）。
+
+---
 
 ## 🏗️ アーキテクチャ リファクタリング
 
@@ -19,71 +38,26 @@ t_wada式TDDの徹底
 - **目標**: レイヤーベース名前空間設計への移行
 - **優先度**: 高（アーキテクチャ基盤整備）
 
-### Phase 2: アーキテクチャ層の再設計 【完了】
-- **現状**: 4層アーキテクチャ（プレゼンテーション・アプリケーション・ドメイン・インフラ）
-- **問題**: ドメイン層が薄すぎ、Commands/Services の責務が曖昧、名称がルーター機能を表現していない
-- **目標**: シンプルな3層アーキテクチャ（プレゼンテーション・ビジネスロジック・インフラ）
-- **優先度**: 中（保守性向上）
-- **完了**: 3層アーキテクチャへの移行完了、すべての主要コンポーネントのリファクタリング完了
-
-**実装手順**:
-- [x] CommandService → CommandRouterに名称変更（ルーティング機能を明確化）
-- [x] Commands層の責務をUI制御のみに限定（GistSetCommandリファクタリング完了）
-- [x] Services層にワークフロー制御機能を統合（GistConfigService実装完了）
-- [x] 現在のGistInputService等の細分化されたServiceを統合（GistConfigServiceで完了）
-- [x] CommandからのService直接操作を廃止（GistSetCommandで完了、他Commandは現在のアーキテクチャで適切）
-- [x] 新しい責務分離に基づくテストケースの更新（GistSetCommandRefactoredTests.cs等で実装済み）
-
-### 具体的なリファクタリング対象
-
-#### GistSetCommand の責務分離
-**完了**: GistSetCommandのリファクタリング済み
-**現在の実装**:
-```csharp
-// UI制御のみに特化（完了）
-var validatedGistId = await CollectGistIdAsync(gistId);
-var validatedFileName = CollectFileName(fileName);
-var request = new GistConfigRequest { GistId = validatedGistId, FileName = validatedFileName };
-var result = await _gistConfigService.ConfigureGistAsync(request);
-DisplaySuccessMessage(result.GistId!, result.FileName!);
-```
-
-**実装済み要素**:
-- [x] GistConfigService: Gist設定ワークフロー統合サービス
-- [x] GistConfigRequest/GistConfigResult: リクエスト・レスポンスモデル
-- [x] IGistManager: GistManagerのインターフェース抽出
-- [x] IGistConfigService: サービスのインターフェース
-- [x] GistSetCommand: UI制御のみの責務に限定
-
-#### Service統合状況
-- [x] `GistConfigService`: Gist設定のワークフロー全体（実装完了）
-- [x] `GistSyncService`: Gist同期のワークフロー全体（既存実装で適切に分離済み）
-- [x] `GistManager`: Gistファイル操作のワークフロー全体（IGistManagerインターフェース化完了）
-
-### Phase 2 完了状況
-
-**完了した要素**:
-- ✅ DIコンテナ設定完了（AppHost.csでGistConfigService等の依存関係設定済み）
-- ✅ GistSetCommandのリファクタリング完了（UI制御のみに責務限定）
-- ✅ GistConfigServiceの実装完了（ワークフロー統合サービス）
-- ✅ IGistManagerインターフェース作成完了
-- ✅ 新しいテストケース実装完了（GistSetCommandRefactoredTests.cs等）
-- ✅ CommandRouter実装完了（旧CommandServiceから移行）
-
-**技術的成果**:
-- 3層アーキテクチャへの移行完了
-- 責務の明確化とレイヤー間の適切な分離
-- t-wada式TDD原則に基づく実装パターンの確立
-- モック可能な設計の実現
+### Phase 2: アーキテクチャ層の再設計 【完了ログ（要約）】
+- 3層アーキテクチャへ移行し、CommandRouter/Services/Infrastructure の責務を確立。
+- DI設定・GistConfig/GistSet の責務分離・関連テストの更新を完了。
+- 参考: `AppHost.cs`, `Presentation/CommandRouter.cs`, `Business/*`。
 
 ## 次期フェーズ優先度
 
-### Phase 1: 名前空間の再編成（現状確認済み - 完了）
-**現状**: `Abstractions/`フォルダが存在しないため、現在の3層構造（Business/Infrastructure/Presentation）が適切に実装済み
-**結論**: 追加の名前空間再編成は不要
+### Phase 1: 名前空間の再編成 【完了ログ（要約）】
+- `Abstractions/` 不要。現3層構造が確立済み。追加作業なし。
 
 ### Phase 3: テスト設計リファクタリング（次期最優先）
 **現状**: レイヤーベーステスト構造への移行が主要課題
+
+追加の整合性タスク（高優先度）:
+- [ ] WinGetComClient の winget.exe フォールバックを `IProcessWrapper` 経由に統一（直接 `Process.Start` を排除）
+- [ ] `export`/`import` はパススルーとして `CommandRouter` で明示ルーティング（README の定義に合わせる）
+  - [ ] export: `winget export` へそのまま委譲（ファイル出力）
+  - [ ] import: `winget import` へそのまま委譲（定義ファイルからインストール）
+- [ ] `uninstall` の COM API 対応可否を確認し、不可なら正式にフォールバック設計を文書化
+- [ ] 例外と終了コードのポリシー策定（表示/復帰値の一貫性）
 
 ## 🧪 テスト設計リファクタリング（t-wada式TDD対応）
 
@@ -93,7 +67,7 @@ DisplaySuccessMessage(result.GistId!, result.FileName!);
 - **優先度**: 中（テストアーキテクチャ整備）
 
 **実装手順**:
-- [ ] テストフォルダ構造をレイヤーベースに再編成:
+- [ ] テストフォルダ構造をレイヤーベースに再編成（公式配置: `tests/NuitsJp.GistGet.Tests`）:
   - [ ] `Tests/Presentation/` フォルダ作成
     - [ ] `CommandRouterTests.cs` （現在のCommandServiceTests.cs）
     - [ ] `Commands/GistSetCommandTests.cs` 等のCommandテスト移動
@@ -116,6 +90,11 @@ DisplaySuccessMessage(result.GistId!, result.FileName!);
   - [ ] `Tests/Mocks/Business/` フォルダ作成
     - [ ] `MockGistConfigService.cs` 作成
     - [ ] `MockGistSyncService.cs` 移動・更新
+
+**テスト観点の更新（README/docs 反映）**:
+- [ ] export/import は passthrough の E2E スモーク（`CommandRouter` → `IWinGetPassthroughClient` 呼び出しを検証）
+- [ ] YAML 配列スキーマのシリアライズ/デシリアライズ往復テスト（空/単数/複数/オプション有無）
+- [ ] Passthrough 出力のスナップショット比較（正規化後差分ゼロ）
 
 ### Phase 4: テスト戦略の層別分離
 - **現状**: 混在したテスト責務（UI・ワークフロー・外部システムが同一テスト）
@@ -172,6 +151,12 @@ DisplaySuccessMessage(result.GistId!, result.FileName!);
 - [ ] 既存の平文トークンファイルからの移行処理
 - [ ] 復号化失敗時の再認証プロンプト機能
 - [ ] 暗号化保存のテストケース追加
+
+### CI/CD とドキュメント整合
+- [ ] GitHub Actions を `windows-latest` のみに限定（Windows ターゲティング依存）
+- [ ] Release 成果物パスを `net8.0-windows10.0.26100/win-x64/publish/GistGet.exe` に固定
+- [ ] 環境変数名を `GIST_TOKEN` に統一（README/ワークフロー/コード）
+- [ ] docs 内の辞書スキーマ参照を配列スキーマに一掃（相互参照の確認）
 
 ### トークンの定期的な更新機能
 - **現状**: 取得したトークンは無期限で使用される
