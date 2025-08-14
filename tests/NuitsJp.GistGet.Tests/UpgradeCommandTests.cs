@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Moq;
 using NuitsJp.GistGet.Infrastructure.WinGet;
 using NuitsJp.GistGet.Tests.Mocks;
 using Shouldly;
@@ -14,12 +15,14 @@ public class UpgradeCommandTests
 {
     private readonly ILogger<WinGetComClient> _logger;
     private readonly MockGistSyncService _mockGistSyncService;
+    private readonly Mock<IProcessWrapper> _mockProcessWrapper;
 
     public UpgradeCommandTests()
     {
         var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
         _logger = loggerFactory.CreateLogger<WinGetComClient>();
         _mockGistSyncService = new MockGistSyncService();
+        _mockProcessWrapper = new Mock<IProcessWrapper>();
     }
 
     // Phase 1: RED - 失敗するテストから開始
@@ -27,7 +30,7 @@ public class UpgradeCommandTests
     public async Task UpgradePackageAsync_ShouldReturnSuccess_WhenValidPackageIdProvided()
     {
         // Arrange
-        var client = new WinGetComClient(_mockGistSyncService, _logger);
+        var client = new WinGetComClient(_mockGistSyncService, _logger, _mockProcessWrapper.Object);
         var args = new[] { "upgrade", "--id", "TestPackage.Test" };
 
         // Act
@@ -41,7 +44,7 @@ public class UpgradeCommandTests
     public async Task UpgradePackageAsync_ShouldReturnSuccess_WhenAllOption()
     {
         // Arrange
-        var client = new WinGetComClient(_mockGistSyncService, _logger);
+        var client = new WinGetComClient(_mockGistSyncService, _logger, _mockProcessWrapper.Object);
         var args = new[] { "upgrade", "--all" };
 
         // Act
@@ -55,7 +58,7 @@ public class UpgradeCommandTests
     public async Task UpgradePackageAsync_ShouldWorkWithoutInitialization_WhenValidArgs()
     {
         // Arrange
-        var client = new WinGetComClient(_mockGistSyncService, _logger);
+        var client = new WinGetComClient(_mockGistSyncService, _logger, _mockProcessWrapper.Object);
         var args = new[] { "upgrade", "--id", "TestPackage.Test" };
 
         // Act
@@ -69,7 +72,7 @@ public class UpgradeCommandTests
     public async Task UpgradePackageAsync_ShouldReturnError_WhenMissingPackageId()
     {
         // Arrange
-        var client = new WinGetComClient(_mockGistSyncService, _logger);
+        var client = new WinGetComClient(_mockGistSyncService, _logger, _mockProcessWrapper.Object);
         var args = new[] { "upgrade" }; // --id が指定されていない
 
         // Act

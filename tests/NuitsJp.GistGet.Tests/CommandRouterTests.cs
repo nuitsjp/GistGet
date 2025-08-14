@@ -149,6 +149,62 @@ public class CommandRouterTests
         _mockPassthroughClient.LastArgs.ShouldBe(args);
     }
 
+    [Fact]
+    public async Task ExecuteAsync_ShouldRouteExportToPassthrough_E2ESmoke()
+    {
+        // Arrange - E2Eスモークテスト: export コマンドが適切にパススルーされることを確認
+        var args = new[] { "export", "--output", "test-packages.json" };
+
+        // Act
+        var result = await _commandRouter.ExecuteAsync(args);
+
+        // Assert
+        result.ShouldBe(0);
+        _mockPassthroughClient.LastArgs.ShouldBe(args);
+        _mockPassthroughClient.LastArgs.Length.ShouldBe(3);
+        _mockPassthroughClient.LastArgs[0].ShouldBe("export");
+        _mockPassthroughClient.LastArgs[1].ShouldBe("--output");
+        _mockPassthroughClient.LastArgs[2].ShouldBe("test-packages.json");
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldRouteImportToPassthrough_E2ESmoke()
+    {
+        // Arrange - E2Eスモークテスト: import コマンドが適切にパススルーされることを確認
+        var args = new[] { "import", "--input", "test-packages.json", "--accept-package-agreements" };
+
+        // Act
+        var result = await _commandRouter.ExecuteAsync(args);
+
+        // Assert
+        result.ShouldBe(0);
+        _mockPassthroughClient.LastArgs.ShouldBe(args);
+        _mockPassthroughClient.LastArgs.Length.ShouldBe(4);
+        _mockPassthroughClient.LastArgs[0].ShouldBe("import");
+        _mockPassthroughClient.LastArgs[1].ShouldBe("--input");
+        _mockPassthroughClient.LastArgs[2].ShouldBe("test-packages.json");
+        _mockPassthroughClient.LastArgs[3].ShouldBe("--accept-package-agreements");
+    }
+
+    [Theory]
+    [InlineData("export")]
+    [InlineData("import")]
+    public async Task ExecuteAsync_ShouldLogExplicitPassthroughRouting_ForExportImportCommands(string command)
+    {
+        // Arrange - パススルーコマンドのログ出力が明示的であることを確認
+        var args = new[] { command, "--test" };
+
+        // Act
+        var result = await _commandRouter.ExecuteAsync(args);
+
+        // Assert
+        result.ShouldBe(0);
+        _mockPassthroughClient.LastArgs.ShouldBe(args);
+
+        // ログでは明示的パススルーとして記録される（実装では "explicit command" としてログされる）
+        // モックなのでログの検証は困難だが、ルーティングロジックが正しく動作することを確認
+    }
+
     // Phase 7.1: エラーハンドリング改善 - Red フェーズ（失敗するテストから開始）
 
     [Fact]

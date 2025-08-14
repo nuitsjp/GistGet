@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Moq;
 using NuitsJp.GistGet.Infrastructure.WinGet;
 using NuitsJp.GistGet.Tests.Mocks;
 using Shouldly;
@@ -10,12 +11,14 @@ public class WinGetComClientTests
 {
     private readonly ILogger<WinGetComClient> _logger;
     private readonly MockGistSyncService _mockGistSyncService;
+    private readonly Mock<IProcessWrapper> _mockProcessWrapper;
 
     public WinGetComClientTests()
     {
         var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
         _logger = loggerFactory.CreateLogger<WinGetComClient>();
         _mockGistSyncService = new MockGistSyncService();
+        _mockProcessWrapper = new Mock<IProcessWrapper>();
     }
 
     [Fact(Skip = "COM API requires proper environment setup - covered by integration tests")]
@@ -46,7 +49,7 @@ public class WinGetComClientTests
     public async Task GetInstalledPackagesAsync_ShouldThrow_WhenNotInitialized()
     {
         // Arrange
-        var client = new WinGetComClient(_mockGistSyncService, _logger);
+        var client = new WinGetComClient(_mockGistSyncService, _logger, _mockProcessWrapper.Object);
 
         // Act & Assert
         await Should.ThrowAsync<InvalidOperationException>(
@@ -57,7 +60,7 @@ public class WinGetComClientTests
     public async Task SearchPackagesAsync_ShouldThrow_WhenNotInitialized()
     {
         // Arrange
-        var client = new WinGetComClient(_mockGistSyncService, _logger);
+        var client = new WinGetComClient(_mockGistSyncService, _logger, _mockProcessWrapper.Object);
 
         // Act & Assert
         await Should.ThrowAsync<InvalidOperationException>(

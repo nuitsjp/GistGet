@@ -85,7 +85,8 @@ public class CommandRouter : ICommandRouter
     private async Task<int> RouteCommandAsync(string command, string[] args)
     {
         var usesCom = command is "install" or "uninstall" or "upgrade";
-        var usesGist = command is "sync";  // export/importを除外
+        var usesGist = command is "sync";
+        var usesPassthrough = command is "export" or "import" or "list" or "search" or "show";
         var isAuthCommand = command is "auth";
         var isTestGistCommand = command is "test-gist";
         var isGistSubCommand = command is "gist";
@@ -115,7 +116,13 @@ public class CommandRouter : ICommandRouter
             return await HandleComCommandAsync(command, args);
         }
 
-        _logger.LogDebug("Routing to passthrough client for command: {Command}", command);
+        if (usesPassthrough)
+        {
+            _logger.LogDebug("Routing to passthrough client for explicit command: {Command}", command);
+            return await _passthroughClient.ExecuteAsync(args);
+        }
+
+        _logger.LogDebug("Routing to passthrough client for unknown command: {Command}", command);
         return await _passthroughClient.ExecuteAsync(args);
     }
 

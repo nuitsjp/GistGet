@@ -78,4 +78,14 @@ public interface IProcessResult : IDisposable
     /// プロセスの終了コード
     /// </summary>
     int ExitCode { get; }
+
+    /// <summary>
+    /// 標準出力を読み取る
+    /// </summary>
+    Task<string> ReadStandardOutputAsync();
+
+    /// <summary>
+    /// 標準エラーを読み取る
+    /// </summary>
+    Task<string> ReadStandardErrorAsync();
 }

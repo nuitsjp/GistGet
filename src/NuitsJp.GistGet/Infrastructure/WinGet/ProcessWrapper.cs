@@ -34,6 +34,16 @@ public class ProcessResult : IProcessResult
 
     public int ExitCode => _process.ExitCode;
 
+    public async Task<string> ReadStandardOutputAsync()
+    {
+        return await _process.StandardOutput.ReadToEndAsync();
+    }
+
+    public async Task<string> ReadStandardErrorAsync()
+    {
+        return await _process.StandardError.ReadToEndAsync();
+    }
+
     public void Dispose()
     {
         _process?.Dispose();

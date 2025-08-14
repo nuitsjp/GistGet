@@ -11,19 +11,17 @@
 
 ## 🚦 次にやること（Start Here）
 
-1. CommandRouter に `export/import` のパススルー明示ルーティングを追加し、E2Eスモークを作成。
-2. WinGetComClient の winget.exe フォールバックを `IProcessWrapper` 経由に統一（直 `Process.Start` 排除）。
-3. 例外と終了コードのポリシーを策定し `docs/architecture.md` にDRとして追記。
-4. YAML（Packages配列）往復テストを追加（空/単/複/任意項目有無）。
-5. Passthrough 出力のスナップショットテスト（正規化差分ゼロ）を追加。
-6. GitHub Actions を Windows 専用に固定し、成果物パスを検証（READMEと一致）。
-7. DPAPI によるトークン暗号化（保存/復旧/再認証）を実装し単体テスト追加。
-8. `new-architecture.md` の重複情報を整理し、`architecture.md` への誘導を維持。
+1. 例外と終了コードのポリシーを策定し `docs/architecture.md` にDRとして追記。
+2. YAML（Packages配列）往復テストを追加（空/単/複/任意項目有無）。
+3. Passthrough 出力のスナップショットテスト（正規化差分ゼロ）を追加。
+4. GitHub Actions を Windows 専用に固定し、成果物パスを検証（READMEと一致）。
+5. DPAPI によるトークン暗号化（保存/復旧/再認証）を実装し単体テスト追加。
+6. `new-architecture.md` の重複情報を整理し、`architecture.md` への誘導を維持。
 
 ## 🧭 現状サマリ（README / docs 同期後）
 
-- パススルー: `list/search/show` は `WinGetPassthrough` で動作。`CommandRouter` 実装済み。
-- COMクライアント: `Initialize` と `install` は COM 経由実装済み。`uninstall` は winget.exe フォールバック、`upgrade` は簡易実装。
+- パススルー: `list/search/show/export/import` は `WinGetPassthrough` で動作。`CommandRouter` 明示ルーティング実装済み。
+- COMクライアント: `Initialize` と `install` は COM 経由実装済み。`uninstall` は `IProcessWrapper` 経由フォールバック、`upgrade` は簡易実装。
 - Gist: `GistSyncService` はスタブ。`gist set/status/show` コマンドあり。YAML は配列スキーマ（`Packages: - Id: ...`）で統一。
 - 認証: `GitHubAuthService` あり。CI では `GIST_TOKEN` を使用する方針に更新（README 反映済み）。
 - CI: Windows のみを対象（`windows-latest`）。Release 成果物パス修正済み（README 反映済み）。
@@ -51,11 +49,11 @@
 ### Phase 3: テスト設計リファクタリング（次期最優先）
 **現状**: レイヤーベーステスト構造への移行が主要課題
 
+### 完了ログ（整合性タスク）
+- export/import パススルーの `CommandRouter` 明示ルーティング実装・E2Eテスト追加完了。
+- WinGetComClient の `IProcessWrapper` 統一（`UninstallPackageAsync`、`FallbackToWingetExe`）完了。
+
 追加の整合性タスク（高優先度）:
-- [ ] WinGetComClient の winget.exe フォールバックを `IProcessWrapper` 経由に統一（直接 `Process.Start` を排除）
-- [ ] `export`/`import` はパススルーとして `CommandRouter` で明示ルーティング（README の定義に合わせる）
-  - [ ] export: `winget export` へそのまま委譲（ファイル出力）
-  - [ ] import: `winget import` へそのまま委譲（定義ファイルからインストール）
 - [ ] `uninstall` の COM API 対応可否を確認し、不可なら正式にフォールバック設計を文書化
 - [ ] 例外と終了コードのポリシー策定（表示/復帰値の一貫性）
 
@@ -92,7 +90,7 @@
     - [ ] `MockGistSyncService.cs` 移動・更新
 
 **テスト観点の更新（README/docs 反映）**:
-- [ ] export/import は passthrough の E2E スモーク（`CommandRouter` → `IWinGetPassthroughClient` 呼び出しを検証）
+- [x] export/import は passthrough の E2E スモーク（`CommandRouter` → `IWinGetPassthroughClient` 呼び出しを検証）完了
 - [ ] YAML 配列スキーマのシリアライズ/デシリアライズ往復テスト（空/単数/複数/オプション有無）
 - [ ] Passthrough 出力のスナップショット比較（正規化後差分ゼロ）
 

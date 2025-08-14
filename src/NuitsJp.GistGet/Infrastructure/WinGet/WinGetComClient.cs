@@ -13,14 +13,16 @@ public class WinGetComClient : IWinGetClient
 {
     private readonly IGistSyncService _gistSyncService;
     private readonly ILogger<WinGetComClient> _logger;
+    private readonly IProcessWrapper _processWrapper;
     private PackageManager? _packageManager;
 
     private bool _isInitialized = false;
 
-    public WinGetComClient(IGistSyncService gistSyncService, ILogger<WinGetComClient> logger)
+    public WinGetComClient(IGistSyncService gistSyncService, ILogger<WinGetComClient> logger, IProcessWrapper processWrapper)
     {
         _gistSyncService = gistSyncService;
         _logger = logger;
+        _processWrapper = processWrapper;
     }
 
     public Task InitializeAsync()
@@ -149,11 +151,11 @@ public class WinGetComClient : IWinGetClient
                 RedirectStandardError = true
             };
 
-            using var process = System.Diagnostics.Process.Start(processInfo);
+            using var process = _processWrapper.Start(processInfo);
             if (process != null)
             {
-                var output = await process.StandardOutput.ReadToEndAsync();
-                var error = await process.StandardError.ReadToEndAsync();
+                var output = await process.ReadStandardOutputAsync();
+                var error = await process.ReadStandardErrorAsync();
                 await process.WaitForExitAsync();
 
                 if (!string.IsNullOrEmpty(error))
@@ -232,11 +234,11 @@ public class WinGetComClient : IWinGetClient
                 RedirectStandardError = true
             };
 
-            using var process = System.Diagnostics.Process.Start(processInfo);
+            using var process = _processWrapper.Start(processInfo);
             if (process != null)
             {
-                var output = await process.StandardOutput.ReadToEndAsync();
-                var error = await process.StandardError.ReadToEndAsync();
+                var output = await process.ReadStandardOutputAsync();
+                var error = await process.ReadStandardErrorAsync();
                 await process.WaitForExitAsync();
 
                 if (!string.IsNullOrEmpty(error))
