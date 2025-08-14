@@ -52,10 +52,36 @@ public class MockWinGetClient : IWinGetClient
 public class MockWinGetPassthroughClient : IWinGetPassthroughClient
 {
     public string[]? LastArgs { get; private set; }
+    public string? LastOutput { get; private set; }
+
+    // テスト用のサンプル出力データ
+    private readonly Dictionary<string, string> _mockOutputs = new()
+    {
+        { "list", "Name        Id                  Version  Source\nGit for Windows  Git.Git             2.43.0   winget\nNotePad++     Notepad++.Notepad++  8.6.8    winget" },
+        { "search notepad", "Name        Id                  Version  Source\nNotePad++     Notepad++.Notepad++  8.6.8    winget" },
+        { "show Git.Git", "Found Git for Windows [Git.Git]\nVersion: 2.43.0\nPublisher: The Git Development Community" },
+        { "export", "{\"Sources\":[{\"Packages\":[{\"PackageIdentifier\":\"Git.Git\",\"Version\":\"2.43.0\"}],\"SourceDetails\":{\"Argument\":\"https://cdn.winget.microsoft.com/cache\",\"Identifier\":\"winget\",\"Name\":\"winget\",\"Type\":\"Microsoft.PreIndexed.Package\"}}],\"WinGetVersion\":\"1.7.10661\"}" },
+        { "import", "Successfully imported packages." }
+    };
 
     public Task<int> ExecuteAsync(string[] args)
     {
         LastArgs = args;
+
+        // 引数に基づいて適切なモック出力を生成
+        var command = args.Length > 0 ? args[0] : "";
+        var fullCommand = string.Join(" ", args);
+
+        LastOutput = command switch
+        {
+            "export" => _mockOutputs["export"],
+            "import" => _mockOutputs["import"],
+            "list" => _mockOutputs["list"],
+            "show" when args.Contains("Git.Git") => _mockOutputs["show Git.Git"],
+            "search" when fullCommand.Contains("notepad") => _mockOutputs["search notepad"],
+            _ => $"Mock output for: {fullCommand}"
+        };
+
         return Task.FromResult(0);
     }
 }

@@ -11,12 +11,8 @@
 
 ## 🚦 次にやること（Start Here）
 
-1. 例外と終了コードのポリシーを策定し `docs/architecture.md` にDRとして追記。
-2. YAML（Packages配列）往復テストを追加（空/単/複/任意項目有無）。
-3. Passthrough 出力のスナップショットテスト（正規化差分ゼロ）を追加。
-4. GitHub Actions を Windows 専用に固定し、成果物パスを検証（READMEと一致）。
-5. DPAPI によるトークン暗号化（保存/復旧/再認証）を実装し単体テスト追加。
-6. `new-architecture.md` の重複情報を整理し、`architecture.md` への誘導を維持。
+1. DPAPI によるトークン暗号化（保存/復旧/再認証）を実装し単体テスト追加。
+2. `new-architecture.md` の重複情報を整理し、`architecture.md` への誘導を維持。
 
 ## 🧭 現状サマリ（README / docs 同期後）
 
@@ -53,9 +49,14 @@
 - export/import パススルーの `CommandRouter` 明示ルーティング実装・E2Eテスト追加完了。
 - WinGetComClient の `IProcessWrapper` 統一（`UninstallPackageAsync`、`FallbackToWingetExe`）完了。
 
+### 完了ログ（最優先タスク）
+- 例外と終了コードのポリシー策定完了。`docs/architecture.md`にDR-001として追記。
+- YAML（Packages配列）往復テスト追加完了。`PackageYamlConverterTests.cs`に空/単/複/任意項目有無の網羅的テスト追加。
+- Passthrough出力スナップショットテスト追加完了。`WinGetPassthroughTests.cs`新規作成、正規化・決定性検証実装。
+- GitHub Actions Windows専用固定完了。`build-windows-only.yml`作成、成果物パス検証追加。
+
 追加の整合性タスク（高優先度）:
 - [ ] `uninstall` の COM API 対応可否を確認し、不可なら正式にフォールバック設計を文書化
-- [ ] 例外と終了コードのポリシー策定（表示/復帰値の一貫性）
 
 ## 🧪 テスト設計リファクタリング（t-wada式TDD対応）
 
@@ -91,8 +92,8 @@
 
 **テスト観点の更新（README/docs 反映）**:
 - [x] export/import は passthrough の E2E スモーク（`CommandRouter` → `IWinGetPassthroughClient` 呼び出しを検証）完了
-- [ ] YAML 配列スキーマのシリアライズ/デシリアライズ往復テスト（空/単数/複数/オプション有無）
-- [ ] Passthrough 出力のスナップショット比較（正規化後差分ゼロ）
+- [x] YAML 配列スキーマのシリアライズ/デシリアライズ往復テスト（空/単数/複数/オプション有無）完了
+- [x] Passthrough 出力のスナップショット比較（正規化後差分ゼロ）完了
 
 ### Phase 4: テスト戦略の層別分離
 - **現状**: 混在したテスト責務（UI・ワークフロー・外部システムが同一テスト）
@@ -150,9 +151,11 @@
 - [ ] 復号化失敗時の再認証プロンプト機能
 - [ ] 暗号化保存のテストケース追加
 
-### CI/CD とドキュメント整合
-- [ ] GitHub Actions を `windows-latest` のみに限定（Windows ターゲティング依存）
-- [ ] Release 成果物パスを `net8.0-windows10.0.26100/win-x64/publish/GistGet.exe` に固定
+### 完了ログ（CI/CD とドキュメント整合）
+- GitHub Actions Windows専用固定完了。`build-windows-only.yml`作成、成果物パス検証追加。
+- Release 成果物パス固定完了。`src/NuitsJp.GistGet/bin/Release/net8.0-windows10.0.26100/win-x64/publish/GistGet.exe`を検証。
+
+残タスク:
 - [ ] 環境変数名を `GIST_TOKEN` に統一（README/ワークフロー/コード）
 - [ ] docs 内の辞書スキーマ参照を配列スキーマに一掃（相互参照の確認）
 

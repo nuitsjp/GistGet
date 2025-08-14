@@ -1,0 +1,133 @@
+name: Build and Test (Windows Only)
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  GITHUB_TOKEN: ${{ secrets.GIST_ACCESS_TOKEN }}
+
+jobs:
+  # Windows環境でのフルビルドとテスト（Windows専用）
+  build-and-test-windows:
+    name: Build and Test (Windows Only)
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+    
+    - name: Test (All Tests)
+      run: |
+        dotnet test --no-build --configuration Release `
+          --logger "trx;LogFileName=test-results.trx" `
+          --logger "console;verbosity=detailed"
+    
+    - name: Create self-contained executable
+      run: |
+        dotnet publish src/NuitsJp.GistGet/NuitsJp.GistGet.csproj `
+          -c Release `
+          -r win-x64 `
+          --self-contained `
+          -p:PublishSingleFile=true `
+          -p:PublishReadyToRun=true
+    
+    - name: Verify artifact path matches README
+      run: |
+        $artifactPath = "src/NuitsJp.GistGet/bin/Release/net8.0-windows10.0.26100/win-x64/publish/GistGet.exe"
+        if (Test-Path $artifactPath) {
+          Write-Host "✓ Artifact found at expected path: $artifactPath"
+          Get-Item $artifactPath | ForEach-Object { 
+            Write-Host "  Size: $($_.Length) bytes"
+            Write-Host "  Modified: $($_.LastWriteTime)"
+          }
+        } else {
+          Write-Error "✗ Artifact not found at expected path: $artifactPath"
+          Write-Host "Available files in publish directory:"
+          Get-ChildItem -Recurse src/NuitsJp.GistGet/bin/Release/ -Name "*.exe" | ForEach-Object { Write-Host "  $_" }
+          exit 1
+        }
+    
+    - name: Upload Windows executable
+      uses: actions/upload-artifact@v4
+      with:
+        name: gistget-win-x64
+        path: src/NuitsJp.GistGet/bin/Release/net8.0-windows10.0.26100/win-x64/publish/GistGet.exe
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-windows
+        path: '**/test-results.trx'
+
+  # コード品質チェック（Windows）
+  code-quality-windows:
+    name: Code Quality (Windows)
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Install dotnet-format
+      run: dotnet tool install -g dotnet-format
+    
+    - name: Check formatting
+      run: dotnet format --verify-no-changes --verbosity diagnostic --no-restore
+    
+    - name: Run code analysis
+      run: dotnet build --no-incremental /p:EnforceCodeStyleInBuild=true
+
+  # Release job (タグ作成時のみ)
+  release:
+    name: Create Release
+    runs-on: windows-latest
+    needs: build-and-test-windows
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: gistget-win-x64
+        path: ./release
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          ./release/GistGet.exe
+        body: |
+          ## Changes
+          
+          - Windows専用ビルド
+          - 成果物パス: `src/NuitsJp.GistGet/bin/Release/net8.0-windows10.0.26100/win-x64/publish/GistGet.exe`
+          
+          ## Installation
+          
+          Download `GistGet.exe` and place it in your PATH.

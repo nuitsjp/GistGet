@@ -443,3 +443,92 @@ dotnet test --collect:"XPlat Code Coverage"
   - COM API失敗 → winget.exe実行
   - ネットワーク失敗 → オフライン動作継続
   - 認証失敗 → 再認証プロンプト
+
+## 5. Design Decisions（DR）
+
+### DR-001: 例外と終了コードのポリシー
+
+**Status**: Accepted  
+**Date**: 2025-01-14  
+**Decision**: 例外処理と終了コードの統一方針を確立する
+
+#### Context
+アプリケーション全体で一貫したエラーハンドリング戦略が必要。現在のコードベースにはパターンが存在するが、明文化されていない。
+
+#### Decision
+
+##### 終了コードポリシー
+- **成功**: `0` - 処理が正常に完了した場合
+- **エラー**: `1` - 任意のエラーが発生した場合（詳細化は将来検討）
+
+##### 例外タイプ分類
+1. **入力検証例外**: `ArgumentException`, `ArgumentNullException`
+   - 用途: パラメータ検証、NULL チェック
+   - 処理: コンストラクタ、メソッド開始時の即座チェック
+
+2. **ビジネスルール例外**: `InvalidOperationException`
+   - 用途: 設定未完了、アクセス権限、状態不正
+   - 処理: ビジネスロジック層での検証
+
+3. **外部システム例外**: `COMException`, `HttpRequestException`, `IOException`
+   - 用途: COM API、GitHub API、ファイルシステム連携エラー
+   - 処理: Infrastructure層での専用ハンドリング
+
+4. **データ形式例外**: `JsonException`, `YamlException`, `CryptographicException`
+   - 用途: データシリアライズ、暗号化処理エラー
+   - 処理: 変換処理での専用catch
+
+##### エラーハンドリング原則
+1. **階層化catch処理**: 具体的例外から一般例外へ
+2. **ログ出力**: 全例外を構造化ログで記録（`_logger.LogError`）
+3. **ユーザー表示**: エラー種別に応じた適切な日本語メッセージ（`Console.WriteLine`）
+4. **フォールバック戦略**: COM API失敗時のwinget.exe実行など
+
+##### 実装パターン例
+```csharp
+public async Task<int> ExecuteAsync(string[] args)
+{
+    try
+    {
+        // メイン処理
+        return 0;
+    }
+    catch (ArgumentException argEx)
+    {
+        _logger.LogError(argEx, "入力検証エラー: {Message}", argEx.Message);
+        Console.WriteLine($"入力エラー: {argEx.Message}");
+        return 1;
+    }
+    catch (InvalidOperationException invEx)
+    {
+        _logger.LogError(invEx, "操作エラー: {Message}", invEx.Message);
+        Console.WriteLine($"操作エラー: {invEx.Message}");
+        return 1;
+    }
+    catch (COMException comEx)
+    {
+        _errorMessageService.HandleComException(comEx);
+        return 1;
+    }
+    catch (HttpRequestException httpEx)
+    {
+        _errorMessageService.HandleNetworkException(httpEx);
+        return 1;
+    }
+    catch (Exception ex)
+    {
+        _errorMessageService.HandleUnexpectedException(ex);
+        return 1;
+    }
+}
+```
+
+#### Consequences
+- **Positive**: 一貫したエラー処理、保守性向上、ユーザー体験統一
+- **Negative**: 追加の実装コスト、エラー分類の学習コスト
+- **Risks**: 既存コードの不整合、新機能での遵守漏れ
+
+#### Implementation Notes
+- `ErrorMessageService.cs`で例外タイプ別メッセージ処理を実装済み
+- `CommandRouter.cs`で主要例外タイプの catch 実装済み
+- テスト実装時は例外パターンの確認を含める
