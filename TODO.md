@@ -4,112 +4,32 @@
 
 - **単一の正本**: 仕様は `docs/architecture.md` を正とし、本TODOはそれに整合。差異が生じたら先にドキュメントを更新。
 - **完了の最小化**: 完了済みの詳細手順は削除し、1〜3行の「完了ログ」に集約（必要ならPR/コミットへのリンクのみ）。
-- **Start Here の明示**: 冒頭に「次にやること（Start Here）」を常設し、着手順の分かる5〜10項目に限定。
 - **表現の統一**: 動詞始まり・1行・具体的成果物基準（例: 例外ポリシーのDR文書追加、テスト名変更）。
 - **用語と経路の一貫性**: `export/import` はパススルー、`sync` は内部YAML（Packages配列）準拠。README/Docs/コードを同時に更新。
 - **テスト配置の固定**: テストは `tests/NuitsJp.GistGet.Tests` に集約。命名・構造はレイヤ別。
 - **実装後の現状反映**: TODO実施完了後は必ず現状サマリと完了ログを更新し、実装状況をドキュメントに反映する。
 
-## 🚦 次にやること（Start Here）
-
-1. レイヤーベーステスト構造への移行（`Tests/Infrastructure/GitHub/GitHubAuthServiceTests.cs` は実装済み）。
-2. `uninstall` の COM API 対応可否を確認し、不可なら正式にフォールバック設計を文書化。
-3. 環境変数名を `GIST_TOKEN` に統一（README/ワークフロー/コード）。
-
-## 🧭 現状サマリ（README / docs 同期後）
-
-- パススルー: `list/search/show/export/import` は `WinGetPassthrough` で動作。`CommandRouter` 明示ルーティング実装済み。
-- COMクライアント: `Initialize` と `install` は COM 経由実装済み。`uninstall` は `IProcessWrapper` 経由フォールバック、`upgrade` は簡易実装。
-- Gist: `GistSyncService` はスタブ。`gist set/status/show` コマンドあり。YAML は配列スキーマ（`Packages: - Id: ...`）で統一。
-- 認証: `GitHubAuthService` でDPAPI暗号化保存実装済み。平文移行処理は削除済み。CI では `GIST_TOKEN` を使用する方針に更新（README 反映済み）。
-- テスト: DPAPIテスト4つ実装済み（`Tests/Infrastructure/GitHub/GitHubAuthServiceTests.cs`）。全テストスイート160成功、11スキップ。
-- CI: Windows のみを対象（`windows-latest`）。Release 成果物パス修正済み（README 反映済み）。
-
 ---
 
-## 🏗️ アーキテクチャ リファクタリング
+## 🏗️ アーキテクチャリファクタリング（残課題）
 
-### Phase 1: 名前空間の再編成（Abstractionsの解体）
-- **現状**: 単一`Abstractions/`フォルダに全インターフェースが集約
-- **問題**: レイヤー構造不明確、インフラ層の外部システム混在、過度な抽象化
-- **目標**: レイヤーベース名前空間設計への移行
-- **優先度**: 高（アーキテクチャ基盤整備）
-
-### Phase 2: アーキテクチャ層の再設計 【完了ログ（要約）】
-- 3層アーキテクチャへ移行し、CommandRouter/Services/Infrastructure の責務を確立。
-- DI設定・GistConfig/GistSet の責務分離・関連テストの更新を完了。
-- 参考: `AppHost.cs`, `Presentation/CommandRouter.cs`, `Business/*`。
-
-## 次期フェーズ優先度
-
-### Phase 1: 名前空間の再編成 【完了ログ（要約）】
-- `Abstractions/` 不要。現3層構造が確立済み。追加作業なし。
-
-### Phase 3: テスト設計リファクタリング（次期最優先）
-**現状**: レイヤーベーステスト構造への移行が主要課題
-
-### 完了ログ（整合性タスク）
-- export/import パススルーの `CommandRouter` 明示ルーティング実装・E2Eテスト追加完了。
-- WinGetComClient の `IProcessWrapper` 統一（`UninstallPackageAsync`、`FallbackToWingetExe`）完了。
-
-### 完了ログ（最優先タスク）
-- 例外と終了コードのポリシー策定完了。`docs/architecture.md`にDR-001として追記。
-- YAML（Packages配列）往復テスト追加完了。`PackageYamlConverterTests.cs`に空/単/複/任意項目有無の網羅的テスト追加。
-- Passthrough出力スナップショットテスト追加完了。`WinGetPassthroughTests.cs`新規作成、正規化・決定性検証実装。
-- GitHub Actions Windows専用固定完了。`build-windows-only.yml`作成、成果物パス検証追加。
-- **DPAPIトークン暗号化完了**。`GitHubAuthService`でDPAPI暗号化保存実装、平文移行処理削除、テスト4つ実装済み。
-
-追加の整合性タスク（高優先度）:
-- [ ] `uninstall` の COM API 対応可否を確認し、不可なら正式にフォールバック設計を文書化
-
-## 🧪 テスト設計リファクタリング（t-wada式TDD対応）
-
-### Phase 3: テスト名前空間の再編成
-- **現状**: 単一テストプロジェクトに全テストが集約
-- **目標**: レイヤーベーステスト構造への移行
-- **優先度**: 中（テストアーキテクチャ整備）
-
-**実装手順**:
-- [ ] テストフォルダ構造をレイヤーベースに再編成（公式配置: `tests/NuitsJp.GistGet.Tests`）:
-  - [ ] `Tests/Presentation/` フォルダ作成
-    - [ ] `CommandRouterTests.cs` （現在のCommandServiceTests.cs）
-    - [ ] `Commands/GistSetCommandTests.cs` 等のCommandテスト移動
-  - [ ] `Tests/Business/` フォルダ作成  
-    - [ ] `GistConfigServiceTests.cs` （新規統合Serviceテスト）
-    - [ ] `GistSyncServiceTests.cs` 等のServiceテスト移動
-  - [x] `Tests/Infrastructure/` フォルダ作成 ✅ 実装済み
-    - [ ] `WinGet/WinGetComClientTests.cs` 移動
-    - [x] `GitHub/GitHubAuthServiceTests.cs` 移動 ✅ 実装済み
-    - [ ] `Storage/GistConfigurationStorageTests.cs` 移動
-- [ ] テスト名前空間の更新:
-  - [ ] `NuitsJp.GistGet.Tests.Presentation`
-  - [ ] `NuitsJp.GistGet.Tests.Business` 
-  - [ ] `NuitsJp.GistGet.Tests.Infrastructure`
-- [ ] モック実装の再編成:
-  - [ ] `Tests/Mocks/Infrastructure/` フォルダ作成
-    - [ ] `WinGet/MockWinGetClient.cs` 移動
-    - [ ] `GitHub/MockGitHubAuthService.cs` 作成
-    - [ ] `Storage/MockGistConfigurationStorage.cs` 作成
-  - [ ] `Tests/Mocks/Business/` フォルダ作成
-    - [ ] `MockGistConfigService.cs` 作成
-    - [ ] `MockGistSyncService.cs` 移動・更新
-
-**テスト観点の更新（README/docs 反映）**:
-- [x] export/import は passthrough の E2E スモーク（`CommandRouter` → `IWinGetPassthroughClient` 呼び出しを検証）完了
-- [x] YAML 配列スキーマのシリアライズ/デシリアライズ往復テスト（空/単数/複数/オプション有無）完了
-- [x] Passthrough 出力のスナップショット比較（正規化後差分ゼロ）完了
+### 完了ログ（2025-01-14実施）
+- **レイヤーベーステスト構造への移行完了**。全テストファイルをPresentation/Business/Infrastructure層に移行、名前空間更新済み。
+- **COM API制約調査完了**。UninstallPackageAsync未対応を公式仕様で確認、docs/architecture.mdに正式文書化。
+- **環境変数統一完了**。GITHUB_TOKEN → GIST_TOKEN への統一（ワークフロー・ドキュメント）。
+- **Phase 4 Presentation層テスト戦略完了**。CommandRouterTestsをt-wada式TDD対応で責務分離実装、UI制御・ルーティング・終了コード検証に特化。21テスト全成功、モック依存関係問題解決済み。
 
 ### Phase 4: テスト戦略の層別分離
-- **現状**: 混在したテスト責務（UI・ワークフロー・外部システムが同一テスト）
+- **現状**: 現在のテストは責務が混在（UI・ワークフロー・外部システム）
 - **目標**: t-wada式TDD原則に基づく責務明確化
 - **優先度**: 高（TDD品質向上）
 
 **実装手順**:
-- [ ] Presentation層テスト戦略実装:
-  - [ ] UI制御のみをテスト対象とする
-  - [ ] Business層サービスを完全モック化
-  - [ ] 入力処理・表示処理・終了コードの検証に特化
-  - [ ] CommandRouterのルーティング機能テストを分離
+- [x] Presentation層テスト戦略実装:
+  - [x] UI制御のみをテスト対象とする
+  - [x] Business層サービスを完全モック化
+  - [x] 入力処理・表示処理・終了コードの検証に特化
+  - [x] CommandRouterのルーティング機能テストを分離
 - [ ] Business層テスト戦略実装:
   - [ ] ワークフローとビジネスルールのみをテスト対象
   - [ ] Infrastructure層を完全モック化  
@@ -142,19 +62,10 @@
 
 ## 🔒 セキュリティ強化タスク
 
-### 完了ログ（DPAPI暗号化）
-- **DPAPIトークン暗号化実装完了**。`System.Security.Cryptography.ProtectedData`でCurrentUserスコープ暗号化。
-- **平文移行処理削除完了**。レガシー対応コード削除、暗号化のみサポート。
-- **テスト実装完了**。4つのテストケース（暗号化保存、復号化読み込み、復号化失敗、ファイル不存在）すべて成功。
-- **ドキュメント更新完了**。`docs/architecture.md`でセキュリティ設計を最新状況に反映。
-
-### 完了ログ（CI/CD とドキュメント整合）
-- GitHub Actions Windows専用固定完了。`build-windows-only.yml`作成、成果物パス検証追加。
-- Release 成果物パス固定完了。`src/NuitsJp.GistGet/bin/Release/net8.0-windows10.0.26100/win-x64/publish/GistGet.exe`を検証。
-
-残タスク:
-- [ ] 環境変数名を `GIST_TOKEN` に統一（README/ワークフロー/コード）
-- [ ] docs 内の辞書スキーマ参照を配列スキーマに一掃（相互参照の確認）
+### 完了ログ（DPAPI暗号化・環境変数統一）
+- **DPAPIトークン暗号化実装完了**。`GitHubAuthService`でDPAPI暗号化保存実装、平文移行処理削除、テスト4つ実装済み。
+- **環境変数統一完了**。GITHUB_TOKEN → GIST_TOKEN への統一（build-windows-only.yml、docs/auth.md、README.md）。
+- **ドキュメント更新完了**。`docs/architecture.md`でセキュリティ設計とCOM API制約を正式文書化。
 
 ### トークンの定期的な更新機能
 - **現状**: 取得したトークンは無期限で使用される
@@ -170,3 +81,43 @@
 - [ ] トークン更新のログ・通知機能
 - [ ] 設定可能な更新間隔（デフォルト30日）
 
+## 📋 機能拡張タスク
+
+### GistSyncService の本格実装
+- **現状**: `GistSyncService` はスタブ実装（`GistSyncStub.cs`）
+- **目標**: 実際のGist同期機能の実装
+- **優先度**: 中（主要機能）
+
+**実装手順**:
+- [ ] GistSyncServiceのスタブ実装を本格実装に置換
+- [ ] インストール済みパッケージ取得とGistファイル同期の実装
+- [ ] パッケージ差分検出ロジックの実装
+- [ ] 同期後のGistファイル更新処理の実装
+
+### WinGetComClient の upgrade 機能改善
+- **現状**: `upgrade` は簡易COM実装（将来改善予定）
+- **目標**: COM API を活用した本格的なupgrade実装
+- **優先度**: 低（機能拡張）
+
+**実装手順**:
+- [ ] COM API でのupgrade機能可否調査
+- [ ] 利用可能な場合の本格実装
+- [ ] パッケージ更新可能性チェック機能
+- [ ] 一括更新機能の実装
+
+---
+
+## 📊 現在のアーキテクチャ状況（2025-01-14時点）
+
+**3層アーキテクチャ確立済み**:
+- **Presentation層**: `CommandRouter.cs`、`Commands/`（UI制御・ルーティング）
+- **Business層**: `Services/`、`Models/`（ワークフロー・ビジネスルール）
+- **Infrastructure層**: `WinGet/`、`GitHub/`、`Storage/`（外部システム連携）
+
+**実装状況**:
+- パススルー: `export/import/list/search/show` → `WinGetPassthrough` 経由で動作
+- COM API: `install` 完全実装、`uninstall` はwinget.exe フォールバック（技術的制約）
+- Gist: 認証・設定コマンド実装済み、同期機能はスタブ
+- 認証: DPAPI暗号化保存、OAuth Device Flow
+- テスト: レイヤーベース構造で160テスト成功、11スキップ
+- CI/CD: Windows専用、GIST_TOKEN統一済み

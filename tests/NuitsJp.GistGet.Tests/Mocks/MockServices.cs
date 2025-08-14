@@ -10,6 +10,12 @@ public class MockWinGetClient : IWinGetClient
     public string? LastCommand { get; private set; }
     public string[]? LastArgs { get; private set; }
 
+    // テスト制御用プロパティ
+    public Exception? ShouldThrowOnInstall { get; set; }
+    public Exception? ShouldThrowOnUninstall { get; set; }
+    public Exception? ShouldThrowOnUpgrade { get; set; }
+    public int ShouldReturnErrorCode { get; set; } = 0;
+
     public Task InitializeAsync()
     {
         InitializeCalled = true;
@@ -18,23 +24,32 @@ public class MockWinGetClient : IWinGetClient
 
     public Task<int> InstallPackageAsync(string[] args)
     {
+        if (ShouldThrowOnInstall != null)
+            throw ShouldThrowOnInstall;
+
         LastCommand = "install";
         LastArgs = args;
-        return Task.FromResult(0);
+        return Task.FromResult(ShouldReturnErrorCode);
     }
 
     public Task<int> UninstallPackageAsync(string[] args)
     {
+        if (ShouldThrowOnUninstall != null)
+            throw ShouldThrowOnUninstall;
+
         LastCommand = "uninstall";
         LastArgs = args;
-        return Task.FromResult(0);
+        return Task.FromResult(ShouldReturnErrorCode);
     }
 
     public Task<int> UpgradePackageAsync(string[] args)
     {
+        if (ShouldThrowOnUpgrade != null)
+            throw ShouldThrowOnUpgrade;
+
         LastCommand = "upgrade";
         LastArgs = args;
-        return Task.FromResult(0);
+        return Task.FromResult(ShouldReturnErrorCode);
     }
 
     public Task<List<(string Id, string Name, string Version)>> GetInstalledPackagesAsync()
