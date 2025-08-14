@@ -20,10 +20,10 @@
 - **Phase 4 Presentation層テスト戦略完了**。CommandRouterTestsをt-wada式TDD対応で責務分離実装、UI制御・ルーティング・終了コード検証に特化。TestGistCommand不要コード削除、AuthCommandTests追加。カバレージ大幅改善：CommandRouter 74.4%、AuthCommand 89.4%。46テスト全成功。
 - **Phase 4 Business層テスト戦略完了**。Infrastructure層完全抽象化（IGitHubGistClient、IPackageYamlConverter）、t-wada式TDD対応でワークフロー・ビジネスルール検証に特化。GistConfigServiceTests、GistManagerTests追加。カバレージ劇的改善：全体36.3%、GistManager 94.9%、GistConfigService 100%。127テスト全成功。
 
-### Phase 4: テスト戦略の層別分離
-- **現状**: 現在のテストは責務が混在（UI・ワークフロー・外部システム）
-- **目標**: t-wada式TDD原則に基づく責務明確化
-- **優先度**: 高（TDD品質向上）
+### Phase 4: Infrastructure層テスト戦略（最優先）
+- **現状**: Infrastructure層は基本的なテストのみ存在
+- **目標**: 実際の外部システムとの統合テストによる動作保証
+- **優先度**: 最高（次の実装対象）
 
 **実装手順**:
 - [x] Presentation層テスト戦略実装:
@@ -37,29 +37,13 @@
   - [x] 処理順序・バリデーション・例外処理の検証に特化
   - [x] GistManager、GistConfigServiceのワークフローテスト追加
 - [ ] Infrastructure層テスト戦略実装:
-  - [ ] 外部システム連携の個別テストに特化
-  - [ ] 外部システムをモック/スタブ化
-  - [ ] API呼び出し・データ変換・エラーハンドリングの検証
-  - [ ] COM API、GitHub API、ファイルシステムの分離テスト
+  - [ ] 外部システム連携の統合テストに特化
+  - [ ] GitHubGistClient: 実Gist作成・削除による統合テスト
+  - [ ] WinGetComClient: 軽量パッケージ（jq）による実インストール/アンインストールテスト
+  - [ ] GistConfigurationStorage: 実ファイルシステムでのアクセス権限・競合テスト
+  - [ ] テスト用Gist命名規則実装（自動クリーンアップ対応）
+  - [ ] COM APIとwinget.exe実行結果の比較検証
 
-### Phase 5: t-wada式TDD テストケース再設計
-- **現状**: 従来のテストケース設計
-- **目標**: Red-Green-Refactorサイクル対応のテストケース再設計  
-- **優先度**: 高（TDD品質向上）
-
-**実装手順**:
-- [ ] Redフェーズテストケース作成:
-  - [ ] 各レイヤーで失敗するテストケースを先に作成
-  - [ ] 期待する動作を明確に定義した失敗テスト
-  - [ ] エラーハンドリングの失敗パターンテスト
-- [ ] Greenフェーズテスト検証:
-  - [ ] 最小限の実装でテストが通ることを確認
-  - [ ] 各レイヤーの責務境界を明確にしたテスト
-  - [ ] モック設定の最適化と依存関係の明確化
-- [ ] Refactorフェーズテスト保護:
-  - [ ] リファクタリング後もテストが保護されることを確認
-  - [ ] テスト自体のリファクタリング（重複除去、可読性向上）
-  - [ ] テストケース名の意図明確化
 
 ## 🔒 セキュリティ強化タスク
 
@@ -72,7 +56,7 @@
 - **現状**: 取得したトークンは無期限で使用される
 - **目標**: 定期的なトークンの更新によるセキュリティ向上
 - **実装箇所**: `GitHubAuthService.cs` および新規スケジューラー機能
-- **優先度**: 中（セキュリティ向上）
+- **優先度**: 低（将来課題）
 
 **実装手順**:
 - [ ] トークン有効期限チェック機能の実装
@@ -87,7 +71,7 @@
 ### GistSyncService の本格実装
 - **現状**: `GistSyncService` はスタブ実装（`GistSyncStub.cs`）
 - **目標**: 実際のGist同期機能の実装
-- **優先度**: 中（主要機能）
+- **優先度**: 中（Infrastructure層テスト完了後）
 
 **実装手順**:
 - [ ] GistSyncServiceのスタブ実装を本格実装に置換
@@ -120,5 +104,5 @@
 - COM API: `install` 完全実装、`uninstall` はwinget.exe フォールバック（技術的制約）
 - Gist: 認証・設定コマンド実装済み、同期機能はスタブ
 - 認証: DPAPI暗号化保存、OAuth Device Flow
-- テスト: レイヤーベース構造、t-wada式TDD対応。127テスト全成功。カバレージ36.3%（Business層完全カバレージ達成）
+- テスト: レイヤーベース構造、t-wada式TDD対応。213テスト（206合格、7スキップ）。Infrastructure層は統合テスト方針
 - CI/CD: Windows専用、GIST_TOKEN統一済み
