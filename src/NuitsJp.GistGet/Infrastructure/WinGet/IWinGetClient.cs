@@ -1,3 +1,5 @@
+using NuitsJp.GistGet.Models;
+
 namespace NuitsJp.GistGet.Infrastructure.WinGet;
 
 /// <summary>
@@ -35,7 +37,14 @@ public interface IWinGetClient
     /// インストール済みパッケージ一覧を取得する
     /// </summary>
     /// <returns>パッケージ情報のリスト</returns>
-    Task<List<(string Id, string Name, string Version)>> GetInstalledPackagesAsync();
+    Task<List<PackageDefinition>> GetInstalledPackagesAsync();
+
+    /// <summary>
+    /// パッケージを検索する
+    /// </summary>
+    /// <param name="query">検索クエリ</param>
+    /// <returns>見つかったパッケージのリスト</returns>
+    Task<List<PackageDefinition>> SearchPackagesAsync(string query);
 }
 
 /// <summary>

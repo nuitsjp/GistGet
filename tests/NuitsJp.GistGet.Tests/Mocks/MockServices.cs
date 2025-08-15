@@ -1,5 +1,6 @@
 using NuitsJp.GistGet.Infrastructure.WinGet;
 using NuitsJp.GistGet.Business;
+using NuitsJp.GistGet.Models;
 
 namespace NuitsJp.GistGet.Tests.Mocks;
 
@@ -52,13 +53,24 @@ public class MockWinGetClient : IWinGetClient
         return Task.FromResult(ShouldReturnErrorCode);
     }
 
-    public Task<List<(string Id, string Name, string Version)>> GetInstalledPackagesAsync()
+    public Task<List<PackageDefinition>> GetInstalledPackagesAsync()
     {
         // テスト用のモックデータを返す
-        var packages = new List<(string Id, string Name, string Version)>
+        var packages = new List<PackageDefinition>
         {
-            ("TestApp.TestApp", "Test Application", "1.0.0"),
-            ("AnotherApp.AnotherApp", "Another Application", "2.0.0")
+            new("TestApp.TestApp") { Version = "1.0.0" },
+            new("AnotherApp.AnotherApp") { Version = "2.0.0" }
+        };
+        return Task.FromResult(packages);
+    }
+
+    public Task<List<PackageDefinition>> SearchPackagesAsync(string query)
+    {
+        // テスト用のモック検索結果を返す
+        var packages = new List<PackageDefinition>
+        {
+            new(query) { Version = "1.0.0" },
+            new($"{query}.Extended") { Version = "2.0.0" }
         };
         return Task.FromResult(packages);
     }

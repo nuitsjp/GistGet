@@ -1,8 +1,7 @@
 using Microsoft.Management.Deployment;
 using Microsoft.Extensions.Logging;
-using NuitsJp.GistGet.Infrastructure.WinGet;
 using NuitsJp.GistGet.Business;
-using System.Security.Principal;
+using NuitsJp.GistGet.Models;
 
 namespace NuitsJp.GistGet.Infrastructure.WinGet;
 
@@ -31,18 +30,24 @@ public class WinGetComClient : IWinGetClient
 
         try
         {
-            _logger.LogDebug("Initializing COM API - attempting direct PackageManager creation");
+            _logger.LogDebug("Initializing WinGet COM API");
 
-            // まず単純な方法を試す
+            // 公式サンプルに合わせた簡単な初期化
             _packageManager = new PackageManager();
-            _isInitialized = true;
 
-            _logger.LogInformation("COM API initialized successfully");
+            if (_packageManager == null)
+            {
+                throw new InvalidOperationException("PackageManager instance is null after creation");
+            }
+
+            _isInitialized = true;
+            _logger.LogInformation("WinGet COM API initialized successfully");
             return Task.CompletedTask;
         }
         catch (System.Runtime.InteropServices.COMException comEx)
         {
-            _logger.LogError(comEx, "COM API initialization failed with HRESULT: 0x{HRESULT:X8}. This may be due to: 1. Windows Package Manager COM API not available, 2. Version compatibility issues, 3. COM registration issues", comEx.HResult);
+            var errorMessage = GetCOMErrorMessage(comEx.HResult);
+            _logger.LogError(comEx, "COM API initialization failed with HRESULT: 0x{HRESULT:X8} ({ErrorMessage})", comEx.HResult, errorMessage);
             throw;
         }
         catch (Exception ex)
@@ -50,6 +55,19 @@ public class WinGetComClient : IWinGetClient
             _logger.LogError(ex, "Failed to initialize COM API: {ErrorMessage}, Exception type: {ExceptionType}", ex.Message, ex.GetType().FullName);
             throw;
         }
+    }
+
+
+    private string GetCOMErrorMessage(int hresult)
+    {
+        return hresult switch
+        {
+            unchecked((int)0x80040154) => "Class not registered (REGDB_E_CLASSNOTREG) - WinGet COM API may not be available",
+            unchecked((int)0x80070002) => "File not found - Windows Package Manager may not be installed",
+            unchecked((int)0x80004005) => "Unspecified error - COM server may not be running",
+            unchecked((int)0x80080005) => "Server execution failed - WinGet COM server failed to start",
+            _ => $"Unknown COM error: 0x{hresult:X8}"
+        };
     }
 
     public async Task<int> InstallPackageAsync(string[] args)
@@ -62,7 +80,7 @@ public class WinGetComClient : IWinGetClient
         {
             _logger.LogInformation("Installing package: {PackageId} via COM API", packageId);
 
-            // 実際のCOM API呼び出し（公式仕様に基づく修正）
+            // 実際のCOM API呼び出し（公式サンプルに基づく修正）
             var catalogRef = _packageManager!.GetPredefinedPackageCatalog(PredefinedPackageCatalog.OpenWindowsCatalog);
             var connectResult = await catalogRef.ConnectAsync();
 
@@ -72,7 +90,7 @@ public class WinGetComClient : IWinGetClient
                 return await FallbackToWingetExe(args, packageId, "install");
             }
 
-            // パッケージ検索（直接作成を試す）
+            // パッケージ検索（まずはIDで完全一致を試行）
             var findOptions = new FindPackagesOptions();
             var filter = new PackageMatchFilter
             {
@@ -80,18 +98,33 @@ public class WinGetComClient : IWinGetClient
                 Option = PackageFieldMatchOption.Equals,
                 Value = packageId
             };
-            findOptions.Selectors.Add(filter);
+            findOptions.Filters.Add(filter);
 
             var findResult = await connectResult.PackageCatalog.FindPackagesAsync(findOptions);
 
+            // IDで見つからない場合は名前で検索
             if (findResult.Matches.Count == 0)
             {
-                _logger.LogError("Package not found: {PackageId}", packageId);
-                return 1;
+                _logger.LogWarning("Package not found by ID, trying name search: {PackageId}", packageId);
+                findOptions.Filters.Clear();
+                var nameFilter = new PackageMatchFilter
+                {
+                    Field = PackageMatchField.Name,
+                    Option = PackageFieldMatchOption.ContainsCaseInsensitive,
+                    Value = packageId
+                };
+                findOptions.Filters.Add(nameFilter);
+                findResult = await connectResult.PackageCatalog.FindPackagesAsync(findOptions);
+            }
+
+            if (findResult.Matches.Count == 0)
+            {
+                _logger.LogError("Package not found by ID or name: {PackageId}", packageId);
+                return await FallbackToWingetExe(args, packageId, "install");
             }
 
             var package = findResult.Matches[0].CatalogPackage;
-            _logger.LogInformation("Found package: {PackageName} [{PackageId}] {Version}", package.Name, package.Id, package.DefaultInstallVersion.Version);
+            _logger.LogInformation("Found package: {PackageName} [{PackageId}] {Version}", package.Name, package.Id, package.DefaultInstallVersion?.Version ?? "unknown");
 
             // インストール実行（直接作成を試す）
             var installOptions = new InstallOptions
@@ -117,7 +150,7 @@ public class WinGetComClient : IWinGetClient
                 {
                     _logger.LogError("Installation failed: {Status}", installResult.Status);
                 }
-                return 1;
+                return await FallbackToWingetExe(args, packageId, "install");
             }
         }
         catch (System.Runtime.InteropServices.COMException comEx)
@@ -140,12 +173,29 @@ public class WinGetComClient : IWinGetClient
 
         try
         {
-            _logger.LogInformation("Uninstalling package: {PackageId} via COM API. Note: Uninstall functionality is not available in COM API, falling back to winget.exe", packageId);
+            _logger.LogInformation("Uninstalling package: {PackageId} via winget.exe (COM API uninstall not available)", packageId);
 
+            // インストール済みパッケージから実際のパッケージIDを特定
+            var installedPackages = await GetInstalledPackagesAsync();
+            var actualPackage = installedPackages.FirstOrDefault(pkg =>
+                pkg.Id.Contains(packageId, StringComparison.OrdinalIgnoreCase));
+
+            string actualPackageId = actualPackage?.Id ?? packageId;
+
+            if (actualPackage != null)
+            {
+                _logger.LogInformation("Found installed package: {ActualPackageId} for query: {QueryPackageId}", actualPackageId, packageId);
+            }
+            else
+            {
+                _logger.LogWarning("Package not found in installed list, using original ID: {PackageId}", packageId);
+            }
+
+            // 実際のパッケージIDでwinget.exeを呼び出し
             var processInfo = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "winget",
-                Arguments = string.Join(" ", args),
+                Arguments = $"uninstall {actualPackageId} --accept-source-agreements --disable-interactivity",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true
@@ -209,10 +259,22 @@ public class WinGetComClient : IWinGetClient
 
     private string? GetPackageId(string[] args)
     {
+        // --id フラグが指定されている場合
         for (int i = 0; i < args.Length - 1; i++)
         {
             if (args[i] == "--id" || args[i] == "-i")
                 return args[i + 1];
+        }
+
+        // winget.exe形式の引数解析: 最初の引数（install/uninstall）の後がパッケージID
+        if (args.Length >= 2 &&
+            (args[0] == "install" || args[0] == "uninstall" || args[0] == "upgrade"))
+        {
+            // 2番目の引数がオプション（--で始まる）でない場合、それがパッケージID
+            if (!args[1].StartsWith("--") && !args[1].StartsWith("-"))
+            {
+                return args[1];
+            }
         }
 
         _logger.LogWarning("Package ID not specified in args: {Args}", string.Join(" ", args));
@@ -264,29 +326,16 @@ public class WinGetComClient : IWinGetClient
         }
     }
 
-    private bool IsRunningAsAdministrator()
-    {
-        try
-        {
-            var identity = WindowsIdentity.GetCurrent();
-            var principal = new WindowsPrincipal(identity);
-            return principal.IsInRole(WindowsBuiltInRole.Administrator);
-        }
-        catch
-        {
-            return false;
-        }
-    }
 
     /// <summary>
     /// インストール済みパッケージ一覧を取得（内部用）
     /// </summary>
-    public async Task<List<(string Id, string Name, string Version)>> GetInstalledPackagesAsync()
+    public async Task<List<PackageDefinition>> GetInstalledPackagesAsync()
     {
         if (!_isInitialized)
             throw new InvalidOperationException("COM API not initialized");
 
-        var packages = new List<(string Id, string Name, string Version)>();
+        var packages = new List<PackageDefinition>();
 
         try
         {
@@ -317,7 +366,11 @@ public class WinGetComClient : IWinGetClient
 
                     if (installedVersion != null)
                     {
-                        packages.Add((pkg.Id, pkg.Name, installedVersion.Version));
+                        var packageDef = new PackageDefinition(pkg.Id)
+                        {
+                            Version = installedVersion.Version
+                        };
+                        packages.Add(packageDef);
                     }
                 }
                 catch (Exception ex)
@@ -339,12 +392,12 @@ public class WinGetComClient : IWinGetClient
     /// <summary>
     /// パッケージ検索（内部用）
     /// </summary>
-    public async Task<List<(string Id, string Name, string Version)>> SearchPackagesAsync(string query)
+    public async Task<List<PackageDefinition>> SearchPackagesAsync(string query)
     {
         if (!_isInitialized)
             throw new InvalidOperationException("COM API not initialized");
 
-        var packages = new List<(string Id, string Name, string Version)>();
+        var packages = new List<PackageDefinition>();
 
         try
         {
@@ -368,7 +421,7 @@ public class WinGetComClient : IWinGetClient
                 Option = PackageFieldMatchOption.ContainsCaseInsensitive,
                 Value = query
             };
-            findOptions.Selectors.Add(filter);
+            findOptions.Filters.Add(filter);
 
             var findResult = await connectResult.PackageCatalog.FindPackagesAsync(findOptions);
 
@@ -383,7 +436,11 @@ public class WinGetComClient : IWinGetClient
 
                     if (defaultVersion != null)
                     {
-                        packages.Add((pkg.Id, pkg.Name, defaultVersion.Version));
+                        var packageDef = new PackageDefinition(pkg.Id)
+                        {
+                            Version = defaultVersion.Version
+                        };
+                        packages.Add(packageDef);
                     }
                 }
                 catch (Exception ex)

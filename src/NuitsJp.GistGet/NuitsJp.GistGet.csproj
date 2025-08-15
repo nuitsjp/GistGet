@@ -2,21 +2,26 @@
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFramework>net8.0-windows10.0.26100</TargetFramework>
+		<TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
 		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
 		<ApplicationManifest>app.manifest</ApplicationManifest>
 		<AssemblyName>GistGet</AssemblyName>
+		<Platforms>x64;x86;ARM64</Platforms>
 
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<!-- MVP検証のため一時的にAOTを無効化 -->
 		<!-- <PublishAot>true</PublishAot> -->
 		<InvariantGlobalization>true</InvariantGlobalization>
+		
+		<!-- WinGet COM API設定 -->
+		<MicrosoftManagementDeployment-FactoryLinkage>static</MicrosoftManagementDeployment-FactoryLinkage>
 	</PropertyGroup>
 
 	<!-- アーキテクチャ改善: 依存性注入とログ機能を追加 -->
 	<ItemGroup>
-		<PackageReference Include="Microsoft.WindowsPackageManager.ComInterop" Version="1.11.430" />
+		<PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.2.0" />
+		<PackageReference Include="Microsoft.WindowsPackageManager.ComInterop" Version="1.10.340" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />

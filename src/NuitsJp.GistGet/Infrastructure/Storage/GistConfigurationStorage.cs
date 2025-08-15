@@ -7,6 +7,7 @@ namespace NuitsJp.GistGet.Infrastructure.Storage;
 public class GistConfigurationStorage : IGistConfigurationStorage
 {
     private readonly string _filePath;
+    private static readonly SemaphoreSlim _fileSemaphore = new(1, 1);
 
     public string FilePath => _filePath;
 
@@ -32,6 +33,7 @@ public class GistConfigurationStorage : IGistConfigurationStorage
 
         configuration.Validate();
 
+        await _fileSemaphore.WaitAsync();
         try
         {
             // ディレクトリが存在しない場合は作成
@@ -59,9 +61,10 @@ public class GistConfigurationStorage : IGistConfigurationStorage
         {
             throw new InvalidOperationException($"Failed to save configuration file: {ex.Message}", ex);
         }
-        catch (UnauthorizedAccessException ex)
+        // UnauthorizedAccessException はそのまま投げる
+        finally
         {
-            throw new InvalidOperationException($"Access denied when saving configuration: {ex.Message}", ex);
+            _fileSemaphore.Release();
         }
     }
 
@@ -70,6 +73,7 @@ public class GistConfigurationStorage : IGistConfigurationStorage
         if (!File.Exists(_filePath))
             return null;
 
+        await _fileSemaphore.WaitAsync();
         try
         {
             // 暗号化されたファイルを読み込み
@@ -98,6 +102,10 @@ public class GistConfigurationStorage : IGistConfigurationStorage
         {
             throw new InvalidOperationException($"Invalid configuration data: {ex.Message}", ex);
         }
+        finally
+        {
+            _fileSemaphore.Release();
+        }
     }
 
     public async Task<bool> IsConfiguredAsync()
@@ -116,20 +124,28 @@ public class GistConfigurationStorage : IGistConfigurationStorage
 
     public async Task DeleteConfigurationAsync()
     {
-        if (File.Exists(_filePath))
+        await _fileSemaphore.WaitAsync();
+        try
         {
-            try
+            if (File.Exists(_filePath))
             {
-                File.Delete(_filePath);
+                try
+                {
+                    File.Delete(_filePath);
+                }
+                catch (IOException ex)
+                {
+                    throw new InvalidOperationException($"Failed to delete configuration file: {ex.Message}", ex);
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    throw new InvalidOperationException($"Access denied when deleting configuration: {ex.Message}", ex);
+                }
             }
-            catch (IOException ex)
-            {
-                throw new InvalidOperationException($"Failed to delete configuration file: {ex.Message}", ex);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                throw new InvalidOperationException($"Access denied when deleting configuration: {ex.Message}", ex);
-            }
+        }
+        finally
+        {
+            _fileSemaphore.Release();
         }
 
         await Task.CompletedTask;

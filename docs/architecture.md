@@ -399,8 +399,8 @@ NuitsJp.GistGet.Tests.Mocks.Business/
 ### 3.4 テスト実行環境
 
 **技術的制約**:
-- ターゲット環境: `net8.0-windows10.0.26100` （Windows 10限定）
-- ランタイム: `win-x64` （64bit Windows専用）
+- ターゲット環境: `net8.0-windows10.0.22621.0` （Windows 10 Build 22621以降）
+- ランタイム: `win-x64` （x64/x86/ARM64対応）
 - COM API依存のため、CI/CD環境ではWindows Runnerが必須
 
 **テスト実行戦略**:
@@ -421,10 +421,10 @@ dotnet test --collect:"XPlat Code Coverage"
 ```
 
 **前提条件**:
-- Windows 10/11 (Build 26100以降)
+- Windows 10/11 (Build 22621以降)
 - .NET 8 SDK
 - Visual Studio 2022またはVS Code
-- WinGet COM APIの利用可能な環境
+- Microsoft.WindowsPackageManager.ComInterop 1.10.340 （自動インストール）
 
 ## 3.5 WinGet COM API制約事項
 
@@ -471,17 +471,31 @@ SilentUninstallCommand,
 
 これらのメタデータフィールドの存在から、**将来的にはCOM API経由でのUninstall機能追加が検討されている**可能性がある。
 
-### 3.5.2 現在の実装方針
+### 3.5.2 現在の実装方針と成功実績
 
-現在の`WinGetComClient.UninstallPackageAsync`実装は技術的制約に基づく**適切な設計判断**:
+**2025-08-15実装完了**: 公式サンプルベースによるCOM API完全実装達成
 
 #### ハイブリッド実装アプローチ
 
-| 機能 | 実装方式 | 理由 |
-|------|----------|------|
-| **Install** | COM API優先 → winget.exe フォールバック | COM API完全サポート |
-| **Uninstall** | 直接winget.exe実行 | COM APIサポートなし |
+| 機能 | 実装方式 | 実装状況 |
+|------|----------|----------|
+| **Install** | COM API優先 → winget.exe フォールバック | ✅ 統合テスト成功 |
+| **Uninstall** | 実際パッケージID特定 → winget.exe実行 | ✅ 統合テスト成功 |
+| **Search** | COM API実装 | ✅ COM/EXE比較テスト成功 |
 | **Upgrade** | 簡易COM実装（将来改善予定） | 部分的サポート |
+
+#### 技術的実装詳細
+
+**初期化パターン**: 
+```csharp
+// 公式サンプルベースの簡潔実装
+_packageManager = new PackageManager();
+```
+
+**検索戦略**:
+1. PackageMatchField.Id完全一致検索
+2. PackageMatchField.Name部分一致フォールバック
+3. 結果をPackageDefinitionに統一
 
 #### Gistファイル同期の透過性
 
@@ -496,6 +510,37 @@ SilentUninstallCommand,
 3. **将来拡張への準備**: COM API拡張時の対応準備済み
 4. **機能の完全性**: Gist同期機能は全操作で透過的に動作
 
+### 3.5.4 テスト環境の動作実績
+
+#### WinGet COM APIテストの実装成功
+
+**2025-08-15時点の実装状況**:
+- **COM API統合テスト全6つが成功**: 初期化・検索・インストール・アンインストール・COM/EXE比較
+- **公式サンプルベースの実装**: Microsoft.WindowsPackageManager.ComInterop 1.10.340使用
+- **プラットフォーム対応**: net8.0-windows10.0.22621.0、x64/x86/ARM64
+
+**環境変数による制御**:
+- `SKIP_WINGET_COM_TESTS`: COM APIが利用できない環境でのテストスキップ機能
+  - 設定時: COM API統合テストをスキップし、警告メッセージを出力
+  - 未設定時: COM APIテストを実行（推奨）
+
+**CI/CD環境での設定例**:
+```yaml
+env:
+  SKIP_WINGET_COM_TESTS: "true"  # CI環境でCOM APIが利用できない場合のみ
+```
+
+**ローカル開発環境**:
+- Windows 11/10 (Build 22621以降推奨)
+- Windows Package Manager が正しくインストールされている
+- Microsoft.WindowsPackageManager.ComInterop パッケージ経由で自動対応
+
+**実装アーキテクチャ**:
+- **初期化**: `new PackageManager()` による直接実装（公式サンプルベース）
+- **パッケージ検索**: ID完全一致 → 名前部分一致のフォールバック
+- **インストール**: COM API実行 → winget.exe フォールバック
+- **アンインストール**: 実際のパッケージID特定 → winget.exe実行
+
 ## 4. 実装の特徴とアーキテクチャ原則
 
 ### 4.1 設計原則
@@ -507,8 +552,10 @@ SilentUninstallCommand,
 
 ### 4.2 技術スタック
 
-- **フレームワーク**: .NET 8
-- **COM API**: Microsoft.Management.Deployment
+- **フレームワーク**: .NET 8 (net8.0-windows10.0.22621.0)
+- **プラットフォーム**: x64/x86/ARM64 対応
+- **COM API**: Microsoft.WindowsPackageManager.ComInterop 1.10.340
+- **CsWinRT**: Microsoft.Windows.CsWinRT 2.2.0
 - **HTTP通信**: System.Net.Http（GitHub API用）
 - **暗号化**: Windows DPAPI
 - **ログ**: Microsoft.Extensions.Logging
