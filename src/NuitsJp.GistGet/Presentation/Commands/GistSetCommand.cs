@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using NuitsJp.GistGet.Business.Services;
 using NuitsJp.GistGet.Business.Models;
+using Sharprompt;
 
 namespace NuitsJp.GistGet.Presentation.Commands
 {
@@ -85,16 +86,20 @@ namespace NuitsJp.GistGet.Presentation.Commands
                 return ExtractGistIdFromUrl(providedGistId);
             }
 
-            Console.Write("Gist IDまたはURLを入力してください: ");
-            var userInput = Console.ReadLine();
-
-            if (string.IsNullOrWhiteSpace(userInput))
+            try
             {
-                Console.WriteLine("Error: Gist IDが入力されませんでした。");
+                var userInput = Prompt.Input<string>(
+                    "Gist IDまたはURLを入力してください",
+                    validators: new[] { Validators.Required() }
+                );
+
+                return ExtractGistIdFromUrl(userInput);
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("Error: Gist IDの入力に失敗しました。");
                 return null;
             }
-
-            return ExtractGistIdFromUrl(userInput);
         }
 
         private static string CollectFileName(string? providedFileName)
@@ -105,10 +110,21 @@ namespace NuitsJp.GistGet.Presentation.Commands
             }
 
             const string defaultFileName = "packages.yaml";
-            Console.Write($"ファイル名を入力してください（デフォルト: {defaultFileName}）: ");
-            var userInput = Console.ReadLine();
 
-            return string.IsNullOrWhiteSpace(userInput) ? defaultFileName : userInput;
+            try
+            {
+                var userInput = Prompt.Input<string>(
+                    "ファイル名を入力してください",
+                    defaultValue: defaultFileName
+                );
+
+                return string.IsNullOrWhiteSpace(userInput) ? defaultFileName : userInput;
+            }
+            catch (Exception)
+            {
+                Console.WriteLine($"ファイル名の入力に失敗しました。デフォルト値 '{defaultFileName}' を使用します。");
+                return defaultFileName;
+            }
         }
 
         private static string ExtractGistIdFromUrl(string gistIdOrUrl)

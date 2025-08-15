@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using NuitsJp.GistGet.Business;
 using NuitsJp.GistGet.Business.Models;
+using Sharprompt;
 
 namespace NuitsJp.GistGet.Presentation.Commands;
 
@@ -139,24 +140,23 @@ public class SyncCommand
         }
 
         Console.WriteLine();
-        Console.Write("今すぐ再起動しますか？ (Y/N): ");
 
-        while (true)
+        try
         {
-            var key = Console.ReadKey(true);
-            Console.WriteLine(key.KeyChar);
+            var result = Prompt.Confirm("今すぐ再起動しますか？", defaultValue: false);
 
-            switch (key.KeyChar.ToString().ToUpper())
+            if (!result)
             {
-                case "Y":
-                    return Task.FromResult(true);
-                case "N":
-                    Console.WriteLine("再起動をスキップしました。後で手動で再起動してください。");
-                    return Task.FromResult(false);
-                default:
-                    Console.Write("Y または N を入力してください: ");
-                    break;
+                Console.WriteLine("再起動をスキップしました。後で手動で再起動してください。");
             }
+
+            return Task.FromResult(result);
+        }
+        catch (Exception)
+        {
+            // Sharpromptが失敗した場合のフォールバック
+            Console.WriteLine("再起動確認に失敗しました。再起動をスキップします。");
+            return Task.FromResult(false);
         }
     }
 }
