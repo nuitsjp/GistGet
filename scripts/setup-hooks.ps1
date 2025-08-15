@@ -28,34 +28,30 @@ if (-not $formatInstalled) {
     }
 }
 
-# Enable git hooks (Windows needs this due to filesystem permissions)
+# Copy pre-commit hook template and enable git hooks
+$templatePath = "scripts\hooks\pre-commit.ps1"
+if (-not (Test-Path $templatePath)) {
+    Write-Host "❌ Pre-commit template not found: $templatePath" -ForegroundColor Red
+    exit 1
+}
+
+# Copy the template to .git/hooks/
+$hookPath = ".git\hooks\pre-commit.ps1"
+Copy-Item $templatePath $hookPath -Force
+Write-Host "✅ Pre-commit script copied from template" -ForegroundColor Green
+
 if ($IsWindows -or $env:OS -like "*Windows*") {
-    # On Windows, make sure the PowerShell script can be executed
-    $hookPath = ".git\hooks\pre-commit.ps1"
-    if (Test-Path $hookPath) {
-        # Create a batch file wrapper for the PowerShell script
-        $batchContent = "@echo off`npowershell.exe -ExecutionPolicy Bypass -File `"%~dp0pre-commit.ps1`""
-        Set-Content -Path ".git\hooks\pre-commit.bat" -Value $batchContent
-        
-        # Create the main pre-commit hook that calls the batch file
-        $hookContent = "#!/bin/sh`n`"./pre-commit.bat`""
-        Set-Content -Path ".git\hooks\pre-commit" -Value $hookContent
-        
-        Write-Host "✅ Pre-commit hooks enabled (Windows)" -ForegroundColor Green
-    } else {
-        Write-Host "❌ pre-commit.ps1 not found" -ForegroundColor Red
-        exit 1
-    }
+    # On Windows, create a simple hook that directly calls PowerShell
+    $hookContent = "#!/bin/sh`npowershell.exe -ExecutionPolicy Bypass -File `"`$(dirname `$0)/pre-commit.ps1`""
+    Set-Content -Path ".git\hooks\pre-commit" -Value $hookContent
+    
+    Write-Host "✅ Pre-commit hooks enabled (Windows)" -ForegroundColor Green
 } else {
-    # On Unix-like systems, make the shell script executable
-    $hookPath = ".git/hooks/pre-commit"
-    if (Test-Path $hookPath) {
-        chmod +x $hookPath
-        Write-Host "✅ Pre-commit hooks enabled (Unix)" -ForegroundColor Green
-    } else {
-        Write-Host "❌ pre-commit hook not found" -ForegroundColor Red
-        exit 1
-    }
+    # On Unix-like systems, create a shell script wrapper
+    $shellWrapper = "#!/bin/sh`npwsh -File `"`$(dirname `"`$0`")/pre-commit.ps1`""
+    Set-Content -Path ".git/hooks/pre-commit" -Value $shellWrapper
+    chmod +x ".git/hooks/pre-commit"
+    Write-Host "✅ Pre-commit hooks enabled (Unix)" -ForegroundColor Green
 }
 
 Write-Host ""
