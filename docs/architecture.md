@@ -71,7 +71,9 @@ sequenceDiagram
 
 **シンプルな3層アーキテクチャ（推奨設計）**:
 
-- **プレゼンテーション層（Commands）**: UI制御とエントリポイント
+- **プレゼンテーション層（Commands + Console）**: UI制御とエントリポイント
+  - Console層: 高レベルUI抽象化とコマンド固有の表示制御
+  - Commands層: ビジネスフロー制御とオプション解析
 - **ビジネスロジック層（Services）**: ワークフロー制御とビジネスルール
 - **インフラストラクチャ層**: 外部システム連携とデータ永続化
 
@@ -151,9 +153,9 @@ public class CommandRouter  // 現在のCommandService.cs
 ```
 
 #### Commands（プレゼンテーション層）
-**責務**: UI制御に特化
-- コマンドライン引数解析・対話的入力処理
-- コンソール出力・エラーメッセージ表示
+**責務**: ビジネスフロー制御に特化
+- コマンドライン引数解析・オプション検証
+- ビジネスロジックの呼び出しと結果処理
 - 実行結果（exit code）返却
 
 **推奨実装例**:
@@ -237,7 +239,180 @@ CLI引数 -> CommandRouter (ルーティング判定)
 - CommandService → CommandRouterに名称変更
 - Serviceがワークフロー制御を担い、Commandは単純なUI制御のみ
 
-### 2.3 名前空間とレイヤーベース抽象化
+### 2.3 Command-Console分離設計
+
+#### 2.3.1 設計原則
+
+**高レベル抽象化によるUI詳細の隠蔽**: CommandからコンソールのI/O詳細を完全に分離し、コマンド固有の高レベルインターフェースを提供します。
+
+**設計理念**:
+- Commandはビジネスフローとオプション解析に専念
+- ConsoleはUI表現とユーザーインタラクションに専念
+- UI変更がCommandに影響しない抽象化レベル
+
+#### 2.3.2 構造設計
+
+**コマンド固有の高レベルインターフェース**:
+
+```csharp
+// NuitsJp.GistGet.Presentation.Sync/ISyncConsole.cs
+public interface ISyncConsole : IConsoleBase
+{
+    /// <summary>同期開始を通知</summary>
+    void NotifySyncStarting();
+    
+    /// <summary>同期結果を表示し、ユーザーアクションを取得</summary>
+    SyncUserAction ShowSyncResultAndGetAction(SyncResult result);
+    
+    /// <summary>再起動確認（必要なパッケージリストを含む）</summary>
+    bool ConfirmRebootWithPackageList(List<string> packagesRequiringReboot);
+    
+    /// <summary>再起動実行を通知</summary>
+    void NotifyRebootExecuting();
+}
+
+// NuitsJp.GistGet.Presentation.Auth/IAuthConsole.cs
+public interface IAuthConsole : IConsoleBase
+{
+    /// <summary>認証フロー全体を実行</summary>
+    Task<bool> RunDeviceFlowAuthentication(DeviceCodeInfo deviceCode, CancellationToken cancellationToken);
+    
+    /// <summary>認証状態を表示</summary>
+    void ShowAuthenticationStatus(AuthStatus status);
+}
+
+// NuitsJp.GistGet.Presentation.GistConfig/IGistConfigConsole.cs
+public interface IGistConfigConsole : IConsoleBase
+{
+    /// <summary>Gist設定フローを実行</summary>
+    GistConfigInput CollectGistConfiguration(bool showInstructions = true);
+    
+    /// <summary>設定成功を表示</summary>
+    void ShowConfigurationSuccess(string gistId, string fileName);
+}
+```
+
+**共通基盤インターフェース**:
+
+```csharp
+// NuitsJp.GistGet.Presentation.Console/IConsoleBase.cs
+public interface IConsoleBase
+{
+    /// <summary>エラーを表示（詳細度は実装に委ねる）</summary>
+    void ShowError(Exception exception, string? userFriendlyMessage = null);
+    
+    /// <summary>警告を表示</summary>
+    void ShowWarning(string message);
+    
+    /// <summary>進捗状況を表示（長時間処理用）</summary>
+    IDisposable BeginProgress(string operation);
+}
+```
+
+**フォルダ構造**:
+
+```
+src/NuitsJp.GistGet/Presentation/
+├── Console/
+│   ├── IConsoleBase.cs (共通基盤)
+│   ├── ConsoleBase.cs (共通実装)
+│   └── ConsoleStyles.cs (表示スタイル設定)
+├── Sync/
+│   ├── SyncCommand.cs
+│   ├── ISyncConsole.cs
+│   ├── SyncConsole.cs (標準実装)
+│   └── SharpromptSyncConsole.cs (リッチUI実装)
+├── Auth/
+│   ├── AuthCommand.cs
+│   ├── IAuthConsole.cs
+│   ├── AuthConsole.cs
+│   └── SharpromptAuthConsole.cs
+└── GistConfig/
+    ├── GistSetCommand.cs
+    ├── GistStatusCommand.cs
+    ├── GistShowCommand.cs
+    ├── IGistConfigConsole.cs
+    ├── GistConfigConsole.cs
+    └── SharpromptGistConfigConsole.cs
+```
+
+#### 2.3.3 実装パターン
+
+**SyncCommandの簡潔な実装例**:
+
+```csharp
+public class SyncCommand
+{
+    private readonly IGistSyncService _gistSyncService;
+    private readonly ISyncConsole _console;
+    private readonly ILogger<SyncCommand> _logger;
+
+    public async Task<int> ExecuteAsync(string[] args)
+    {
+        try
+        {
+            // オプション解析はCommandが責任を持つ
+            var options = ParseOptions(args);
+            
+            // UIへの通知は高レベルで
+            _console.NotifySyncStarting();
+            
+            // ビジネスロジック実行
+            var result = await _gistSyncService.SyncAsync();
+            
+            // 結果表示とユーザーアクション取得を一体化
+            var userAction = _console.ShowSyncResultAndGetAction(result);
+            
+            // 再起動処理（UIの詳細はConsoleに委譲）
+            if (result.RebootRequired && userAction != SyncUserAction.SkipReboot)
+            {
+                if (_console.ConfirmRebootWithPackageList(result.PackagesRequiringReboot))
+                {
+                    _console.NotifyRebootExecuting();
+                    await _gistSyncService.ExecuteRebootAsync();
+                }
+            }
+            
+            return result.ExitCode;
+        }
+        catch (Exception ex)
+        {
+            _console.ShowError(ex, "同期処理でエラーが発生しました");
+            return 1;
+        }
+    }
+}
+```
+
+#### 2.3.4 DI設定
+
+```csharp
+// 環境変数やコンフィグで切り替え可能
+var useRichUI = Environment.GetEnvironmentVariable("GISTGET_RICH_UI") != "false";
+
+if (useRichUI)
+{
+    services.AddSingleton<ISyncConsole, SharpromptSyncConsole>();
+    services.AddSingleton<IAuthConsole, SharpromptAuthConsole>();
+    services.AddSingleton<IGistConfigConsole, SharpromptGistConfigConsole>();
+}
+else
+{
+    services.AddSingleton<ISyncConsole, SyncConsole>();
+    services.AddSingleton<IAuthConsole, AuthConsole>();
+    services.AddSingleton<IGistConfigConsole, GistConfigConsole>();
+}
+```
+
+#### 2.3.5 設計の利点
+
+1. **責任の分離**: CommandはビジネスフローとオプションBM解析、ConsoleはUI表現に専念
+2. **テスタビリティ**: 高レベルインターフェースのモックが簡単
+3. **拡張性**: 新しいUI実装（TUI、Web等）の追加が容易
+4. **保守性**: UIの変更がCommandに影響しない
+5. **ドメイン表現**: メソッド名がビジネス要件を直接表現
+
+### 2.4 名前空間とレイヤーベース抽象化
 
 **現在の問題**: 単一`Abstractions`による過度な抽象化
 - 単一プロジェクトで外部公開しないのに全インターフェースを集約

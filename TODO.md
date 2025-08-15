@@ -29,24 +29,41 @@
 
 
 
-## 🚀 次の作業：syncコマンド実装
+## 🚀 次の作業：Command-Console分離リファクタリング
 
-**優先度**: 高（Phase 5：syncコマンド実装）
+**優先度**: 高（Phase 0：syncコマンド実装の前提条件）
+
+### Phase 0: Command-Console分離基盤構築
+
+**設計原則**: CommandからUI詳細を完全分離し、コマンド固有の高レベルインターフェースによる抽象化を実現
+
+**実装手順**:
+- [ ] Console基盤作成（IConsoleBase, ConsoleBase）
+- [ ] Syncコマンド分離（ISyncConsole, SyncConsole, Sync/SyncCommand移動）
+- [ ] Authコマンド分離（IAuthConsole, AuthConsole, Auth/AuthCommand移動）
+- [ ] Gist関連コマンド分離（IGistConfigConsole, GistConfigConsole, 各コマンド移動）
+- [ ] CommandRouter更新（新しい名前空間対応）
+- [ ] AppHost.cs更新（DI設定）
+- [ ] 単体テスト更新（高レベルインターフェースモック）
+
+## 🔄 Phase 5：syncコマンド実装
+
+**優先度**: 高（Command-Console分離完了後）
 
 ### Phase 5: syncコマンド実装
-- **現状**: syncコマンド仕様書作成完了、実装開始準備整い
+- **現状**: Command-Console分離完了、syncコマンド仕様書作成完了
 - **目標**: docs/gistget/sync.mdに基づくsyncコマンドの完全実装
-- **実装範囲**: SyncCommand、GistSyncService本格実装、SyncPlanモデル、再起動処理
+- **実装範囲**: SyncCommand（ISyncConsole使用）、GistSyncService本格実装、SyncPlanモデル、再起動処理
 
 **実装手順**:
 - [ ] SyncPlanモデル作成 (Business層)
 - [ ] SyncResultモデル作成 (Business層)
 - [ ] GistSyncService本格実装 (GistSyncStub.csを置換)
-- [ ] SyncCommand作成 (Presentation層)
+- [ ] SyncCommand作成 (Presentation/Sync層、ISyncConsole使用)
 - [ ] CommandRouterに"sync"コマンド追加
 - [ ] 再起動処理実装 (CheckRebootRequired, ExecuteRebootAsync)
 - [ ] 差分検出ロジック実装 (DetectDifferences)
-- [ ] syncコマンドテスト作成 (Business層・統合テスト)
+- [ ] syncコマンドテスト作成 (ISyncConsoleモック使用)
 - [ ] DI登録更新 (Program.cs)
 - [ ] 動作確認とテスト実行
 
