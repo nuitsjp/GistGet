@@ -2,7 +2,9 @@ using Microsoft.Extensions.Logging;
 using NuitsJp.GistGet.Presentation;
 using NuitsJp.GistGet.Infrastructure.WinGet;
 using NuitsJp.GistGet.Business;
-using NuitsJp.GistGet.Presentation.Commands;
+using NuitsJp.GistGet.Presentation.Auth;
+using NuitsJp.GistGet.Presentation.GistConfig;
+using NuitsJp.GistGet.Presentation.Sync;
 
 namespace NuitsJp.GistGet.Presentation;
 
@@ -11,37 +13,28 @@ namespace NuitsJp.GistGet.Presentation;
 /// </summary>
 public class CommandRouter : ICommandRouter
 {
-    private readonly IWinGetClient _winGetClient;
-    private readonly IWinGetPassthroughClient _passthroughClient;
-    private readonly IGistSyncService _gistSyncService;
     private readonly AuthCommand _authCommand;
     private readonly GistSetCommand _gistSetCommand;
     private readonly GistStatusCommand _gistStatusCommand;
     private readonly GistShowCommand _gistShowCommand;
-    private readonly SyncCommand _syncCommand;
+    // private readonly SyncCommand _syncCommand; // TODO: 循環依存解決後に復旧
     private readonly ILogger<CommandRouter> _logger;
     private readonly IErrorMessageService _errorMessageService;
 
     public CommandRouter(
-        IWinGetClient winGetClient,
-        IWinGetPassthroughClient passthroughClient,
-        IGistSyncService gistSyncService,
         AuthCommand authCommand,
         GistSetCommand gistSetCommand,
         GistStatusCommand gistStatusCommand,
         GistShowCommand gistShowCommand,
-        SyncCommand syncCommand,
+        // SyncCommand syncCommand, // TODO: 循環依存解決後に復旧
         ILogger<CommandRouter> logger,
         IErrorMessageService errorMessageService)
     {
-        _winGetClient = winGetClient;
-        _passthroughClient = passthroughClient;
-        _gistSyncService = gistSyncService;
         _authCommand = authCommand;
         _gistSetCommand = gistSetCommand;
         _gistStatusCommand = gistStatusCommand;
         _gistShowCommand = gistShowCommand;
-        _syncCommand = syncCommand;
+        // _syncCommand = syncCommand; // TODO: 循環依存解決後に復旧
         _logger = logger;
         _errorMessageService = errorMessageService;
     }
@@ -54,7 +47,8 @@ public class CommandRouter : ICommandRouter
 
             if (args.Length == 0)
             {
-                return await _passthroughClient.ExecuteAsync(args);
+                // TODO: WinGetCommandクラス作成後に復旧
+                throw new NotImplementedException("Default WinGet passthrough temporarily disabled during refactoring");
             }
 
             var command = args[0].ToLowerInvariant();
@@ -116,30 +110,32 @@ public class CommandRouter : ICommandRouter
         if (usesPassthrough)
         {
             _logger.LogDebug("Routing to passthrough client for explicit command: {Command}", command);
-            return await _passthroughClient.ExecuteAsync(args);
+            // TODO: WinGetCommandクラス作成後に復旧
+            throw new NotImplementedException("WinGet passthrough temporarily disabled during refactoring");
         }
 
         _logger.LogDebug("Routing to passthrough client for unknown command: {Command}", command);
-        return await _passthroughClient.ExecuteAsync(args);
+        // TODO: WinGetCommandクラス作成後に復旧
+        throw new NotImplementedException("WinGet passthrough temporarily disabled during refactoring");
     }
 
     private async Task<int> HandleGistSubCommandAsync(string[] args)
     {
         if (args.Length < 2)
         {
-            Console.WriteLine("Usage: gistget gist <command> [options]");
-            Console.WriteLine();
-            Console.WriteLine("Commands:");
-            Console.WriteLine("  set [--gist-id <id>] [--file <filename>]  - Gist設定を行います");
-            Console.WriteLine("  status                                     - 現在のGist設定状態を表示します");
-            Console.WriteLine("  show [--raw]                              - Gistの内容を表示します");
-            Console.WriteLine();
-            Console.WriteLine("Examples:");
-            Console.WriteLine("  gistget gist set --gist-id abc123 --file packages.yaml");
-            Console.WriteLine("  gistget gist set                  # 対話的に設定");
-            Console.WriteLine("  gistget gist status");
-            Console.WriteLine("  gistget gist show");
-            Console.WriteLine("  gistget gist show --raw          # Raw YAML形式で表示");
+            System.Console.WriteLine("Usage: gistget gist <command> [options]");
+            System.Console.WriteLine();
+            System.Console.WriteLine("Commands:");
+            System.Console.WriteLine("  set [--gist-id <id>] [--file <filename>]  - Gist設定を行います");
+            System.Console.WriteLine("  status                                     - 現在のGist設定状態を表示します");
+            System.Console.WriteLine("  show [--raw]                              - Gistの内容を表示します");
+            System.Console.WriteLine();
+            System.Console.WriteLine("Examples:");
+            System.Console.WriteLine("  gistget gist set --gist-id abc123 --file packages.yaml");
+            System.Console.WriteLine("  gistget gist set                  # 対話的に設定");
+            System.Console.WriteLine("  gistget gist status");
+            System.Console.WriteLine("  gistget gist show");
+            System.Console.WriteLine("  gistget gist show --raw          # Raw YAML形式で表示");
             return 1;
         }
 
@@ -186,25 +182,25 @@ public class CommandRouter : ICommandRouter
 
     private Task<int> ShowGistSubCommandHelp(string invalidSubCommand)
     {
-        Console.WriteLine($"Error: Unknown gist command '{invalidSubCommand}'");
-        Console.WriteLine();
-        Console.WriteLine("Available commands:");
-        Console.WriteLine("  set     - Gist設定を行います");
-        Console.WriteLine("  status  - 現在のGist設定状態を表示します");
-        Console.WriteLine("  show    - Gistの内容を表示します");
-        Console.WriteLine();
-        Console.WriteLine("Use 'gistget gist' for more information.");
+        System.Console.WriteLine($"Error: Unknown gist command '{invalidSubCommand}'");
+        System.Console.WriteLine();
+        System.Console.WriteLine("Available commands:");
+        System.Console.WriteLine("  set     - Gist設定を行います");
+        System.Console.WriteLine("  status  - 現在のGist設定状態を表示します");
+        System.Console.WriteLine("  show    - Gistの内容を表示します");
+        System.Console.WriteLine();
+        System.Console.WriteLine("Use 'gistget gist' for more information.");
         return Task.FromResult(1);
     }
 
 
 
-    private async Task<int> HandleGistCommandAsync(string command, string[] args)
+    private Task<int> HandleGistCommandAsync(string command, string[] args)
     {
         _logger.LogDebug("Routing to Gist service for command: {Command}", command);
         return command switch
         {
-            "sync" => await _syncCommand.ExecuteAsync(args),
+            "sync" => throw new NotImplementedException("SyncCommand temporarily disabled during refactoring to resolve circular dependency"),
             _ => throw new ArgumentException($"Unsupported gist command: {command}")
         };
     }
@@ -212,15 +208,9 @@ public class CommandRouter : ICommandRouter
     private async Task<int> HandleComCommandAsync(string command, string[] args)
     {
         _logger.LogDebug("Routing to COM client for command: {Command}", command);
-        await _winGetClient.InitializeAsync();
-
-        return command switch
-        {
-            "install" => await _winGetClient.InstallPackageAsync(args),
-            "uninstall" => await _winGetClient.UninstallPackageAsync(args),
-            "upgrade" => await _winGetClient.UpgradePackageAsync(args),
-            _ => throw new ArgumentException($"Unsupported COM command: {command}")
-        };
+        // TODO: WinGetCommandクラス作成後に復旧
+        await Task.CompletedTask; // async警告を回避
+        throw new NotImplementedException("WinGet COM commands temporarily disabled during refactoring");
     }
 
 

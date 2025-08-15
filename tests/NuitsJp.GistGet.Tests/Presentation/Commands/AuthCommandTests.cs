@@ -4,7 +4,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NuitsJp.GistGet.Infrastructure.GitHub;
-using NuitsJp.GistGet.Presentation.Commands;
+using NuitsJp.GistGet.Presentation.Auth;
+using NuitsJp.GistGet.Presentation.Console;
 using Shouldly;
 using Xunit;
 
@@ -18,14 +19,16 @@ namespace NuitsJp.GistGet.Tests.Presentation.Commands;
 public class AuthCommandTests
 {
     private readonly Mock<IGitHubAuthService> _mockAuthService;
+    private readonly Mock<IAuthConsole> _mockConsole;
     private readonly Mock<ILogger<AuthCommand>> _mockLogger;
     private readonly AuthCommand _authCommand;
 
     public AuthCommandTests()
     {
         _mockAuthService = new Mock<IGitHubAuthService>();
+        _mockConsole = new Mock<IAuthConsole>();
         _mockLogger = new Mock<ILogger<AuthCommand>>();
-        _authCommand = new AuthCommand(_mockAuthService.Object, _mockLogger.Object);
+        _authCommand = new AuthCommand(_mockAuthService.Object, _mockConsole.Object, _mockLogger.Object);
     }
 
     #region UI Control Tests - Success Scenarios
@@ -80,7 +83,7 @@ public class AuthCommandTests
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("認証コマンドの実行中にエラーが発生しました")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("認証フロー実行中にエラーが発生しました")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
