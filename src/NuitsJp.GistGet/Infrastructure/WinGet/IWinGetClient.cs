@@ -70,7 +70,7 @@ public interface IProcessWrapper
     /// </summary>
     /// <param name="startInfo">プロセス開始情報</param>
     /// <returns>開始されたプロセス</returns>
-    IProcessResult? Start(System.Diagnostics.ProcessStartInfo startInfo);
+    IProcessResult? Start(global::System.Diagnostics.ProcessStartInfo startInfo);
 }
 
 /// <summary>

@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using NuitsJp.GistGet.Presentation;
 using NuitsJp.GistGet.Business;
 using NuitsJp.GistGet.Business.Services;
+using NuitsJp.GistGet.Infrastructure.Os;
 using NuitsJp.GistGet.Infrastructure.WinGet;
 using NuitsJp.GistGet.Infrastructure.GitHub;
 using NuitsJp.GistGet.Infrastructure.Storage;
@@ -66,6 +67,7 @@ public static class AppHost
 
                 // Infrastructure
                 services.AddSingleton<IProcessWrapper, ProcessWrapper>();
+                services.AddSingleton<IOsService, OsService>();
 
                 // Supporting services used by commands/managers
                 services.AddSingleton<GistInputService>();

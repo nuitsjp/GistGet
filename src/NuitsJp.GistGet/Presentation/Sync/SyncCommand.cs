@@ -15,9 +15,9 @@ public class SyncCommand
 
     public SyncCommand(IGistSyncService gistSyncService, ISyncConsole console, ILogger<SyncCommand> logger)
     {
-        _gistSyncService = gistSyncService;
-        _console = console;
-        _logger = logger;
+        _gistSyncService = gistSyncService ?? throw new ArgumentNullException(nameof(gistSyncService));
+        _console = console ?? throw new ArgumentNullException(nameof(console));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
@@ -48,7 +48,7 @@ public class SyncCommand
             var userAction = _console.ShowSyncResultAndGetAction(result);
 
             // 再起動処理（UIの詳細はConsoleに委譲）
-            if (result.RebootRequired && userAction != SyncUserAction.SkipReboot)
+            if (result.RebootRequired && !options.SkipReboot && userAction != SyncUserAction.SkipReboot)
             {
                 var shouldReboot = options.ForceReboot || userAction == SyncUserAction.ForceReboot ||
                                    _console.ConfirmRebootWithPackageList(result.InstalledPackages);

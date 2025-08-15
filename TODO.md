@@ -28,30 +28,28 @@
 - **syncコマンド仕様書作成完了**。docs/gistget/sync.mdを新規作成。Gist→ローカルの一方向同期、再起動処理、Mermaidシーケンス図、クラス設計を含む詳細仕様。docs/architecture.md最新化。
 - **Command-Console分離アーキテクチャ設計完了**。docs/architecture.mdに新セクション2.3追加、TODO.mdにPhase 0設定。高レベル抽象化によるUI詳細隠蔽設計確立。
 - **Phase 0: Command-Console分離基盤構築完了**。Console抽象化レイヤー実装（IConsoleBase, ConsoleBase）、Auth分離（IAuthConsole, AuthConsole, AuthCommand）、GistConfig分離（IGistConfigConsole, GistConfigConsole, 各コマンドクラス）、Sync分離（ISyncConsole, SyncConsole, SyncCommand）完了。CommandRouter名前空間対応、DI循環依存解決、旧Commands削除。187テスト全成功、git commit完了。
+- **Phase 1: syncコマンド実装完了**。GistSyncService本格実装（差分検出、同期実行、再起動処理）、SyncPlan/SyncResultモデル作成、t-wada式TDDテスト30個（GistSyncServiceTests 16個、SyncCommandTests 14個）全成功。PC再起動問題解決のためIOsServiceアーキテクチャ導入（Infrastructure/Os層、テスト時モック化）。syncコマンド完全動作対応。
 
 
 
-## � 次の作業：syncコマンド実装
+## 🔄 次の作業：機能拡張・改良
 
-**優先度**: 高（Phase 0完了により実装可能）
+**優先度**: 中（Phase 1完了により基盤確立）
 
-### Phase 1: syncコマンド実装
+### Phase 2: syncコマンド拡張機能
 
-**現状**: Command-Console分離完了、syncコマンド仕様書作成完了  
-**目標**: docs/gistget/sync.mdに基づくsyncコマンドの完全実装  
-**実装範囲**: SyncCommand（ISyncConsole使用済み）、GistSyncService本格実装、SyncPlanモデル、再起動処理
+**現状**: syncコマンド基本実装完了（Gist→ローカル一方向同期、再起動処理、テスト完備）  
+**目標**: 仕様書の拡張機能実装とUI改良  
+**実装範囲**: --dry-run、--force、--no-restart、進捗表示、エラー詳細表示
 
 **実装手順**:
-- [ ] SyncPlanモデル作成 (Business層)
-- [ ] SyncResultモデル作成 (Business層)
-- [ ] GistSyncService本格実装 (GistSyncStub.csを置換)
-- [x] SyncCommand作成 (Presentation/Sync層、ISyncConsole使用) - **完了**
-- [x] CommandRouterに"sync"コマンド追加（名前空間変更対応） - **完了**
-- [ ] 再起動処理実装 (CheckRebootRequired, ExecuteRebootAsync)
-- [ ] 差分検出ロジック実装 (DetectDifferences)
-- [ ] syncコマンドテスト作成 (ISyncConsoleモック使用)
-- [x] DI登録更新 (AppHost.cs) - **完了**
-- [ ] 動作確認とテスト実行
+- [ ] --dry-run実装 (プレビュー機能)
+- [ ] --force実装 (確認プロンプトスキップ)  
+- [ ] --no-restart実装 (手動再起動委譲)
+- [ ] 進捗表示UI実装 (SyncConsole拡張)
+- [ ] エラー詳細表示改良
+- [ ] 複数Gistファイル対応検討
+- [ ] パフォーマンス最適化
 
 ## 🔒 将来課題：セキュリティ強化
 
@@ -88,10 +86,11 @@
 **実装状況**:
 - パススルー: `export/import/list/search/show` 動作確認済み
 - COM API: `install/uninstall` 完全実装。222テスト全成功
-- Gist: 認証・設定コマンド実装済み、**syncコマンド仕様書作成完了**
+- **Gist**: 認証・設定・**sync**コマンド完全実装（Gist→ローカル一方向同期、再起動処理、差分検出）
 - **Command-Console分離**: Phase 0完了（Auth、GistConfig、Sync全分離、CommandRouter対応、DI設定完了）
+- **syncコマンド**: Phase 1完了（GistSyncService、SyncPlan/Result、IOsService、30テスト全成功）
 - 認証: DPAPI暗号化保存、OAuth Device Flow
-- テスト: レイヤーベース構造、t-wada式TDD対応。Infrastructure層統合テスト完成。187テスト全成功
+- テスト: レイヤーベース構造、t-wada式TDD対応。Infrastructure層統合テスト完成。217テスト全成功
 - CI/CD: Windows専用、GIST_TOKEN統一済み
 - 開発環境: Visual Studio 2022対応
 

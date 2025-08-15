@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using NuitsJp.GistGet.Business.Models;
+using NuitsJp.GistGet.Infrastructure.Os;
 using NuitsJp.GistGet.Infrastructure.WinGet;
 using NuitsJp.GistGet.Models;
 using System.Diagnostics;
@@ -14,16 +15,19 @@ public class GistSyncService : IGistSyncService
 {
     private readonly IGistManager _gistManager;
     private readonly IWinGetClient _winGetClient;
+    private readonly IOsService _osService;
     private readonly ILogger<GistSyncService> _logger;
 
     public GistSyncService(
         IGistManager gistManager,
         IWinGetClient winGetClient,
+        IOsService osService,
         ILogger<GistSyncService> logger)
     {
-        _gistManager = gistManager;
-        _winGetClient = winGetClient;
-        _logger = logger;
+        _gistManager = gistManager ?? throw new ArgumentNullException(nameof(gistManager));
+        _winGetClient = winGetClient ?? throw new ArgumentNullException(nameof(winGetClient));
+        _osService = osService ?? throw new ArgumentNullException(nameof(osService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
@@ -245,22 +249,8 @@ public class GistSyncService : IGistSyncService
     {
         try
         {
-            _logger.LogInformation("Executing system reboot");
-
-            // Windows システム再起動コマンド実行
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = "shutdown",
-                Arguments = "/r /t 0",
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var process = Process.Start(startInfo);
-            if (process != null)
-            {
-                await process.WaitForExitAsync();
-            }
+            _logger.LogInformation("Executing system reboot via OsService");
+            await _osService.ExecuteRebootAsync();
         }
         catch (Exception ex)
         {
