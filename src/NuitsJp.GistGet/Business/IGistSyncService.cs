@@ -11,13 +11,13 @@ public interface IGistSyncService
     /// インストール後にGist更新を通知する
     /// </summary>
     /// <param name="packageId">インストールされたパッケージID</param>
-    void AfterInstall(string packageId);
+    Task AfterInstallAsync(string packageId);
 
     /// <summary>
     /// アンインストール後にGist更新を通知する
     /// </summary>
     /// <param name="packageId">アンインストールされたパッケージID</param>
-    void AfterUninstall(string packageId);
+    Task AfterUninstallAsync(string packageId);
 
     /// <summary>
     /// Gistから同期を実行する

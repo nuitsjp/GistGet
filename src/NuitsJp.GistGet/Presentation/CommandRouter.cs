@@ -5,6 +5,7 @@ using NuitsJp.GistGet.Business;
 using NuitsJp.GistGet.Presentation.Auth;
 using NuitsJp.GistGet.Presentation.GistConfig;
 using NuitsJp.GistGet.Presentation.Sync;
+using NuitsJp.GistGet.Presentation.WinGet;
 
 namespace NuitsJp.GistGet.Presentation;
 
@@ -17,7 +18,8 @@ public class CommandRouter : ICommandRouter
     private readonly GistSetCommand _gistSetCommand;
     private readonly GistStatusCommand _gistStatusCommand;
     private readonly GistShowCommand _gistShowCommand;
-    // private readonly SyncCommand _syncCommand; // TODO: 循環依存解決後に復旧
+    private readonly SyncCommand _syncCommand;
+    private readonly WinGetCommand _winGetCommand;
     private readonly ILogger<CommandRouter> _logger;
     private readonly IErrorMessageService _errorMessageService;
 
@@ -26,7 +28,8 @@ public class CommandRouter : ICommandRouter
         GistSetCommand gistSetCommand,
         GistStatusCommand gistStatusCommand,
         GistShowCommand gistShowCommand,
-        // SyncCommand syncCommand, // TODO: 循環依存解決後に復旧
+        SyncCommand syncCommand,
+        WinGetCommand winGetCommand,
         ILogger<CommandRouter> logger,
         IErrorMessageService errorMessageService)
     {
@@ -34,7 +37,8 @@ public class CommandRouter : ICommandRouter
         _gistSetCommand = gistSetCommand;
         _gistStatusCommand = gistStatusCommand;
         _gistShowCommand = gistShowCommand;
-        // _syncCommand = syncCommand; // TODO: 循環依存解決後に復旧
+        _syncCommand = syncCommand;
+        _winGetCommand = winGetCommand;
         _logger = logger;
         _errorMessageService = errorMessageService;
     }
@@ -47,8 +51,8 @@ public class CommandRouter : ICommandRouter
 
             if (args.Length == 0)
             {
-                // TODO: WinGetCommandクラス作成後に復旧
-                throw new NotImplementedException("Default WinGet passthrough temporarily disabled during refactoring");
+                // 引数がない場合はwingetのヘルプを表示
+                return await _winGetCommand.ExecutePassthroughAsync(new[] { "--help" });
             }
 
             var command = args[0].ToLowerInvariant();
@@ -110,13 +114,11 @@ public class CommandRouter : ICommandRouter
         if (usesPassthrough)
         {
             _logger.LogDebug("Routing to passthrough client for explicit command: {Command}", command);
-            // TODO: WinGetCommandクラス作成後に復旧
-            throw new NotImplementedException("WinGet passthrough temporarily disabled during refactoring");
+            return await _winGetCommand.ExecutePassthroughAsync(args);
         }
 
         _logger.LogDebug("Routing to passthrough client for unknown command: {Command}", command);
-        // TODO: WinGetCommandクラス作成後に復旧
-        throw new NotImplementedException("WinGet passthrough temporarily disabled during refactoring");
+        return await _winGetCommand.ExecutePassthroughAsync(args);
     }
 
     private async Task<int> HandleGistSubCommandAsync(string[] args)
@@ -200,17 +202,21 @@ public class CommandRouter : ICommandRouter
         _logger.LogDebug("Routing to Gist service for command: {Command}", command);
         return command switch
         {
-            "sync" => throw new NotImplementedException("SyncCommand temporarily disabled during refactoring to resolve circular dependency"),
+            "sync" => _syncCommand.ExecuteAsync(args),
             _ => throw new ArgumentException($"Unsupported gist command: {command}")
         };
     }
 
     private async Task<int> HandleComCommandAsync(string command, string[] args)
     {
-        _logger.LogDebug("Routing to COM client for command: {Command}", command);
-        // TODO: WinGetCommandクラス作成後に復旧
-        await Task.CompletedTask; // async警告を回避
-        throw new NotImplementedException("WinGet COM commands temporarily disabled during refactoring");
+        _logger.LogDebug("Routing to WinGet COM command: {Command}", command);
+        return command switch
+        {
+            "install" => await _winGetCommand.ExecuteInstallAsync(args),
+            "uninstall" => await _winGetCommand.ExecuteUninstallAsync(args),
+            "upgrade" => await _winGetCommand.ExecuteUpgradeAsync(args),
+            _ => throw new ArgumentException($"Unsupported COM command: {command}")
+        };
     }
 
 

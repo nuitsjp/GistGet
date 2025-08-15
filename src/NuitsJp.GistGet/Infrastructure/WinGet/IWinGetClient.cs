@@ -45,6 +45,13 @@ public interface IWinGetClient
     /// <param name="query">検索クエリ</param>
     /// <returns>見つかったパッケージのリスト</returns>
     Task<List<PackageDefinition>> SearchPackagesAsync(string query);
+
+    /// <summary>
+    /// winget.exeに引数をそのまま渡して実行する（パススルー）
+    /// </summary>
+    /// <param name="args">wingetコマンド引数</param>
+    /// <returns>実行結果コード</returns>
+    Task<int> ExecutePassthroughAsync(string[] args);
 }
 
 /// <summary>

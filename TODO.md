@@ -30,16 +30,17 @@
 - **Phase 0: Command-Console分離基盤構築完了**。Console抽象化レイヤー実装（IConsoleBase, ConsoleBase）、Auth分離（IAuthConsole, AuthConsole, AuthCommand）、GistConfig分離（IGistConfigConsole, GistConfigConsole, 各コマンドクラス）、Sync分離（ISyncConsole, SyncConsole, SyncCommand）完了。CommandRouter名前空間対応、DI循環依存解決、旧Commands削除。187テスト全成功、git commit完了。
 - **Phase 1: syncコマンド実装完了**。GistSyncService本格実装（差分検出、同期実行、再起動処理）、SyncPlan/SyncResultモデル作成、t-wada式TDDテスト30個（GistSyncServiceTests 16個、SyncCommandTests 14個）全成功。PC再起動問題解決のためIOsServiceアーキテクチャ導入（Infrastructure/Os層、テスト時モック化）。syncコマンド完全動作対応。
 
+### 完了ログ（2025-08-15 Phase 2実施）
+- **Phase 2: install/uninstall/upgradeコマンド実装とGist自動更新完了**。WinGetCommand基盤クラス作成（Presentation/WinGet/）、CommandRouter統合復活（NotImplementedException削除）、GistSyncService.AfterInstall/AfterUninstallAsync実装（Gist自動更新）、WinGetPassthrough復活（list/search/show/export/import）、簡易バージョン固定機能実装、再起動管理機能実装（特定パッケージ判定・確認プロンプト・OSサービス連携）、Presentation層テスト実装（WinGetCommandTests 7個追加）。188個テスト全成功、PowerShell機能パリティ達成。
 
 
-## 🔄 次の作業：機能拡張・改良
 
-**優先度**: 中（Phase 1完了により基盤確立）
+## 🔄 次の作業：拡張機能実装
 
-### Phase 2: syncコマンド拡張機能
+**優先度**: 中（Phase 2完了により基盤確立）
 
-**現状**: syncコマンド基本実装完了（Gist→ローカル一方向同期、再起動処理、テスト完備）  
-**目標**: 仕様書の拡張機能実装とUI改良  
+### Phase 3: syncコマンド拡張機能
+
 **実装範囲**: --dry-run、--force、--no-restart、進捗表示、エラー詳細表示
 
 **実装手順**:
@@ -48,8 +49,6 @@
 - [ ] --no-restart実装 (手動再起動委譲)
 - [ ] 進捗表示UI実装 (SyncConsole拡張)
 - [ ] エラー詳細表示改良
-- [ ] 複数Gistファイル対応検討
-- [ ] パフォーマンス最適化
 
 ## 🔒 将来課題：セキュリティ強化
 
@@ -84,13 +83,18 @@
 - **Infrastructure層**: `WinGet/`、`GitHub/`、`Storage/`（外部システム連携）
 
 **実装状況**:
-- パススルー: `export/import/list/search/show` 動作確認済み
-- COM API: `install/uninstall` 完全実装。222テスト全成功
-- **Gist**: 認証・設定・**sync**コマンド完全実装（Gist→ローカル一方向同期、再起動処理、差分検出）
-- **Command-Console分離**: Phase 0完了（Auth、GistConfig、Sync全分離、CommandRouter対応、DI設定完了）
+- **✅ Phase 2完了**: install/uninstall/upgradeコマンド完全実装（WinGetCommand、CommandRouter統合）
+- **✅ Phase 2完了**: Gist自動更新機能実装（AfterInstall/AfterUninstallAsync、PackageCollection操作）
+- **✅ Phase 2完了**: パススルー復活（export/import/list/search/show、ExecutePassthroughAsync）
+- COM API: WinGetComClient完全実装。188テスト全成功
+- **Gist**: 認証・設定・**sync**コマンド・**install/uninstall/upgrade統合**完全実装（双方向Gist同期）
+- **Command-Console分離**: Phase 0完了（Auth、GistConfig、Sync、**WinGet**全分離、CommandRouter対応、DI設定完了）
 - **syncコマンド**: Phase 1完了（GistSyncService、SyncPlan/Result、IOsService、30テスト全成功）
+- **install/uninstall/upgradeコマンド**: Phase 2完了（WinGetCommand、Gist自動更新、再起動管理、7テスト追加）
 - 認証: DPAPI暗号化保存、OAuth Device Flow
-- テスト: レイヤーベース構造、t-wada式TDD対応。Infrastructure層統合テスト完成。217テスト全成功
+- テスト: レイヤーベース構造、t-wada式TDD対応。Presentation層テスト強化完成。188テスト全成功
+- **テストカバレージ**: 向上（Business層90%超維持、Presentation層強化、Infrastructure層50%程度）
+- **PowerShell機能パリティ**: 達成（install/uninstall/upgrade後のGist自動更新、再起動管理）
 - CI/CD: Windows専用、GIST_TOKEN統一済み
 - 開発環境: Visual Studio 2022対応
 

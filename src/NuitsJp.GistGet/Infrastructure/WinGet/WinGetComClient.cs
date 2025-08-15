@@ -137,7 +137,7 @@ public class WinGetComClient : IWinGetClient
             if (installResult.Status == InstallResultStatus.Ok)
             {
                 _logger.LogInformation("Successfully installed package: {PackageId}", packageId);
-                _gistSyncService.AfterInstall(packageId);
+                await _gistSyncService.AfterInstallAsync(packageId);
                 return 0;
             }
             else
@@ -213,7 +213,7 @@ public class WinGetComClient : IWinGetClient
 
                 if (process.ExitCode == 0)
                 {
-                    _gistSyncService.AfterUninstall(packageId);
+                    await _gistSyncService.AfterUninstallAsync(packageId);
                 }
 
                 return process.ExitCode;
@@ -309,9 +309,9 @@ public class WinGetComClient : IWinGetClient
                 if (process.ExitCode == 0)
                 {
                     if (operation == "install")
-                        _gistSyncService.AfterInstall(packageId);
+                        await _gistSyncService.AfterInstallAsync(packageId);
                     else if (operation == "uninstall")
-                        _gistSyncService.AfterUninstall(packageId);
+                        await _gistSyncService.AfterUninstallAsync(packageId);
                 }
 
                 return process.ExitCode;
@@ -456,6 +456,46 @@ public class WinGetComClient : IWinGetClient
         {
             _logger.LogError(ex, "Failed to search packages for query: {Query}", query);
             return packages;
+        }
+    }
+
+    public async Task<int> ExecutePassthroughAsync(string[] args)
+    {
+        try
+        {
+            _logger.LogDebug("Executing passthrough command: {Args}", string.Join(" ", args));
+
+            var processInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "winget",
+                Arguments = string.Join(" ", args),
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+
+            using var process = _processWrapper.Start(processInfo);
+            if (process != null)
+            {
+                var output = await process.ReadStandardOutputAsync();
+                var error = await process.ReadStandardErrorAsync();
+                await process.WaitForExitAsync();
+
+                // 出力をそのまま表示
+                if (!string.IsNullOrEmpty(output))
+                    System.Console.Write(output);
+                if (!string.IsNullOrEmpty(error))
+                    System.Console.Error.Write(error);
+
+                return process.ExitCode;
+            }
+
+            return 1;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to execute passthrough command: {Args}", string.Join(" ", args));
+            return 1;
         }
     }
 

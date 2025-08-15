@@ -327,23 +327,36 @@ public class GistSyncServiceTests
     #region AfterInstall/AfterUninstall Tests
 
     [Fact]
-    public void AfterInstall_WithPackageId_ShouldLogInformation()
+    public async Task AfterInstallAsync_WithPackageId_ShouldUpdateGist()
     {
-        // Arrange & Act - Business層: install/uninstallコマンド専用メソッドのログ動作検証
-        Should.NotThrow(() => _gistSyncService.AfterInstall("Git.Git"));
+        // Arrange
+        var packageId = "Git.Git";
+        var existingPackages = new PackageCollection();
+        _mockGistManager.Setup(x => x.GetGistPackagesAsync()).ReturnsAsync(existingPackages);
 
-        // Assert - ログ出力の確認（実際のログ検証はIntegration層の責務）
-        // Business層では例外発生しないことのみ検証
+        // Act
+        await _gistSyncService.AfterInstallAsync(packageId);
+
+        // Assert
+        _mockGistManager.Verify(x => x.GetGistPackagesAsync(), Times.Once);
+        _mockGistManager.Verify(x => x.UpdateGistPackagesAsync(It.IsAny<PackageCollection>()), Times.Once);
     }
 
     [Fact]
-    public void AfterUninstall_WithPackageId_ShouldLogInformation()
+    public async Task AfterUninstallAsync_WithPackageId_ShouldUpdateGist()
     {
-        // Arrange & Act - Business層: install/uninstallコマンド専用メソッドのログ動作検証
-        Should.NotThrow(() => _gistSyncService.AfterUninstall("Git.Git"));
+        // Arrange
+        var packageId = "Git.Git";
+        var existingPackages = new PackageCollection();
+        existingPackages.Add(new PackageDefinition(packageId));
+        _mockGistManager.Setup(x => x.GetGistPackagesAsync()).ReturnsAsync(existingPackages);
 
-        // Assert - ログ出力の確認（実際のログ検証はIntegration層の責務）
-        // Business層では例外発生しないことのみ検証
+        // Act
+        await _gistSyncService.AfterUninstallAsync(packageId);
+
+        // Assert
+        _mockGistManager.Verify(x => x.GetGistPackagesAsync(), Times.Once);
+        _mockGistManager.Verify(x => x.UpdateGistPackagesAsync(It.IsAny<PackageCollection>()), Times.Once);
     }
 
     #endregion

@@ -75,6 +75,13 @@ public class MockWinGetClient : IWinGetClient
         };
         return Task.FromResult(packages);
     }
+
+    public Task<int> ExecutePassthroughAsync(string[] args)
+    {
+        LastCommand = "passthrough";
+        LastArgs = args;
+        return Task.FromResult(ShouldReturnErrorCode);
+    }
 }
 
 public class MockWinGetPassthroughClient : IWinGetPassthroughClient
@@ -119,14 +126,16 @@ public class MockGistSyncService : IGistSyncService
     public string? LastCommand { get; private set; }
     public bool SyncStatePersisted { get; private set; } = false;
 
-    public void AfterInstall(string packageId)
+    public Task AfterInstallAsync(string packageId)
     {
         // テスト用: 何もしない
+        return Task.CompletedTask;
     }
 
-    public void AfterUninstall(string packageId)
+    public Task AfterUninstallAsync(string packageId)
     {
         // テスト用: 何もしない
+        return Task.CompletedTask;
     }
 
     public Task<SyncResult> SyncAsync()

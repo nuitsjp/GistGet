@@ -31,19 +31,84 @@ public class GistSyncService : IGistSyncService
     }
 
     /// <summary>
-    /// install/uninstallコマンド専用（syncでは何もしない）
+    /// install後のGist自動更新処理
     /// </summary>
-    public void AfterInstall(string packageId)
+    public async Task AfterInstallAsync(string packageId)
     {
-        _logger.LogInformation("Package installed: {PackageId}, Gist sync will be handled separately", packageId);
+        if (string.IsNullOrWhiteSpace(packageId))
+        {
+            _logger.LogWarning("AfterInstall called with empty package ID");
+            return;
+        }
+
+        try
+        {
+            _logger.LogInformation("Updating Gist after installing package: {PackageId}", packageId);
+
+            // 現在のGistパッケージリストを取得
+            var currentPackages = await _gistManager.GetGistPackagesAsync();
+
+            // パッケージが既に存在するかチェック
+            if (currentPackages.FindById(packageId) == null)
+            {
+                // 新しいパッケージを追加
+                var newPackage = new PackageDefinition(packageId);
+                currentPackages.Add(newPackage);
+
+                // Gistを更新
+                await _gistManager.UpdateGistPackagesAsync(currentPackages);
+                _logger.LogInformation("Successfully added package {PackageId} to Gist", packageId);
+            }
+            else
+            {
+                _logger.LogInformation("Package {PackageId} already exists in Gist", packageId);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update Gist after installing {PackageId}", packageId);
+            throw;
+        }
     }
 
     /// <summary>
-    /// install/uninstallコマンド専用（syncでは何もしない）
+    /// uninstall後のGist自動更新処理
     /// </summary>
-    public void AfterUninstall(string packageId)
+    public async Task AfterUninstallAsync(string packageId)
     {
-        _logger.LogInformation("Package uninstalled: {PackageId}, Gist sync will be handled separately", packageId);
+        if (string.IsNullOrWhiteSpace(packageId))
+        {
+            _logger.LogWarning("AfterUninstall called with empty package ID");
+            return;
+        }
+
+        try
+        {
+            _logger.LogInformation("Updating Gist after uninstalling package: {PackageId}", packageId);
+
+            // 現在のGistパッケージリストを取得
+            var currentPackages = await _gistManager.GetGistPackagesAsync();
+
+            // パッケージを削除
+            var existingPackage = currentPackages.FindById(packageId);
+            if (existingPackage != null)
+            {
+                currentPackages.Remove(existingPackage);
+
+                // Gistを更新
+                await _gistManager.UpdateGistPackagesAsync(currentPackages);
+                _logger.LogInformation("Successfully removed package {PackageId} from Gist", packageId);
+            }
+            else
+            {
+                _logger.LogWarning("Package {PackageId} was not found in Gist, nothing to remove", packageId);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update Gist after uninstalling {PackageId}", packageId);
+            throw;
+        }
     }
 
     /// <summary>

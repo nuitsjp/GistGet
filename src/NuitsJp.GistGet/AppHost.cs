@@ -14,6 +14,7 @@ using NuitsJp.GistGet.Presentation.Console;
 using NuitsJp.GistGet.Presentation.Auth;
 using NuitsJp.GistGet.Presentation.GistConfig;
 using NuitsJp.GistGet.Presentation.Sync;
+using NuitsJp.GistGet.Presentation.WinGet;
 
 namespace NuitsJp.GistGet;
 
@@ -52,14 +53,16 @@ public static class AppHost
                 // Console abstractions
                 services.AddSingleton<IAuthConsole, AuthConsole>();
                 services.AddSingleton<IGistConfigConsole, GistConfigConsole>();
-                // services.AddSingleton<ISyncConsole, SyncConsole>(); // TODO: 循環依存解決後に復旧
+                services.AddSingleton<ISyncConsole, SyncConsole>();
+                services.AddSingleton<IWinGetConsole, WinGetConsole>();
 
                 // Commands with new namespace structure
                 services.AddSingleton<NuitsJp.GistGet.Presentation.Auth.AuthCommand>();
                 services.AddSingleton<NuitsJp.GistGet.Presentation.GistConfig.GistSetCommand>();
                 services.AddSingleton<NuitsJp.GistGet.Presentation.GistConfig.GistStatusCommand>();
                 services.AddSingleton<NuitsJp.GistGet.Presentation.GistConfig.GistShowCommand>();
-                // services.AddSingleton<NuitsJp.GistGet.Presentation.Sync.SyncCommand>(); // TODO: 循環依存解決後に復旧
+                services.AddSingleton<NuitsJp.GistGet.Presentation.Sync.SyncCommand>();
+                services.AddSingleton<NuitsJp.GistGet.Presentation.WinGet.WinGetCommand>();
 
                 // Business services
                 services.AddSingleton<IGistConfigService, GistConfigService>();
