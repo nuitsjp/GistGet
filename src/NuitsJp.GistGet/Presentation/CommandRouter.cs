@@ -2,8 +2,10 @@ using Microsoft.Extensions.Logging;
 using NuitsJp.GistGet.Presentation;
 using NuitsJp.GistGet.Infrastructure.WinGet;
 using NuitsJp.GistGet.Business;
+using NuitsJp.GistGet.Infrastructure.GitHub;
 using NuitsJp.GistGet.Presentation.Auth;
 using NuitsJp.GistGet.Presentation.GistConfig;
+using NuitsJp.GistGet.Presentation.Login;
 using NuitsJp.GistGet.Presentation.Sync;
 using NuitsJp.GistGet.Presentation.WinGet;
 
@@ -22,6 +24,9 @@ public class CommandRouter : ICommandRouter
     private readonly WinGetCommand _winGetCommand;
     private readonly ILogger<CommandRouter> _logger;
     private readonly IErrorMessageService _errorMessageService;
+    private readonly IGitHubAuthService _authService;
+    private readonly IGistManager _gistManager;
+    private readonly LoginCommand _loginCommand;
 
     public CommandRouter(
         AuthCommand authCommand,
@@ -31,7 +36,10 @@ public class CommandRouter : ICommandRouter
         SyncCommand syncCommand,
         WinGetCommand winGetCommand,
         ILogger<CommandRouter> logger,
-        IErrorMessageService errorMessageService)
+        IErrorMessageService errorMessageService,
+        IGitHubAuthService authService,
+        IGistManager gistManager,
+        LoginCommand loginCommand)
     {
         _authCommand = authCommand;
         _gistSetCommand = gistSetCommand;
@@ -41,6 +49,9 @@ public class CommandRouter : ICommandRouter
         _winGetCommand = winGetCommand;
         _logger = logger;
         _errorMessageService = errorMessageService;
+        _authService = authService;
+        _gistManager = gistManager;
+        _loginCommand = loginCommand;
     }
 
     public async Task<int> ExecuteAsync(string[] args)
@@ -56,6 +67,26 @@ public class CommandRouter : ICommandRouter
             }
 
             var command = args[0].ToLowerInvariant();
+
+            // 認証・Gist設定が必要なコマンドを判定
+            if (RequiresAuthentication(command, args))
+            {
+                // 認証チェック・自動ログイン
+                if (!await EnsureAuthenticatedAsync())
+                {
+                    return 1;
+                }
+
+                // Gist設定チェック・自動設定
+                if (RequiresGistConfiguration(command, args))
+                {
+                    if (!await EnsureGistConfiguredAsync())
+                    {
+                        return 1;
+                    }
+                }
+            }
+
             return await RouteCommandAsync(command, args);
         }
         catch (System.Runtime.InteropServices.COMException comEx)
@@ -86,12 +117,19 @@ public class CommandRouter : ICommandRouter
         var usesGist = command is "sync";
         var usesPassthrough = command is "export" or "import" or "list" or "search" or "show";
         var isAuthCommand = command is "auth";
+        var isLoginCommand = command is "login";
         var isGistSubCommand = command is "gist";
 
+        if (isLoginCommand)
+        {
+            return await _loginCommand.ExecuteAsync(args);
+        }
 
         if (isAuthCommand)
         {
-            return await _authCommand.ExecuteAsync(args);
+            // 後方互換性のため非推奨メッセージを表示
+            System.Console.WriteLine("注意: 'auth' コマンドは 'login' に変更されました。'gistget login' を使用してください。");
+            return await _loginCommand.ExecuteAsync(args);
         }
 
         if (isGistSubCommand)
@@ -195,7 +233,71 @@ public class CommandRouter : ICommandRouter
         return Task.FromResult(1);
     }
 
+    /// <summary>
+    /// 認証が必要なコマンドかどうかを判定
+    /// </summary>
+    private bool RequiresAuthentication(string command, string[] args)
+    {
+        // 認証が必要なコマンド
+        return command switch
+        {
+            "sync" => true,
+            "install" or "uninstall" or "upgrade" => true,
+            "gist" when args.Length > 1 && args[1] != "status" => true,
+            _ => false
+        };
+    }
 
+    /// <summary>
+    /// Gist設定が必要なコマンドかどうかを判定
+    /// </summary>
+    private bool RequiresGistConfiguration(string command, string[] args)
+    {
+        // Gist設定が必要なコマンド（認証済みが前提）
+        return command switch
+        {
+            "sync" => true,
+            "install" or "uninstall" or "upgrade" => true,
+            "gist" when args.Length > 1 && args[1] == "show" => true,
+            _ => false
+        };
+    }
+
+    /// <summary>
+    /// 認証状態を確認し、必要に応じて自動ログイン
+    /// </summary>
+    private async Task<bool> EnsureAuthenticatedAsync()
+    {
+        if (await _authService.IsAuthenticatedAsync())
+        {
+            return true;
+        }
+
+        _logger.LogInformation("認証が必要です。ログインを開始します...");
+        System.Console.WriteLine("認証が必要です。GitHubログインを開始します...");
+
+        // LoginCommandを実行
+        var result = await _loginCommand.ExecuteAsync(new[] { "login" });
+        return result == 0;
+    }
+
+    /// <summary>
+    /// Gist設定状態を確認し、必要に応じて自動設定
+    /// </summary>
+    private async Task<bool> EnsureGistConfiguredAsync()
+    {
+        if (await _gistManager.IsConfiguredAsync())
+        {
+            return true;
+        }
+
+        _logger.LogInformation("Gist設定が必要です。設定を開始します...");
+        System.Console.WriteLine("Gist設定が必要です。設定を開始します...");
+
+        // GistSetCommandを実行（対話形式）
+        var result = await _gistSetCommand.ExecuteAsync(null, null);
+        return result == 0;
+    }
 
     private Task<int> HandleGistCommandAsync(string command, string[] args)
     {

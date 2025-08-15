@@ -13,6 +13,7 @@ using NuitsJp.GistGet.Infrastructure.Storage;
 using NuitsJp.GistGet.Presentation.Console;
 using NuitsJp.GistGet.Presentation.Auth;
 using NuitsJp.GistGet.Presentation.GistConfig;
+using NuitsJp.GistGet.Presentation.Login;
 using NuitsJp.GistGet.Presentation.Sync;
 using NuitsJp.GistGet.Presentation.WinGet;
 
@@ -52,12 +53,14 @@ public static class AppHost
 
                 // Console abstractions
                 services.AddSingleton<IAuthConsole, AuthConsole>();
+                services.AddSingleton<ILoginConsole, LoginConsole>();
                 services.AddSingleton<IGistConfigConsole, GistConfigConsole>();
                 services.AddSingleton<ISyncConsole, SyncConsole>();
                 services.AddSingleton<IWinGetConsole, WinGetConsole>();
 
                 // Commands with new namespace structure
                 services.AddSingleton<NuitsJp.GistGet.Presentation.Auth.AuthCommand>();
+                services.AddSingleton<NuitsJp.GistGet.Presentation.Login.LoginCommand>();
                 services.AddSingleton<NuitsJp.GistGet.Presentation.GistConfig.GistSetCommand>();
                 services.AddSingleton<NuitsJp.GistGet.Presentation.GistConfig.GistStatusCommand>();
                 services.AddSingleton<NuitsJp.GistGet.Presentation.GistConfig.GistShowCommand>();

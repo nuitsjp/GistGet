@@ -53,7 +53,8 @@ gistget show --id Git.Git  # → winget show --id Git.Git
 | settings | config | パススルー | - | 不要 | 低 | 設定管理 |
 | pin | - | パススルー | - | 不要 | 低 | ローカルバージョン固定 |
 | **認証管理（GistGet独自実装）** |
-| auth | - | 独立実装 | - | 不要 | 最高 | GitHub認証・トークン管理 |
+| login | - | 独立実装 | - | 不要 | 最高 | GitHubログイン・トークン管理 |
+| auth | - | 独立実装 | - | 不要 | 中 | loginコマンドへの後方互換（非推奨） |
 | configure | - | パススルー | - | 要管理者 | 低 | システム構成 |
 | download | - | パススルー | - | 不要 | 低 | インストーラDL |
 | repair | - | パススルー | - | 要管理者 | 低 | パッケージ修復 |
@@ -76,8 +77,9 @@ gistget show --id Git.Git  # → winget show --id Git.Git
 - **COM利用**: Gist同期が必要なコマンド（install/uninstall/upgrade）はCOM API経由で実装し、操作後に自動的にGist定義を更新
 - **パススルー**: 表示系・管理系はwinget.exeへ引数をそのまま渡して実行
 - **バージョン固定**: YAML定義内の`Version`フィールドで指定（Gist側で管理）
-- **認証**: ローカルは OAuth Device Flow、CI は環境変数 `GIST_TOKEN`。手動でトークンを貼り付ける操作は不要。`auth` は起動・状態確認用に提供。
+- **認証**: ローカルは OAuth Device Flow、CI は環境変数 `GIST_TOKEN`。手動でトークンを貼り付ける操作は不要。`login` コマンドで認証。
 - **Gist管理**: 事前設定前提（`gistget gist set`でGist ID・ファイル名を設定）
+- **自動認証・設定**: 認証・Gist設定が必要なコマンド実行時、未設定の場合は自動的に認証・設定フローを実行
 
 ---
 
@@ -117,14 +119,14 @@ Packages:
 
 **ローカル開発（推奨）:**
 ```bash
-# 初回のみ認証が必要
-gistget auth
+# 初回のみログインが必要
+gistget login
 
-# 認証状態の確認
-gistget auth status
+# ログイン状態の確認
+gistget login status
 
-# 認証のテスト（API呼び出し確認）
-gistget auth test
+# 後方互換性のためauthコマンドも使用可能（非推奨）
+gistget auth  # → loginにリダイレクト
 ```
 
 **Gist設定（ローカル開発・テスト用）:**
@@ -149,8 +151,8 @@ gistget gist show
 
 **初回セットアップの完全な手順:**
 ```bash
-# 1. GitHub認証
-gistget auth
+# 1. GitHubログイン
+gistget login
 
 # 2. GitHubでGist作成（ブラウザ）
 # https://gist.github.com/ にアクセス
@@ -180,7 +182,7 @@ env:
 - 統合テスト: `GIST_TOKEN`環境変数または事前認証要求
 
 **認証フロー:**
-1. ローカル開発: `gistget auth` で認証（一度のみ）
+1. ローカル開発: `gistget login` で認証（一度のみ）、または必要時に自動実行
 2. CI/CD: 認証不要（ビルドのみ実行）
 3. テスト: ローカル環境で手動実行
 

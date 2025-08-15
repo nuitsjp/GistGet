@@ -23,7 +23,7 @@ sequenceDiagram
     participant GitHub as GitHub API
     participant Browser as ブラウザ
 
-    User->>App: gistget auth
+    User->>App: gistget login
     App->>GitHub: Device Code要求
     GitHub-->>App: Device Code + User Code
     App->>Browser: 認証URL自動起動
@@ -832,3 +832,58 @@ public async Task<int> ExecuteAsync(string[] args)
 - `ErrorMessageService.cs`で例外タイプ別メッセージ処理を実装済み
 - `CommandRouter.cs`で主要例外タイプの catch 実装済み
 - テスト実装時は例外パターンの確認を含める
+
+### DR-002: CommandRouterでの一元的認証・設定チェック
+
+**Status**: Accepted  
+**Date**: 2025-08-15  
+**Decision**: CommandRouterで認証・Gist設定チェックを一元化し、自動的に未設定の場合はフローを実行する
+
+#### Context
+各コマンドで個別に認証・Gist設定チェックを行うと、同一ロジックが分散し、保守性が低下する。ユーザー体験として、認証やGist設定を意識することなく、自然にコマンドを実行できるようにしたい。
+
+#### Decision
+
+##### 一元的チェック実装
+```csharp
+public async Task<int> ExecuteAsync(string[] args)
+{
+    var command = args[0].ToLowerInvariant();
+    
+    // 認証・Gist設定が必要なコマンドを判定
+    if (RequiresAuthentication(command, args))
+    {
+        if (!await EnsureAuthenticatedAsync())
+            return 1;
+            
+        if (RequiresGistConfiguration(command, args))
+        {
+            if (!await EnsureGistConfiguredAsync())
+                return 1;
+        }
+    }
+    
+    return await RouteCommandAsync(command, args);
+}
+```
+
+##### コマンド判定ロジック
+- **認証が必要**: sync, install, uninstall, upgrade, gist (status以外)
+- **Gist設定が必要**: sync, install, uninstall, upgrade, gist show
+
+##### 自動実行フロー
+1. **EnsureAuthenticatedAsync**: 未認証時に`LoginCommand`を自動実行
+2. **EnsureGistConfiguredAsync**: 未設定時に`GistSetCommand`を自動実行
+
+##### auth → login コマンド変更
+- `login`コマンドを標準とし、`auth`は後方互換性のため非推奨メッセージと共に動作
+
+#### Consequences
+- **Positive**: DRY原則の徹底、ユーザー体験の向上、保守性の向上
+- **Negative**: CommandRouterの複雑度増加、新しい依存性の追加
+- **Risks**: ログインフローの無限ループ、設定フローの中断時の処理
+
+#### Implementation Notes
+- CommandRouterに`IGitHubAuthService`、`IGistManager`、`LoginCommand`を依存性注入
+- 各コマンドから認証・設定チェックロジックを削除
+- テストでは認証・設定済み状態をモックで設定
