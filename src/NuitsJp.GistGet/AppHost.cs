@@ -51,6 +51,7 @@ public static class AppHost
                 services.AddSingleton<GistSetCommand>();
                 services.AddSingleton<GistStatusCommand>();
                 services.AddSingleton<GistShowCommand>();
+                services.AddSingleton<SyncCommand>();
 
                 // Infrastructure
                 services.AddSingleton<IProcessWrapper, ProcessWrapper>();

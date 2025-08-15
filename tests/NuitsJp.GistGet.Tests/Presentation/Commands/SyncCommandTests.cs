@@ -32,7 +32,7 @@ public class SyncCommandTests
         var result = await mockGistSync.SyncAsync();
 
         // Assert
-        result.ShouldBe(0);
+        result.ExitCode.ShouldBe(0);
         mockGistSync.LastCommand.ShouldBe("sync");
     }
 
@@ -47,7 +47,7 @@ public class SyncCommandTests
         var result = await mockGistSync.SyncAsync();
 
         // Assert
-        result.ShouldBe(0);
+        result.ExitCode.ShouldBe(0);
 
         // 新機能：同期状態の永続化をテスト（まだ実装されていない）
         mockGistSync.SyncStatePersisted.ShouldBeTrue(); // これは失敗するはず

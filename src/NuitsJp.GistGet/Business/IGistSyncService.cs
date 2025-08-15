@@ -1,3 +1,5 @@
+using NuitsJp.GistGet.Business.Models;
+
 namespace NuitsJp.GistGet.Business;
 
 /// <summary>
@@ -20,7 +22,11 @@ public interface IGistSyncService
     /// <summary>
     /// Gistから同期を実行する
     /// </summary>
-    /// <returns>実行結果コード</returns>
-    Task<int> SyncAsync();
+    /// <returns>同期結果</returns>
+    Task<SyncResult> SyncAsync();
 
+    /// <summary>
+    /// システム再起動を実行する
+    /// </summary>
+    Task ExecuteRebootAsync();
 }

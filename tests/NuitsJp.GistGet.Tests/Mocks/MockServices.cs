@@ -1,5 +1,6 @@
 using NuitsJp.GistGet.Infrastructure.WinGet;
 using NuitsJp.GistGet.Business;
+using NuitsJp.GistGet.Business.Models;
 using NuitsJp.GistGet.Models;
 
 namespace NuitsJp.GistGet.Tests.Mocks;
@@ -128,11 +129,17 @@ public class MockGistSyncService : IGistSyncService
         // テスト用: 何もしない
     }
 
-    public Task<int> SyncAsync()
+    public Task<SyncResult> SyncAsync()
     {
         LastCommand = "sync";
         // REFACTOR段階：より意味的な実装に改善
         SyncStatePersisted = true;
-        return Task.FromResult(0);
+        return Task.FromResult(new SyncResult { ExitCode = 0 });
+    }
+
+    public Task ExecuteRebootAsync()
+    {
+        // テスト用: 何もしない
+        return Task.CompletedTask;
     }
 }

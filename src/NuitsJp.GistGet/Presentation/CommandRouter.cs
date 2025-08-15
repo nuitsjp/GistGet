@@ -18,6 +18,7 @@ public class CommandRouter : ICommandRouter
     private readonly GistSetCommand _gistSetCommand;
     private readonly GistStatusCommand _gistStatusCommand;
     private readonly GistShowCommand _gistShowCommand;
+    private readonly SyncCommand _syncCommand;
     private readonly ILogger<CommandRouter> _logger;
     private readonly IErrorMessageService _errorMessageService;
 
@@ -29,6 +30,7 @@ public class CommandRouter : ICommandRouter
         GistSetCommand gistSetCommand,
         GistStatusCommand gistStatusCommand,
         GistShowCommand gistShowCommand,
+        SyncCommand syncCommand,
         ILogger<CommandRouter> logger,
         IErrorMessageService errorMessageService)
     {
@@ -39,6 +41,7 @@ public class CommandRouter : ICommandRouter
         _gistSetCommand = gistSetCommand;
         _gistStatusCommand = gistStatusCommand;
         _gistShowCommand = gistShowCommand;
+        _syncCommand = syncCommand;
         _logger = logger;
         _errorMessageService = errorMessageService;
     }
@@ -201,7 +204,7 @@ public class CommandRouter : ICommandRouter
         _logger.LogDebug("Routing to Gist service for command: {Command}", command);
         return command switch
         {
-            "sync" => await _gistSyncService.SyncAsync(),
+            "sync" => await _syncCommand.ExecuteAsync(args),
             _ => throw new ArgumentException($"Unsupported gist command: {command}")
         };
     }

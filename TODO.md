@@ -24,87 +24,54 @@
 - **Phase 4 Infrastructure層テスト戦略完了**。実際の外部システムとの統合テストに特化した戦略を採用。GitHubGistClient: テスト用Gist命名規則（GISTGET_TEST_*）と自動クリーンアップ機能実装、CRUD操作の完全フローテスト準備（Create/Delete API実装待ち）。WinGetComClient: jqパッケージによる実インストール/アンインストール統合テスト、COM APIとwinget.exe結果比較検証。GistConfigurationStorage: 並行アクセス、アクセス権限、破損ファイル対応などファイルシステム境界値テスト。222テスト（215合格、4スキップ、3失敗）で統合テスト基盤確立。
 
 ### 完了ログ（2025-08-15実施）
-- **Infrastructure層テスト修正完了**。GistConfigurationStorage: UnauthorizedAccessException適切な投げ方修正、SemaphoreSlimによるファイルアクセス同期制御追加で並行アクセス問題解決。GitHubGistClientTests: NetworkErrorテストを現実的な期待値に修正。**222テスト全成功達成（失敗0、スキップ4）**。カバレージ45%。
-- **WinGet COM API完全修正完了**。公式winget-cliサンプルベースでアーキテクチャ刷新：複雑なFactory実装削除、`new PackageManager()`直接実装、Microsoft.WindowsPackageManager.ComInteropパッケージ統一、プロジェクト設定修正（net8.0-windows10.0.22621.0、CsWinRT 2.2.0）。統合テスト全成功：初期化・パッケージ検索・インストール・アンインストール・COM/EXE比較の6テスト。Visual Studioソリューション構成エラー修正（Any CPU → x64/x86/ARM64対応）。
+- **Infrastructure層テスト修正完了**。222テスト全成功。WinGet COM API完全修正。Visual Studioソリューション構成修正。
+- **syncコマンド仕様書作成完了**。docs/gistget/sync.mdを新規作成。Gist→ローカルの一方向同期、再起動処理、Mermaidシーケンス図、クラス設計を含む詳細仕様。docs/architecture.md最新化。
 
-### Phase 4: Infrastructure層テスト戦略（完了）
-- **現状**: Infrastructure層統合テスト実装完了
-- **目標**: 実際の外部システムとの統合テストによる動作保証
-- **優先度**: 完了
+
+
+## 🚀 次の作業：syncコマンド実装
+
+**優先度**: 高（Phase 5：syncコマンド実装）
+
+### Phase 5: syncコマンド実装
+- **現状**: syncコマンド仕様書作成完了、実装開始準備整い
+- **目標**: docs/gistget/sync.mdに基づくsyncコマンドの完全実装
+- **実装範囲**: SyncCommand、GistSyncService本格実装、SyncPlanモデル、再起動処理
 
 **実装手順**:
-- [x] Presentation層テスト戦略実装:
-  - [x] UI制御のみをテスト対象とする
-  - [x] Business層サービスを完全モック化
-  - [x] 入力処理・表示処理・終了コードの検証に特化
-  - [x] CommandRouterのルーティング機能テストを分離
-- [x] Business層テスト戦略実装:
-  - [x] ワークフローとビジネスルールのみをテスト対象
-  - [x] Infrastructure層を完全モック化（IGitHubGistClient、IPackageYamlConverter）  
-  - [x] 処理順序・バリデーション・例外処理の検証に特化
-  - [x] GistManager、GistConfigServiceのワークフローテスト追加
-- [x] Infrastructure層テスト戦略実装:
-  - [x] 外部システム連携の統合テストに特化
-  - [x] GitHubGistClient: 実Gist作成・削除による統合テスト（構造準備、API実装待ち）
-  - [x] WinGetComClient: 軽量パッケージ（jq）による実インストール/アンインストールテスト
-  - [x] GistConfigurationStorage: 実ファイルシステムでのアクセス権限・競合テスト
-  - [x] テスト用Gist命名規則実装（自動クリーンアップ対応）
-  - [x] COM APIとwinget.exe実行結果の比較検証
+- [ ] SyncPlanモデル作成 (Business層)
+- [ ] SyncResultモデル作成 (Business層)
+- [ ] GistSyncService本格実装 (GistSyncStub.csを置換)
+- [ ] SyncCommand作成 (Presentation層)
+- [ ] CommandRouterに"sync"コマンド追加
+- [ ] 再起動処理実装 (CheckRebootRequired, ExecuteRebootAsync)
+- [ ] 差分検出ロジック実装 (DetectDifferences)
+- [ ] syncコマンドテスト作成 (Business層・統合テスト)
+- [ ] DI登録更新 (Program.cs)
+- [ ] 動作確認とテスト実行
 
+## 🔒 将来課題：セキュリティ強化
 
-## 🔒 セキュリティ強化タスク
+**優先度**: 低（sync実装後の将来課題）
 
 ### 完了ログ（DPAPI暗号化・環境変数統一）
-- **DPAPIトークン暗号化実装完了**。`GitHubAuthService`でDPAPI暗号化保存実装、平文移行処理削除、テスト4つ実装済み。
-- **環境変数統一完了**。GITHUB_TOKEN → GIST_TOKEN への統一（build-windows-only.yml、docs/auth.md、README.md）。
-- **ドキュメント更新完了**。`docs/architecture.md`でセキュリティ設計とCOM API制約を正式文書化。
+- **DPAPIトークン暗号化実装完了**。
+- **環境変数統一完了**。GITHUB_TOKEN → GIST_TOKEN。
+- **セキュリティ設計文書化完了**。
 
-### トークンの定期的な更新機能
-- **現状**: 取得したトークンは無期限で使用される
-- **目標**: 定期的なトークンの更新によるセキュリティ向上
-- **実装箇所**: `GitHubAuthService.cs` および新規スケジューラー機能
-- **優先度**: 低（将来課題）
-
-**実装手順**:
-- [ ] トークン有効期限チェック機能の実装
-- [ ] トークン更新（refresh）機能の調査・実装
-- [ ] バックグラウンドでの自動更新スケジューラー
-- [ ] 更新失敗時の再認証フロー
-- [ ] トークン更新のログ・通知機能
-- [ ] 設定可能な更新間隔（デフォルト30日）
-
-## 🔄 次の作業
-
-**優先度: 中（Phase 4完了後の次フェーズ）**
-
-### 1. GistSyncService本格実装への移行
-- Phase 4 Infrastructure層テスト戦略完全完了
-- 全222テスト成功、統合テスト基盤確立済み
-- WinGet COM API環境制約も把握済み
+### トークン定期更新機能
+- トークン有効期限チェック機能
+- トークン更新機能調査・実装
+- 自動更新スケジューラー
 
 ## 📋 機能拡張タスク
 
-### GistSyncService の本格実装
-- **現状**: `GistSyncService` はスタブ実装（`GistSyncStub.cs`）
-- **目標**: 実際のGist同期機能の実装
-- **優先度**: 中（Infrastructure層テスト完了確認後）
+**優先度**: 低（sync実装後の機能拡張）
 
-**実装手順**:
-- [ ] GistSyncServiceのスタブ実装を本格実装に置換
-- [ ] インストール済みパッケージ取得とGistファイル同期の実装
-- [ ] パッケージ差分検出ロジックの実装
-- [ ] 同期後のGistファイル更新処理の実装
-
-### WinGetComClient の upgrade 機能改善
-- **現状**: `upgrade` は簡易COM実装（将来改善予定）
-- **目標**: COM API を活用した本格的なupgrade実装
-- **優先度**: 低（機能拡張）
-
-**実装手順**:
-- [ ] COM API でのupgrade機能可否調査
-- [ ] 利用可能な場合の本格実装
-- [ ] パッケージ更新可能性チェック機能
-- [ ] 一括更新機能の実装
+### WinGetComClient upgrade機能改善
+- COM API活用本格的upgrade実装
+- パッケージ更新可能性チェック
+- 一括更新機能
 
 ---
 
@@ -116,13 +83,13 @@
 - **Infrastructure層**: `WinGet/`、`GitHub/`、`Storage/`（外部システム連携）
 
 **実装状況**:
-- パススルー: `export/import/list/search/show` → `WinGetPassthrough` 経由で動作
-- COM API: `install/uninstall` 完全実装。公式サンプルベースの簡潔実装、フォールバック機能付き
-- Gist: 認証・設定コマンド実装済み、同期機能はスタブ
+- パススルー: `export/import/list/search/show` 動作確認済み
+- COM API: `install/uninstall` 完全実装。222テスト全成功
+- Gist: 認証・設定コマンド実装済み、**syncコマンド仕様書作成完了**
 - 認証: DPAPI暗号化保存、OAuth Device Flow
-- テスト: レイヤーベース構造、t-wada式TDD対応。**222テスト全成功（失敗0、スキップ4）**。Infrastructure層統合テスト完成、カバレージ45%
+- テスト: レイヤーベース構造、t-wada式TDD対応。Infrastructure層統合テスト完成
 - CI/CD: Windows専用、GIST_TOKEN統一済み
-- 開発環境: Visual Studio 2022対応（ソリューション構成修正済み）
+- 開発環境: Visual Studio 2022対応
 
 **技術詳細**:
 - WinGet COM API: Microsoft.WindowsPackageManager.ComInterop 1.10.340、CsWinRT 2.2.0使用
