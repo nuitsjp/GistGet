@@ -11,7 +11,6 @@ using NuitsJp.GistGet.Infrastructure.Storage;
 
 // using NuitsJp.GistGet.Presentation.Commands; // 旧Commands名前空間をコメントアウト
 using NuitsJp.GistGet.Presentation.Console;
-using NuitsJp.GistGet.Presentation.Auth;
 using NuitsJp.GistGet.Presentation.GistConfig;
 using NuitsJp.GistGet.Presentation.Login;
 using NuitsJp.GistGet.Presentation.Sync;
@@ -52,14 +51,12 @@ public static class AppHost
                 services.AddSingleton<GitHubAuthService>(); // 一部のコマンドが具象型を要求するため自己型も登録
 
                 // Console abstractions
-                services.AddSingleton<IAuthConsole, AuthConsole>();
                 services.AddSingleton<ILoginConsole, LoginConsole>();
                 services.AddSingleton<IGistConfigConsole, GistConfigConsole>();
                 services.AddSingleton<ISyncConsole, SyncConsole>();
                 services.AddSingleton<IWinGetConsole, WinGetConsole>();
 
                 // Commands with new namespace structure
-                services.AddSingleton<NuitsJp.GistGet.Presentation.Auth.AuthCommand>();
                 services.AddSingleton<NuitsJp.GistGet.Presentation.Login.LoginCommand>();
                 services.AddSingleton<NuitsJp.GistGet.Presentation.GistConfig.GistSetCommand>();
                 services.AddSingleton<NuitsJp.GistGet.Presentation.GistConfig.GistStatusCommand>();

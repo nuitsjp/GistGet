@@ -3,7 +3,6 @@ using NuitsJp.GistGet.Presentation;
 using NuitsJp.GistGet.Infrastructure.WinGet;
 using NuitsJp.GistGet.Business;
 using NuitsJp.GistGet.Infrastructure.GitHub;
-using NuitsJp.GistGet.Presentation.Auth;
 using NuitsJp.GistGet.Presentation.GistConfig;
 using NuitsJp.GistGet.Presentation.Login;
 using NuitsJp.GistGet.Presentation.Sync;
@@ -16,7 +15,6 @@ namespace NuitsJp.GistGet.Presentation;
 /// </summary>
 public class CommandRouter : ICommandRouter
 {
-    private readonly AuthCommand _authCommand;
     private readonly GistSetCommand _gistSetCommand;
     private readonly GistStatusCommand _gistStatusCommand;
     private readonly GistShowCommand _gistShowCommand;
@@ -29,7 +27,6 @@ public class CommandRouter : ICommandRouter
     private readonly LoginCommand _loginCommand;
 
     public CommandRouter(
-        AuthCommand authCommand,
         GistSetCommand gistSetCommand,
         GistStatusCommand gistStatusCommand,
         GistShowCommand gistShowCommand,
@@ -41,7 +38,6 @@ public class CommandRouter : ICommandRouter
         IGistManager gistManager,
         LoginCommand loginCommand)
     {
-        _authCommand = authCommand;
         _gistSetCommand = gistSetCommand;
         _gistStatusCommand = gistStatusCommand;
         _gistShowCommand = gistShowCommand;
@@ -116,7 +112,6 @@ public class CommandRouter : ICommandRouter
         var usesCom = command is "install" or "uninstall" or "upgrade";
         var usesGist = command is "sync";
         var usesPassthrough = command is "export" or "import" or "list" or "search" or "show";
-        var isAuthCommand = command is "auth";
         var isLoginCommand = command is "login";
         var isGistSubCommand = command is "gist";
 
@@ -125,12 +120,6 @@ public class CommandRouter : ICommandRouter
             return await _loginCommand.ExecuteAsync(args);
         }
 
-        if (isAuthCommand)
-        {
-            // 後方互換性のため非推奨メッセージを表示
-            System.Console.WriteLine("注意: 'auth' コマンドは 'login' に変更されました。'gistget login' を使用してください。");
-            return await _loginCommand.ExecuteAsync(args);
-        }
 
         if (isGistSubCommand)
         {

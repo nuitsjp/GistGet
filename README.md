@@ -123,9 +123,6 @@ gistget login
 
 # ログイン状態の確認
 gistget login status
-
-# 後方互換性のためauthコマンドも使用可能（非推奨）
-gistget auth  # → loginにリダイレクト
 ```
 
 **Gist設定（ローカル開発・テスト用）:**
