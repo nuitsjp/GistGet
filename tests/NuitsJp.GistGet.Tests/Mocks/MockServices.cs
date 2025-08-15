@@ -1,6 +1,6 @@
-using NuitsJp.GistGet.Infrastructure.WinGet;
 using NuitsJp.GistGet.Business;
 using NuitsJp.GistGet.Business.Models;
+using NuitsJp.GistGet.Infrastructure.WinGet;
 using NuitsJp.GistGet.Models;
 
 namespace NuitsJp.GistGet.Tests.Mocks;
@@ -86,18 +86,29 @@ public class MockWinGetClient : IWinGetClient
 
 public class MockWinGetPassthroughClient : IWinGetPassthroughClient
 {
-    public string[]? LastArgs { get; private set; }
-    public string? LastOutput { get; private set; }
-
     // テスト用のサンプル出力データ
     private readonly Dictionary<string, string> _mockOutputs = new()
     {
-        { "list", "Name        Id                  Version  Source\nGit for Windows  Git.Git             2.43.0   winget\nNotePad++     Notepad++.Notepad++  8.6.8    winget" },
-        { "search notepad", "Name        Id                  Version  Source\nNotePad++     Notepad++.Notepad++  8.6.8    winget" },
-        { "show Git.Git", "Found Git for Windows [Git.Git]\nVersion: 2.43.0\nPublisher: The Git Development Community" },
-        { "export", "{\"Sources\":[{\"Packages\":[{\"PackageIdentifier\":\"Git.Git\",\"Version\":\"2.43.0\"}],\"SourceDetails\":{\"Argument\":\"https://cdn.winget.microsoft.com/cache\",\"Identifier\":\"winget\",\"Name\":\"winget\",\"Type\":\"Microsoft.PreIndexed.Package\"}}],\"WinGetVersion\":\"1.7.10661\"}" },
+        {
+            "list",
+            "Name        Id                  Version  Source\nGit for Windows  Git.Git             2.43.0   winget\nNotePad++     Notepad++.Notepad++  8.6.8    winget"
+        },
+        {
+            "search notepad",
+            "Name        Id                  Version  Source\nNotePad++     Notepad++.Notepad++  8.6.8    winget"
+        },
+        {
+            "show Git.Git", "Found Git for Windows [Git.Git]\nVersion: 2.43.0\nPublisher: The Git Development Community"
+        },
+        {
+            "export",
+            "{\"Sources\":[{\"Packages\":[{\"PackageIdentifier\":\"Git.Git\",\"Version\":\"2.43.0\"}],\"SourceDetails\":{\"Argument\":\"https://cdn.winget.microsoft.com/cache\",\"Identifier\":\"winget\",\"Name\":\"winget\",\"Type\":\"Microsoft.PreIndexed.Package\"}}],\"WinGetVersion\":\"1.7.10661\"}"
+        },
         { "import", "Successfully imported packages." }
     };
+
+    public string[]? LastArgs { get; private set; }
+    public string? LastOutput { get; private set; }
 
     public Task<int> ExecuteAsync(string[] args)
     {
@@ -124,7 +135,7 @@ public class MockWinGetPassthroughClient : IWinGetPassthroughClient
 public class MockGistSyncService : IGistSyncService
 {
     public string? LastCommand { get; private set; }
-    public bool SyncStatePersisted { get; private set; } = false;
+    public bool SyncStatePersisted { get; private set; }
 
     public Task AfterInstallAsync(string packageId)
     {

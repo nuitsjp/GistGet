@@ -1,30 +1,22 @@
 using System.Security.Cryptography;
+using System.Text;
 using NuitsJp.GistGet.Models;
-using NuitsJp.GistGet.Infrastructure.Storage;
 
 namespace NuitsJp.GistGet.Infrastructure.Storage;
 
 public class GistConfigurationStorage : IGistConfigurationStorage
 {
-    private readonly string _filePath;
     private static readonly SemaphoreSlim _fileSemaphore = new(1, 1);
-
-    public string FilePath => _filePath;
 
     public GistConfigurationStorage(string appDataDirectory)
     {
         if (string.IsNullOrWhiteSpace(appDataDirectory))
             throw new ArgumentException("App data directory cannot be null or empty", nameof(appDataDirectory));
 
-        _filePath = Path.Combine(appDataDirectory, "gist.dat");
+        FilePath = Path.Combine(appDataDirectory, "gist.dat");
     }
 
-    public static GistConfigurationStorage CreateDefault()
-    {
-        var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var gistGetDir = Path.Combine(appDataPath, "GistGet");
-        return new GistConfigurationStorage(gistGetDir);
-    }
+    public string FilePath { get; }
 
     public async Task SaveGistConfigurationAsync(GistConfiguration configuration)
     {
@@ -37,21 +29,18 @@ public class GistConfigurationStorage : IGistConfigurationStorage
         try
         {
             // ディレクトリが存在しない場合は作成
-            var directory = Path.GetDirectoryName(_filePath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
+            var directory = Path.GetDirectoryName(FilePath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory)) Directory.CreateDirectory(directory);
 
             // JSON文字列に変換
             var json = configuration.ToJson();
-            var jsonBytes = System.Text.Encoding.UTF8.GetBytes(json);
+            var jsonBytes = Encoding.UTF8.GetBytes(json);
 
             // DPAPI で暗号化（CurrentUser スコープ）
             var encryptedBytes = ProtectedData.Protect(jsonBytes, null, DataProtectionScope.CurrentUser);
 
             // ファイルに保存
-            await File.WriteAllBytesAsync(_filePath, encryptedBytes);
+            await File.WriteAllBytesAsync(FilePath, encryptedBytes);
         }
         catch (CryptographicException ex)
         {
@@ -70,25 +59,27 @@ public class GistConfigurationStorage : IGistConfigurationStorage
 
     public async Task<GistConfiguration?> LoadGistConfigurationAsync()
     {
-        if (!File.Exists(_filePath))
+        if (!File.Exists(FilePath))
             return null;
 
         await _fileSemaphore.WaitAsync();
         try
         {
             // 暗号化されたファイルを読み込み
-            var encryptedBytes = await File.ReadAllBytesAsync(_filePath);
+            var encryptedBytes = await File.ReadAllBytesAsync(FilePath);
 
             // DPAPI で復号化
             var jsonBytes = ProtectedData.Unprotect(encryptedBytes, null, DataProtectionScope.CurrentUser);
-            var json = System.Text.Encoding.UTF8.GetString(jsonBytes);
+            var json = Encoding.UTF8.GetString(jsonBytes);
 
             // JSON から GistConfiguration オブジェクトに変換
             return GistConfiguration.FromJson(json);
         }
         catch (CryptographicException ex)
         {
-            throw new InvalidOperationException($"Failed to decrypt configuration. The file may be corrupted or created by a different user: {ex.Message}", ex);
+            throw new InvalidOperationException(
+                $"Failed to decrypt configuration. The file may be corrupted or created by a different user: {ex.Message}",
+                ex);
         }
         catch (IOException ex)
         {
@@ -127,11 +118,10 @@ public class GistConfigurationStorage : IGistConfigurationStorage
         await _fileSemaphore.WaitAsync();
         try
         {
-            if (File.Exists(_filePath))
-            {
+            if (File.Exists(FilePath))
                 try
                 {
-                    File.Delete(_filePath);
+                    File.Delete(FilePath);
                 }
                 catch (IOException ex)
                 {
@@ -141,7 +131,6 @@ public class GistConfigurationStorage : IGistConfigurationStorage
                 {
                     throw new InvalidOperationException($"Access denied when deleting configuration: {ex.Message}", ex);
                 }
-            }
         }
         finally
         {
@@ -149,5 +138,12 @@ public class GistConfigurationStorage : IGistConfigurationStorage
         }
 
         await Task.CompletedTask;
+    }
+
+    public static GistConfigurationStorage CreateDefault()
+    {
+        var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        var gistGetDir = Path.Combine(appDataPath, "GistGet");
+        return new GistConfigurationStorage(gistGetDir);
     }
 }

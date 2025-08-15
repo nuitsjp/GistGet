@@ -1,8 +1,7 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Moq;
 using NuitsJp.GistGet.Infrastructure.GitHub;
 using NuitsJp.GistGet.Presentation.Login;
-using Xunit;
 
 namespace NuitsJp.GistGet.Tests.Presentation.Commands;
 
@@ -21,7 +20,7 @@ public class LoginCommandTests
         var command = new LoginCommand(authService.Object, console.Object, logger.Object);
 
         // Act
-        var result = await command.ExecuteAsync(new[] { "login" });
+        var result = await command.ExecuteAsync(["login"]);
 
         // Assert
         Assert.Equal(0, result);
@@ -42,7 +41,7 @@ public class LoginCommandTests
         var command = new LoginCommand(authService.Object, console.Object, logger.Object);
 
         // Act
-        var result = await command.ExecuteAsync(new[] { "login", "status" });
+        var result = await command.ExecuteAsync(["login", "status"]);
 
         // Assert
         Assert.Equal(0, result);
@@ -63,7 +62,7 @@ public class LoginCommandTests
         var command = new LoginCommand(authService.Object, console.Object, logger.Object);
 
         // Act
-        var result = await command.ExecuteAsync(new[] { "login" });
+        var result = await command.ExecuteAsync(["login"]);
 
         // Assert
         Assert.Equal(1, result);

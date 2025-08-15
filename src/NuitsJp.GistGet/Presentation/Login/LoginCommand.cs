@@ -68,11 +68,9 @@ public class LoginCommand
                 _console.NotifyAuthSuccess();
                 return 0;
             }
-            else
-            {
-                _console.NotifyAuthFailure("ログインに失敗しました");
-                return 1;
-            }
+
+            _console.NotifyAuthFailure("ログインに失敗しました");
+            return 1;
         }
         catch (Exception ex)
         {
@@ -93,7 +91,6 @@ public class LoginCommand
             string? tokenInfo = null;
 
             if (isAuthenticated)
-            {
                 try
                 {
                     var client = await _authService.GetAuthenticatedClientAsync();
@@ -108,7 +105,6 @@ public class LoginCommand
                     _logger.LogWarning(ex, "ユーザー情報の取得に失敗しました");
                     tokenInfo = "ユーザー情報取得失敗";
                 }
-            }
 
             _console.ShowAuthStatus(isAuthenticated, tokenInfo);
         }

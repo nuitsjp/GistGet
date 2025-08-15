@@ -40,12 +40,9 @@ public class SyncConsole : ConsoleBase, ISyncConsole
         WriteInfoLine("同期が完了しました。");
         WriteInfoLine("再起動が必要なパッケージがインストールされました：");
 
-        foreach (var package in packagesRequiringReboot)
-        {
-            System.Console.WriteLine($"  - {package}");
-        }
+        foreach (var package in packagesRequiringReboot) System.Console.WriteLine($"  - {package}");
 
-        return PromptForConfirmation("今すぐ再起動しますか？", defaultValue: false);
+        return PromptForConfirmation("今すぐ再起動しますか？", false);
     }
 
     /// <summary>
@@ -75,50 +72,31 @@ public class SyncConsole : ConsoleBase, ISyncConsole
         if (result.InstalledPackages.Count > 0)
         {
             WriteSuccessLine($"インストール済み ({result.InstalledPackages.Count}件):");
-            foreach (var package in result.InstalledPackages)
-            {
-                System.Console.WriteLine($"  + {package}");
-            }
+            foreach (var package in result.InstalledPackages) System.Console.WriteLine($"  + {package}");
         }
 
         if (result.UninstalledPackages.Count > 0)
         {
             WriteWarningLine($"アンインストール済み ({result.UninstalledPackages.Count}件):");
-            foreach (var package in result.UninstalledPackages)
-            {
-                System.Console.WriteLine($"  - {package}");
-            }
+            foreach (var package in result.UninstalledPackages) System.Console.WriteLine($"  - {package}");
         }
 
         if (result.FailedPackages.Count > 0)
         {
             WriteErrorLine($"失敗 ({result.FailedPackages.Count}件):");
-            foreach (var package in result.FailedPackages)
-            {
-                System.Console.WriteLine($"  ✗ {package}");
-            }
+            foreach (var package in result.FailedPackages) System.Console.WriteLine($"  ✗ {package}");
         }
 
-        if (!result.HasChanges)
-        {
-            WriteInfoLine("変更はありませんでした。システムは既に同期されています。");
-        }
+        if (!result.HasChanges) WriteInfoLine("変更はありませんでした。システムは既に同期されています。");
 
         System.Console.WriteLine();
 
         if (result.IsSuccess)
-        {
             WriteSuccessLine("✓ 同期が正常に完了しました。");
-        }
         else
-        {
             WriteErrorLine("⚠ 同期中にエラーが発生しました。");
-        }
 
-        if (result.RebootRequired)
-        {
-            WriteWarningLine("⚠ 再起動が必要です。");
-        }
+        if (result.RebootRequired) WriteWarningLine("⚠ 再起動が必要です。");
     }
 
     /// <summary>

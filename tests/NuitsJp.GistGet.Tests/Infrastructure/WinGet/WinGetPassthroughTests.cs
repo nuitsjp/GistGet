@@ -1,9 +1,7 @@
-using Shouldly;
-using Xunit;
-using NuitsJp.GistGet.Infrastructure.WinGet;
-using NuitsJp.GistGet.Tests.Mocks;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using NuitsJp.GistGet.Tests.Mocks;
+using Shouldly;
 
 namespace NuitsJp.GistGet.Tests.Infrastructure.WinGet;
 
@@ -28,7 +26,8 @@ public class WinGetPassthroughTests
 
         // Assert
         result.ShouldBe(0);
-        normalizedOutput.ShouldBe("Name|Id|Version|Source\nGit for Windows|Git.Git|2.43.0|winget\nNotePad++|Notepad++.Notepad++|8.6.8|winget");
+        normalizedOutput.ShouldBe(
+            "Name|Id|Version|Source\nGit for Windows|Git.Git|2.43.0|winget\nNotePad++|Notepad++.Notepad++|8.6.8|winget");
     }
 
     [Fact]
@@ -44,26 +43,26 @@ public class WinGetPassthroughTests
         // Assert
         result.ShouldBe(0);
         var expectedJson = """
-            {
-              "Sources": [
-                {
-                  "Packages": [
-                    {
-                      "PackageIdentifier": "Git.Git",
-                      "Version": "2.43.0"
-                    }
-                  ],
-                  "SourceDetails": {
-                    "Argument": "https://cdn.winget.microsoft.com/cache",
-                    "Identifier": "winget",
-                    "Name": "winget",
-                    "Type": "Microsoft.PreIndexed.Package"
-                  }
-                }
-              ],
-              "WinGetVersion": "1.7.10661"
-            }
-            """;
+                           {
+                             "Sources": [
+                               {
+                                 "Packages": [
+                                   {
+                                     "PackageIdentifier": "Git.Git",
+                                     "Version": "2.43.0"
+                                   }
+                                 ],
+                                 "SourceDetails": {
+                                   "Argument": "https://cdn.winget.microsoft.com/cache",
+                                   "Identifier": "winget",
+                                   "Name": "winget",
+                                   "Type": "Microsoft.PreIndexed.Package"
+                                 }
+                               }
+                             ],
+                             "WinGetVersion": "1.7.10661"
+                           }
+                           """;
         normalizedOutput.ShouldBe(expectedJson);
     }
 
@@ -94,7 +93,8 @@ public class WinGetPassthroughTests
 
         // Assert
         result.ShouldBe(0);
-        normalizedOutput.ShouldBe("Found Git for Windows [Git.Git]\nVersion: 2.43.0\nPublisher: The Git Development Community");
+        normalizedOutput.ShouldBe(
+            "Found Git for Windows [Git.Git]\nVersion: 2.43.0\nPublisher: The Git Development Community");
     }
 
     [Fact]
@@ -113,11 +113,14 @@ public class WinGetPassthroughTests
     }
 
     [Theory]
-    [InlineData(new[] { "list" }, "Name|Id|Version|Source\nGit for Windows|Git.Git|2.43.0|winget\nNotePad++|Notepad++.Notepad++|8.6.8|winget")]
+    [InlineData(new[] { "list" },
+        "Name|Id|Version|Source\nGit for Windows|Git.Git|2.43.0|winget\nNotePad++|Notepad++.Notepad++|8.6.8|winget")]
     [InlineData(new[] { "search", "notepad" }, "Name|Id|Version|Source\nNotePad++|Notepad++.Notepad++|8.6.8|winget")]
-    [InlineData(new[] { "show", "Git.Git" }, "Found Git for Windows [Git.Git]\nVersion: 2.43.0\nPublisher: The Git Development Community")]
+    [InlineData(new[] { "show", "Git.Git" },
+        "Found Git for Windows [Git.Git]\nVersion: 2.43.0\nPublisher: The Git Development Community")]
     [InlineData(new[] { "import", "--input", "test.json" }, "Successfully imported packages.")]
-    public async Task ExecuteAsync_RoundTripNormalization_ShouldProduceDeterministicOutput(string[] args, string expectedNormalized)
+    public async Task ExecuteAsync_RoundTripNormalization_ShouldProduceDeterministicOutput(string[] args,
+        string expectedNormalized)
     {
         // Arrange & Act
         var result1 = await _mockPassthroughClient.ExecuteAsync(args);

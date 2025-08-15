@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
-using NuitsJp.GistGet.Infrastructure.WinGet;
 
 namespace NuitsJp.GistGet.Infrastructure.WinGet;
 
@@ -9,8 +8,8 @@ namespace NuitsJp.GistGet.Infrastructure.WinGet;
 /// </summary>
 public class WinGetPassthrough : IWinGetPassthroughClient
 {
-    private readonly IProcessWrapper _processWrapper;
     private readonly ILogger<WinGetPassthrough> _logger;
+    private readonly IProcessWrapper _processWrapper;
 
     public WinGetPassthrough(IProcessWrapper processWrapper, ILogger<WinGetPassthrough> logger)
     {
@@ -31,10 +30,7 @@ public class WinGetPassthrough : IWinGetPassthroughClient
         };
 
         // 引数をそのまま渡す
-        foreach (var arg in args)
-        {
-            startInfo.ArgumentList.Add(arg);
-        }
+        foreach (var arg in args) startInfo.ArgumentList.Add(arg);
 
         try
         {

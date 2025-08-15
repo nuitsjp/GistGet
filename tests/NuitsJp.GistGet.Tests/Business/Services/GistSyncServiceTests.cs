@@ -1,17 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NuitsJp.GistGet.Business;
-using NuitsJp.GistGet.Business.Models;
-using NuitsJp.GistGet.Business.Services;
 using NuitsJp.GistGet.Infrastructure.Os;
 using NuitsJp.GistGet.Infrastructure.WinGet;
 using NuitsJp.GistGet.Models;
 using Shouldly;
-using Xunit;
 
 namespace NuitsJp.GistGet.Tests.Business.Services;
 
@@ -22,11 +15,11 @@ namespace NuitsJp.GistGet.Tests.Business.Services;
 /// </summary>
 public class GistSyncServiceTests
 {
-    private readonly Mock<IGistManager> _mockGistManager;
-    private readonly Mock<IWinGetClient> _mockWinGetClient;
-    private readonly Mock<IOsService> _mockOsService;
-    private readonly Mock<ILogger<GistSyncService>> _mockLogger;
     private readonly GistSyncService _gistSyncService;
+    private readonly Mock<IGistManager> _mockGistManager;
+    private readonly Mock<ILogger<GistSyncService>> _mockLogger;
+    private readonly Mock<IOsService> _mockOsService;
+    private readonly Mock<IWinGetClient> _mockWinGetClient;
 
     public GistSyncServiceTests()
     {
@@ -384,8 +377,8 @@ public class GistSyncServiceTests
         _mockOsService.Setup(x => x.ExecuteRebootAsync()).ThrowsAsync(exception);
 
         // Act & Assert - 例外の適切な伝播検証
-        var thrownException = await Should.ThrowAsync<InvalidOperationException>(
-            async () => await _gistSyncService.ExecuteRebootAsync());
+        var thrownException =
+            await Should.ThrowAsync<InvalidOperationException>(async () => await _gistSyncService.ExecuteRebootAsync());
         thrownException.ShouldBe(exception);
         _mockOsService.Verify(x => x.ExecuteRebootAsync(), Times.Once);
     }

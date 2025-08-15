@@ -61,8 +61,8 @@ public abstract class ConsoleBase : IConsoleBase
     /// </summary>
     private class SimpleProgressIndicator : IProgressIndicator
     {
-        private readonly string _operation;
         private readonly ConsoleBase _console;
+        private readonly string _operation;
         private bool _disposed;
 
         public SimpleProgressIndicator(string operation, ConsoleBase console)
@@ -74,18 +74,12 @@ public abstract class ConsoleBase : IConsoleBase
 
         public void UpdateMessage(string message)
         {
-            if (!_disposed)
-            {
-                _console.WriteInfoLine($"{_operation}: {message}");
-            }
+            if (!_disposed) _console.WriteInfoLine($"{_operation}: {message}");
         }
 
         public void Complete()
         {
-            if (!_disposed)
-            {
-                _console.WriteInfoLine($"{_operation}が完了しました。");
-            }
+            if (!_disposed) _console.WriteInfoLine($"{_operation}が完了しました。");
         }
 
         public void Dispose()

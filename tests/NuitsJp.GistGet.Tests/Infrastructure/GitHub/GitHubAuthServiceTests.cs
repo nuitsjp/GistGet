@@ -1,6 +1,7 @@
+using System.Reflection;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NuitsJp.GistGet.Infrastructure.GitHub;
-using Xunit;
 
 namespace NuitsJp.GistGet.Tests.Infrastructure.GitHub;
 
@@ -10,8 +11,8 @@ namespace NuitsJp.GistGet.Tests.Infrastructure.GitHub;
 /// </summary>
 public class GitHubAuthServiceTests : IDisposable
 {
-    private readonly string _testTokenDirectory;
     private readonly ILogger<GitHubAuthService> _logger;
+    private readonly string _testTokenDirectory;
 
     public GitHubAuthServiceTests()
     {
@@ -27,10 +28,7 @@ public class GitHubAuthServiceTests : IDisposable
     public void Dispose()
     {
         // テスト後のクリーンアップ
-        if (Directory.Exists(_testTokenDirectory))
-        {
-            Directory.Delete(_testTokenDirectory, true);
-        }
+        if (Directory.Exists(_testTokenDirectory)) Directory.Delete(_testTokenDirectory, true);
     }
 
     [Fact]
@@ -96,7 +94,7 @@ public class GitHubAuthServiceTests : IDisposable
 
         // 不正な暗号化データを作成（復号化に失敗させる）
         var invalidData = new { EncryptedToken = "invalid_base64_data", CreatedAt = DateTime.UtcNow };
-        var json = System.Text.Json.JsonSerializer.Serialize(invalidData);
+        var json = JsonSerializer.Serialize(invalidData);
         await File.WriteAllTextAsync(tokenFilePath, json);
 
         // Act
@@ -113,7 +111,7 @@ public class GitHubAuthServiceTests : IDisposable
 
         // リフレクションを使用してテスト用ディレクトリを設定
         var tokenFilePathField = typeof(GitHubAuthService).GetField("_tokenFilePath",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            BindingFlags.NonPublic | BindingFlags.Instance);
         var testTokenFilePath = Path.Combine(_testTokenDirectory, "token.json");
         tokenFilePathField?.SetValue(service, testTokenFilePath);
 

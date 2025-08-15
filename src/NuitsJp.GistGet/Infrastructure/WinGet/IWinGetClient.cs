@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using NuitsJp.GistGet.Models;
 
 namespace NuitsJp.GistGet.Infrastructure.WinGet;
@@ -77,7 +78,7 @@ public interface IProcessWrapper
     /// </summary>
     /// <param name="startInfo">プロセス開始情報</param>
     /// <returns>開始されたプロセス</returns>
-    IProcessResult? Start(global::System.Diagnostics.ProcessStartInfo startInfo);
+    IProcessResult? Start(ProcessStartInfo startInfo);
 }
 
 /// <summary>
@@ -86,14 +87,14 @@ public interface IProcessWrapper
 public interface IProcessResult : IDisposable
 {
     /// <summary>
-    /// プロセスの終了を待機する
-    /// </summary>
-    Task WaitForExitAsync();
-
-    /// <summary>
     /// プロセスの終了コード
     /// </summary>
     int ExitCode { get; }
+
+    /// <summary>
+    /// プロセスの終了を待機する
+    /// </summary>
+    Task WaitForExitAsync();
 
     /// <summary>
     /// 標準出力を読み取る

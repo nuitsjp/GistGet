@@ -1,5 +1,6 @@
+using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
-using NuitsJp.GistGet.Presentation;
 
 namespace NuitsJp.GistGet.Presentation;
 
@@ -15,7 +16,7 @@ public class ErrorMessageService : IErrorMessageService
         _logger = logger;
     }
 
-    public void HandleComException(System.Runtime.InteropServices.COMException comEx)
+    public void HandleComException(COMException comEx)
     {
         _logger.LogError(comEx, "COM API error occurred");
 
@@ -40,13 +41,9 @@ public class ErrorMessageService : IErrorMessageService
         _logger.LogError(invEx, "Package not found error");
         var packageName = ExtractPackageNameFromMessage(invEx.Message);
         if (!string.IsNullOrEmpty(packageName))
-        {
             _logger.LogError("エラー: パッケージ '{PackageName}' が見つかりません。正しいパッケージIDを確認してください。", packageName);
-        }
         else
-        {
             _logger.LogError("エラー: 指定されたパッケージが見つかりません。正しいパッケージIDを確認してください。");
-        }
     }
 
     public void HandleUnexpectedException(Exception ex)
@@ -58,7 +55,7 @@ public class ErrorMessageService : IErrorMessageService
     private static string? ExtractPackageNameFromMessage(string message)
     {
         // "Package 'PackageName' not found" の形式から PackageName を抽出
-        var match = System.Text.RegularExpressions.Regex.Match(message, @"Package '([^']+)' not found");
+        var match = Regex.Match(message, @"Package '([^']+)' not found");
         return match.Success ? match.Groups[1].Value : null;
     }
 }

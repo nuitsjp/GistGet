@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
-using NuitsJp.GistGet.Infrastructure.GitHub;
 using NuitsJp.GistGet.Business;
+using NuitsJp.GistGet.Infrastructure.GitHub;
 using NuitsJp.GistGet.Presentation.Console;
 
 namespace NuitsJp.GistGet.Presentation.GistConfig;
@@ -11,8 +11,8 @@ namespace NuitsJp.GistGet.Presentation.GistConfig;
 public class GistStatusCommand
 {
     private readonly IGitHubAuthService _authService;
-    private readonly IGistManager _gistManager;
     private readonly IGistConfigConsole _console;
+    private readonly IGistManager _gistManager;
     private readonly ILogger<GistStatusCommand> _logger;
 
     public GistStatusCommand(

@@ -9,40 +9,16 @@ namespace NuitsJp.GistGet.Presentation.Login;
 public class LoginConsole : ConsoleBase, ILoginConsole
 {
     /// <summary>
-    /// エラーメッセージを出力
-    /// </summary>
-    protected override void WriteErrorLine(string message)
-    {
-        System.Console.WriteLine(message);
-    }
-
-    /// <summary>
-    /// 警告メッセージを出力
-    /// </summary>
-    protected override void WriteWarningLine(string message)
-    {
-        System.Console.WriteLine(message);
-    }
-
-    /// <summary>
-    /// 情報メッセージを出力
-    /// </summary>
-    protected override void WriteInfoLine(string message)
-    {
-        System.Console.WriteLine(message);
-    }
-
-    /// <summary>
     /// ログイン手順を表示（Device Flow用）
     /// </summary>
     public void ShowAuthInstructions(string deviceCode, string userCode, string verificationUri)
     {
         System.Console.WriteLine();
         System.Console.WriteLine("=== GitHubログイン ===");
-        System.Console.WriteLine($"1. ブラウザで以下のURLを開いてください:");
+        System.Console.WriteLine("1. ブラウザで以下のURLを開いてください:");
         System.Console.WriteLine($"   {verificationUri}");
         System.Console.WriteLine();
-        System.Console.WriteLine($"2. 以下のコードを入力してください:");
+        System.Console.WriteLine("2. 以下のコードを入力してください:");
         System.Console.WriteLine($"   {userCode}");
         System.Console.WriteLine();
         System.Console.WriteLine("3. ブラウザでのログイン完了後、Enterキーを押してください...");
@@ -89,15 +65,36 @@ public class LoginConsole : ConsoleBase, ILoginConsole
         if (isAuthenticated)
         {
             System.Console.WriteLine("✅ ログイン済み");
-            if (!string.IsNullOrEmpty(tokenInfo))
-            {
-                System.Console.WriteLine($"ユーザー情報: {tokenInfo}");
-            }
+            if (!string.IsNullOrEmpty(tokenInfo)) System.Console.WriteLine($"ユーザー情報: {tokenInfo}");
         }
         else
         {
             System.Console.WriteLine("❌ 未ログイン");
             System.Console.WriteLine("'gistget login' を実行してログインしてください");
         }
+    }
+
+    /// <summary>
+    /// エラーメッセージを出力
+    /// </summary>
+    protected override void WriteErrorLine(string message)
+    {
+        System.Console.WriteLine(message);
+    }
+
+    /// <summary>
+    /// 警告メッセージを出力
+    /// </summary>
+    protected override void WriteWarningLine(string message)
+    {
+        System.Console.WriteLine(message);
+    }
+
+    /// <summary>
+    /// 情報メッセージを出力
+    /// </summary>
+    protected override void WriteInfoLine(string message)
+    {
+        System.Console.WriteLine(message);
     }
 }

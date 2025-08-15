@@ -1,7 +1,8 @@
+﻿using System.Diagnostics;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using NuitsJp.GistGet.Infrastructure.GitHub;
 using NuitsJp.GistGet.Models;
 using Octokit;
 
@@ -12,15 +13,14 @@ namespace NuitsJp.GistGet.Infrastructure.GitHub;
 /// </summary>
 public class GitHubAuthService : IGitHubAuthService
 {
-    private readonly ILogger<GitHubAuthService> _logger;
-    private readonly string _tokenFilePath;
-    private readonly HttpClient _httpClient;
-
     // GitHub OAuth App設定 (GistGet独自OAuth App)
     private const string ClientId = "Ov23lihQJhLB6hCnEIvS"; // GistGet専用Client ID
     private const string AppName = "GistGet";
     private const string DeviceCodeUrl = "https://github.com/login/device/code";
     private const string AccessTokenUrl = "https://github.com/login/oauth/access_token";
+    private readonly HttpClient _httpClient;
+    private readonly ILogger<GitHubAuthService> _logger;
+    private readonly string _tokenFilePath;
 
     public GitHubAuthService(ILogger<GitHubAuthService> logger)
     {
@@ -53,10 +53,10 @@ public class GitHubAuthService : IGitHubAuthService
             }
 
             Console.WriteLine("=== GitHub Device Flow 認証 ===");
-            Console.WriteLine($"ブラウザで以下のURLを開いてください:");
+            Console.WriteLine("ブラウザで以下のURLを開いてください:");
             Console.WriteLine($"{deviceCodeResponse.VerificationUri}");
             Console.WriteLine();
-            Console.WriteLine($"表示されたページで以下のコードを入力してください:");
+            Console.WriteLine("表示されたページで以下のコードを入力してください:");
             Console.WriteLine($"{deviceCodeResponse.UserCode}");
             Console.WriteLine();
             Console.WriteLine("認証を完了したら自動的に次に進みます...");
@@ -64,7 +64,7 @@ public class GitHubAuthService : IGitHubAuthService
             // ブラウザを自動で開く
             try
             {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                Process.Start(new ProcessStartInfo
                 {
                     FileName = deviceCodeResponse.VerificationUri,
                     UseShellExecute = true
@@ -103,89 +103,6 @@ public class GitHubAuthService : IGitHubAuthService
             Console.WriteLine($"認証エラー: {ex.Message}");
             return false;
         }
-    }
-
-    private async Task<DeviceCodeResponse?> RequestDeviceCodeAsync()
-    {
-        var requestBody = new FormUrlEncodedContent(new[]
-        {
-            new KeyValuePair<string, string>("client_id", ClientId),
-            new KeyValuePair<string, string>("scope", "gist")
-        });
-
-        var response = await _httpClient.PostAsync(DeviceCodeUrl, requestBody);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            _logger.LogError("Device Code要求が失敗しました: {StatusCode}", response.StatusCode);
-            return null;
-        }
-
-        var json = await response.Content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<DeviceCodeResponse>(json, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-        });
-    }
-
-    private async Task<string?> PollForAccessTokenAsync(DeviceCodeResponse deviceCode)
-    {
-        var interval = deviceCode.Interval;
-        var expiresAt = DateTime.UtcNow.AddSeconds(deviceCode.ExpiresIn);
-
-        while (DateTime.UtcNow < expiresAt)
-        {
-            await Task.Delay(TimeSpan.FromSeconds(interval));
-
-            var requestBody = new FormUrlEncodedContent(new[]
-            {
-                new KeyValuePair<string, string>("client_id", ClientId),
-                new KeyValuePair<string, string>("device_code", deviceCode.DeviceCode),
-                new KeyValuePair<string, string>("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
-            });
-
-            var response = await _httpClient.PostAsync(AccessTokenUrl, requestBody);
-            var json = await response.Content.ReadAsStringAsync();
-
-            if (response.IsSuccessStatusCode)
-            {
-                var tokenResponse = JsonSerializer.Deserialize<AccessTokenResponse>(json, new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-                });
-
-                if (!string.IsNullOrEmpty(tokenResponse?.AccessToken))
-                {
-                    return tokenResponse.AccessToken;
-                }
-            }
-
-            // エラーレスポンスをチェック
-            var errorResponse = JsonSerializer.Deserialize<OAuthErrorResponse>(json, new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-            });
-
-            if (errorResponse?.Error == "authorization_pending")
-            {
-                // まだ認証されていない、続行
-                continue;
-            }
-            else if (errorResponse?.Error == "slow_down")
-            {
-                // レート制限、インターバルを増やす
-                interval += 5;
-                continue;
-            }
-            else
-            {
-                // その他のエラー
-                _logger.LogError("アクセストークン取得エラー: {Error}", errorResponse?.Error);
-                break;
-            }
-        }
-
-        return null;
     }
 
     /// <summary>
@@ -263,11 +180,11 @@ public class GitHubAuthService : IGitHubAuthService
         var tokenData = new { AccessToken = token, CreatedAt = DateTime.UtcNow };
 
         // DPAPIで暗号化
-        var jsonBytes = System.Text.Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(tokenData));
-        var encryptedBytes = System.Security.Cryptography.ProtectedData.Protect(
+        var jsonBytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(tokenData));
+        var encryptedBytes = ProtectedData.Protect(
             jsonBytes,
             null,
-            System.Security.Cryptography.DataProtectionScope.CurrentUser);
+            DataProtectionScope.CurrentUser);
 
         var encryptedData = new
         {
@@ -275,7 +192,7 @@ public class GitHubAuthService : IGitHubAuthService
             CreatedAt = DateTime.UtcNow
         };
 
-        var json = System.Text.Json.JsonSerializer.Serialize(encryptedData, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        var json = JsonSerializer.Serialize(encryptedData, new JsonSerializerOptions { WriteIndented = true });
         await File.WriteAllTextAsync(_tokenFilePath, json);
         _logger.LogInformation("アクセストークンを暗号化して保存しました: {TokenPath}", _tokenFilePath);
     }
@@ -287,25 +204,25 @@ public class GitHubAuthService : IGitHubAuthService
         try
         {
             var json = await File.ReadAllTextAsync(_tokenFilePath);
-            var jsonElement = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(json);
+            var jsonElement = JsonSerializer.Deserialize<JsonElement>(json);
 
             // DPAPI暗号化形式のトークンを復号化
             if (jsonElement.TryGetProperty("EncryptedToken", out var encryptedTokenProp))
             {
                 var encryptedBytes = Convert.FromBase64String(encryptedTokenProp.GetString()!);
-                var decryptedBytes = System.Security.Cryptography.ProtectedData.Unprotect(
+                var decryptedBytes = ProtectedData.Unprotect(
                     encryptedBytes,
                     null,
-                    System.Security.Cryptography.DataProtectionScope.CurrentUser);
+                    DataProtectionScope.CurrentUser);
 
-                var decryptedJson = System.Text.Encoding.UTF8.GetString(decryptedBytes);
-                var tokenData = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(decryptedJson);
+                var decryptedJson = Encoding.UTF8.GetString(decryptedBytes);
+                var tokenData = JsonSerializer.Deserialize<JsonElement>(decryptedJson);
                 return tokenData.GetProperty("AccessToken").GetString();
             }
 
             return null;
         }
-        catch (System.Security.Cryptography.CryptographicException ex)
+        catch (CryptographicException ex)
         {
             _logger.LogError(ex, "トークンの復号化に失敗しました。再認証が必要です。");
             return null;
@@ -315,5 +232,81 @@ public class GitHubAuthService : IGitHubAuthService
             _logger.LogError(ex, "トークンファイルの読み込みに失敗しました");
             return null;
         }
+    }
+
+    private async Task<DeviceCodeResponse?> RequestDeviceCodeAsync()
+    {
+        var requestBody = new FormUrlEncodedContent([
+            new KeyValuePair<string, string>("client_id", ClientId),
+            new KeyValuePair<string, string>("scope", "gist")
+        ]);
+
+        var response = await _httpClient.PostAsync(DeviceCodeUrl, requestBody);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogError("Device Code要求が失敗しました: {StatusCode}", response.StatusCode);
+            return null;
+        }
+
+        var json = await response.Content.ReadAsStringAsync();
+        return JsonSerializer.Deserialize<DeviceCodeResponse>(json, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        });
+    }
+
+    private async Task<string?> PollForAccessTokenAsync(DeviceCodeResponse deviceCode)
+    {
+        var interval = deviceCode.Interval;
+        var expiresAt = DateTime.UtcNow.AddSeconds(deviceCode.ExpiresIn);
+
+        while (DateTime.UtcNow < expiresAt)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(interval));
+
+            var requestBody = new FormUrlEncodedContent([
+                new KeyValuePair<string, string>("client_id", ClientId),
+                new KeyValuePair<string, string>("device_code", deviceCode.DeviceCode),
+                new KeyValuePair<string, string>("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
+            ]);
+
+            var response = await _httpClient.PostAsync(AccessTokenUrl, requestBody);
+            var json = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                var tokenResponse = JsonSerializer.Deserialize<AccessTokenResponse>(json, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+                });
+
+                if (!string.IsNullOrEmpty(tokenResponse?.AccessToken)) return tokenResponse.AccessToken;
+            }
+
+            // エラーレスポンスをチェック
+            var errorResponse = JsonSerializer.Deserialize<OAuthErrorResponse>(json, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+            });
+
+            if (errorResponse?.Error == "authorization_pending")
+            {
+                // まだ認証されていない、続行
+            }
+            else if (errorResponse?.Error == "slow_down")
+            {
+                // レート制限、インターバルを増やす
+                interval += 5;
+            }
+            else
+            {
+                // その他のエラー
+                _logger.LogError("アクセストークン取得エラー: {Error}", errorResponse?.Error);
+                break;
+            }
+        }
+
+        return null;
     }
 }

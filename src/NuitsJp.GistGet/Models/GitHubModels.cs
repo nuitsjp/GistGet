@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace NuitsJp.GistGet.Models;
 
@@ -7,23 +7,18 @@ namespace NuitsJp.GistGet.Models;
 /// </summary>
 public class DeviceCodeResponse
 {
-    [JsonPropertyName("device_code")]
-    public string DeviceCode { get; set; } = string.Empty;
+    [JsonPropertyName("device_code")] public string DeviceCode { get; init; } = string.Empty;
 
-    [JsonPropertyName("user_code")]
-    public string UserCode { get; set; } = string.Empty;
+    [JsonPropertyName("user_code")] public string UserCode { get; init; } = string.Empty;
 
-    [JsonPropertyName("verification_uri")]
-    public string VerificationUri { get; set; } = string.Empty;
+    [JsonPropertyName("verification_uri")] public string VerificationUri { get; init; } = string.Empty;
 
     [JsonPropertyName("verification_uri_complete")]
-    public string? VerificationUriComplete { get; set; }
+    public string? VerificationUriComplete { get; init; }
 
-    [JsonPropertyName("expires_in")]
-    public int ExpiresIn { get; set; }
+    [JsonPropertyName("expires_in")] public int ExpiresIn { get; init; }
 
-    [JsonPropertyName("interval")]
-    public int Interval { get; set; }
+    [JsonPropertyName("interval")] public int Interval { get; init; }
 }
 
 /// <summary>
@@ -31,14 +26,11 @@ public class DeviceCodeResponse
 /// </summary>
 public class AccessTokenResponse
 {
-    [JsonPropertyName("access_token")]
-    public string? AccessToken { get; set; }
+    [JsonPropertyName("access_token")] public string? AccessToken { get; init; }
 
-    [JsonPropertyName("token_type")]
-    public string? TokenType { get; set; }
+    [JsonPropertyName("token_type")] public string? TokenType { get; init; }
 
-    [JsonPropertyName("scope")]
-    public string? Scope { get; set; }
+    [JsonPropertyName("scope")] public string? Scope { get; init; }
 }
 
 /// <summary>
@@ -46,14 +38,12 @@ public class AccessTokenResponse
 /// </summary>
 public class OAuthErrorResponse
 {
-    [JsonPropertyName("error")]
-    public string? Error { get; set; }
+    [JsonPropertyName("error")] public string? Error { get; init; }
 
     [JsonPropertyName("error_description")]
-    public string? ErrorDescription { get; set; }
+    public string? ErrorDescription { get; init; }
 
-    [JsonPropertyName("error_uri")]
-    public string? ErrorUri { get; set; }
+    [JsonPropertyName("error_uri")] public string? ErrorUri { get; init; }
 }
 
 /// <summary>
@@ -71,7 +61,7 @@ public class WinGetPackage
 /// </summary>
 public class PackageList
 {
-    public List<WinGetPackage> Packages { get; set; } = new();
+    public List<WinGetPackage> Packages { get; set; } = [];
     public DateTime ExportedAt { get; set; } = DateTime.UtcNow;
     public string ExportedBy { get; set; } = "GistGet";
 }

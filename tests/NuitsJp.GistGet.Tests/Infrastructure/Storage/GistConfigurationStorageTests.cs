@@ -1,9 +1,9 @@
-using Shouldly;
-using Xunit;
-using NuitsJp.GistGet.Models;
-using NuitsJp.GistGet.Infrastructure.Storage;
 using System.Security.AccessControl;
 using System.Security.Principal;
+using System.Text;
+using NuitsJp.GistGet.Infrastructure.Storage;
+using NuitsJp.GistGet.Models;
+using Shouldly;
 
 namespace NuitsJp.GistGet.Tests.Infrastructure.Storage;
 
@@ -11,8 +11,8 @@ namespace NuitsJp.GistGet.Tests.Infrastructure.Storage;
 [Trait("Category", "FileSystem")]
 public class GistConfigurationStorageTests : IDisposable
 {
-    private readonly string _testDirectory;
     private readonly GistConfigurationStorage _storage;
+    private readonly string _testDirectory;
 
     public GistConfigurationStorageTests()
     {
@@ -25,10 +25,7 @@ public class GistConfigurationStorageTests : IDisposable
     public void Dispose()
     {
         // テスト後のクリーンアップ
-        if (Directory.Exists(_testDirectory))
-        {
-            Directory.Delete(_testDirectory, true);
-        }
+        if (Directory.Exists(_testDirectory)) Directory.Delete(_testDirectory, true);
     }
 
     [Fact]
@@ -51,7 +48,7 @@ public class GistConfigurationStorageTests : IDisposable
         // 暗号化されたバイト配列をJSON文字列として解釈できないことを確認
         Should.Throw<Exception>(() =>
         {
-            var jsonString = System.Text.Encoding.UTF8.GetString(encryptedContent);
+            var jsonString = Encoding.UTF8.GetString(encryptedContent);
             GistConfiguration.FromJson(jsonString);
         });
     }
@@ -70,8 +67,10 @@ public class GistConfigurationStorageTests : IDisposable
         loadedConfig.ShouldNotBeNull();
         loadedConfig.GistId.ShouldBe(originalConfig.GistId);
         loadedConfig.FileName.ShouldBe(originalConfig.FileName);
-        loadedConfig.CreatedAt.ShouldBeInRange(originalConfig.CreatedAt.AddMilliseconds(-1), originalConfig.CreatedAt.AddMilliseconds(1));
-        loadedConfig.LastAccessedAt.ShouldBeInRange(originalConfig.LastAccessedAt.AddMilliseconds(-1), originalConfig.LastAccessedAt.AddMilliseconds(1));
+        loadedConfig.CreatedAt.ShouldBeInRange(originalConfig.CreatedAt.AddMilliseconds(-1),
+            originalConfig.CreatedAt.AddMilliseconds(1));
+        loadedConfig.LastAccessedAt.ShouldBeInRange(originalConfig.LastAccessedAt.AddMilliseconds(-1),
+            originalConfig.LastAccessedAt.AddMilliseconds(1));
     }
 
     [Fact]
@@ -169,7 +168,7 @@ public class GistConfigurationStorageTests : IDisposable
         // 書き込みタスク
         tasks.Add(Task.Run(async () =>
         {
-            for (int i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
             {
                 await _storage.SaveGistConfigurationAsync(config1);
                 await Task.Delay(10);
@@ -179,7 +178,7 @@ public class GistConfigurationStorageTests : IDisposable
         // 別の書き込みタスク
         tasks.Add(Task.Run(async () =>
         {
-            for (int i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
             {
                 await _storage.SaveGistConfigurationAsync(config2);
                 await Task.Delay(15);
@@ -190,7 +189,7 @@ public class GistConfigurationStorageTests : IDisposable
         var readResults = new List<GistConfiguration?>();
         tasks.Add(Task.Run(async () =>
         {
-            for (int i = 0; i < 20; i++)
+            for (var i = 0; i < 20; i++)
             {
                 var config = await _storage.LoadGistConfigurationAsync();
                 readResults.Add(config);

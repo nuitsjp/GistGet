@@ -1,9 +1,7 @@
-using Shouldly;
-using Xunit;
-using NuitsJp.GistGet.Infrastructure.GitHub;
+﻿using Microsoft.Extensions.Logging;
 using Moq;
-using Microsoft.Extensions.Logging;
-using System.Text.Json;
+using NuitsJp.GistGet.Infrastructure.GitHub;
+using Shouldly;
 
 namespace NuitsJp.GistGet.Tests.Infrastructure.GitHub;
 
@@ -11,10 +9,10 @@ namespace NuitsJp.GistGet.Tests.Infrastructure.GitHub;
 [Trait("Category", "RequiresGitHubToken")]
 public class GitHubGistClientTests : IAsyncLifetime
 {
-    private readonly Mock<ILogger<GitHubGistClient>> _mockLogger;
-    private readonly GitHubAuthService _authService;
-    private readonly List<string> _createdGistIds = new();
     private const string TestGistPrefix = "GISTGET_TEST";
+    private readonly GitHubAuthService _authService;
+    private readonly List<string> _createdGistIds = [];
+    private readonly Mock<ILogger<GitHubGistClient>> _mockLogger;
 
     public GitHubGistClientTests()
     {
@@ -59,7 +57,6 @@ public class GitHubGistClientTests : IAsyncLifetime
 
         var client = new GitHubGistClient(_authService, _mockLogger.Object);
         foreach (var gistId in _createdGistIds)
-        {
             try
             {
                 // Gist削除APIを実装後に有効化
@@ -69,7 +66,6 @@ public class GitHubGistClientTests : IAsyncLifetime
             {
                 // 削除エラーは無視
             }
-        }
     }
 
     private string GenerateTestGistName(string testMethodName)
@@ -199,10 +195,8 @@ public class GitHubGistClientTests : IAsyncLifetime
         var isAuthenticated = await authService.IsAuthenticatedAsync();
 
         if (!isAuthenticated)
-        {
             // 認証されていない場合はテストをスキップ
             return;
-        }
 
         var client = new GitHubGistClient(authService, _mockLogger.Object);
 
@@ -223,10 +217,8 @@ public class GitHubGistClientTests : IAsyncLifetime
         var isAuthenticated = await authService.IsAuthenticatedAsync();
 
         if (!isAuthenticated)
-        {
             // 認証されていない場合はテストをスキップ
             return;
-        }
 
         var client = new GitHubGistClient(authService, _mockLogger.Object);
 
@@ -247,10 +239,8 @@ public class GitHubGistClientTests : IAsyncLifetime
         var isAuthenticated = await authService.IsAuthenticatedAsync();
 
         if (!isAuthenticated)
-        {
             // 認証されていない場合はテストをスキップ
             return;
-        }
 
         var client = new GitHubGistClient(authService, _mockLogger.Object);
 
@@ -278,34 +268,27 @@ public class GitHubGistClientTests : IAsyncLifetime
 
         string? createdGistId = null;
 
-        try
-        {
-            // Act 1: Create Gist (実装待ち - GitHub APIのCreateGist)
-            // createdGistId = await client.CreateAsync(testGistName, fileName, initialContent, isPublic: false);
-            // _createdGistIds.Add(createdGistId);
+        // Act 1: Create Gist (実装待ち - GitHub APIのCreateGist)
+        // createdGistId = await client.CreateAsync(testGistName, fileName, initialContent, isPublic: false);
+        // _createdGistIds.Add(createdGistId);
 
-            // Act 2: Verify Exists
-            // var exists = await client.ExistsAsync(createdGistId);
-            // exists.ShouldBeTrue();
+        // Act 2: Verify Exists
+        // var exists = await client.ExistsAsync(createdGistId);
+        // exists.ShouldBeTrue();
 
-            // Act 3: Read Content
-            // var readContent = await client.GetFileContentAsync(createdGistId, fileName);
-            // readContent.ShouldBe(initialContent);
+        // Act 3: Read Content
+        // var readContent = await client.GetFileContentAsync(createdGistId, fileName);
+        // readContent.ShouldBe(initialContent);
 
-            // Act 4: Update Content
-            // await client.UpdateFileContentAsync(createdGistId, fileName, updatedContent);
+        // Act 4: Update Content
+        // await client.UpdateFileContentAsync(createdGistId, fileName, updatedContent);
 
-            // Act 5: Verify Update
-            // var updatedReadContent = await client.GetFileContentAsync(createdGistId, fileName);
-            // updatedReadContent.ShouldBe(updatedContent);
+        // Act 5: Verify Update
+        // var updatedReadContent = await client.GetFileContentAsync(createdGistId, fileName);
+        // updatedReadContent.ShouldBe(updatedContent);
 
-            // 現在はGitHubGistClientにCreate/Delete APIが未実装のため、テストを保留
-            // テストの構造は統合テスト用に準備完了
-        }
-        finally
-        {
-            // Cleanup is handled by DisposeAsync
-        }
+        // 現在はGitHubGistClientにCreate/Delete APIが未実装のため、テストを保留
+        // テストの構造は統合テスト用に準備完了
     }
 
     [Fact]

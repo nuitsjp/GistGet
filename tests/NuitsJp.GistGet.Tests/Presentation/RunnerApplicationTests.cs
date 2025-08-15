@@ -1,8 +1,7 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Moq;
-using NuitsJp.GistGet;
 using NuitsJp.GistGet.Presentation;
 
 namespace NuitsJp.GistGet.Tests.Presentation;
@@ -25,7 +24,7 @@ public class RunnerApplicationTests
         var app = new RunnerApplication();
 
         // Act
-        var code = await app.RunAsync(host, new[] { "--help" });
+        var code = await app.RunAsync(host, ["--help"]);
 
         // Assert
         Assert.Equal(0, code);

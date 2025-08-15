@@ -1,5 +1,3 @@
-using System;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NuitsJp.GistGet.Business;
@@ -9,7 +7,6 @@ using NuitsJp.GistGet.Infrastructure.GitHub;
 using NuitsJp.GistGet.Infrastructure.Storage;
 using NuitsJp.GistGet.Models;
 using Shouldly;
-using Xunit;
 
 namespace NuitsJp.GistGet.Tests.Business.Services;
 
@@ -20,11 +17,11 @@ namespace NuitsJp.GistGet.Tests.Business.Services;
 /// </summary>
 public class GistConfigServiceTests
 {
+    private readonly GistConfigService _gistConfigService;
     private readonly Mock<IGitHubAuthService> _mockAuthService;
-    private readonly Mock<IGistConfigurationStorage> _mockStorage;
     private readonly Mock<IGistManager> _mockGistManager;
     private readonly Mock<ILogger<GistConfigService>> _mockLogger;
-    private readonly GistConfigService _gistConfigService;
+    private readonly Mock<IGistConfigurationStorage> _mockStorage;
 
     public GistConfigServiceTests()
     {
@@ -39,6 +36,85 @@ public class GistConfigServiceTests
             _mockGistManager.Object,
             _mockLogger.Object);
     }
+
+    #region Business Workflow Tests - Complete Process Verification
+
+    [Fact]
+    public async Task ConfigureGistAsync_ShouldExecuteCompleteWorkflow_InCorrectOrder()
+    {
+        // Arrange - Business層: 完全なワークフローの実行順序検証
+        var request = new GistConfigRequest { GistId = "test-gist-id", FileName = "test.yaml" };
+        _mockAuthService.Setup(x => x.IsAuthenticatedAsync()).ReturnsAsync(true);
+        _mockGistManager.Setup(x => x.ValidateGistAccessAsync("test-gist-id")).Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _gistConfigService.ConfigureGistAsync(request);
+
+        // Assert - Business層: ワークフロー全体の正しい実行順序とInfrastructure層呼び出し検証
+        result.IsSuccess.ShouldBeTrue();
+
+        // 実行順序の検証
+        var invocations = new List<string>();
+        _mockAuthService.Verify(x => x.IsAuthenticatedAsync(), Times.Once);
+        _mockGistManager.Verify(x => x.ValidateGistAccessAsync("test-gist-id"), Times.Once);
+        _mockStorage.Verify(x => x.SaveGistConfigurationAsync(It.Is<GistConfiguration>(c =>
+            c.GistId == "test-gist-id" && c.FileName == "test.yaml")), Times.Once);
+
+        // Infrastructure層のインターフェースのみ呼び出され、実装は完全に分離されていること
+        _mockAuthService.VerifyNoOtherCalls();
+        _mockGistManager.VerifyNoOtherCalls();
+        _mockStorage.VerifyNoOtherCalls();
+    }
+
+    #endregion
+
+    #region Business Rules Tests
+
+    [Fact]
+    public async Task ConfigureGistAsync_ShouldTrimWhitespaceFromFileName_WhenProvided()
+    {
+        // Arrange - Business層: ファイル名正規化のビジネスルールテスト
+        var request = new GistConfigRequest { GistId = "test-gist-id", FileName = "  test.yaml  " };
+        _mockAuthService.Setup(x => x.IsAuthenticatedAsync()).ReturnsAsync(true);
+        _mockGistManager.Setup(x => x.ValidateGistAccessAsync("test-gist-id")).Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _gistConfigService.ConfigureGistAsync(request);
+
+        // Assert - Business層: 文字列正規化ルールの検証（ただし現在の実装では未対応）
+        result.IsSuccess.ShouldBeTrue();
+        // 注意: 現在の実装では空白のトリムは行われていないため、そのまま保存される
+        _mockStorage.Verify(x => x.SaveGistConfigurationAsync(It.Is<GistConfiguration>(c =>
+            c.FileName == "  test.yaml  ")), Times.Once);
+    }
+
+    #endregion
+
+    #region Infrastructure Layer Isolation Tests
+
+    [Fact]
+    public async Task ConfigureGistAsync_ShouldOnlyCallExpectedServices_NotOtherServices()
+    {
+        // Arrange - Business層: Infrastructure層の完全分離検証
+        var request = new GistConfigRequest { GistId = "test-gist-id", FileName = "test.yaml" };
+        _mockAuthService.Setup(x => x.IsAuthenticatedAsync()).ReturnsAsync(true);
+        _mockGistManager.Setup(x => x.ValidateGistAccessAsync("test-gist-id")).Returns(Task.CompletedTask);
+
+        // Act
+        await _gistConfigService.ConfigureGistAsync(request);
+
+        // Assert - Business層テスト: 期待されるサービスのみが呼ばれることを確認
+        _mockAuthService.Verify(x => x.IsAuthenticatedAsync(), Times.Once);
+        _mockGistManager.Verify(x => x.ValidateGistAccessAsync("test-gist-id"), Times.Once);
+        _mockStorage.Verify(x => x.SaveGistConfigurationAsync(It.IsAny<GistConfiguration>()), Times.Once);
+
+        // 他の予期しない呼び出しがないことを確認
+        _mockAuthService.VerifyNoOtherCalls();
+        _mockGistManager.VerifyNoOtherCalls();
+        _mockStorage.VerifyNoOtherCalls();
+    }
+
+    #endregion
 
     #region Constructor Tests
 
@@ -189,85 +265,6 @@ public class GistConfigServiceTests
         result.ErrorMessage.ShouldContain("設定エラー: Gist does not exist");
         // エラー発生時は保存処理は実行されない
         _mockStorage.Verify(x => x.SaveGistConfigurationAsync(It.IsAny<GistConfiguration>()), Times.Never);
-    }
-
-    #endregion
-
-    #region Business Workflow Tests - Complete Process Verification
-
-    [Fact]
-    public async Task ConfigureGistAsync_ShouldExecuteCompleteWorkflow_InCorrectOrder()
-    {
-        // Arrange - Business層: 完全なワークフローの実行順序検証
-        var request = new GistConfigRequest { GistId = "test-gist-id", FileName = "test.yaml" };
-        _mockAuthService.Setup(x => x.IsAuthenticatedAsync()).ReturnsAsync(true);
-        _mockGistManager.Setup(x => x.ValidateGistAccessAsync("test-gist-id")).Returns(Task.CompletedTask);
-
-        // Act
-        var result = await _gistConfigService.ConfigureGistAsync(request);
-
-        // Assert - Business層: ワークフロー全体の正しい実行順序とInfrastructure層呼び出し検証
-        result.IsSuccess.ShouldBeTrue();
-
-        // 実行順序の検証
-        var invocations = new List<string>();
-        _mockAuthService.Verify(x => x.IsAuthenticatedAsync(), Times.Once);
-        _mockGistManager.Verify(x => x.ValidateGistAccessAsync("test-gist-id"), Times.Once);
-        _mockStorage.Verify(x => x.SaveGistConfigurationAsync(It.Is<GistConfiguration>(c =>
-            c.GistId == "test-gist-id" && c.FileName == "test.yaml")), Times.Once);
-
-        // Infrastructure層のインターフェースのみ呼び出され、実装は完全に分離されていること
-        _mockAuthService.VerifyNoOtherCalls();
-        _mockGistManager.VerifyNoOtherCalls();
-        _mockStorage.VerifyNoOtherCalls();
-    }
-
-    #endregion
-
-    #region Business Rules Tests
-
-    [Fact]
-    public async Task ConfigureGistAsync_ShouldTrimWhitespaceFromFileName_WhenProvided()
-    {
-        // Arrange - Business層: ファイル名正規化のビジネスルールテスト
-        var request = new GistConfigRequest { GistId = "test-gist-id", FileName = "  test.yaml  " };
-        _mockAuthService.Setup(x => x.IsAuthenticatedAsync()).ReturnsAsync(true);
-        _mockGistManager.Setup(x => x.ValidateGistAccessAsync("test-gist-id")).Returns(Task.CompletedTask);
-
-        // Act
-        var result = await _gistConfigService.ConfigureGistAsync(request);
-
-        // Assert - Business層: 文字列正規化ルールの検証（ただし現在の実装では未対応）
-        result.IsSuccess.ShouldBeTrue();
-        // 注意: 現在の実装では空白のトリムは行われていないため、そのまま保存される
-        _mockStorage.Verify(x => x.SaveGistConfigurationAsync(It.Is<GistConfiguration>(c =>
-            c.FileName == "  test.yaml  ")), Times.Once);
-    }
-
-    #endregion
-
-    #region Infrastructure Layer Isolation Tests
-
-    [Fact]
-    public async Task ConfigureGistAsync_ShouldOnlyCallExpectedServices_NotOtherServices()
-    {
-        // Arrange - Business層: Infrastructure層の完全分離検証
-        var request = new GistConfigRequest { GistId = "test-gist-id", FileName = "test.yaml" };
-        _mockAuthService.Setup(x => x.IsAuthenticatedAsync()).ReturnsAsync(true);
-        _mockGistManager.Setup(x => x.ValidateGistAccessAsync("test-gist-id")).Returns(Task.CompletedTask);
-
-        // Act
-        await _gistConfigService.ConfigureGistAsync(request);
-
-        // Assert - Business層テスト: 期待されるサービスのみが呼ばれることを確認
-        _mockAuthService.Verify(x => x.IsAuthenticatedAsync(), Times.Once);
-        _mockGistManager.Verify(x => x.ValidateGistAccessAsync("test-gist-id"), Times.Once);
-        _mockStorage.Verify(x => x.SaveGistConfigurationAsync(It.IsAny<GistConfiguration>()), Times.Once);
-
-        // 他の予期しない呼び出しがないことを確認
-        _mockAuthService.VerifyNoOtherCalls();
-        _mockGistManager.VerifyNoOtherCalls();
-        _mockStorage.VerifyNoOtherCalls();
     }
 
     #endregion

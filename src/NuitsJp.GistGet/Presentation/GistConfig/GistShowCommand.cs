@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
-using NuitsJp.GistGet.Infrastructure.GitHub;
 using NuitsJp.GistGet.Business;
+using NuitsJp.GistGet.Infrastructure.GitHub;
 using NuitsJp.GistGet.Models;
 
 namespace NuitsJp.GistGet.Presentation.GistConfig;
@@ -11,10 +11,10 @@ namespace NuitsJp.GistGet.Presentation.GistConfig;
 public class GistShowCommand
 {
     private readonly IGitHubAuthService _authService;
-    private readonly IGistManager _gistManager;
-    private readonly IPackageYamlConverter _yamlConverter;
     private readonly IGistConfigConsole _console;
+    private readonly IGistManager _gistManager;
     private readonly ILogger<GistShowCommand> _logger;
+    private readonly IPackageYamlConverter _yamlConverter;
 
     public GistShowCommand(
         IGitHubAuthService authService,
@@ -110,8 +110,10 @@ public class GistShowCommand
         {
             result.Add($"登録パッケージ数: {packages.Count}");
             result.Add("");
-            result.Add("Package ID                          | Version      | Architecture | Scope   | Source  | Custom");
-            result.Add("----------------------------------- | ------------ | ------------ | ------- | ------- | ---------------");
+            result.Add(
+                "Package ID                          | Version      | Architecture | Scope   | Source  | Custom");
+            result.Add(
+                "----------------------------------- | ------------ | ------------ | ------- | ------- | ---------------");
 
             var sortedPackages = packages.ToSortedList();
             foreach (var package in sortedPackages)

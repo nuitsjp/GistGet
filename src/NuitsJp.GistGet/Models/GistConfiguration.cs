@@ -4,11 +4,6 @@ namespace NuitsJp.GistGet.Models;
 
 public class GistConfiguration
 {
-    public string GistId { get; set; } = string.Empty;
-    public string FileName { get; set; } = string.Empty;
-    public DateTime CreatedAt { get; set; }
-    public DateTime LastAccessedAt { get; set; }
-
     public GistConfiguration(string gistId, string fileName)
     {
         if (string.IsNullOrWhiteSpace(gistId))
@@ -27,6 +22,11 @@ public class GistConfiguration
     public GistConfiguration()
     {
     }
+
+    public string GistId { get; init; } = string.Empty;
+    public string FileName { get; init; } = string.Empty;
+    public DateTime CreatedAt { get; init; }
+    public DateTime LastAccessedAt { get; set; }
 
     public void UpdateLastAccessed()
     {

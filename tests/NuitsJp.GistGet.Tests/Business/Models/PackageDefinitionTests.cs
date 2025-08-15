@@ -1,6 +1,5 @@
-using Shouldly;
-using Xunit;
 using NuitsJp.GistGet.Models;
+using Shouldly;
 
 namespace NuitsJp.GistGet.Tests.Business.Models;
 
@@ -73,14 +72,9 @@ public class PackageDefinitionTests
     [Fact]
     public void Validate_WithEmptyId_ShouldThrowArgumentException()
     {
-        // Arrange
-        var package = new PackageDefinition("AkelPad.AkelPad");
-        // リフレクションでプライベートプロパティを変更
-        var idProperty = typeof(PackageDefinition).GetProperty("Id");
-        idProperty?.SetValue(package, string.Empty);
-
-        // Act & Assert
-        Should.Throw<ArgumentException>(() => package.Validate());
+        // Arrange & Act & Assert
+        // 空のIDでコンストラクタを呼び出すとArgumentExceptionが発生する
+        Should.Throw<ArgumentException>(() => new PackageDefinition(string.Empty));
     }
 
     [Theory]
@@ -123,10 +117,7 @@ public class PackageDefinitionTests
     public void Validate_WithValidArchitecture_ShouldNotThrow(string? architecture)
     {
         // Arrange
-        var package = new PackageDefinition("AkelPad.AkelPad")
-        {
-            Architecture = architecture
-        };
+        var package = new PackageDefinition("AkelPad.AkelPad", architecture: architecture);
 
         // Act & Assert
         Should.NotThrow(() => package.Validate());
@@ -136,10 +127,7 @@ public class PackageDefinitionTests
     public void Validate_WithInvalidArchitecture_ShouldThrowArgumentException()
     {
         // Arrange
-        var package = new PackageDefinition("AkelPad.AkelPad")
-        {
-            Architecture = "invalid"
-        };
+        var package = new PackageDefinition("AkelPad.AkelPad", architecture: "invalid");
 
         // Act & Assert
         Should.Throw<ArgumentException>(() => package.Validate());

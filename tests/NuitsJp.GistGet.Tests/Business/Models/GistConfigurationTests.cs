@@ -1,7 +1,6 @@
-using Shouldly;
-using Xunit;
-using NuitsJp.GistGet.Models;
 using System.Text.Json;
+using NuitsJp.GistGet.Models;
+using Shouldly;
 
 namespace NuitsJp.GistGet.Tests.Business.Models;
 
@@ -81,8 +80,10 @@ public class GistConfigurationTests
         var deserialized = JsonSerializer.Deserialize<GistConfiguration>(json);
         deserialized!.GistId.ShouldBe(config.GistId);
         deserialized.FileName.ShouldBe(config.FileName);
-        deserialized.CreatedAt.ShouldBeInRange(config.CreatedAt.AddMilliseconds(-1), config.CreatedAt.AddMilliseconds(1));
-        deserialized.LastAccessedAt.ShouldBeInRange(config.LastAccessedAt.AddMilliseconds(-1), config.LastAccessedAt.AddMilliseconds(1));
+        deserialized.CreatedAt.ShouldBeInRange(config.CreatedAt.AddMilliseconds(-1),
+            config.CreatedAt.AddMilliseconds(1));
+        deserialized.LastAccessedAt.ShouldBeInRange(config.LastAccessedAt.AddMilliseconds(-1),
+            config.LastAccessedAt.AddMilliseconds(1));
     }
 
     [Fact]
@@ -98,8 +99,10 @@ public class GistConfigurationTests
         // Assert
         deserializedConfig.GistId.ShouldBe(originalConfig.GistId);
         deserializedConfig.FileName.ShouldBe(originalConfig.FileName);
-        deserializedConfig.CreatedAt.ShouldBeInRange(originalConfig.CreatedAt.AddMilliseconds(-1), originalConfig.CreatedAt.AddMilliseconds(1));
-        deserializedConfig.LastAccessedAt.ShouldBeInRange(originalConfig.LastAccessedAt.AddMilliseconds(-1), originalConfig.LastAccessedAt.AddMilliseconds(1));
+        deserializedConfig.CreatedAt.ShouldBeInRange(originalConfig.CreatedAt.AddMilliseconds(-1),
+            originalConfig.CreatedAt.AddMilliseconds(1));
+        deserializedConfig.LastAccessedAt.ShouldBeInRange(originalConfig.LastAccessedAt.AddMilliseconds(-1),
+            originalConfig.LastAccessedAt.AddMilliseconds(1));
     }
 
     [Fact]

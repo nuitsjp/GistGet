@@ -1,12 +1,11 @@
+﻿using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NuitsJp.GistGet.Infrastructure.WinGet;
+using NuitsJp.GistGet.Models;
 using NuitsJp.GistGet.Tests.Mocks;
 using Shouldly;
-using Xunit;
 using Xunit.Abstractions;
-using System.Diagnostics;
-using NuitsJp.GistGet.Models;
 
 namespace NuitsJp.GistGet.Tests.Infrastructure.WinGet;
 
@@ -14,12 +13,12 @@ namespace NuitsJp.GistGet.Tests.Infrastructure.WinGet;
 [Trait("Category", "RequiresWinGet")]
 public class WinGetComClientTests : IAsyncLifetime
 {
+    private const string TestPackageId = "jq";
+    private const string TestPackageVersion = "1.6";
     private readonly ILogger<WinGetComClient> _logger;
     private readonly MockGistSyncService _mockGistSyncService;
     private readonly Mock<IProcessWrapper> _mockProcessWrapper;
     private readonly ITestOutputHelper _testOutput;
-    private const string TestPackageId = "jq";
-    private const string TestPackageVersion = "1.6";
 
     public WinGetComClientTests(ITestOutputHelper testOutput)
     {
@@ -58,11 +57,8 @@ public class WinGetComClientTests : IAsyncLifetime
             };
 
             using var process = Process.Start(startInfo);
-            if (process != null)
-            {
-                await process.WaitForExitAsync();
-                // アンインストールの成功/失敗は無視（元々インストールされていない可能性があるため）
-            }
+            if (process != null) await process.WaitForExitAsync();
+            // アンインストールの成功/失敗は無視（元々インストールされていない可能性があるため）
         }
         catch
         {
@@ -123,13 +119,18 @@ public class WinGetComClientTests : IAsyncLifetime
         try
         {
             // Act 1: Install package
-            var installArgs = new[] { "install", TestPackageId, "--version", TestPackageVersion, "--accept-source-agreements", "--accept-package-agreements" };
+            var installArgs = new[]
+            {
+                "install", TestPackageId, "--version", TestPackageVersion, "--accept-source-agreements",
+                "--accept-package-agreements"
+            };
             var installResult = await client.InstallPackageAsync(installArgs);
             installResult.ShouldBe(0); // 0 means success
 
             // Verify installation by checking installed packages
             var installedPackages = await client.GetInstalledPackagesAsync();
-            var installedPackage = installedPackages.FirstOrDefault(pkg => pkg.Id.Contains(TestPackageId, StringComparison.OrdinalIgnoreCase));
+            var installedPackage = installedPackages.FirstOrDefault(pkg =>
+                pkg.Id.Contains(TestPackageId, StringComparison.OrdinalIgnoreCase));
             installedPackage.ShouldNotBeNull();
             actualInstalledPackageId = installedPackage.Id;
 
@@ -148,7 +149,8 @@ public class WinGetComClientTests : IAsyncLifetime
             }
             else
             {
-                _testOutput?.WriteLine($"Uninstall failed with exit code: {uninstallResult}. This may be expected for COM API installed packages.");
+                _testOutput?.WriteLine(
+                    $"Uninstall failed with exit code: {uninstallResult}. This may be expected for COM API installed packages.");
                 // アンインストールが失敗してもテストは成功とする（COM API特有の制約のため）
             }
         }
@@ -200,8 +202,7 @@ public class WinGetComClientTests : IAsyncLifetime
         var client = new WinGetComClient(_mockGistSyncService, _logger, _mockProcessWrapper.Object);
 
         // Act & Assert
-        await Should.ThrowAsync<InvalidOperationException>(
-            async () => await client.GetInstalledPackagesAsync());
+        await Should.ThrowAsync<InvalidOperationException>(async () => await client.GetInstalledPackagesAsync());
     }
 
     [Fact]
@@ -211,8 +212,7 @@ public class WinGetComClientTests : IAsyncLifetime
         var client = new WinGetComClient(_mockGistSyncService, _logger, _mockProcessWrapper.Object);
 
         // Act & Assert
-        await Should.ThrowAsync<InvalidOperationException>(
-            async () => await client.SearchPackagesAsync("test"));
+        await Should.ThrowAsync<InvalidOperationException>(async () => await client.SearchPackagesAsync("test"));
     }
 
     // 統合テスト用のヘルパーメソッド
@@ -259,7 +259,7 @@ public class WinGetComClientTests : IAsyncLifetime
 
             using var process = Process.Start(startInfo);
             if (process == null)
-                return new List<PackageDefinition>();
+                return [];
 
             var output = await process.StandardOutput.ReadToEndAsync();
             await process.WaitForExitAsync();
@@ -269,17 +269,14 @@ public class WinGetComClientTests : IAsyncLifetime
             var packages = new List<PackageDefinition>();
             if (output.Contains("jqlang.jq", StringComparison.OrdinalIgnoreCase) ||
                 output.Contains(query, StringComparison.OrdinalIgnoreCase))
-            {
                 // COM APIの結果と一致するように実際のパッケージIDを使用
                 packages.Add(new PackageDefinition("jqlang.jq"));
-            }
 
             return packages;
         }
         catch
         {
-            return new List<PackageDefinition>();
+            return [];
         }
     }
 }
-

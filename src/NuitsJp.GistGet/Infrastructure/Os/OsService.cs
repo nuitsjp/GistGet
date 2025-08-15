@@ -1,6 +1,4 @@
-using System;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace NuitsJp.GistGet.Infrastructure.Os;
@@ -9,14 +7,9 @@ namespace NuitsJp.GistGet.Infrastructure.Os;
 /// オペレーティングシステム操作の実装クラス
 /// Windowsのshutdownコマンドを使用した実際のシステム操作
 /// </summary>
-public class OsService : IOsService
+public class OsService(ILogger<OsService> logger) : IOsService
 {
-    private readonly ILogger<OsService> _logger;
-
-    public OsService(ILogger<OsService> logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly ILogger<OsService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     /// <summary>
     /// システム再起動を即座に実行

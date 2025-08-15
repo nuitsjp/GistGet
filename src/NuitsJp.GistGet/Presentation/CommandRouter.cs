@@ -1,6 +1,5 @@
+﻿using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
-using NuitsJp.GistGet.Presentation;
-using NuitsJp.GistGet.Infrastructure.WinGet;
 using NuitsJp.GistGet.Business;
 using NuitsJp.GistGet.Infrastructure.GitHub;
 using NuitsJp.GistGet.Presentation.GistConfig;
@@ -13,42 +12,28 @@ namespace NuitsJp.GistGet.Presentation;
 /// <summary>
 /// コマンド実行サービス（アーキテクチャ改善版）
 /// </summary>
-public class CommandRouter : ICommandRouter
+public class CommandRouter(
+    GistSetCommand gistSetCommand,
+    GistStatusCommand gistStatusCommand,
+    GistShowCommand gistShowCommand,
+    SyncCommand syncCommand,
+    WinGetCommand winGetCommand,
+    ILogger<CommandRouter> logger,
+    IErrorMessageService errorMessageService,
+    IGitHubAuthService authService,
+    IGistManager gistManager,
+    LoginCommand loginCommand) : ICommandRouter
 {
-    private readonly GistSetCommand _gistSetCommand;
-    private readonly GistStatusCommand _gistStatusCommand;
-    private readonly GistShowCommand _gistShowCommand;
-    private readonly SyncCommand _syncCommand;
-    private readonly WinGetCommand _winGetCommand;
-    private readonly ILogger<CommandRouter> _logger;
-    private readonly IErrorMessageService _errorMessageService;
-    private readonly IGitHubAuthService _authService;
-    private readonly IGistManager _gistManager;
-    private readonly LoginCommand _loginCommand;
-
-    public CommandRouter(
-        GistSetCommand gistSetCommand,
-        GistStatusCommand gistStatusCommand,
-        GistShowCommand gistShowCommand,
-        SyncCommand syncCommand,
-        WinGetCommand winGetCommand,
-        ILogger<CommandRouter> logger,
-        IErrorMessageService errorMessageService,
-        IGitHubAuthService authService,
-        IGistManager gistManager,
-        LoginCommand loginCommand)
-    {
-        _gistSetCommand = gistSetCommand;
-        _gistStatusCommand = gistStatusCommand;
-        _gistShowCommand = gistShowCommand;
-        _syncCommand = syncCommand;
-        _winGetCommand = winGetCommand;
-        _logger = logger;
-        _errorMessageService = errorMessageService;
-        _authService = authService;
-        _gistManager = gistManager;
-        _loginCommand = loginCommand;
-    }
+    private readonly IGitHubAuthService _authService = authService;
+    private readonly IErrorMessageService _errorMessageService = errorMessageService;
+    private readonly IGistManager _gistManager = gistManager;
+    private readonly GistSetCommand _gistSetCommand = gistSetCommand;
+    private readonly GistShowCommand _gistShowCommand = gistShowCommand;
+    private readonly GistStatusCommand _gistStatusCommand = gistStatusCommand;
+    private readonly ILogger<CommandRouter> _logger = logger;
+    private readonly LoginCommand _loginCommand = loginCommand;
+    private readonly SyncCommand _syncCommand = syncCommand;
+    private readonly WinGetCommand _winGetCommand = winGetCommand;
 
     public async Task<int> ExecuteAsync(string[] args)
     {
@@ -57,10 +42,8 @@ public class CommandRouter : ICommandRouter
             _logger.LogInformation("Executing command with args: {Args}", string.Join(" ", args));
 
             if (args.Length == 0)
-            {
                 // 引数がない場合はwingetのヘルプを表示
-                return await _winGetCommand.ExecutePassthroughAsync(new[] { "--help" });
-            }
+                return await _winGetCommand.ExecutePassthroughAsync(["--help"]);
 
             var command = args[0].ToLowerInvariant();
 
@@ -68,24 +51,17 @@ public class CommandRouter : ICommandRouter
             if (RequiresAuthentication(command, args))
             {
                 // 認証チェック・自動ログイン
-                if (!await EnsureAuthenticatedAsync())
-                {
-                    return 1;
-                }
+                if (!await EnsureAuthenticatedAsync()) return 1;
 
                 // Gist設定チェック・自動設定
                 if (RequiresGistConfiguration(command, args))
-                {
                     if (!await EnsureGistConfiguredAsync())
-                    {
                         return 1;
-                    }
-                }
             }
 
             return await RouteCommandAsync(command, args);
         }
-        catch (System.Runtime.InteropServices.COMException comEx)
+        catch (COMException comEx)
         {
             _errorMessageService.HandleComException(comEx);
             return 1;
@@ -115,28 +91,15 @@ public class CommandRouter : ICommandRouter
         var isLoginCommand = command is "login";
         var isGistSubCommand = command is "gist";
 
-        if (isLoginCommand)
-        {
-            return await _loginCommand.ExecuteAsync(args);
-        }
+        if (isLoginCommand) return await _loginCommand.ExecuteAsync(args);
 
 
-        if (isGistSubCommand)
-        {
-            return await HandleGistSubCommandAsync(args);
-        }
+        if (isGistSubCommand) return await HandleGistSubCommandAsync(args);
 
 
+        if (usesGist) return await HandleGistCommandAsync(command, args);
 
-        if (usesGist)
-        {
-            return await HandleGistCommandAsync(command, args);
-        }
-
-        if (usesCom)
-        {
-            return await HandleComCommandAsync(command, args);
-        }
+        if (usesCom) return await HandleComCommandAsync(command, args);
 
         if (usesPassthrough)
         {
@@ -186,8 +149,7 @@ public class CommandRouter : ICommandRouter
         string? fileName = null;
 
         // 引数解析
-        for (int i = 2; i < args.Length; i++)
-        {
+        for (var i = 2; i < args.Length; i++)
             if (args[i] == "--gist-id" && i + 1 < args.Length)
             {
                 gistId = args[i + 1];
@@ -198,7 +160,6 @@ public class CommandRouter : ICommandRouter
                 fileName = args[i + 1];
                 i++; // Skip next argument
             }
-        }
 
         return await _gistSetCommand.ExecuteAsync(gistId, fileName);
     }
@@ -257,16 +218,13 @@ public class CommandRouter : ICommandRouter
     /// </summary>
     private async Task<bool> EnsureAuthenticatedAsync()
     {
-        if (await _authService.IsAuthenticatedAsync())
-        {
-            return true;
-        }
+        if (await _authService.IsAuthenticatedAsync()) return true;
 
         _logger.LogInformation("認証が必要です。ログインを開始します...");
         System.Console.WriteLine("認証が必要です。GitHubログインを開始します...");
 
         // LoginCommandを実行
-        var result = await _loginCommand.ExecuteAsync(new[] { "login" });
+        var result = await _loginCommand.ExecuteAsync(["login"]);
         return result == 0;
     }
 
@@ -275,10 +233,7 @@ public class CommandRouter : ICommandRouter
     /// </summary>
     private async Task<bool> EnsureGistConfiguredAsync()
     {
-        if (await _gistManager.IsConfiguredAsync())
-        {
-            return true;
-        }
+        if (await _gistManager.IsConfiguredAsync()) return true;
 
         _logger.LogInformation("Gist設定が必要です。設定を開始します...");
         System.Console.WriteLine("Gist設定が必要です。設定を開始します...");
@@ -309,6 +264,4 @@ public class CommandRouter : ICommandRouter
             _ => throw new ArgumentException($"Unsupported COM command: {command}")
         };
     }
-
-
 }

@@ -1,6 +1,5 @@
-using Shouldly;
-using Xunit;
 using NuitsJp.GistGet.Models;
+using Shouldly;
 
 namespace NuitsJp.GistGet.Tests.Business.Models;
 

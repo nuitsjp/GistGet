@@ -1,38 +1,28 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NuitsJp.GistGet.Business;
-using NuitsJp.GistGet.Infrastructure.WinGet;
 using NuitsJp.GistGet.Infrastructure.Os;
-using System.Diagnostics;
+using NuitsJp.GistGet.Infrastructure.WinGet;
 
 namespace NuitsJp.GistGet.Presentation.WinGet;
 
 /// <summary>
 /// WinGetコマンド（install/uninstall/upgrade）の実装
 /// </summary>
-public class WinGetCommand
+public class WinGetCommand(
+    IWinGetClient winGetClient,
+    IGistSyncService gistSyncService,
+    IOsService osService,
+    IWinGetConsole console,
+    ILogger<WinGetCommand> logger)
 {
-    private readonly IWinGetClient _winGetClient;
-    private readonly IGistSyncService _gistSyncService;
-    private readonly IOsService _osService;
-    private readonly IWinGetConsole _console;
-    private readonly ILogger<WinGetCommand> _logger;
+    private readonly IWinGetConsole _console = console ?? throw new ArgumentNullException(nameof(console));
+    private readonly IGistSyncService _gistSyncService = gistSyncService ?? throw new ArgumentNullException(nameof(gistSyncService));
+    private readonly ILogger<WinGetCommand> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IOsService _osService = osService ?? throw new ArgumentNullException(nameof(osService));
 
     // 再起動が必要なパッケージを追跡
-    private readonly List<string> _packagesRequiringReboot = new();
-
-    public WinGetCommand(
-        IWinGetClient winGetClient,
-        IGistSyncService gistSyncService,
-        IOsService osService,
-        IWinGetConsole console,
-        ILogger<WinGetCommand> logger)
-    {
-        _winGetClient = winGetClient ?? throw new ArgumentNullException(nameof(winGetClient));
-        _gistSyncService = gistSyncService ?? throw new ArgumentNullException(nameof(gistSyncService));
-        _osService = osService ?? throw new ArgumentNullException(nameof(osService));
-        _console = console ?? throw new ArgumentNullException(nameof(console));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly List<string> _packagesRequiringReboot = [];
+    private readonly IWinGetClient _winGetClient = winGetClient ?? throw new ArgumentNullException(nameof(winGetClient));
 
     /// <summary>
     /// installコマンドを実行
@@ -210,22 +200,16 @@ public class WinGetCommand
     private string? GetPackageId(string[] args)
     {
         // --id フラグが指定されている場合
-        for (int i = 0; i < args.Length - 1; i++)
-        {
+        for (var i = 0; i < args.Length - 1; i++)
             if (args[i] == "--id" || args[i] == "-i")
                 return args[i + 1];
-        }
 
         // winget.exe形式の引数解析: 最初の引数（install/uninstall/upgrade）の後がパッケージID
         if (args.Length >= 2 &&
             (args[0] == "install" || args[0] == "uninstall" || args[0] == "upgrade"))
-        {
             // 2番目の引数がオプション（--で始まる）でない場合、それがパッケージID
             if (!args[1].StartsWith("--") && !args[1].StartsWith("-"))
-            {
                 return args[1];
-            }
-        }
 
         _logger.LogWarning("Package ID not specified in args: {Args}", string.Join(" ", args));
         return null;
@@ -252,7 +236,6 @@ public class WinGetCommand
             _packagesRequiringReboot.Add(packageId);
 
             if (_console.ConfirmRebootWithPackageList(_packagesRequiringReboot))
-            {
                 try
                 {
                     _console.NotifyRebootExecuting();
@@ -263,7 +246,6 @@ public class WinGetCommand
                     _logger.LogError(ex, "Failed to restart computer");
                     _console.ShowError(ex, "再起動に失敗しました");
                 }
-            }
         }
     }
 }

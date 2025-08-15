@@ -1,7 +1,3 @@
-using System;
-using System.IO;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NuitsJp.GistGet.Business;
@@ -9,7 +5,6 @@ using NuitsJp.GistGet.Infrastructure.GitHub;
 using NuitsJp.GistGet.Infrastructure.Storage;
 using NuitsJp.GistGet.Models;
 using Shouldly;
-using Xunit;
 
 namespace NuitsJp.GistGet.Tests.Business;
 
@@ -20,11 +15,11 @@ namespace NuitsJp.GistGet.Tests.Business;
 /// </summary>
 public class GistManagerTests
 {
+    private readonly GistManager _gistManager;
     private readonly Mock<IGitHubGistClient> _mockGistClient;
+    private readonly Mock<ILogger<GistManager>> _mockLogger;
     private readonly Mock<IGistConfigurationStorage> _mockStorage;
     private readonly Mock<IPackageYamlConverter> _mockYamlConverter;
-    private readonly Mock<ILogger<GistManager>> _mockLogger;
-    private readonly GistManager _gistManager;
 
     public GistManagerTests()
     {
@@ -39,6 +34,37 @@ public class GistManagerTests
             _mockYamlConverter.Object,
             _mockLogger.Object);
     }
+
+    #region Infrastructure Layer Isolation Tests
+
+    [Fact]
+    public async Task GetGistPackagesAsync_ShouldOnlyCallExpectedServices_NotOtherServices()
+    {
+        // Arrange - Business層: Infrastructure層の完全分離検証
+        var testConfig = new GistConfiguration { GistId = "test-gist", FileName = "test.yaml" };
+        var testPackages = new PackageCollection();
+        var yamlContent = "test content";
+
+        _mockStorage.Setup(s => s.LoadGistConfigurationAsync()).ReturnsAsync(testConfig);
+        _mockGistClient.Setup(c => c.GetFileContentAsync("test-gist", "test.yaml")).ReturnsAsync(yamlContent);
+        _mockYamlConverter.Setup(y => y.FromYaml(yamlContent)).Returns(testPackages);
+
+        // Act
+        await _gistManager.GetGistPackagesAsync();
+
+        // Assert - Business層テスト: 期待されるサービスのみが呼ばれることを確認
+        _mockStorage.Verify(s => s.LoadGistConfigurationAsync(), Times.Once);
+        _mockGistClient.Verify(c => c.GetFileContentAsync("test-gist", "test.yaml"), Times.Once);
+        _mockYamlConverter.Verify(y => y.FromYaml(yamlContent), Times.Once);
+        _mockStorage.Verify(s => s.SaveGistConfigurationAsync(It.IsAny<GistConfiguration>()), Times.Once);
+
+        // 他の予期しない呼び出しがないことを確認
+        _mockStorage.VerifyNoOtherCalls();
+        _mockGistClient.VerifyNoOtherCalls();
+        _mockYamlConverter.VerifyNoOtherCalls();
+    }
+
+    #endregion
 
     #region Constructor Tests
 
@@ -171,7 +197,8 @@ public class GistManagerTests
         _mockGistClient.Setup(c => c.GetFileContentAsync("test-gist", "test.yaml")).ThrowsAsync(gistException);
 
         // Act & Assert - Business層: Infrastructure層例外の適切な処理検証
-        var thrownException = await Should.ThrowAsync<InvalidOperationException>(() => _gistManager.GetGistPackagesAsync());
+        var thrownException =
+            await Should.ThrowAsync<InvalidOperationException>(() => _gistManager.GetGistPackagesAsync());
         thrownException.ShouldBe(gistException);
 
         // エラー発生時は後続処理は実行されない
@@ -213,7 +240,8 @@ public class GistManagerTests
         // null入力時は一切の処理が実行されない
         _mockStorage.Verify(s => s.LoadGistConfigurationAsync(), Times.Never);
         _mockYamlConverter.Verify(y => y.ToYaml(It.IsAny<PackageCollection>()), Times.Never);
-        _mockGistClient.Verify(c => c.UpdateFileContentAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        _mockGistClient.Verify(
+            c => c.UpdateFileContentAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
@@ -224,12 +252,15 @@ public class GistManagerTests
         _mockStorage.Setup(s => s.LoadGistConfigurationAsync()).ReturnsAsync((GistConfiguration?)null);
 
         // Act & Assert - Business層: 設定前提条件チェック
-        var exception = await Should.ThrowAsync<InvalidOperationException>(() => _gistManager.UpdateGistPackagesAsync(testPackages));
+        var exception =
+            await Should.ThrowAsync<InvalidOperationException>(() =>
+                _gistManager.UpdateGistPackagesAsync(testPackages));
         exception.Message.ShouldContain("Gist configuration not found");
 
         // 設定が存在しない場合は後続処理は実行されない
         _mockYamlConverter.Verify(y => y.ToYaml(It.IsAny<PackageCollection>()), Times.Never);
-        _mockGistClient.Verify(c => c.UpdateFileContentAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        _mockGistClient.Verify(
+            c => c.UpdateFileContentAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 
     #endregion
@@ -274,7 +305,8 @@ public class GistManagerTests
     public async Task ValidateGistAccessAsync_ShouldThrowArgumentException_WhenGistIdInvalid(string? invalidGistId)
     {
         // Act & Assert - Business層: 入力値検証のビジネスルール
-        var exception = await Should.ThrowAsync<ArgumentException>(() => _gistManager.ValidateGistAccessAsync(invalidGistId!));
+        var exception =
+            await Should.ThrowAsync<ArgumentException>(() => _gistManager.ValidateGistAccessAsync(invalidGistId!));
         exception.Message.ShouldContain("Gist ID cannot be null or empty");
 
         // 無効な入力の場合はGistクライアントは呼ばれない
@@ -301,7 +333,8 @@ public class GistManagerTests
         _mockGistClient.Setup(c => c.ExistsAsync(gistId)).ReturnsAsync(false);
 
         // Act & Assert - Business層: 存在しないGistに対するビジネスルール検証
-        var exception = await Should.ThrowAsync<InvalidOperationException>(() => _gistManager.ValidateGistAccessAsync(gistId));
+        var exception =
+            await Should.ThrowAsync<InvalidOperationException>(() => _gistManager.ValidateGistAccessAsync(gistId));
         exception.Message.ShouldContain($"Gist {gistId} does not exist or is not accessible");
     }
 
@@ -314,39 +347,9 @@ public class GistManagerTests
         _mockGistClient.Setup(c => c.ExistsAsync(gistId)).ThrowsAsync(clientException);
 
         // Act & Assert - Business層: Infrastructure層例外の適切な処理
-        var thrownException = await Should.ThrowAsync<HttpRequestException>(() => _gistManager.ValidateGistAccessAsync(gistId));
+        var thrownException =
+            await Should.ThrowAsync<HttpRequestException>(() => _gistManager.ValidateGistAccessAsync(gistId));
         thrownException.ShouldBe(clientException);
-    }
-
-    #endregion
-
-    #region Infrastructure Layer Isolation Tests
-
-    [Fact]
-    public async Task GetGistPackagesAsync_ShouldOnlyCallExpectedServices_NotOtherServices()
-    {
-        // Arrange - Business層: Infrastructure層の完全分離検証
-        var testConfig = new GistConfiguration { GistId = "test-gist", FileName = "test.yaml" };
-        var testPackages = new PackageCollection();
-        var yamlContent = "test content";
-
-        _mockStorage.Setup(s => s.LoadGistConfigurationAsync()).ReturnsAsync(testConfig);
-        _mockGistClient.Setup(c => c.GetFileContentAsync("test-gist", "test.yaml")).ReturnsAsync(yamlContent);
-        _mockYamlConverter.Setup(y => y.FromYaml(yamlContent)).Returns(testPackages);
-
-        // Act
-        await _gistManager.GetGistPackagesAsync();
-
-        // Assert - Business層テスト: 期待されるサービスのみが呼ばれることを確認
-        _mockStorage.Verify(s => s.LoadGistConfigurationAsync(), Times.Once);
-        _mockGistClient.Verify(c => c.GetFileContentAsync("test-gist", "test.yaml"), Times.Once);
-        _mockYamlConverter.Verify(y => y.FromYaml(yamlContent), Times.Once);
-        _mockStorage.Verify(s => s.SaveGistConfigurationAsync(It.IsAny<GistConfiguration>()), Times.Once);
-
-        // 他の予期しない呼び出しがないことを確認
-        _mockStorage.VerifyNoOtherCalls();
-        _mockGistClient.VerifyNoOtherCalls();
-        _mockYamlConverter.VerifyNoOtherCalls();
     }
 
     #endregion

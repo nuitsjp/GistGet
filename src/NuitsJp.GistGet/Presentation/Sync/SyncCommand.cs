@@ -7,18 +7,11 @@ namespace NuitsJp.GistGet.Presentation.Sync;
 /// syncコマンドの実装
 /// Gist → ローカルの一方向同期を実行
 /// </summary>
-public class SyncCommand
+public class SyncCommand(IGistSyncService gistSyncService, ISyncConsole console, ILogger<SyncCommand> logger)
 {
-    private readonly IGistSyncService _gistSyncService;
-    private readonly ISyncConsole _console;
-    private readonly ILogger<SyncCommand> _logger;
-
-    public SyncCommand(IGistSyncService gistSyncService, ISyncConsole console, ILogger<SyncCommand> logger)
-    {
-        _gistSyncService = gistSyncService ?? throw new ArgumentNullException(nameof(gistSyncService));
-        _console = console ?? throw new ArgumentNullException(nameof(console));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly ISyncConsole _console = console ?? throw new ArgumentNullException(nameof(console));
+    private readonly IGistSyncService _gistSyncService = gistSyncService ?? throw new ArgumentNullException(nameof(gistSyncService));
+    private readonly ILogger<SyncCommand> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     /// <summary>
     /// syncコマンドを実行

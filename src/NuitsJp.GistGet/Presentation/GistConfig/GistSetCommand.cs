@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
-using NuitsJp.GistGet.Business.Services;
 using NuitsJp.GistGet.Business.Models;
+using NuitsJp.GistGet.Business.Services;
 
 namespace NuitsJp.GistGet.Presentation.GistConfig;
 
@@ -9,8 +9,8 @@ namespace NuitsJp.GistGet.Presentation.GistConfig;
 /// </summary>
 public class GistSetCommand
 {
-    private readonly IGistConfigService _gistConfigService;
     private readonly IGistConfigConsole _console;
+    private readonly IGistConfigService _gistConfigService;
     private readonly ILogger<GistSetCommand> _logger;
 
     public GistSetCommand(
@@ -36,10 +36,7 @@ public class GistSetCommand
 
             // Gist ID とファイル名の入力または検証
             var configuration = _console.RequestGistConfiguration(gistId, fileName);
-            if (configuration == null)
-            {
-                return 1;
-            }
+            if (configuration == null) return 1;
 
             // ビジネスロジックはサービス層に委譲
             var request = new GistConfigRequest
@@ -58,11 +55,9 @@ public class GistSetCommand
                 _console.NotifyConfigurationSaved(result.GistId!, result.FileName!);
                 return 0;
             }
-            else
-            {
-                _console.NotifyConfigurationError(result.ErrorMessage!);
-                return 1;
-            }
+
+            _console.NotifyConfigurationError(result.ErrorMessage!);
+            return 1;
         }
         catch (Exception ex)
         {

@@ -3,7 +3,6 @@ using NuitsJp.GistGet.Business.Models;
 using NuitsJp.GistGet.Infrastructure.Os;
 using NuitsJp.GistGet.Infrastructure.WinGet;
 using NuitsJp.GistGet.Models;
-using System.Diagnostics;
 
 namespace NuitsJp.GistGet.Business;
 
@@ -11,24 +10,18 @@ namespace NuitsJp.GistGet.Business;
 /// Gist同期サービスの実装
 /// syncコマンドのメイン処理を担当（Gist更新なし、一方向同期）
 /// </summary>
-public class GistSyncService : IGistSyncService
+public class GistSyncService(
+    IGistManager gistManager,
+    IWinGetClient winGetClient,
+    IOsService osService,
+    ILogger<GistSyncService> logger) : IGistSyncService
 {
-    private readonly IGistManager _gistManager;
-    private readonly IWinGetClient _winGetClient;
-    private readonly IOsService _osService;
-    private readonly ILogger<GistSyncService> _logger;
+    private readonly IGistManager _gistManager = gistManager ?? throw new ArgumentNullException(nameof(gistManager));
+    private readonly ILogger<GistSyncService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IOsService _osService = osService ?? throw new ArgumentNullException(nameof(osService));
 
-    public GistSyncService(
-        IGistManager gistManager,
-        IWinGetClient winGetClient,
-        IOsService osService,
-        ILogger<GistSyncService> logger)
-    {
-        _gistManager = gistManager ?? throw new ArgumentNullException(nameof(gistManager));
+    private readonly IWinGetClient
         _winGetClient = winGetClient ?? throw new ArgumentNullException(nameof(winGetClient));
-        _osService = osService ?? throw new ArgumentNullException(nameof(osService));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     /// <summary>
     /// install後のGist自動更新処理
@@ -141,7 +134,8 @@ public class GistSyncService : IGistSyncService
 
             // 4. 差分検出
             var plan = DetectDifferences(gistPackages, installedPackages);
-            _logger.LogInformation("Sync plan: {Install} to install, {Uninstall} to uninstall, {Skip} already installed, {NotFound} not found",
+            _logger.LogInformation(
+                "Sync plan: {Install} to install, {Uninstall} to uninstall, {Skip} already installed, {NotFound} not found",
                 plan.ToInstall.Count, plan.ToUninstall.Count, plan.AlreadyInstalled.Count, plan.NotFound.Count);
 
             if (plan.IsEmpty)
@@ -157,11 +151,8 @@ public class GistSyncService : IGistSyncService
             if (result.InstalledPackages.Count > 0)
             {
                 result.RebootRequired = CheckRebootRequired(result.InstalledPackages);
-                if (result.RebootRequired)
-                {
-                    _logger.LogInformation("Reboot required for installed packages");
-                    // 実際の再起動はSyncCommandで処理（ユーザー確認が必要）
-                }
+                if (result.RebootRequired) _logger.LogInformation("Reboot required for installed packages");
+                // 実際の再起動はSyncCommandで処理（ユーザー確認が必要）
             }
 
             // 7. 結果判定
@@ -186,6 +177,23 @@ public class GistSyncService : IGistSyncService
     }
 
     /// <summary>
+    /// システム再起動の実行
+    /// </summary>
+    public async Task ExecuteRebootAsync()
+    {
+        try
+        {
+            _logger.LogInformation("Executing system reboot via OsService");
+            await _osService.ExecuteRebootAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to execute system reboot: {Message}", ex.Message);
+            throw;
+        }
+    }
+
+    /// <summary>
     /// Gist定義とローカル状態の差分検出ロジック
     /// </summary>
     private SyncPlan DetectDifferences(PackageCollection gistPackages, List<PackageDefinition> installedPackages)
@@ -202,25 +210,18 @@ public class GistSyncService : IGistSyncService
             if (string.Equals(gistPackage.Uninstall, "true", StringComparison.OrdinalIgnoreCase))
             {
                 // アンインストール対象
-                if (installedIds.Contains(packageId))
-                {
-                    plan.ToUninstall.Add(gistPackage);
-                }
+                if (installedIds.Contains(packageId)) plan.ToUninstall.Add(gistPackage);
                 // 既にアンインストール済みの場合は何もしない
             }
             else
             {
                 // インストール対象
                 if (installedIds.Contains(packageId))
-                {
                     // 既にインストール済み（冪等性）
                     plan.AlreadyInstalled.Add(gistPackage);
-                }
                 else
-                {
                     // インストールが必要
                     plan.ToInstall.Add(gistPackage);
-                }
             }
         }
 
@@ -234,7 +235,6 @@ public class GistSyncService : IGistSyncService
     {
         // インストール処理
         foreach (var package in plan.ToInstall)
-        {
             try
             {
                 _logger.LogInformation("Installing package: {PackageId}", package.Id);
@@ -257,11 +257,9 @@ public class GistSyncService : IGistSyncService
                 result.FailedPackages.Add(package.Id);
                 _logger.LogError(ex, "Exception during install of: {PackageId}", package.Id);
             }
-        }
 
         // アンインストール処理
         foreach (var package in plan.ToUninstall)
-        {
             try
             {
                 _logger.LogInformation("Uninstalling package: {PackageId}", package.Id);
@@ -284,7 +282,6 @@ public class GistSyncService : IGistSyncService
                 result.FailedPackages.Add(package.Id);
                 _logger.LogError(ex, "Exception during uninstall of: {PackageId}", package.Id);
             }
-        }
     }
 
     /// <summary>
@@ -305,22 +302,5 @@ public class GistSyncService : IGistSyncService
         return installedPackages.Any(packageId =>
             rebootRequiredPatterns.Any(pattern =>
                 packageId.Contains(pattern, StringComparison.OrdinalIgnoreCase)));
-    }
-
-    /// <summary>
-    /// システム再起動の実行
-    /// </summary>
-    public async Task ExecuteRebootAsync()
-    {
-        try
-        {
-            _logger.LogInformation("Executing system reboot via OsService");
-            await _osService.ExecuteRebootAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to execute system reboot: {Message}", ex.Message);
-            throw;
-        }
     }
 }

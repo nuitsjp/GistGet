@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 namespace NuitsJp.GistGet.Presentation;
 
 /// <summary>
@@ -5,7 +7,7 @@ namespace NuitsJp.GistGet.Presentation;
 /// </summary>
 public interface IErrorMessageService
 {
-    void HandleComException(System.Runtime.InteropServices.COMException comEx);
+    void HandleComException(COMException comEx);
     void HandleNetworkException(HttpRequestException httpEx);
     void HandlePackageNotFoundException(InvalidOperationException invEx);
     void HandleUnexpectedException(Exception ex);

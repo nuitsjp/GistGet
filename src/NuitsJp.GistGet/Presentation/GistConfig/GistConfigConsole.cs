@@ -1,4 +1,4 @@
-using NuitsJp.GistGet.Presentation.Console;
+﻿using NuitsJp.GistGet.Presentation.Console;
 using Sharprompt;
 
 namespace NuitsJp.GistGet.Presentation.GistConfig;
@@ -9,30 +9,6 @@ namespace NuitsJp.GistGet.Presentation.GistConfig;
 /// </summary>
 public class GistConfigConsole : ConsoleBase, IGistConfigConsole
 {
-    /// <summary>
-    /// エラーメッセージを出力
-    /// </summary>
-    protected override void WriteErrorLine(string message)
-    {
-        System.Console.WriteLine(message);
-    }
-
-    /// <summary>
-    /// 警告メッセージを出力
-    /// </summary>
-    protected override void WriteWarningLine(string message)
-    {
-        System.Console.WriteLine(message);
-    }
-
-    /// <summary>
-    /// 情報メッセージを出力
-    /// </summary>
-    protected override void WriteInfoLine(string message)
-    {
-        System.Console.WriteLine(message);
-    }
-
     /// <summary>
     /// Gist作成手順を表示
     /// </summary>
@@ -54,10 +30,7 @@ public class GistConfigConsole : ConsoleBase, IGistConfigConsole
     {
         // Gist IDの取得
         var gistId = CollectGistId(providedGistId);
-        if (gistId == null)
-        {
-            return null;
-        }
+        if (gistId == null) return null;
 
         // ファイル名の取得
         var fileName = CollectFileName(providedFileName);
@@ -143,20 +116,41 @@ public class GistConfigConsole : ConsoleBase, IGistConfigConsole
     }
 
     /// <summary>
+    /// エラーメッセージを出力
+    /// </summary>
+    protected override void WriteErrorLine(string message)
+    {
+        System.Console.WriteLine(message);
+    }
+
+    /// <summary>
+    /// 警告メッセージを出力
+    /// </summary>
+    protected override void WriteWarningLine(string message)
+    {
+        System.Console.WriteLine(message);
+    }
+
+    /// <summary>
+    /// 情報メッセージを出力
+    /// </summary>
+    protected override void WriteInfoLine(string message)
+    {
+        System.Console.WriteLine(message);
+    }
+
+    /// <summary>
     /// Gist IDを収集（内部ヘルパー）
     /// </summary>
     private string? CollectGistId(string? providedGistId)
     {
-        if (!string.IsNullOrWhiteSpace(providedGistId))
-        {
-            return ExtractGistIdFromUrl(providedGistId);
-        }
+        if (!string.IsNullOrWhiteSpace(providedGistId)) return ExtractGistIdFromUrl(providedGistId);
 
         try
         {
             var userInput = Prompt.Input<string>(
                 "Gist IDまたはURLを入力してください",
-                validators: new[] { Validators.Required() }
+                validators: [Validators.Required()]
             );
 
             return ExtractGistIdFromUrl(userInput);
@@ -173,10 +167,7 @@ public class GistConfigConsole : ConsoleBase, IGistConfigConsole
     /// </summary>
     private static string CollectFileName(string? providedFileName)
     {
-        if (!string.IsNullOrWhiteSpace(providedFileName))
-        {
-            return providedFileName;
-        }
+        if (!string.IsNullOrWhiteSpace(providedFileName)) return providedFileName;
 
         const string defaultFileName = "packages.yaml";
 
@@ -184,7 +175,7 @@ public class GistConfigConsole : ConsoleBase, IGistConfigConsole
         {
             var userInput = Prompt.Input<string>(
                 "ファイル名を入力してください",
-                defaultValue: defaultFileName
+                defaultFileName
             );
 
             return string.IsNullOrWhiteSpace(userInput) ? defaultFileName : userInput;

@@ -1,7 +1,6 @@
-using Shouldly;
-using Xunit;
-using NuitsJp.GistGet.Models;
 using NuitsJp.GistGet.Business;
+using NuitsJp.GistGet.Models;
+using Shouldly;
 
 namespace NuitsJp.GistGet.Tests.Business.Models;
 
@@ -72,13 +71,13 @@ public class PackageYamlConverterTests
         var converter = new PackageYamlConverter();
         var collection = new PackageCollection();
         var package = new PackageDefinition(
-            id: "AkelPad.AkelPad",
-            version: "4.9.8",
-            uninstall: "--silent",
-            architecture: "x64",
-            scope: "user",
-            source: "winget",
-            custom: "--force"
+            "AkelPad.AkelPad",
+            "4.9.8",
+            "--silent",
+            "x64",
+            "user",
+            "winget",
+            "--force"
         );
         collection.Add(package);
 
@@ -101,11 +100,11 @@ public class PackageYamlConverterTests
         // Arrange
         var converter = new PackageYamlConverter();
         var yaml = """
-            packages:
-              - id: AkelPad.AkelPad
-                version: 4.9.8
-              - id: Microsoft.VisualStudioCode
-            """;
+                   packages:
+                     - id: AkelPad.AkelPad
+                       version: 4.9.8
+                     - id: Microsoft.VisualStudioCode
+                   """;
 
         // Act
         var collection = converter.FromYaml(yaml);
@@ -167,7 +166,8 @@ public class PackageYamlConverterTests
         // Arrange
         var converter = new PackageYamlConverter();
         var originalCollection = new PackageCollection();
-        originalCollection.Add(new PackageDefinition("AkelPad.AkelPad", "4.9.8", "--silent", "x64", "user", "winget", "--force"));
+        originalCollection.Add(new PackageDefinition("AkelPad.AkelPad", "4.9.8", "--silent", "x64", "user", "winget",
+            "--force"));
         originalCollection.Add(new PackageDefinition("Microsoft.VisualStudioCode"));
 
         // Act
@@ -241,10 +241,11 @@ public class PackageYamlConverterTests
         originalCollection.Add(new PackageDefinition("A.MinimalPackage"));
 
         // Package with some fields
-        originalCollection.Add(new PackageDefinition("B.PartialPackage", version: "1.0.0", architecture: "x64"));
+        originalCollection.Add(new PackageDefinition("B.PartialPackage", "1.0.0", architecture: "x64"));
 
         // Package with all fields
-        originalCollection.Add(new PackageDefinition("C.FullPackage", "2.0.0", "--silent", "x86", "machine", "msstore", "--quiet"));
+        originalCollection.Add(new PackageDefinition("C.FullPackage", "2.0.0", "--silent", "x86", "machine", "msstore",
+            "--quiet"));
 
         // Act
         var yaml = converter.ToYaml(originalCollection);
@@ -292,13 +293,13 @@ public class PackageYamlConverterTests
         var originalCollection = new PackageCollection();
 
         // Various combinations of optional fields
-        originalCollection.Add(new PackageDefinition("Test.VersionOnly", version: "1.0"));
+        originalCollection.Add(new PackageDefinition("Test.VersionOnly", "1.0"));
         originalCollection.Add(new PackageDefinition("Test.UninstallOnly", uninstall: "--force"));
         originalCollection.Add(new PackageDefinition("Test.ArchOnly", architecture: "arm64"));
         originalCollection.Add(new PackageDefinition("Test.ScopeOnly", scope: "user"));
         originalCollection.Add(new PackageDefinition("Test.SourceOnly", source: "winget"));
         originalCollection.Add(new PackageDefinition("Test.CustomOnly", custom: "--override"));
-        originalCollection.Add(new PackageDefinition("Test.VersionAndScope", version: "2.0", scope: "machine"));
+        originalCollection.Add(new PackageDefinition("Test.VersionAndScope", "2.0", scope: "machine"));
 
         // Act
         var yaml = converter.ToYaml(originalCollection);

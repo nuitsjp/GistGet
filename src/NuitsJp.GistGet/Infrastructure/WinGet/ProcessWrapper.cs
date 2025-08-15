@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using NuitsJp.GistGet.Infrastructure.WinGet;
 
 namespace NuitsJp.GistGet.Infrastructure.WinGet;
 
@@ -8,7 +7,7 @@ namespace NuitsJp.GistGet.Infrastructure.WinGet;
 /// </summary>
 public class ProcessWrapper : IProcessWrapper
 {
-    public IProcessResult? Start(global::System.Diagnostics.ProcessStartInfo startInfo)
+    public IProcessResult? Start(ProcessStartInfo startInfo)
     {
         var process = Process.Start(startInfo);
         return process != null ? new ProcessResult(process) : null;

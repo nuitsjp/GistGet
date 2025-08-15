@@ -41,10 +41,7 @@ public class WinGetConsole : ConsoleBase, IWinGetConsole
     {
         System.Console.WriteLine();
         System.Console.WriteLine("以下のパッケージは再起動が必要です:");
-        foreach (var package in packagesRequiringReboot)
-        {
-            System.Console.WriteLine($"  - {package}");
-        }
+        foreach (var package in packagesRequiringReboot) System.Console.WriteLine($"  - {package}");
         System.Console.WriteLine();
         System.Console.Write("今すぐ再起動しますか? (y/N): ");
 

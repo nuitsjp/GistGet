@@ -1,14 +1,14 @@
-using System.Text;
+﻿using NuitsJp.GistGet.Models;
+using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
-using NuitsJp.GistGet.Models;
 
 namespace NuitsJp.GistGet.Business;
 
 public class PackageYamlConverter : IPackageYamlConverter
 {
-    private readonly ISerializer _serializer;
     private readonly IDeserializer _deserializer;
+    private readonly ISerializer _serializer;
 
     public PackageYamlConverter()
     {
@@ -62,10 +62,7 @@ public class PackageYamlConverter : IPackageYamlConverter
         {
             var yamlModel = _deserializer.Deserialize<PackageYamlModel>(yaml);
 
-            if (yamlModel?.Packages == null)
-            {
-                return new PackageCollection();
-            }
+            if (yamlModel?.Packages == null) return [];
 
             var collection = new PackageCollection();
             foreach (var item in yamlModel.Packages)
@@ -74,13 +71,13 @@ public class PackageYamlConverter : IPackageYamlConverter
                     continue;
 
                 var package = new PackageDefinition(
-                    id: item.Id,
-                    version: item.Version,
-                    uninstall: item.Uninstall,
-                    architecture: item.Architecture,
-                    scope: item.Scope,
-                    source: item.Source,
-                    custom: item.Custom
+                    item.Id,
+                    item.Version,
+                    item.Uninstall,
+                    item.Architecture,
+                    item.Scope,
+                    item.Source,
+                    item.Custom
                 );
 
                 collection.Add(package);
@@ -88,7 +85,7 @@ public class PackageYamlConverter : IPackageYamlConverter
 
             return collection;
         }
-        catch (YamlDotNet.Core.YamlException ex)
+        catch (YamlException ex)
         {
             throw new ArgumentException($"Invalid YAML format: {ex.Message}", nameof(yaml), ex);
         }
@@ -100,7 +97,7 @@ public class PackageYamlConverter : IPackageYamlConverter
 
     private class PackageYamlModel
     {
-        public List<PackageYamlItem> Packages { get; set; } = new();
+        public List<PackageYamlItem> Packages { get; set; } = [];
     }
 
     private class PackageYamlItem

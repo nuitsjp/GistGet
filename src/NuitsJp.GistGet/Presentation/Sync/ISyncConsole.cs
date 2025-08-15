@@ -46,10 +46,13 @@ public enum SyncUserAction
 {
     /// <summary>継続（通常の処理）</summary>
     Continue,
+
     /// <summary>再起動をスキップ</summary>
     SkipReboot,
+
     /// <summary>強制再起動</summary>
     ForceReboot,
+
     /// <summary>キャンセル</summary>
     Cancel
 }

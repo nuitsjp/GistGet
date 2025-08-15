@@ -1,6 +1,7 @@
 .serena/
 .claude/settings.local.json
 coverage-report/
+inspection-results.xml
 
 [Oo]utput/
 

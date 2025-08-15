@@ -1,20 +1,18 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using NuitsJp.GistGet.Presentation;
 using NuitsJp.GistGet.Business;
 using NuitsJp.GistGet.Business.Services;
-using NuitsJp.GistGet.Infrastructure.Os;
-using NuitsJp.GistGet.Infrastructure.WinGet;
 using NuitsJp.GistGet.Infrastructure.GitHub;
+using NuitsJp.GistGet.Infrastructure.Os;
 using NuitsJp.GistGet.Infrastructure.Storage;
-
-// using NuitsJp.GistGet.Presentation.Commands; // 旧Commands名前空間をコメントアウト
-using NuitsJp.GistGet.Presentation.Console;
+using NuitsJp.GistGet.Infrastructure.WinGet;
+using NuitsJp.GistGet.Presentation;
 using NuitsJp.GistGet.Presentation.GistConfig;
 using NuitsJp.GistGet.Presentation.Login;
 using NuitsJp.GistGet.Presentation.Sync;
 using NuitsJp.GistGet.Presentation.WinGet;
+// using NuitsJp.GistGet.Presentation.Commands; // 旧Commands名前空間をコメントアウト
 
 namespace NuitsJp.GistGet;
 
@@ -57,12 +55,12 @@ public static class AppHost
                 services.AddSingleton<IWinGetConsole, WinGetConsole>();
 
                 // Commands with new namespace structure
-                services.AddSingleton<NuitsJp.GistGet.Presentation.Login.LoginCommand>();
-                services.AddSingleton<NuitsJp.GistGet.Presentation.GistConfig.GistSetCommand>();
-                services.AddSingleton<NuitsJp.GistGet.Presentation.GistConfig.GistStatusCommand>();
-                services.AddSingleton<NuitsJp.GistGet.Presentation.GistConfig.GistShowCommand>();
-                services.AddSingleton<NuitsJp.GistGet.Presentation.Sync.SyncCommand>();
-                services.AddSingleton<NuitsJp.GistGet.Presentation.WinGet.WinGetCommand>();
+                services.AddSingleton<LoginCommand>();
+                services.AddSingleton<GistSetCommand>();
+                services.AddSingleton<GistStatusCommand>();
+                services.AddSingleton<GistShowCommand>();
+                services.AddSingleton<SyncCommand>();
+                services.AddSingleton<WinGetCommand>();
 
                 // Business services
                 services.AddSingleton<IGistConfigService, GistConfigService>();

@@ -3,16 +3,10 @@ using Octokit;
 
 namespace NuitsJp.GistGet.Infrastructure.GitHub;
 
-public class GitHubGistClient : IGitHubGistClient
+public class GitHubGistClient(GitHubAuthService authService, ILogger<GitHubGistClient> logger) : IGitHubGistClient
 {
-    private readonly GitHubAuthService _authService;
-    private readonly ILogger<GitHubGistClient> _logger;
-
-    public GitHubGistClient(GitHubAuthService authService, ILogger<GitHubGistClient> logger)
-    {
-        _authService = authService ?? throw new ArgumentNullException(nameof(authService));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly GitHubAuthService _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+    private readonly ILogger<GitHubGistClient> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task<string> GetFileContentAsync(string gistId, string fileName)
     {
@@ -25,9 +19,7 @@ public class GitHubGistClient : IGitHubGistClient
             var gist = await client!.Gist.Get(gistId);
 
             if (gist?.Files == null || !gist.Files.ContainsKey(fileName))
-            {
                 throw new InvalidOperationException($"File '{fileName}' not found in Gist {gistId}");
-            }
 
             var file = gist.Files[fileName];
             if (string.IsNullOrEmpty(file.Content))
@@ -111,7 +103,8 @@ public class GitHubGistClient : IGitHubGistClient
         }
         catch (ApiException ex)
         {
-            _logger.LogError(ex, "GitHub API error when checking Gist {GistId} existence: {Message}", gistId, ex.Message);
+            _logger.LogError(ex, "GitHub API error when checking Gist {GistId} existence: {Message}", gistId,
+                ex.Message);
             throw new InvalidOperationException($"Failed to check Gist {gistId} existence: {ex.Message}", ex);
         }
         catch (Exception ex)

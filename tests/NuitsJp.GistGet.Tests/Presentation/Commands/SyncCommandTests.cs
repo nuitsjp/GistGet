@@ -1,15 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NuitsJp.GistGet.Business;
 using NuitsJp.GistGet.Business.Models;
-using NuitsJp.GistGet.Business.Services;
-using NuitsJp.GistGet.Presentation.Console;
 using NuitsJp.GistGet.Presentation.Sync;
 using Shouldly;
-using Xunit;
 
 namespace NuitsJp.GistGet.Tests.Presentation.Commands;
 
@@ -20,9 +14,9 @@ namespace NuitsJp.GistGet.Tests.Presentation.Commands;
 /// </summary>
 public class SyncCommandTests
 {
-    private readonly Mock<IGistSyncService> _mockSyncService;
     private readonly Mock<ISyncConsole> _mockConsole;
     private readonly Mock<ILogger<SyncCommand>> _mockLogger;
+    private readonly Mock<IGistSyncService> _mockSyncService;
     private readonly SyncCommand _syncCommand;
 
     public SyncCommandTests()
@@ -32,6 +26,29 @@ public class SyncCommandTests
         _mockLogger = new Mock<ILogger<SyncCommand>>();
         _syncCommand = new SyncCommand(_mockSyncService.Object, _mockConsole.Object, _mockLogger.Object);
     }
+
+    #region Exception Handling Tests
+
+    [Fact]
+    public async Task ExecuteAsync_WithException_ShouldReturnErrorAndShowErrorMessage()
+    {
+        // Arrange - Presentation層: 例外発生時のUI制御とエラー表示テスト
+        var exception = new InvalidOperationException("Sync operation failed");
+        _mockSyncService.Setup(x => x.SyncAsync()).ThrowsAsync(exception);
+
+        var args = new[] { "sync" };
+
+        // Act
+        var result = await _syncCommand.ExecuteAsync(args);
+
+        // Assert - UI制御: 例外時のエラー処理とUI表示検証
+        result.ShouldBe(1);
+        _mockConsole.Verify(x => x.NotifySyncStarting(), Times.Once);
+        _mockConsole.Verify(x => x.ShowError(exception, "同期処理でエラーが発生しました"), Times.Once);
+        _mockConsole.Verify(x => x.ShowSyncResultAndGetAction(It.IsAny<SyncResult>()), Times.Never);
+    }
+
+    #endregion
 
     #region Constructor Tests
 
@@ -87,8 +104,6 @@ public class SyncCommandTests
         {
             ExitCode = 0,
             InstalledPackages = { "Git.Git" },
-            UninstalledPackages = { },
-            FailedPackages = { },
             RebootRequired = false
         };
 
@@ -115,8 +130,6 @@ public class SyncCommandTests
         var failureResult = new SyncResult
         {
             ExitCode = 1,
-            InstalledPackages = { },
-            UninstalledPackages = { },
             FailedPackages = { "Git.Git" },
             RebootRequired = false
         };
@@ -164,8 +177,6 @@ public class SyncCommandTests
         {
             ExitCode = 0,
             InstalledPackages = { "Microsoft.VisualStudio.2022.Community" },
-            UninstalledPackages = { },
-            FailedPackages = { },
             RebootRequired = true
         };
 
@@ -196,8 +207,6 @@ public class SyncCommandTests
         {
             ExitCode = 0,
             InstalledPackages = { "Microsoft.VisualStudio.2022.Community" },
-            UninstalledPackages = { },
-            FailedPackages = { },
             RebootRequired = true
         };
 
@@ -227,8 +236,6 @@ public class SyncCommandTests
         {
             ExitCode = 0,
             InstalledPackages = { "Microsoft.VisualStudio.2022.Community" },
-            UninstalledPackages = { },
-            FailedPackages = { },
             RebootRequired = true
         };
 
@@ -256,8 +263,6 @@ public class SyncCommandTests
         {
             ExitCode = 0,
             InstalledPackages = { "Microsoft.VisualStudio.2022.Community" },
-            UninstalledPackages = { },
-            FailedPackages = { },
             RebootRequired = true
         };
 
@@ -285,8 +290,6 @@ public class SyncCommandTests
         {
             ExitCode = 0,
             InstalledPackages = { "Microsoft.VisualStudio.2022.Community" },
-            UninstalledPackages = { },
-            FailedPackages = { },
             RebootRequired = true
         };
 
@@ -314,8 +317,6 @@ public class SyncCommandTests
         {
             ExitCode = 0,
             InstalledPackages = { "Microsoft.VisualStudio.2022.Community" },
-            UninstalledPackages = { },
-            FailedPackages = { },
             RebootRequired = true
         };
 
@@ -333,29 +334,6 @@ public class SyncCommandTests
         _mockConsole.Verify(x => x.ConfirmRebootWithPackageList(It.IsAny<List<string>>()), Times.Never);
         _mockConsole.Verify(x => x.NotifyRebootExecuting(), Times.Once);
         _mockSyncService.Verify(x => x.ExecuteRebootAsync(), Times.Once);
-    }
-
-    #endregion
-
-    #region Exception Handling Tests
-
-    [Fact]
-    public async Task ExecuteAsync_WithException_ShouldReturnErrorAndShowErrorMessage()
-    {
-        // Arrange - Presentation層: 例外発生時のUI制御とエラー表示テスト
-        var exception = new InvalidOperationException("Sync operation failed");
-        _mockSyncService.Setup(x => x.SyncAsync()).ThrowsAsync(exception);
-
-        var args = new[] { "sync" };
-
-        // Act
-        var result = await _syncCommand.ExecuteAsync(args);
-
-        // Assert - UI制御: 例外時のエラー処理とUI表示検証
-        result.ShouldBe(1);
-        _mockConsole.Verify(x => x.NotifySyncStarting(), Times.Once);
-        _mockConsole.Verify(x => x.ShowError(exception, "同期処理でエラーが発生しました"), Times.Once);
-        _mockConsole.Verify(x => x.ShowSyncResultAndGetAction(It.IsAny<SyncResult>()), Times.Never);
     }
 
     #endregion

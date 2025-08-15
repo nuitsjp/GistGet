@@ -1,28 +1,22 @@
 using Microsoft.Extensions.Logging;
-using NuitsJp.GistGet.Models;
-using NuitsJp.GistGet.Infrastructure.Storage;
 using NuitsJp.GistGet.Infrastructure.GitHub;
+using NuitsJp.GistGet.Infrastructure.Storage;
+using NuitsJp.GistGet.Models;
 
 namespace NuitsJp.GistGet.Business;
 
-public class GistManager : IGistManager
+public class GistManager(
+    IGitHubGistClient gistClient,
+    IGistConfigurationStorage storage,
+    IPackageYamlConverter yamlConverter,
+    ILogger<GistManager> logger) : IGistManager
 {
-    private readonly IGitHubGistClient _gistClient;
-    private readonly IGistConfigurationStorage _storage;
-    private readonly IPackageYamlConverter _yamlConverter;
-    private readonly ILogger<GistManager> _logger;
+    private readonly IGitHubGistClient _gistClient = gistClient ?? throw new ArgumentNullException(nameof(gistClient));
+    private readonly ILogger<GistManager> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IGistConfigurationStorage _storage = storage ?? throw new ArgumentNullException(nameof(storage));
 
-    public GistManager(
-        IGitHubGistClient gistClient,
-        IGistConfigurationStorage storage,
-        IPackageYamlConverter yamlConverter,
-        ILogger<GistManager> logger)
-    {
-        _gistClient = gistClient ?? throw new ArgumentNullException(nameof(gistClient));
-        _storage = storage ?? throw new ArgumentNullException(nameof(storage));
-        _yamlConverter = yamlConverter ?? throw new ArgumentNullException(nameof(yamlConverter));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly IPackageYamlConverter _yamlConverter =
+        yamlConverter ?? throw new ArgumentNullException(nameof(yamlConverter));
 
     public async Task<bool> IsConfiguredAsync()
     {
@@ -104,10 +98,7 @@ public class GistManager : IGistManager
             _logger.LogInformation("Validating access to Gist {GistId}", gistId);
 
             var exists = await _gistClient.ExistsAsync(gistId);
-            if (!exists)
-            {
-                throw new InvalidOperationException($"Gist {gistId} does not exist or is not accessible");
-            }
+            if (!exists) throw new InvalidOperationException($"Gist {gistId} does not exist or is not accessible");
 
             _logger.LogInformation("Gist {GistId} is accessible", gistId);
         }
@@ -122,9 +113,8 @@ public class GistManager : IGistManager
     {
         var config = await _storage.LoadGistConfigurationAsync();
         if (config == null)
-        {
-            throw new InvalidOperationException("Gist configuration not found. Please configure Gist settings first using 'gistget gist set' command.");
-        }
+            throw new InvalidOperationException(
+                "Gist configuration not found. Please configure Gist settings first using 'gistget gist set' command.");
 
         return config;
     }

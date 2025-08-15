@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 
 namespace NuitsJp.GistGet.Models;
 
@@ -8,10 +8,20 @@ public class PackageCollection : IEnumerable<PackageDefinition>
 
     public PackageCollection()
     {
-        _packages = new HashSet<PackageDefinition>();
+        _packages = [];
     }
 
     public int Count => _packages.Count;
+
+    public IEnumerator<PackageDefinition> GetEnumerator()
+    {
+        return _packages.GetEnumerator();
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
 
     public void Add(PackageDefinition package)
     {
@@ -53,15 +63,5 @@ public class PackageCollection : IEnumerable<PackageDefinition>
     public void Clear()
     {
         _packages.Clear();
-    }
-
-    public IEnumerator<PackageDefinition> GetEnumerator()
-    {
-        return _packages.GetEnumerator();
-    }
-
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
     }
 }
