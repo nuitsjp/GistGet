@@ -54,7 +54,6 @@ gistget show --id Git.Git  # → winget show --id Git.Git
 | pin | - | パススルー | - | 不要 | 低 | ローカルバージョン固定 |
 | **認証管理（GistGet独自実装）** |
 | login | - | 独立実装 | - | 不要 | 最高 | GitHubログイン・トークン管理 |
-| auth | - | 独立実装 | - | 不要 | 中 | loginコマンドへの後方互換（非推奨） |
 | configure | - | パススルー | - | 要管理者 | 低 | システム構成 |
 | download | - | パススルー | - | 不要 | 低 | インストーラDL |
 | repair | - | パススルー | - | 要管理者 | 低 | パッケージ修復 |
@@ -79,7 +78,7 @@ gistget show --id Git.Git  # → winget show --id Git.Git
 - **バージョン固定**: YAML定義内の`Version`フィールドで指定（Gist側で管理）
 - **認証**: ローカルは OAuth Device Flow、CI は環境変数 `GIST_TOKEN`。手動でトークンを貼り付ける操作は不要。`login` コマンドで認証。
 - **Gist管理**: 事前設定前提（`gistget gist set`でGist ID・ファイル名を設定）
-- **自動認証・設定**: 認証・Gist設定が必要なコマンド実行時、未設定の場合は自動的に認証・設定フローを実行
+- **自動認証・設定**: 認証・Gist設定が必要なコマンド実行時、未設定の場合は自動的に認証・設定フローを実行（CommandRouterで一元管理）
 
 ---
 
@@ -185,6 +184,11 @@ env:
 1. ローカル開発: `gistget login` で認証（一度のみ）、または必要時に自動実行
 2. CI/CD: 認証不要（ビルドのみ実行）
 3. テスト: ローカル環境で手動実行
+
+**自動認証・設定の動作:**
+- 認証が必要なコマンド（sync, install, uninstall, upgrade, gist）実行時、未認証であれば自動的にログイン画面を表示
+- Gist設定が必要なコマンド実行時、未設定であれば自動的にGist設定フローを実行
+- CommandRouterレベルでの一元管理により、すべてのコマンドで統一的な動作を保証
 
 ---
 

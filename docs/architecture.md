@@ -132,6 +132,7 @@ graph TB
 - コマンドライン引数の最初の解析（どのコマンドか判定）
 - 適切なCommandへのルーティング
 - 共通エラーハンドリング（COM例外、ネットワーク例外等）
+- 認証・Gist設定チェックの一元管理と自動実行
 
 **推奨実装例**:
 ```csharp
@@ -141,9 +142,23 @@ public class CommandRouter  // 現在のCommandService.cs
     {
         var command = args.FirstOrDefault()?.ToLowerInvariant();
         
+        // 認証・Gist設定が必要なコマンドの一元チェック
+        if (RequiresAuthentication(command, args))
+        {
+            if (!await EnsureAuthenticatedAsync())
+                return 1;
+                
+            if (RequiresGistConfiguration(command, args))
+            {
+                if (!await EnsureGistConfiguredAsync())
+                    return 1;
+            }
+        }
+        
         return command switch
         {
-            "auth" => await _authCommand.ExecuteAsync(args),
+            "login" => await _loginCommand.ExecuteAsync(args),
+            "auth" => await _loginCommand.ExecuteAsync(args), // 後方互換
             "gist" => await HandleGistSubCommandAsync(args),
             "sync" => await _syncCommand.ExecuteAsync(args),
             _ => await _passthroughClient.ExecuteAsync(args) // winget.exeへ
@@ -887,3 +902,4 @@ public async Task<int> ExecuteAsync(string[] args)
 - CommandRouterに`IGitHubAuthService`、`IGistManager`、`LoginCommand`を依存性注入
 - 各コマンドから認証・設定チェックロジックを削除
 - テストでは認証・設定済み状態をモックで設定
+- LoginCommandはAuthCommandの機能を継承し、authコマンドは後方互換性のため非推奨として動作
