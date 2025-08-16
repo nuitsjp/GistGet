@@ -39,7 +39,7 @@ public static class AppHost
 
                 // WinGet clients
                 services.AddSingleton<IWinGetClient, WinGetComClient>();
-                services.AddSingleton<IWinGetPassthroughClient, WinGetPassthrough>();
+                services.AddSingleton<IWinGetPassthroughClient, WinGetPassthroughClient>();
 
                 // Package management (Business layer)
                 services.AddSingleton<IPackageManagementService, PackageManagementService>();

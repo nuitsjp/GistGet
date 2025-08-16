@@ -1,5 +1,6 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Management.Deployment;
 using NuitsJp.GistGet.Models;
@@ -13,14 +14,16 @@ public class WinGetComClient : IWinGetClient
 {
     private readonly ILogger<WinGetComClient> _logger;
     private readonly IProcessWrapper _processWrapper;
+    private readonly IWinGetPassthroughClient _passthroughClient;
 
     private bool _isInitialized;
     private PackageManager? _packageManager;
 
-    public WinGetComClient(ILogger<WinGetComClient> logger, IProcessWrapper processWrapper)
+    public WinGetComClient(ILogger<WinGetComClient> logger, IProcessWrapper processWrapper, IWinGetPassthroughClient passthroughClient)
     {
         _logger = logger;
         _processWrapper = processWrapper;
+        _passthroughClient = passthroughClient;
     }
 
     public Task InitializeAsync()
@@ -171,29 +174,8 @@ public class WinGetComClient : IWinGetClient
                 _logger.LogWarning("Package not found in installed list, using original ID: {PackageId}", packageId);
 
             // 実際のパッケージIDでwinget.exeを呼び出し
-            var processInfo = new ProcessStartInfo
-            {
-                FileName = "winget",
-                Arguments = $"uninstall {actualPackageId} --accept-source-agreements --disable-interactivity",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
-
-            using var process = _processWrapper.Start(processInfo);
-            if (process != null)
-            {
-                var output = await process.ReadStandardOutputAsync();
-                var error = await process.ReadStandardErrorAsync();
-                await process.WaitForExitAsync();
-
-                if (!string.IsNullOrEmpty(error))
-                    Console.Error.Write(error);
-
-                return process.ExitCode;
-            }
-
-            return 1;
+            var uninstallArgs = new[] { "uninstall", actualPackageId, "--accept-source-agreements", "--disable-interactivity" };
+            return await _passthroughClient.ExecuteAsync(uninstallArgs);
         }
         catch (Exception ex)
         {
@@ -364,42 +346,8 @@ public class WinGetComClient : IWinGetClient
 
     public async Task<int> ExecutePassthroughAsync(string[] args)
     {
-        try
-        {
-            _logger.LogDebug("Executing passthrough command: {Args}", string.Join(" ", args));
-
-            var processInfo = new ProcessStartInfo
-            {
-                FileName = "winget",
-                Arguments = string.Join(" ", args),
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
-
-            using var process = _processWrapper.Start(processInfo);
-            if (process != null)
-            {
-                var output = await process.ReadStandardOutputAsync();
-                var error = await process.ReadStandardErrorAsync();
-                await process.WaitForExitAsync();
-
-                // 出力をそのまま表示
-                if (!string.IsNullOrEmpty(output))
-                    Console.Write(output);
-                if (!string.IsNullOrEmpty(error))
-                    Console.Error.Write(error);
-
-                return process.ExitCode;
-            }
-
-            return 1;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to execute passthrough command: {Args}", string.Join(" ", args));
-            return 1;
-        }
+        _logger.LogDebug("Delegating passthrough command to WinGetPassthroughClient: {Args}", string.Join(" ", args));
+        return await _passthroughClient.ExecuteAsync(args);
     }
 
 
@@ -434,41 +382,10 @@ public class WinGetComClient : IWinGetClient
         return null;
     }
 
+
     private async Task<int> FallbackToWingetExe(string[] args, string packageId, string operation)
     {
-        try
-        {
-            _logger.LogInformation("Falling back to winget.exe for {Operation}: {PackageId}", operation, packageId);
-
-            var processInfo = new ProcessStartInfo
-            {
-                FileName = "winget",
-                Arguments = string.Join(" ", args),
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
-
-            using var process = _processWrapper.Start(processInfo);
-            if (process != null)
-            {
-                var output = await process.ReadStandardOutputAsync();
-                var error = await process.ReadStandardErrorAsync();
-                await process.WaitForExitAsync();
-
-                if (!string.IsNullOrEmpty(error))
-                    Console.Error.Write(error);
-
-                return process.ExitCode;
-            }
-
-            return 1;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Fallback to winget.exe failed for {Operation}: {PackageId}, Error: {ErrorMessage}",
-                operation, packageId, ex.Message);
-            return 1;
-        }
+        _logger.LogInformation("Falling back to winget.exe for {Operation}: {PackageId}", operation, packageId);
+        return await _passthroughClient.ExecuteAsync(args);
     }
 }

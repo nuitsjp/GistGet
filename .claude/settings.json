@@ -29,11 +29,15 @@
       "Bash(mv:*)",
       "Bash(git add:*)",
       "Bash(git restore:*)",
+      "Bash(git reset:*)",
+      "Bash(git commit:*)",
+      "Bash(git rm:*)",
       "Bash(winget:*)",
       "Bash(dotnet build)",
       "Bash(./GistGet.exe:*)",
       "Bash(rm:*)",
       "Bash(find:*)",
+      "Bash(dir:*)",
       "Bash(dotnet:*)",
       "Bash(dotnet add:*)",
       "Bash(dotnet test:*)",
@@ -42,9 +46,12 @@
       "Bash(dotnet run:*)",
       "Bash(GistGet.exe:*)",
       "Bash(powershell:*)",
+      "Bash(reportgenerator:*)",
+      "Bash(grep:*)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "WebFetch(domain:www.nuget.org)"
+      "WebFetch(domain:www.nuget.org)",
+      "WebSearch"
     ],
     "deny": []
   }
