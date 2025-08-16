@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\NuitsJp.GistGet\NuitsJp.GistGet.csproj" />
+    <ProjectReference Include="..\NuitsJp.GistGet\NuitsJp.GistGet.csproj" />
   </ItemGroup>
 
 </Project>
