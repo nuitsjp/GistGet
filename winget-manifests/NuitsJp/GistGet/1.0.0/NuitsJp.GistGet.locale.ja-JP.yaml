@@ -1,0 +1,34 @@
+# Created with GitHub Actions for NuitsJp.GistGet
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.locale.1.6.0.schema.json
+
+PackageIdentifier: NuitsJp.GistGet
+PackageVersion: 1.0.0
+PackageLocale: ja-JP
+Publisher: NuitsJp
+PublisherUrl: https://github.com/nuitsjp
+PublisherSupportUrl: https://github.com/nuitsjp/GistGet/issues
+Author: NuitsJp
+PackageName: GistGet
+PackageUrl: https://github.com/nuitsjp/GistGet
+License: MIT
+LicenseUrl: https://github.com/nuitsjp/GistGet/blob/main/LICENSE
+Copyright: Copyright (c) 2024 NuitsJp
+CopyrightUrl: https://github.com/nuitsjp/GistGet/blob/main/LICENSE
+ShortDescription: GitHub GistでWinGetインストールリストを管理するPowerShellモジュール
+Description: |-
+  GistGetは、ローカル環境とGitHub Gistに保存されたクラウドのYAMLファイル間でパッケージ定義を
+  同期するPowerShellモジュールです。マシン間で一貫した開発環境セットアップを可能にし、
+  WinGetパッケージマネージャーとのシームレスな統合により、自動化されたパッケージ管理
+  ワークフローを提供します。
+Tags:
+- winget
+- gist
+- パッケージマネージャー
+- 開発ツール
+- powershell
+- github
+- 自動化
+- 同期
+- yaml
+ManifestType: locale
+ManifestVersion: 1.6.0

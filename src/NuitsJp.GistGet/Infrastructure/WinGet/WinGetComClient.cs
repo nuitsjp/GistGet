@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Management.Deployment;
-using NuitsJp.GistGet.Business;
 using NuitsJp.GistGet.Models;
 
 namespace NuitsJp.GistGet.Infrastructure.WinGet;
@@ -12,17 +11,14 @@ namespace NuitsJp.GistGet.Infrastructure.WinGet;
 /// </summary>
 public class WinGetComClient : IWinGetClient
 {
-    private readonly IGistSyncService _gistSyncService;
     private readonly ILogger<WinGetComClient> _logger;
     private readonly IProcessWrapper _processWrapper;
 
     private bool _isInitialized;
     private PackageManager? _packageManager;
 
-    public WinGetComClient(IGistSyncService gistSyncService, ILogger<WinGetComClient> logger,
-        IProcessWrapper processWrapper)
+    public WinGetComClient(ILogger<WinGetComClient> logger, IProcessWrapper processWrapper)
     {
-        _gistSyncService = gistSyncService;
         _logger = logger;
         _processWrapper = processWrapper;
     }
@@ -128,7 +124,6 @@ public class WinGetComClient : IWinGetClient
             if (installResult.Status == InstallResultStatus.Ok)
             {
                 _logger.LogInformation("Successfully installed package: {PackageId}", packageId);
-                await _gistSyncService.AfterInstallAsync(packageId);
                 return 0;
             }
 
@@ -194,8 +189,6 @@ public class WinGetComClient : IWinGetClient
 
                 if (!string.IsNullOrEmpty(error))
                     Console.Error.Write(error);
-
-                if (process.ExitCode == 0) await _gistSyncService.AfterUninstallAsync(packageId);
 
                 return process.ExitCode;
             }
@@ -465,14 +458,6 @@ public class WinGetComClient : IWinGetClient
 
                 if (!string.IsNullOrEmpty(error))
                     Console.Error.Write(error);
-
-                if (process.ExitCode == 0)
-                {
-                    if (operation == "install")
-                        await _gistSyncService.AfterInstallAsync(packageId);
-                    else if (operation == "uninstall")
-                        await _gistSyncService.AfterUninstallAsync(packageId);
-                }
 
                 return process.ExitCode;
             }

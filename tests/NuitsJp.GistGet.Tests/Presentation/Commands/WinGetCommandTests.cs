@@ -15,7 +15,7 @@ namespace NuitsJp.GistGet.Tests.Presentation.Commands;
 public class WinGetCommandTests
 {
     private readonly Mock<IWinGetConsole> _mockConsole;
-    private readonly Mock<IGistSyncService> _mockGistSyncService;
+    private readonly Mock<IPackageManagementService> _mockPackageManagementService;
     private readonly Mock<ILogger<WinGetCommand>> _mockLogger;
     private readonly Mock<IOsService> _mockOsService;
     private readonly Mock<IWinGetClient> _mockWinGetClient;
@@ -23,15 +23,15 @@ public class WinGetCommandTests
 
     public WinGetCommandTests()
     {
+        _mockPackageManagementService = new Mock<IPackageManagementService>();
         _mockWinGetClient = new Mock<IWinGetClient>();
-        _mockGistSyncService = new Mock<IGistSyncService>();
         _mockOsService = new Mock<IOsService>();
         _mockConsole = new Mock<IWinGetConsole>();
         _mockLogger = new Mock<ILogger<WinGetCommand>>();
 
         _winGetCommand = new WinGetCommand(
+            _mockPackageManagementService.Object,
             _mockWinGetClient.Object,
-            _mockGistSyncService.Object,
             _mockOsService.Object,
             _mockConsole.Object,
             _mockLogger.Object);
@@ -44,8 +44,8 @@ public class WinGetCommandTests
     {
         // Arrange
         var args = new[] { "uninstall", "Git.Git" };
-        _mockWinGetClient.Setup(x => x.UninstallPackageAsync(args)).ReturnsAsync(0);
-        _mockGistSyncService.Setup(x => x.AfterUninstallAsync("Git.Git")).Returns(Task.CompletedTask);
+        _mockPackageManagementService.Setup(x => x.ExtractPackageId(args)).Returns("Git.Git");
+        _mockPackageManagementService.Setup(x => x.UninstallPackageAsync(args)).ReturnsAsync(0);
 
         // Act
         var result = await _winGetCommand.ExecuteUninstallAsync(args);
@@ -54,8 +54,7 @@ public class WinGetCommandTests
         result.ShouldBe(0);
         _mockConsole.Verify(x => x.NotifyUninstallStarting("Git.Git"), Times.Once);
         _mockConsole.Verify(x => x.NotifyOperationSuccess("アンインストール", "Git.Git"), Times.Once);
-        _mockWinGetClient.Verify(x => x.UninstallPackageAsync(args), Times.Once);
-        _mockGistSyncService.Verify(x => x.AfterUninstallAsync("Git.Git"), Times.Once);
+        _mockPackageManagementService.Verify(x => x.UninstallPackageAsync(args), Times.Once);
     }
 
     #endregion
@@ -67,7 +66,8 @@ public class WinGetCommandTests
     {
         // Arrange
         var args = new[] { "upgrade", "Git.Git" };
-        _mockWinGetClient.Setup(x => x.UpgradePackageAsync(args)).ReturnsAsync(0);
+        _mockPackageManagementService.Setup(x => x.ExtractPackageId(args)).Returns("Git.Git");
+        _mockPackageManagementService.Setup(x => x.UpgradePackageAsync(args)).ReturnsAsync(0);
 
         // Act
         var result = await _winGetCommand.ExecuteUpgradeAsync(args);
@@ -76,7 +76,7 @@ public class WinGetCommandTests
         result.ShouldBe(0);
         _mockConsole.Verify(x => x.NotifyUpgradeStarting("Git.Git"), Times.Once);
         _mockConsole.Verify(x => x.NotifyOperationSuccess("アップグレード", "Git.Git"), Times.Once);
-        _mockWinGetClient.Verify(x => x.UpgradePackageAsync(args), Times.Once);
+        _mockPackageManagementService.Verify(x => x.UpgradePackageAsync(args), Times.Once);
     }
 
     #endregion
@@ -88,8 +88,8 @@ public class WinGetCommandTests
     {
         // Arrange
         var args = new[] { "install", "Git.Git" };
-        _mockWinGetClient.Setup(x => x.InstallPackageAsync(args)).ReturnsAsync(0);
-        _mockGistSyncService.Setup(x => x.AfterInstallAsync("Git.Git")).Returns(Task.CompletedTask);
+        _mockPackageManagementService.Setup(x => x.ExtractPackageId(args)).Returns("Git.Git");
+        _mockPackageManagementService.Setup(x => x.InstallPackageAsync(args)).ReturnsAsync(0);
 
         // Act
         var result = await _winGetCommand.ExecuteInstallAsync(args);
@@ -98,8 +98,7 @@ public class WinGetCommandTests
         result.ShouldBe(0);
         _mockConsole.Verify(x => x.NotifyInstallStarting("Git.Git"), Times.Once);
         _mockConsole.Verify(x => x.NotifyOperationSuccess("インストール", "Git.Git"), Times.Once);
-        _mockWinGetClient.Verify(x => x.InstallPackageAsync(args), Times.Once);
-        _mockGistSyncService.Verify(x => x.AfterInstallAsync("Git.Git"), Times.Once);
+        _mockPackageManagementService.Verify(x => x.InstallPackageAsync(args), Times.Once);
     }
 
     [Fact]
@@ -107,6 +106,7 @@ public class WinGetCommandTests
     {
         // Arrange
         var args = new[] { "install" };
+        _mockPackageManagementService.Setup(x => x.ExtractPackageId(args)).Returns((string?)null);
 
         // Act
         var result = await _winGetCommand.ExecuteInstallAsync(args);
@@ -114,15 +114,16 @@ public class WinGetCommandTests
         // Assert
         result.ShouldBe(1);
         _mockConsole.Verify(x => x.ShowError(It.IsAny<ArgumentException>(), "パッケージIDが指定されていません"), Times.Once);
-        _mockWinGetClient.Verify(x => x.InstallPackageAsync(It.IsAny<string[]>()), Times.Never);
+        _mockPackageManagementService.Verify(x => x.InstallPackageAsync(It.IsAny<string[]>()), Times.Never);
     }
 
     [Fact]
-    public async Task ExecuteInstallAsync_WhenWinGetClientFails_ShouldReturnErrorCode()
+    public async Task ExecuteInstallAsync_WhenPackageManagementServiceFails_ShouldReturnErrorCode()
     {
         // Arrange
         var args = new[] { "install", "Git.Git" };
-        _mockWinGetClient.Setup(x => x.InstallPackageAsync(args)).ReturnsAsync(1);
+        _mockPackageManagementService.Setup(x => x.ExtractPackageId(args)).Returns("Git.Git");
+        _mockPackageManagementService.Setup(x => x.InstallPackageAsync(args)).ReturnsAsync(1);
 
         // Act
         var result = await _winGetCommand.ExecuteInstallAsync(args);
@@ -131,7 +132,7 @@ public class WinGetCommandTests
         result.ShouldBe(1);
         _mockConsole.Verify(x => x.NotifyInstallStarting("Git.Git"), Times.Once);
         _mockConsole.Verify(x => x.NotifyOperationSuccess(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-        _mockGistSyncService.Verify(x => x.AfterInstallAsync(It.IsAny<string>()), Times.Never);
+        _mockPackageManagementService.Verify(x => x.InstallPackageAsync(args), Times.Once);
     }
 
     #endregion

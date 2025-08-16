@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Octokit;
 
 namespace NuitsJp.GistGet.Infrastructure.GitHub;
@@ -5,6 +6,7 @@ namespace NuitsJp.GistGet.Infrastructure.GitHub;
 /// <summary>
 /// GitHub認証サービスのインターフェース
 /// </summary>
+
 public interface IGitHubAuthService
 {
     /// <summary>

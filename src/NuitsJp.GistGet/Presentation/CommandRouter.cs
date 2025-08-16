@@ -45,21 +45,25 @@ public class CommandRouter(
                 // 引数がない場合はwingetのヘルプを表示
                 return await _winGetCommand.ExecutePassthroughAsync(["--help"]);
 
-            var command = args[0].ToLowerInvariant();
+            // サイレントモードの検出と除去
+            var (isSilentMode, filteredArgs) = ExtractSilentMode(args);
+            _logger.LogDebug("Silent mode: {IsSilentMode}", isSilentMode);
+
+            var command = filteredArgs[0].ToLowerInvariant();
 
             // 認証・Gist設定が必要なコマンドを判定
-            if (RequiresAuthentication(command, args))
+            if (RequiresAuthentication(command, filteredArgs))
             {
                 // 認証チェック・自動ログイン
-                if (!await EnsureAuthenticatedAsync()) return 1;
+                if (!await EnsureAuthenticatedAsync(isSilentMode)) return 1;
 
                 // Gist設定チェック・自動設定
-                if (RequiresGistConfiguration(command, args))
-                    if (!await EnsureGistConfiguredAsync())
+                if (RequiresGistConfiguration(command, filteredArgs))
+                    if (!await EnsureGistConfiguredAsync(isSilentMode))
                         return 1;
             }
 
-            return await RouteCommandAsync(command, args);
+            return await RouteCommandAsync(command, filteredArgs);
         }
         catch (COMException comEx)
         {
@@ -216,9 +220,17 @@ public class CommandRouter(
     /// <summary>
     /// 認証状態を確認し、必要に応じて自動ログイン
     /// </summary>
-    private async Task<bool> EnsureAuthenticatedAsync()
+    private async Task<bool> EnsureAuthenticatedAsync(bool isSilentMode = false)
     {
         if (await _authService.IsAuthenticatedAsync()) return true;
+
+        if (isSilentMode)
+        {
+            _logger.LogError("Silent mode: Authentication required but not available");
+            System.Console.Error.WriteLine("Error: Authentication required but not available in silent mode.");
+            System.Console.Error.WriteLine("Please run 'gistget login' first.");
+            return false;
+        }
 
         _logger.LogInformation("認証が必要です。ログインを開始します...");
         System.Console.WriteLine("認証が必要です。GitHubログインを開始します...");
@@ -231,9 +243,17 @@ public class CommandRouter(
     /// <summary>
     /// Gist設定状態を確認し、必要に応じて自動設定
     /// </summary>
-    private async Task<bool> EnsureGistConfiguredAsync()
+    private async Task<bool> EnsureGistConfiguredAsync(bool isSilentMode = false)
     {
         if (await _gistManager.IsConfiguredAsync()) return true;
+
+        if (isSilentMode)
+        {
+            _logger.LogError("Silent mode: Gist configuration required but not available");
+            System.Console.Error.WriteLine("Error: Gist configuration required but not available in silent mode.");
+            System.Console.Error.WriteLine("Please run 'gistget gist set' first.");
+            return false;
+        }
 
         _logger.LogInformation("Gist設定が必要です。設定を開始します...");
         System.Console.WriteLine("Gist設定が必要です。設定を開始します...");
@@ -263,5 +283,29 @@ public class CommandRouter(
             "upgrade" => await _winGetCommand.ExecuteUpgradeAsync(args),
             _ => throw new ArgumentException($"Unsupported COM command: {command}")
         };
+    }
+
+    /// <summary>
+    /// サイレントモード（--silent, -s）フラグを検出して除去
+    /// </summary>
+    private static (bool isSilentMode, string[] filteredArgs) ExtractSilentMode(string[] args)
+    {
+        var silentFlags = new[] { "--silent", "-s" };
+        var filteredList = new List<string>();
+        var isSilentMode = false;
+
+        foreach (var arg in args)
+        {
+            if (silentFlags.Contains(arg.ToLowerInvariant()))
+            {
+                isSilentMode = true;
+            }
+            else
+            {
+                filteredList.Add(arg);
+            }
+        }
+
+        return (isSilentMode, filteredList.ToArray());
     }
 }

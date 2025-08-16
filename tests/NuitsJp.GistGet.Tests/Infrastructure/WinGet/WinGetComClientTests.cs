@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NuitsJp.GistGet.Infrastructure.WinGet;
 using NuitsJp.GistGet.Models;
-using NuitsJp.GistGet.Tests.Mocks;
 using Shouldly;
 using Xunit.Abstractions;
 
@@ -16,7 +15,6 @@ public class WinGetComClientTests : IAsyncLifetime
     private const string TestPackageId = "jq";
     private const string TestPackageVersion = "1.6";
     private readonly ILogger<WinGetComClient> _logger;
-    private readonly MockGistSyncService _mockGistSyncService;
     private readonly Mock<IProcessWrapper> _mockProcessWrapper;
     private readonly ITestOutputHelper _testOutput;
 
@@ -25,7 +23,6 @@ public class WinGetComClientTests : IAsyncLifetime
         _testOutput = testOutput;
         var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
         _logger = loggerFactory.CreateLogger<WinGetComClient>();
-        _mockGistSyncService = new MockGistSyncService();
         _mockProcessWrapper = new Mock<IProcessWrapper>();
     }
 
@@ -39,6 +36,67 @@ public class WinGetComClientTests : IAsyncLifetime
     {
         // テスト終了後にテストパッケージをクリーンアップ
         await EnsureTestPackageNotInstalled();
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void Constructor_ShouldNotRequireGistSyncService()
+    {
+        // Arrange & Act
+        var client = new WinGetComClient(_logger, _mockProcessWrapper.Object);
+
+        // Assert
+        client.ShouldNotBeNull();
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task InstallPackageAsync_ShouldNotCallGistSync()
+    {
+        // Arrange
+        var client = new WinGetComClient(_logger, _mockProcessWrapper.Object);
+
+        // Mock process wrapper to simulate successful install
+        var mockProcess = new Mock<IProcessResult>();
+        mockProcess.Setup(p => p.ExitCode).Returns(0);
+        mockProcess.Setup(p => p.ReadStandardOutputAsync()).ReturnsAsync("Successfully installed");
+        mockProcess.Setup(p => p.ReadStandardErrorAsync()).ReturnsAsync("");
+        mockProcess.Setup(p => p.WaitForExitAsync()).Returns(Task.CompletedTask);
+
+        _mockProcessWrapper.Setup(pw => pw.Start(It.IsAny<ProcessStartInfo>()))
+                          .Returns(mockProcess.Object);
+
+        // Act
+        var exitCode = await client.InstallPackageAsync(new[] { "install", "Git.Git" });
+
+        // Assert
+        exitCode.ShouldBe(1); // Should fail because not initialized
+        // No IGistSyncService calls should be made (impossible since it's not injected)
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task UninstallPackageAsync_ShouldNotCallGistSync()
+    {
+        // Arrange
+        var client = new WinGetComClient(_logger, _mockProcessWrapper.Object);
+
+        // Mock process wrapper to simulate successful uninstall
+        var mockProcess = new Mock<IProcessResult>();
+        mockProcess.Setup(p => p.ExitCode).Returns(0);
+        mockProcess.Setup(p => p.ReadStandardOutputAsync()).ReturnsAsync("Successfully uninstalled");
+        mockProcess.Setup(p => p.ReadStandardErrorAsync()).ReturnsAsync("");
+        mockProcess.Setup(p => p.WaitForExitAsync()).Returns(Task.CompletedTask);
+
+        _mockProcessWrapper.Setup(pw => pw.Start(It.IsAny<ProcessStartInfo>()))
+                          .Returns(mockProcess.Object);
+
+        // Act
+        var exitCode = await client.UninstallPackageAsync(new[] { "uninstall", "Git.Git" });
+
+        // Assert
+        exitCode.ShouldBe(1); // Should fail because not initialized
+        // No IGistSyncService calls should be made (impossible since it's not injected)
     }
 
     private async Task EnsureTestPackageNotInstalled()
@@ -75,7 +133,7 @@ public class WinGetComClientTests : IAsyncLifetime
             return;
 
         // Arrange
-        var client = new WinGetComClient(_mockGistSyncService, _logger, _mockProcessWrapper.Object);
+        var client = new WinGetComClient(_logger, _mockProcessWrapper.Object);
 
         // Act & Assert
         await Should.NotThrowAsync(() => client.InitializeAsync());
@@ -90,7 +148,7 @@ public class WinGetComClientTests : IAsyncLifetime
             return;
 
         // Arrange
-        var client = new WinGetComClient(_mockGistSyncService, _logger, _mockProcessWrapper.Object);
+        var client = new WinGetComClient(_logger, _mockProcessWrapper.Object);
         await client.InitializeAsync();
 
         // Act
@@ -111,7 +169,7 @@ public class WinGetComClientTests : IAsyncLifetime
             return;
 
         // Arrange
-        var client = new WinGetComClient(_mockGistSyncService, _logger, _mockProcessWrapper.Object);
+        var client = new WinGetComClient(_logger, _mockProcessWrapper.Object);
         await client.InitializeAsync();
 
         string? actualInstalledPackageId = null;
@@ -176,7 +234,7 @@ public class WinGetComClientTests : IAsyncLifetime
             return;
 
         // Arrange
-        var client = new WinGetComClient(_mockGistSyncService, _logger, _mockProcessWrapper.Object);
+        var client = new WinGetComClient(_logger, _mockProcessWrapper.Object);
         await client.InitializeAsync();
 
         // Act: COM API search
@@ -199,7 +257,7 @@ public class WinGetComClientTests : IAsyncLifetime
     public async Task GetInstalledPackagesAsync_ShouldThrow_WhenNotInitialized()
     {
         // Arrange
-        var client = new WinGetComClient(_mockGistSyncService, _logger, _mockProcessWrapper.Object);
+        var client = new WinGetComClient(_logger, _mockProcessWrapper.Object);
 
         // Act & Assert
         await Should.ThrowAsync<InvalidOperationException>(async () => await client.GetInstalledPackagesAsync());
@@ -209,7 +267,7 @@ public class WinGetComClientTests : IAsyncLifetime
     public async Task SearchPackagesAsync_ShouldThrow_WhenNotInitialized()
     {
         // Arrange
-        var client = new WinGetComClient(_mockGistSyncService, _logger, _mockProcessWrapper.Object);
+        var client = new WinGetComClient(_logger, _mockProcessWrapper.Object);
 
         // Act & Assert
         await Should.ThrowAsync<InvalidOperationException>(async () => await client.SearchPackagesAsync("test"));
@@ -228,7 +286,7 @@ public class WinGetComClientTests : IAsyncLifetime
 
         try
         {
-            var client = new WinGetComClient(_mockGistSyncService, _logger, _mockProcessWrapper.Object);
+            var client = new WinGetComClient(_logger, _mockProcessWrapper.Object);
             await client.InitializeAsync();
             _testOutput?.WriteLine("WinGet COM API successfully initialized");
             return true;

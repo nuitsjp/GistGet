@@ -10,12 +10,37 @@
 
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<!-- MVP検証のため一時的にAOTを無効化 -->
-		<!-- <PublishAot>true</PublishAot> -->
 		<InvariantGlobalization>true</InvariantGlobalization>
 		
 		<!-- WinGet COM API設定 -->
 		<MicrosoftManagementDeployment-FactoryLinkage>static</MicrosoftManagementDeployment-FactoryLinkage>
+
+		<!-- ビルド最適化設定 -->
+		<PublishSingleFile>true</PublishSingleFile>
+		<SelfContained>true</SelfContained>
+		<PublishTrimmed>true</PublishTrimmed>
+		<TrimMode>partial</TrimMode>
+		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+		
+		<!-- AOTは後で検討 (COM APIとの互換性要確認) -->
+		<!-- <PublishAot>true</PublishAot> -->
+
+		<!-- バージョン情報 (WinGet配布用) -->
+		<Version>1.0.0</Version>
+		<AssemblyVersion>1.0.0.0</AssemblyVersion>
+		<FileVersion>1.0.0.0</FileVersion>
+		<Company>NuitsJp</Company>
+		<Product>GistGet</Product>
+		<Description>PowerShell module for managing WinGet installation lists on GitHub Gist</Description>
+		<Copyright>© 2024 NuitsJp</Copyright>
+		<PackageId>NuitsJp.GistGet</PackageId>
+		<PackageProjectUrl>https://github.com/nuitsjp/GistGet</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/nuitsjp/GistGet</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageTags>winget;gist;package-manager;development-tools</PackageTags>
 	</PropertyGroup>
 
 	<!-- アーキテクチャ改善: 依存性注入とログ機能を追加 -->

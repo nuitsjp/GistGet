@@ -41,6 +41,9 @@ public static class AppHost
                 services.AddSingleton<IWinGetClient, WinGetComClient>();
                 services.AddSingleton<IWinGetPassthroughClient, WinGetPassthrough>();
 
+                // Package management (Business layer)
+                services.AddSingleton<IPackageManagementService, PackageManagementService>();
+
                 // Gist services (core)
                 services.AddSingleton<IGistSyncService, GistSyncService>();
 

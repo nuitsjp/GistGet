@@ -1,0 +1,170 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # v1.0.0のような形式のタグでトリガー
+  workflow_dispatch:  # 手動実行も可能
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  PROJECT_PATH: 'src/NuitsJp.GistGet'
+  
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # 全履歴を取得（GitVersion用）
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore ${{ env.PROJECT_PATH }}
+
+    - name: Build project
+      run: dotnet build ${{ env.PROJECT_PATH }} --configuration Release --no-restore
+
+    - name: Run tests
+      run: dotnet test tests/NuitsJp.GistGet.Tests/ --configuration Release --no-build --verbosity normal
+
+    - name: Publish optimized build
+      run: |
+        dotnet publish ${{ env.PROJECT_PATH }} `
+          --configuration Release `
+          --runtime win-x64 `
+          --self-contained true `
+          --output publish/win-x64
+
+    - name: Create release artifacts
+      run: |
+        # 実行ファイルをZIPアーカイブに圧縮
+        Compress-Archive -Path "publish/win-x64/GistGet.exe" -DestinationPath "GistGet-win-x64.zip"
+        
+        # ハッシュ値を計算
+        $hash = Get-FileHash "publish/win-x64/GistGet.exe" -Algorithm SHA256
+        $hash.Hash | Out-File -FilePath "GistGet-win-x64.exe.sha256"
+        
+        # ファイルサイズ情報
+        $size = (Get-Item "publish/win-x64/GistGet.exe").Length
+        "File size: $([math]::Round($size/1MB, 2)) MB" | Out-File -FilePath "GistGet-win-x64.info.txt"
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-artifacts
+        path: |
+          GistGet-win-x64.zip
+          GistGet-win-x64.exe.sha256
+          GistGet-win-x64.info.txt
+          publish/win-x64/GistGet.exe
+
+  release:
+    needs: build-and-test
+    runs-on: windows-latest
+    permissions:
+      contents: write  # リリース作成に必要
+
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: release-artifacts
+
+    - name: Extract version from tag
+      id: version
+      shell: pwsh
+      run: |
+        if ($env:GITHUB_REF -match "refs/tags/v(.+)") {
+          $version = $matches[1]
+        } else {
+          $version = "dev-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+        }
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+        echo "Version: $version"
+
+    - name: Create GitHub Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name }}
+        release_name: GistGet v${{ steps.version.outputs.version }}
+        body: |
+          ## GistGet v${{ steps.version.outputs.version }}
+          
+          PowerShell module for managing WinGet installation lists on GitHub Gist.
+          
+          ### Changes in this release
+          - See commit history for detailed changes
+          
+          ### Installation
+          
+          #### Option 1: Download executable
+          1. Download `GistGet-win-x64.zip` from the assets below
+          2. Extract `GistGet.exe` to a directory in your PATH
+          3. Run `GistGet.exe --help` to get started
+          
+          #### Option 2: Install via WinGet (coming soon)
+          ```
+          winget install NuitsJp.GistGet
+          ```
+          
+          ### System Requirements
+          - Windows 10/11 (x64)
+          - .NET 8 runtime (included in single-file executable)
+          
+          ### Verification
+          Verify the downloaded file using the provided SHA256 hash:
+          ```powershell
+          Get-FileHash GistGet.exe -Algorithm SHA256
+          ```
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset - ZIP
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./GistGet-win-x64.zip
+        asset_name: GistGet-win-x64.zip
+        asset_content_type: application/zip
+
+    - name: Upload Release Asset - Executable
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./GistGet.exe
+        asset_name: GistGet.exe
+        asset_content_type: application/octet-stream
+
+    - name: Upload Release Asset - SHA256
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./GistGet-win-x64.exe.sha256
+        asset_name: GistGet-win-x64.exe.sha256
+        asset_content_type: text/plain
+
+    - name: Upload Release Asset - Info
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./GistGet-win-x64.info.txt
+        asset_name: GistGet-win-x64.info.txt
+        asset_content_type: text/plain

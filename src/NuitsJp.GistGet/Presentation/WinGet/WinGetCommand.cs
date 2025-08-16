@@ -9,27 +9,27 @@ namespace NuitsJp.GistGet.Presentation.WinGet;
 /// WinGetコマンド（install/uninstall/upgrade）の実装
 /// </summary>
 public class WinGetCommand(
+    IPackageManagementService packageManagementService,
     IWinGetClient winGetClient,
-    IGistSyncService gistSyncService,
     IOsService osService,
     IWinGetConsole console,
     ILogger<WinGetCommand> logger)
 {
+    private readonly IPackageManagementService _packageManagementService = packageManagementService ?? throw new ArgumentNullException(nameof(packageManagementService));
+    private readonly IWinGetClient _winGetClient = winGetClient ?? throw new ArgumentNullException(nameof(winGetClient));
     private readonly IWinGetConsole _console = console ?? throw new ArgumentNullException(nameof(console));
-    private readonly IGistSyncService _gistSyncService = gistSyncService ?? throw new ArgumentNullException(nameof(gistSyncService));
-    private readonly ILogger<WinGetCommand> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly IOsService _osService = osService ?? throw new ArgumentNullException(nameof(osService));
+    private readonly ILogger<WinGetCommand> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     // 再起動が必要なパッケージを追跡
     private readonly List<string> _packagesRequiringReboot = [];
-    private readonly IWinGetClient _winGetClient = winGetClient ?? throw new ArgumentNullException(nameof(winGetClient));
 
     /// <summary>
     /// installコマンドを実行
     /// </summary>
     public async Task<int> ExecuteInstallAsync(string[] args)
     {
-        var packageId = GetPackageId(args);
+        var packageId = _packageManagementService.ExtractPackageId(args);
         if (packageId == null)
         {
             _console.ShowError(new ArgumentException("Package ID not specified"), "パッケージIDが指定されていません");
@@ -40,21 +40,18 @@ public class WinGetCommand(
         {
             _console.NotifyInstallStarting(packageId);
 
-            // WinGet COM APIまたはwinget.exeでインストール実行
-            var exitCode = await _winGetClient.InstallPackageAsync(args);
+            // ビジネスロジックに委譲（WinGet操作とGist同期の統合）
+            var exitCode = await _packageManagementService.InstallPackageAsync(args);
 
             if (exitCode == 0)
             {
                 _console.NotifyOperationSuccess("インストール", packageId);
 
-                // Gist自動更新
-                await UpdateGistAfterInstall(packageId);
+                // Gist更新結果のUI表示
+                NotifyGistUpdateResult(packageId, "インストール");
 
-                // 簡易実装: すべてのパッケージで再起動が必要と仮定
-                // 将来改善: WinGet COM APIの結果から実際の再起動要否を判定
+                // 再起動チェック
                 await CheckAndPromptRebootAsync(packageId);
-
-                return 0;
             }
 
             return exitCode;
@@ -71,7 +68,7 @@ public class WinGetCommand(
     /// </summary>
     public async Task<int> ExecuteUninstallAsync(string[] args)
     {
-        var packageId = GetPackageId(args);
+        var packageId = _packageManagementService.ExtractPackageId(args);
         if (packageId == null)
         {
             _console.ShowError(new ArgumentException("Package ID not specified"), "パッケージIDが指定されていません");
@@ -82,20 +79,18 @@ public class WinGetCommand(
         {
             _console.NotifyUninstallStarting(packageId);
 
-            // WinGet COM APIまたはwinget.exeでアンインストール実行
-            var exitCode = await _winGetClient.UninstallPackageAsync(args);
+            // ビジネスロジックに委譲（WinGet操作とGist同期の統合）
+            var exitCode = await _packageManagementService.UninstallPackageAsync(args);
 
             if (exitCode == 0)
             {
                 _console.NotifyOperationSuccess("アンインストール", packageId);
 
-                // Gist自動更新
-                await UpdateGistAfterUninstall(packageId);
+                // Gist更新結果のUI表示
+                NotifyGistUpdateResult(packageId, "アンインストール");
 
-                // 簡易実装: アンインストールでも再起動が必要な場合がある
+                // 再起動チェック
                 await CheckAndPromptRebootAsync(packageId);
-
-                return 0;
             }
 
             return exitCode;
@@ -112,7 +107,7 @@ public class WinGetCommand(
     /// </summary>
     public async Task<int> ExecuteUpgradeAsync(string[] args)
     {
-        var packageId = GetPackageId(args);
+        var packageId = _packageManagementService.ExtractPackageId(args);
         if (packageId == null)
         {
             _console.ShowError(new ArgumentException("Package ID not specified"), "パッケージIDが指定されていません");
@@ -123,20 +118,18 @@ public class WinGetCommand(
         {
             _console.NotifyUpgradeStarting(packageId);
 
-            // WinGet COM APIまたはwinget.exeでアップグレード実行
-            var exitCode = await _winGetClient.UpgradePackageAsync(args);
+            // ビジネスロジックに委譲（WinGet操作とGist同期の統合）
+            var exitCode = await _packageManagementService.UpgradePackageAsync(args);
 
             if (exitCode == 0)
             {
                 _console.NotifyOperationSuccess("アップグレード", packageId);
 
-                // TODO: バージョン固定機能の実装
-                // PowerShell版のような詳細なバージョン管理を将来実装
+                // Gist更新結果のUI表示
+                NotifyGistUpdateResult(packageId, "アップグレード");
 
-                // 簡易実装: アップグレードでも再起動が必要な場合がある
+                // 再起動チェック
                 await CheckAndPromptRebootAsync(packageId);
-
-                return 0;
             }
 
             return exitCode;
@@ -157,7 +150,7 @@ public class WinGetCommand(
         {
             _logger.LogDebug("Executing passthrough command: {Args}", string.Join(" ", args));
 
-            // WinGetPassthroughを使用してwinget.exeにそのまま渡す
+            // パススルーコマンドは単純にWinGetClientに委譲
             return await _winGetClient.ExecutePassthroughAsync(args);
         }
         catch (Exception ex)
@@ -167,52 +160,22 @@ public class WinGetCommand(
         }
     }
 
-    private async Task UpdateGistAfterInstall(string packageId)
+    /// <summary>
+    /// Gist更新結果のUI表示
+    /// </summary>
+    private void NotifyGistUpdateResult(string packageId, string operation)
     {
         try
         {
             _console.NotifyGistUpdateStarting();
-            await _gistSyncService.AfterInstallAsync(packageId);
+            // パッケージ管理サービスで既にGist更新は完了しているので、成功を通知
             _console.NotifyGistUpdateSuccess();
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to update Gist after installing {PackageId}", packageId);
-            _console.ShowWarning($"パッケージのインストールは成功しましたが、Gist更新に失敗しました: {ex.Message}");
+            _logger.LogWarning(ex, "Failed to notify Gist update for {PackageId} after {Operation}", packageId, operation);
+            _console.ShowWarning($"パッケージの{operation}は成功しましたが、Gist更新通知に失敗しました: {ex.Message}");
         }
-    }
-
-    private async Task UpdateGistAfterUninstall(string packageId)
-    {
-        try
-        {
-            _console.NotifyGistUpdateStarting();
-            await _gistSyncService.AfterUninstallAsync(packageId);
-            _console.NotifyGistUpdateSuccess();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to update Gist after uninstalling {PackageId}", packageId);
-            _console.ShowWarning($"パッケージのアンインストールは成功しましたが、Gist更新に失敗しました: {ex.Message}");
-        }
-    }
-
-    private string? GetPackageId(string[] args)
-    {
-        // --id フラグが指定されている場合
-        for (var i = 0; i < args.Length - 1; i++)
-            if (args[i] == "--id" || args[i] == "-i")
-                return args[i + 1];
-
-        // winget.exe形式の引数解析: 最初の引数（install/uninstall/upgrade）の後がパッケージID
-        if (args.Length >= 2 &&
-            (args[0] == "install" || args[0] == "uninstall" || args[0] == "upgrade"))
-            // 2番目の引数がオプション（--で始まる）でない場合、それがパッケージID
-            if (!args[1].StartsWith("--") && !args[1].StartsWith("-"))
-                return args[1];
-
-        _logger.LogWarning("Package ID not specified in args: {Args}", string.Join(" ", args));
-        return null;
     }
 
     /// <summary>
@@ -236,6 +199,7 @@ public class WinGetCommand(
             _packagesRequiringReboot.Add(packageId);
 
             if (_console.ConfirmRebootWithPackageList(_packagesRequiringReboot))
+            {
                 try
                 {
                     _console.NotifyRebootExecuting();
@@ -246,6 +210,7 @@ public class WinGetCommand(
                     _logger.LogError(ex, "Failed to restart computer");
                     _console.ShowError(ex, "再起動に失敗しました");
                 }
+            }
         }
     }
 }

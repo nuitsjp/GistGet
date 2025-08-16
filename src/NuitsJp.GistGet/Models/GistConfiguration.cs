@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
 namespace NuitsJp.GistGet.Models;
@@ -35,10 +36,7 @@ public class GistConfiguration
 
     public string ToJson()
     {
-        return JsonSerializer.Serialize(this, new JsonSerializerOptions
-        {
-            WriteIndented = true
-        });
+        return JsonSerializer.Serialize(this, AppJsonContext.Default.GistConfiguration);
     }
 
     public static GistConfiguration FromJson(string json)
@@ -48,7 +46,7 @@ public class GistConfiguration
 
         try
         {
-            var config = JsonSerializer.Deserialize<GistConfiguration>(json);
+            var config = JsonSerializer.Deserialize(json, AppJsonContext.Default.GistConfiguration);
             if (config == null)
                 throw new InvalidOperationException("Deserialized configuration is null");
 

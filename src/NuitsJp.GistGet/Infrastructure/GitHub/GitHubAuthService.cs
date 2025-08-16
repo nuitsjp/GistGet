@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -177,22 +178,20 @@ public class GitHubAuthService : IGitHubAuthService
 
     public async Task SaveTokenAsync(string token)
     {
-        var tokenData = new { AccessToken = token, CreatedAt = DateTime.UtcNow };
+        var tokenData = new TokenData(token, DateTime.UtcNow);
 
         // DPAPIで暗号化
-        var jsonBytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(tokenData));
+        var jsonBytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(tokenData, AppJsonContext.Default.TokenData));
         var encryptedBytes = ProtectedData.Protect(
             jsonBytes,
             null,
             DataProtectionScope.CurrentUser);
 
-        var encryptedData = new
-        {
-            EncryptedToken = Convert.ToBase64String(encryptedBytes),
-            CreatedAt = DateTime.UtcNow
-        };
+        var encryptedData = new EncryptedTokenData(
+            Convert.ToBase64String(encryptedBytes),
+            DateTime.UtcNow);
 
-        var json = JsonSerializer.Serialize(encryptedData, new JsonSerializerOptions { WriteIndented = true });
+        var json = JsonSerializer.Serialize(encryptedData, AppJsonContext.Default.EncryptedTokenData);
         await File.WriteAllTextAsync(_tokenFilePath, json);
         _logger.LogInformation("アクセストークンを暗号化して保存しました: {TokenPath}", _tokenFilePath);
     }
@@ -204,7 +203,7 @@ public class GitHubAuthService : IGitHubAuthService
         try
         {
             var json = await File.ReadAllTextAsync(_tokenFilePath);
-            var jsonElement = JsonSerializer.Deserialize<JsonElement>(json);
+            var jsonElement = JsonSerializer.Deserialize(json, GitHubJsonContext.Default.JsonElement);
 
             // DPAPI暗号化形式のトークンを復号化
             if (jsonElement.TryGetProperty("EncryptedToken", out var encryptedTokenProp))
@@ -216,7 +215,7 @@ public class GitHubAuthService : IGitHubAuthService
                     DataProtectionScope.CurrentUser);
 
                 var decryptedJson = Encoding.UTF8.GetString(decryptedBytes);
-                var tokenData = JsonSerializer.Deserialize<JsonElement>(decryptedJson);
+                var tokenData = JsonSerializer.Deserialize(decryptedJson, GitHubJsonContext.Default.JsonElement);
                 return tokenData.GetProperty("AccessToken").GetString();
             }
 
@@ -250,10 +249,7 @@ public class GitHubAuthService : IGitHubAuthService
         }
 
         var json = await response.Content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<DeviceCodeResponse>(json, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-        });
+        return JsonSerializer.Deserialize(json, GitHubJsonContext.Default.DeviceCodeResponse);
     }
 
     private async Task<string?> PollForAccessTokenAsync(DeviceCodeResponse deviceCode)
@@ -276,19 +272,13 @@ public class GitHubAuthService : IGitHubAuthService
 
             if (response.IsSuccessStatusCode)
             {
-                var tokenResponse = JsonSerializer.Deserialize<AccessTokenResponse>(json, new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-                });
+                var tokenResponse = JsonSerializer.Deserialize(json, GitHubJsonContext.Default.AccessTokenResponse);
 
                 if (!string.IsNullOrEmpty(tokenResponse?.AccessToken)) return tokenResponse.AccessToken;
             }
 
             // エラーレスポンスをチェック
-            var errorResponse = JsonSerializer.Deserialize<OAuthErrorResponse>(json, new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-            });
+            var errorResponse = JsonSerializer.Deserialize(json, GitHubJsonContext.Default.OAuthErrorResponse);
 
             if (errorResponse?.Error == "authorization_pending")
             {

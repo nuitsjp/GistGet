@@ -7,7 +7,10 @@
       "Bash(reportgenerator:*)",
       "Bash(grep:*)",
       "Bash(git rm:*)",
-      "Bash(.scriptsfix-code-issues.ps1 -FixType PrimaryConstructors)"
+      "Bash(.scriptsfix-code-issues.ps1 -FixType PrimaryConstructors)",
+      "Bash(dir:*)",
+      "Bash(D:GistGetpublishGistGet.exe --version)",
+      "WebSearch"
     ],
     "deny": []
   }

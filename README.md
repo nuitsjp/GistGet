@@ -401,3 +401,140 @@ jobs:
 - 管理者権限（一部テストで必要）
 
 詳細は`scripts/README.md`を参照してください。
+
+## Windows Sandboxでのインストールテスト
+
+WinGet配布前の最終検証として、Windows Sandboxでの動作テストを実施することを推奨します。
+
+### 1. Windows Sandboxの有効化
+
+```powershell
+# 管理者権限でPowerShellを実行
+Enable-WindowsOptionalFeature -Online -FeatureName "Containers-DisposableClientVM" -All
+```
+
+再起動後、Windows Sandboxが利用可能になります。
+
+### 2. テスト用構成ファイルの生成
+
+Windows Sandboxの設定ファイルを現在の環境に合わせて生成します：
+
+```powershell
+# 現在の環境用のsandbox.wsbを生成
+.\sandbox-config.ps1
+
+# カスタムパスで生成する場合
+.\sandbox-config.ps1 -ProjectRoot "C:\YourPath\GistGet" -OutputFile "my-sandbox.wsb"
+```
+
+このスクリプトは以下の機能を提供します：
+- **環境依存パスの自動解決**（開発環境に依存しない）
+- **WinGetの自動インストール**（GitHub最新版）
+- **.NET 8 Runtimeの自動インストール**
+- **GistGetテスト環境の自動セットアップ**
+- **統合されたスクリプト管理**（`scripts`フォルダに集約）
+
+### 3. Sandboxでのテスト手順
+
+1. **設定ファイル生成とSandboxの起動**：
+   ```powershell
+   # 1. 設定ファイル生成
+   .\sandbox-config.ps1
+   
+   # 2. Sandboxの起動
+   .\sandbox.wsb
+   ```
+   
+   起動時に自動的に以下が実行されます：
+   - WinGetの最新版インストール
+   - .NET 8 Runtimeのインストール
+   - 環境セットアップの確認
+   - テスト環境準備完了の通知
+
+2. **自動テストの実行**：
+   ```powershell
+   # Sandbox内でPowerShellを管理者権限で実行
+   cd C:\Scripts
+   
+   # 基本テストのみ実行（推奨）
+   .\run-tests.ps1 -BasicOnly
+   
+   # 全テスト実行（対話的）
+   .\run-tests.ps1
+   
+   # 非対話モードでの全テスト
+   .\run-tests.ps1 -SkipInteractive
+   ```
+
+3. **手動での動作確認**：
+   ```powershell
+   # Sandbox内でPowerShellを管理者権限で実行
+   cd C:\GistGet
+   
+   # 基本動作確認
+   .\GistGet.exe --help
+   .\GistGet.exe list
+   .\GistGet.exe search git
+   
+   # ログイン機能テスト（対話形式）
+   .\GistGet.exe login
+   
+   # Gist設定テスト
+   .\GistGet.exe gist status
+   .\GistGet.exe gist set
+   
+   # サイレントモードテスト
+   .\GistGet.exe --silent install Git.Git
+   ```
+
+4. **WinGetマニフェストテスト**：
+   ```powershell
+   # ローカルマニフェストでインストールテスト
+   winget install --manifest C:\Manifests\NuitsJp\GistGet\1.0.0\
+   
+   # インストール後の動作確認
+   gistget --help
+   gistget list
+   ```
+
+### 5. テスト項目チェックリスト
+
+- [ ] 基本コマンド動作（help, list, search）
+- [ ] 認証フロー（GitHub OAuth Device Flow）
+- [ ] Gist設定（対話形式、コマンドライン引数）
+- [ ] サイレントモード（--silent フラグ）
+- [ ] エラーハンドリング（認証失敗、ネットワークエラー）
+- [ ] WinGetマニフェスト経由でのインストール
+- [ ] アンインストール動作
+- [ ] ファイルサイズ・起動速度の確認
+
+### 6. 注意事項
+
+- **環境依存の解決**：`sandbox-config.ps1`で現在の環境に合わせたWSBファイルを生成してください
+- **管理者権限**：WinGet操作には管理者権限が必要です
+- **ネットワーク**：GitHub APIアクセスとWinGet自動インストールのためインターネット接続が必要です
+- **初回セットアップ時間**：WinGetと.NET 8の自動インストールに数分かかる場合があります
+- **クリーンな環境**：Sandboxは毎回初期状態からスタートするため、実際のユーザー環境に近いテストが可能です
+- **統合されたスクリプト**：すべてのスクリプトが`scripts`フォルダに集約されています
+- **自動テストスクリプト**：`C:\Scripts\run-tests.ps1`で段階的なテストが実行できます
+- **ログの確認**：エラーが発生した場合は、Windowsイベントログやアプリケーションログを確認してください
+
+### 7. トラブルシューティング
+
+**WinGet COM API初期化エラー**：
+```powershell
+# Windows Package Managerの更新
+winget upgrade Microsoft.AppInstaller
+```
+
+**認証エラー**：
+```powershell
+# プロキシ設定の確認（企業環境の場合）
+netsh winhttp show proxy
+```
+
+**ファイルアクセスエラー**：
+```powershell
+# 実行ファイルのプロパティで「ブロックの解除」を確認
+Unblock-File C:\GistGet\GistGet.exe
+```

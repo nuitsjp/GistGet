@@ -1,6 +1,50 @@
-# Development Scripts
+# Scripts Directory
 
-このディレクトリには、開発作業を支援するスクリプトが含まれています。
+このディレクトリには、開発・テスト・ビルドに関連するすべてのスクリプトが含まれています。
+
+## 開発ツール
+
+- **`format-check.ps1`** - コードフォーマットチェック
+- **`format-fix.ps1`** - コードフォーマット自動修正
+- **`fix-code-issues.ps1`** - コード品質問題の修正
+- **`setup-hooks.ps1`** - Git pre-commitフックの設定
+- **`run-code-inspection.ps1`** - コード検査の実行
+
+## テスト・Sandbox環境
+
+- **`setup-sandbox.ps1`** - Windows Sandbox環境の自動セットアップ（WinGet・.NET 8自動インストール）
+- **`run-tests.ps1`** - Sandbox内での自動テスト実行（基本・対話・非対話モード対応）
+
+### Sandbox環境の使用方法
+
+1. **設定ファイル生成**：
+   ```powershell
+   # プロジェクトルートで実行
+   .\sandbox-config.ps1
+   ```
+
+2. **Sandboxの起動**：
+   ```powershell
+   # 生成されたWSBファイルでSandboxを起動
+   .\sandbox.wsb
+   ```
+   
+   起動時に`setup-sandbox.ps1`が自動実行され、WinGetと.NET 8 Runtimeがインストールされます。
+
+3. **テスト実行**：
+   ```powershell
+   # Sandbox内で管理者権限PowerShellを起動し実行
+   cd C:\Scripts
+   
+   # 基本テストのみ（推奨）
+   .\run-tests.ps1 -BasicOnly
+   
+   # 全テスト（対話形式）
+   .\run-tests.ps1
+   
+   # 非対話モード
+   .\run-tests.ps1 -SkipInteractive
+   ```
 
 ## Pre-commitフックの設定
 
