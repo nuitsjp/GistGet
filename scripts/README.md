@@ -1,14 +1,13 @@
 # Scripts Directory
 
-このディレクトリには、開発・テスト・ビルドに関連するすべてのスクリプトが含まれています。
+このディレクトリには、開発環境セットアップとテスト関連のスクリプトが含まれています。
+
+ビルド関連のスクリプトは `../build-scripts/` ディレクトリに移動しました。
 
 ## 開発ツール
 
-- **`format-check.ps1`** - コードフォーマットチェック
-- **`format-fix.ps1`** - コードフォーマット自動修正
-- **`fix-code-issues.ps1`** - コード品質問題の修正
+- **`fix-code-issues.ps1`** - コード品質問題の自動修正
 - **`setup-hooks.ps1`** - Git pre-commitフックの設定
-- **`run-code-inspection.ps1`** - コード検査の実行
 
 ## テスト・Sandbox環境
 
@@ -58,20 +57,21 @@ Git commitの前にコードフォーマットとコード品質をチェック�
 
 **注意**: pre-commitフックは`src/`または`tests/`ディレクトリのファイルが変更された場合のみ実行されます。それ以外のファイル（ドキュメント、設定ファイルなど）のみの変更時はスキップされます。
 
-## 手動でのフォーマットチェック
+## ビルドタスクについて
 
-CI/CDと同じフォーマットチェックをローカルで実行：
-
-```powershell
-.\scripts\format-check.ps1
-```
-
-## フォーマット問題の修正
-
-フォーマット問題を自動的に修正：
+ビルド、テスト、フォーマットチェック、コード検査などは `../build-scripts/` ディレクトリに移動しました。
+これらのタスクは Invoke-Build から実行するか、個別に実行できます：
 
 ```powershell
-.\scripts\format-fix.ps1
+# ビルドタスクの実行
+Invoke-Build FormatCheck  # フォーマットチェック
+Invoke-Build FormatFix    # フォーマット修正
+Invoke-Build CodeInspection  # コード検査
+
+# 個別実行
+.\build-scripts\Format.ps1 -CheckOnly  # フォーマットチェック
+.\build-scripts\Format.ps1 -Fix        # フォーマット修正
+.\build-scripts\CodeInspection.ps1     # コード検査
 ```
 
 ## 使用方法
@@ -85,16 +85,16 @@ CI/CDと同じフォーマットチェックをローカルで実行：
 2. **開発中のフォーマットチェック**
    ```powershell
    # チェックのみ（変更なし）
-   .\scripts\format-check.ps1
+   .\build-scripts\Format.ps1 -CheckOnly
    
    # 問題があれば修正
-   .\scripts\format-fix.ps1
+   .\build-scripts\Format.ps1 -Fix
    ```
 
 3. **コミット時**
    - pre-commitフックが自動実行されます（`src/`または`tests/`の変更がある場合のみ）
    - フォーマット問題があればcommitが中断されます
-   - `.\scripts\format-fix.ps1`で修正してから再度commit
+   - `.\build-scripts\Format.ps1 -Fix`で修正してから再度commit
 
 ## トラブルシューティング
 

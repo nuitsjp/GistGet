@@ -2,28 +2,16 @@
 
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory=$false)]
     [string]$SolutionPath,
-    
-    [Parameter(Mandatory=$false)]
     [string]$OutputFile = "inspection-results.xml",
-    
-    [Parameter(Mandatory=$false)]
     [ValidateSet("ERROR", "WARN", "INFO", "VERBOSE")]
     [string]$Verbosity = "WARN",
-    
-    [Parameter(Mandatory=$false)]
     [switch]$ShowSummary = $true,
-    
-    [Parameter(Mandatory=$false)]
     [switch]$ShowDetails = $false,
-    
-    [Parameter(Mandatory=$false)]
     [switch]$GroupByFile = $false
 )
 
-Write-Host "ReSharper Code Inspection Tool" -ForegroundColor Cyan
-Write-Host "===============================" -ForegroundColor Cyan
+Write-Host "Running ReSharper code inspection..." -ForegroundColor Green
 
 try {
     # Check if InspectCode is available
@@ -31,18 +19,12 @@ try {
     $jbPath = Get-Command jb -ErrorAction SilentlyContinue
     
     if (-not $inspectCodePath -and -not $jbPath) {
-        Write-Error "InspectCode tool not found. Please install JetBrains.ReSharper.GlobalTools using: dotnet tool install --global JetBrains.ReSharper.GlobalTools"
+        Write-Error "InspectCode tool not found. Please run Setup first or install JetBrains.ReSharper.GlobalTools manually."
         exit 1
     }
     
-    if ($inspectCodePath) {
-        Write-Host "InspectCode tool found at: $($inspectCodePath.Source)" -ForegroundColor Green
-        $inspectCommand = "inspectcode"
-    }
-    else {
-        Write-Host "InspectCode tool found via jb command at: $($jbPath.Source)" -ForegroundColor Green
-        $inspectCommand = "jb inspectcode"
-    }
+    $inspectCommand = if ($inspectCodePath) { "inspectcode" } else { "jb inspectcode" }
+    Write-Host "Using InspectCode: $inspectCommand" -ForegroundColor Green
     
     # Find solution file if not specified
     if (-not $SolutionPath) {
@@ -67,7 +49,7 @@ try {
         exit 1
     }
     
-    Write-Host "Analyzing solution: $SolutionPath" -ForegroundColor Green
+    Write-Host "Inspecting solution: $SolutionPath" -ForegroundColor Yellow
     Write-Host "Output file: $OutputFile" -ForegroundColor Green
     Write-Host "Verbosity: $Verbosity" -ForegroundColor Green
     Write-Host ""
@@ -75,11 +57,9 @@ try {
     # Remove existing output file
     if (Test-Path $OutputFile) {
         Remove-Item $OutputFile -Force
-        Write-Host "Removed existing output file." -ForegroundColor Gray
     }
     
     # Run InspectCode
-    Write-Host "Running code inspection..." -ForegroundColor Yellow
     $startTime = Get-Date
     
     $arguments = @(
@@ -222,7 +202,27 @@ try {
     
     Write-Host ""
     Write-Host "Results saved to: $OutputFile" -ForegroundColor Green
-    Write-Host "You can open this file in Visual Studio or ReSharper for detailed analysis." -ForegroundColor Gray
+    
+    # Return non-zero exit code if issues were found (for CI/CD)
+    if ($ShowSummary -and (Test-Path $OutputFile)) {
+        try {
+            [xml]$results = Get-Content $OutputFile -Encoding UTF8
+            if ($results.Report.Issues.Project) {
+                $allIssues = @()
+                foreach ($project in $results.Report.Issues.Project) {
+                    if ($project.Issue) {
+                        $allIssues += $project.Issue
+                    }
+                }
+                if ($allIssues.Count -gt 0) {
+                    exit 2  # Exit with code 2 if issues found
+                }
+            }
+        }
+        catch {
+            # If we can't parse results, assume no issues
+        }
+    }
 }
 catch {
     Write-Error "An error occurred during code inspection: $($_.Exception.Message)"
