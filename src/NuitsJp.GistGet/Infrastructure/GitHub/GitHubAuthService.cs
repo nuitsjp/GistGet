@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -303,7 +302,7 @@ public class GitHubAuthService : IGitHubAuthService
     /// <summary>
     /// 保存されたトークンを削除してログアウトする
     /// </summary>
-    public async Task<bool> LogoutAsync()
+    public Task<bool> LogoutAsync()
     {
         try
         {
@@ -313,18 +312,18 @@ public class GitHubAuthService : IGitHubAuthService
             {
                 File.Delete(_tokenFilePath);
                 _logger.LogInformation("認証トークンを削除しました");
-                return true;
+                return Task.FromResult(true);
             }
             else
             {
                 _logger.LogInformation("認証トークンが見つかりません（既にログアウト済み）");
-                return true; // 既にログアウト済みなので成功扱い
+                return Task.FromResult(true); // 既にログアウト済みなので成功扱い
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "ログアウト処理中にエラーが発生しました: {Message}", ex.Message);
-            return false;
+            return Task.FromResult(false);
         }
     }
 }

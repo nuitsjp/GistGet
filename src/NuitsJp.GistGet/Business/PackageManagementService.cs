@@ -6,21 +6,14 @@ namespace NuitsJp.GistGet.Business;
 /// <summary>
 /// パッケージ管理操作とGist同期を統合するサービスの実装
 /// </summary>
-public class PackageManagementService : IPackageManagementService
+public class PackageManagementService(
+    IWinGetClient winGetClient,
+    IGistSyncService gistSyncService,
+    ILogger<PackageManagementService> logger) : IPackageManagementService
 {
-    private readonly IWinGetClient _winGetClient;
-    private readonly IGistSyncService _gistSyncService;
-    private readonly ILogger<PackageManagementService> _logger;
-
-    public PackageManagementService(
-        IWinGetClient winGetClient,
-        IGistSyncService gistSyncService,
-        ILogger<PackageManagementService> logger)
-    {
-        _winGetClient = winGetClient ?? throw new ArgumentNullException(nameof(winGetClient));
-        _gistSyncService = gistSyncService ?? throw new ArgumentNullException(nameof(gistSyncService));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly IWinGetClient _winGetClient = winGetClient ?? throw new ArgumentNullException(nameof(winGetClient));
+    private readonly IGistSyncService _gistSyncService = gistSyncService ?? throw new ArgumentNullException(nameof(gistSyncService));
+    private readonly ILogger<PackageManagementService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task<int> InstallPackageAsync(string[] args)
     {

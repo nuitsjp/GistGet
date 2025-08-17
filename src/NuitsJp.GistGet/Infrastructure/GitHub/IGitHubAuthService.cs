@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Octokit;
 
 namespace NuitsJp.GistGet.Infrastructure.GitHub;

@@ -8,27 +8,18 @@ namespace NuitsJp.GistGet.Presentation.GistConfig;
 /// <summary>
 /// Gist内容表示コマンドの実装（Command-Console分離版）
 /// </summary>
-public class GistShowCommand
+public class GistShowCommand(
+    IGitHubAuthService authService,
+    IGistManager gistManager,
+    IPackageYamlConverter yamlConverter,
+    IGistConfigConsole console,
+    ILogger<GistShowCommand> logger)
 {
-    private readonly IGitHubAuthService _authService;
-    private readonly IGistConfigConsole _console;
-    private readonly IGistManager _gistManager;
-    private readonly ILogger<GistShowCommand> _logger;
-    private readonly IPackageYamlConverter _yamlConverter;
-
-    public GistShowCommand(
-        IGitHubAuthService authService,
-        IGistManager gistManager,
-        IPackageYamlConverter yamlConverter,
-        IGistConfigConsole console,
-        ILogger<GistShowCommand> logger)
-    {
-        _authService = authService ?? throw new ArgumentNullException(nameof(authService));
-        _gistManager = gistManager ?? throw new ArgumentNullException(nameof(gistManager));
-        _yamlConverter = yamlConverter ?? throw new ArgumentNullException(nameof(yamlConverter));
-        _console = console ?? throw new ArgumentNullException(nameof(console));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly IGitHubAuthService _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+    private readonly IGistConfigConsole _console = console ?? throw new ArgumentNullException(nameof(console));
+    private readonly IGistManager _gistManager = gistManager ?? throw new ArgumentNullException(nameof(gistManager));
+    private readonly ILogger<GistShowCommand> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IPackageYamlConverter _yamlConverter = yamlConverter ?? throw new ArgumentNullException(nameof(yamlConverter));
 
     public async Task<int> ExecuteAsync(bool raw = false)
     {

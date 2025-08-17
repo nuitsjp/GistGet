@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NuitsJp.GistGet.Business;
@@ -18,42 +14,26 @@ using NuitsJp.GistGet.Presentation.Sync;
 using NuitsJp.GistGet.Presentation.WinGet;
 using NuitsJp.GistGet.Presentation.File;
 using Shouldly;
-using Xunit;
 
 namespace NuitsJp.GistGet.Tests.Presentation;
 
 public class CommandRouterTests
 {
-    private readonly Mock<ILogger<CommandRouter>> _mockLogger;
-    private readonly Mock<IErrorMessageService> _mockErrorMessageService;
     private readonly Mock<IGitHubAuthService> _mockAuthService;
     private readonly Mock<IGistManager> _mockGistManager;
 
     // Command dependencies
     private readonly Mock<IGistConfigService> _mockGistConfigService;
     private readonly Mock<IGistConfigConsole> _mockGistConfigConsole;
-    private readonly Mock<ILogger<GistSetCommand>> _mockGistSetLogger;
-    private readonly Mock<ILogger<GistStatusCommand>> _mockGistStatusLogger;
-    private readonly Mock<ILogger<GistShowCommand>> _mockGistShowLogger;
-    private readonly Mock<ILogger<LoginCommand>> _mockLoginLogger;
     private readonly Mock<ILoginConsole> _mockLoginConsole;
-    private readonly Mock<ILogger<LogoutCommand>> _mockLogoutLogger;
     private readonly Mock<ILogoutConsole> _mockLogoutConsole;
     private readonly Mock<IGistSyncService> _mockGistSyncService;
-    private readonly Mock<ISyncConsole> _mockSyncConsole;
-    private readonly Mock<ILogger<SyncCommand>> _mockSyncLogger;
     private readonly Mock<IPackageManagementService> _mockPackageManagementService;
     private readonly Mock<IWinGetClient> _mockWinGetClient;
-    private readonly Mock<IOsService> _mockOsService;
-    private readonly Mock<IWinGetConsole> _mockWinGetConsole;
-    private readonly Mock<ILogger<WinGetCommand>> _mockWinGetLogger;
     private readonly Mock<IPackageYamlConverter> _mockPackageYamlConverter;
 
     // New command dependencies
-    private readonly Mock<ILogger<GistClearCommand>> _mockGistClearLogger;
     private readonly Mock<IFileConsole> _mockFileConsole;
-    private readonly Mock<ILogger<DownloadCommand>> _mockDownloadLogger;
-    private readonly Mock<ILogger<UploadCommand>> _mockUploadLogger;
     private readonly Mock<IGitHubGistClient> _mockGitHubGistClient;
 
     private readonly CommandRouter _commandRouter;
@@ -61,36 +41,36 @@ public class CommandRouterTests
     public CommandRouterTests()
     {
         // Router dependencies
-        _mockLogger = new Mock<ILogger<CommandRouter>>();
-        _mockErrorMessageService = new Mock<IErrorMessageService>();
+        var mockLogger = new Mock<ILogger<CommandRouter>>();
+        var mockErrorMessageService = new Mock<IErrorMessageService>();
         _mockAuthService = new Mock<IGitHubAuthService>();
         _mockGistManager = new Mock<IGistManager>();
 
         // Command dependencies
         _mockGistConfigService = new Mock<IGistConfigService>();
         _mockGistConfigConsole = new Mock<IGistConfigConsole>();
-        _mockGistSetLogger = new Mock<ILogger<GistSetCommand>>();
-        _mockGistStatusLogger = new Mock<ILogger<GistStatusCommand>>();
-        _mockGistShowLogger = new Mock<ILogger<GistShowCommand>>();
-        _mockLoginLogger = new Mock<ILogger<LoginCommand>>();
+        var mockGistSetLogger = new Mock<ILogger<GistSetCommand>>();
+        var mockGistStatusLogger = new Mock<ILogger<GistStatusCommand>>();
+        var mockGistShowLogger = new Mock<ILogger<GistShowCommand>>();
+        var mockLoginLogger = new Mock<ILogger<LoginCommand>>();
         _mockLoginConsole = new Mock<ILoginConsole>();
-        _mockLogoutLogger = new Mock<ILogger<LogoutCommand>>();
+        var mockLogoutLogger = new Mock<ILogger<LogoutCommand>>();
         _mockLogoutConsole = new Mock<ILogoutConsole>();
         _mockGistSyncService = new Mock<IGistSyncService>();
-        _mockSyncConsole = new Mock<ISyncConsole>();
-        _mockSyncLogger = new Mock<ILogger<SyncCommand>>();
+        var mockSyncConsole = new Mock<ISyncConsole>();
+        var mockSyncLogger = new Mock<ILogger<SyncCommand>>();
         _mockPackageManagementService = new Mock<IPackageManagementService>();
         _mockWinGetClient = new Mock<IWinGetClient>();
-        _mockOsService = new Mock<IOsService>();
-        _mockWinGetConsole = new Mock<IWinGetConsole>();
-        _mockWinGetLogger = new Mock<ILogger<WinGetCommand>>();
+        var mockOsService = new Mock<IOsService>();
+        var mockWinGetConsole = new Mock<IWinGetConsole>();
+        var mockWinGetLogger = new Mock<ILogger<WinGetCommand>>();
         _mockPackageYamlConverter = new Mock<IPackageYamlConverter>();
 
         // New command mocks
-        _mockGistClearLogger = new Mock<ILogger<GistClearCommand>>();
+        var mockGistClearLogger = new Mock<ILogger<GistClearCommand>>();
         _mockFileConsole = new Mock<IFileConsole>();
-        _mockDownloadLogger = new Mock<ILogger<DownloadCommand>>();
-        _mockUploadLogger = new Mock<ILogger<UploadCommand>>();
+        var mockDownloadLogger = new Mock<ILogger<DownloadCommand>>();
+        var mockUploadLogger = new Mock<ILogger<UploadCommand>>();
         _mockGitHubGistClient = new Mock<IGitHubGistClient>();
 
         // Setup default successful returns for all commands
@@ -106,16 +86,16 @@ public class CommandRouterTests
         _mockGistManager.Setup(x => x.IsConfiguredAsync()).ReturnsAsync(true);
 
         // Create actual command instances with mocked dependencies
-        var gistSetCommand = new GistSetCommand(_mockGistConfigService.Object, _mockGistConfigConsole.Object, _mockGistSetLogger.Object);
-        var gistStatusCommand = new GistStatusCommand(_mockAuthService.Object, _mockGistManager.Object, _mockGistConfigConsole.Object, _mockGistStatusLogger.Object);
-        var gistShowCommand = new GistShowCommand(_mockAuthService.Object, _mockGistManager.Object, _mockPackageYamlConverter.Object, _mockGistConfigConsole.Object, _mockGistShowLogger.Object);
-        var gistClearCommand = new GistClearCommand(_mockGistManager.Object, _mockGistConfigConsole.Object, _mockGistClearLogger.Object);
-        var loginCommand = new LoginCommand(_mockAuthService.Object, _mockLoginConsole.Object, _mockLoginLogger.Object);
-        var logoutCommand = new LogoutCommand(_mockAuthService.Object, _mockLogoutConsole.Object, _mockLogoutLogger.Object);
-        var downloadCommand = new DownloadCommand(_mockGistManager.Object, _mockFileConsole.Object, _mockDownloadLogger.Object);
-        var uploadCommand = new UploadCommand(_mockGistManager.Object, _mockGitHubGistClient.Object, _mockFileConsole.Object, _mockUploadLogger.Object);
-        var syncCommand = new SyncCommand(_mockGistSyncService.Object, _mockSyncConsole.Object, _mockSyncLogger.Object);
-        var winGetCommand = new WinGetCommand(_mockPackageManagementService.Object, _mockWinGetClient.Object, _mockOsService.Object, _mockWinGetConsole.Object, _mockWinGetLogger.Object);
+        var gistSetCommand = new GistSetCommand(_mockGistConfigService.Object, _mockGistConfigConsole.Object, mockGistSetLogger.Object);
+        var gistStatusCommand = new GistStatusCommand(_mockAuthService.Object, _mockGistManager.Object, _mockGistConfigConsole.Object, mockGistStatusLogger.Object);
+        var gistShowCommand = new GistShowCommand(_mockAuthService.Object, _mockGistManager.Object, _mockPackageYamlConverter.Object, _mockGistConfigConsole.Object, mockGistShowLogger.Object);
+        var gistClearCommand = new GistClearCommand(_mockGistManager.Object, _mockGistConfigConsole.Object, mockGistClearLogger.Object);
+        var loginCommand = new LoginCommand(_mockAuthService.Object, _mockLoginConsole.Object, mockLoginLogger.Object);
+        var logoutCommand = new LogoutCommand(_mockAuthService.Object, _mockLogoutConsole.Object, mockLogoutLogger.Object);
+        var downloadCommand = new DownloadCommand(_mockGistManager.Object, _mockFileConsole.Object, mockDownloadLogger.Object);
+        var uploadCommand = new UploadCommand(_mockGistManager.Object, _mockGitHubGistClient.Object, _mockFileConsole.Object, mockUploadLogger.Object);
+        var syncCommand = new SyncCommand(_mockGistSyncService.Object, mockSyncConsole.Object, mockSyncLogger.Object);
+        var winGetCommand = new WinGetCommand(_mockPackageManagementService.Object, _mockWinGetClient.Object, mockOsService.Object, mockWinGetConsole.Object, mockWinGetLogger.Object);
 
         _commandRouter = new CommandRouter(
             gistSetCommand,
@@ -124,8 +104,8 @@ public class CommandRouterTests
             gistClearCommand,
             syncCommand,
             winGetCommand,
-            _mockLogger.Object,
-            _mockErrorMessageService.Object,
+            mockLogger.Object,
+            mockErrorMessageService.Object,
             _mockAuthService.Object,
             _mockGistManager.Object,
             loginCommand,
@@ -142,7 +122,7 @@ public class CommandRouterTests
     public async Task ExecuteAsync_WhenCommandRequiresAuthentication_ShouldCallEnsureAuthenticatedAsync(string command)
     {
         // Arrange
-        var args = new[] { command, "test-package" };
+        string[] args = [command, "test-package"];
         _mockAuthService.SetupSequence(x => x.IsAuthenticatedAsync())
             .ReturnsAsync(false)  // First call - not authenticated
             .ReturnsAsync(true);  // After login - authenticated
@@ -164,7 +144,7 @@ public class CommandRouterTests
     public async Task ExecuteAsync_WhenGistSubCommandRequiresAuthentication_ShouldCallEnsureAuthenticatedAsync(string command, string subCommand)
     {
         // Arrange
-        var args = new[] { command, subCommand };
+        string[] args = [command, subCommand];
         _mockAuthService.SetupSequence(x => x.IsAuthenticatedAsync())
             .ReturnsAsync(false)  // First call in CommandRouter - not authenticated
             .ReturnsAsync(true)   // After AuthenticateAsync in CommandRouter - authenticated
@@ -209,7 +189,7 @@ public class CommandRouterTests
     public async Task ExecuteAsync_WhenCommandDoesNotRequireAuthentication_ShouldNotCallEnsureAuthenticatedAsync(string command, string subCommand = null)
     {
         // Arrange
-        var args = subCommand != null ? new[] { command, subCommand } : new[] { command };
+        string[] args = subCommand != null ? [command, subCommand] : [command];
 
         // Set up per-test mocks for specific commands
         if (command == "gist" && subCommand == "status")
@@ -245,7 +225,7 @@ public class CommandRouterTests
     public async Task ExecuteAsync_WhenLoginCommand_ShouldCallAuthenticateAsyncDirectly()
     {
         // Arrange
-        var args = new[] { "login" };
+        string[] args = ["login"];
 
         // Act  
         var result = await _commandRouter.ExecuteAsync(args);
@@ -270,7 +250,7 @@ public class CommandRouterTests
     public async Task ExecuteAsync_CommandAliases_ShouldBeNormalizedToCanonicalCommand(string alias, string expectedCommand)
     {
         // Arrange
-        var args = new[] { alias, "test-package" };
+        string[] args = [alias, "test-package"];
 
         // Mock for authenticated user (needed for COM commands)
         _mockAuthService.Setup(x => x.IsAuthenticatedAsync()).ReturnsAsync(true);

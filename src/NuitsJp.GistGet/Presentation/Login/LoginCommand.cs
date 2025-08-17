@@ -6,21 +6,11 @@ namespace NuitsJp.GistGet.Presentation.Login;
 /// <summary>
 /// ログインコマンドの実装（Command-Console分離版）
 /// </summary>
-public class LoginCommand
+public class LoginCommand(
+    IGitHubAuthService authService,
+    ILoginConsole console,
+    ILogger<LoginCommand> logger)
 {
-    private readonly IGitHubAuthService _authService;
-    private readonly ILoginConsole _console;
-    private readonly ILogger<LoginCommand> _logger;
-
-    public LoginCommand(
-        IGitHubAuthService authService,
-        ILoginConsole console,
-        ILogger<LoginCommand> logger)
-    {
-        _authService = authService;
-        _console = console;
-        _logger = logger;
-    }
 
     /// <summary>
     /// ログインコマンドを実行
@@ -46,8 +36,8 @@ public class LoginCommand
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "ログインコマンドの実行中にエラーが発生しました");
-            _console.ShowError(ex, "ログインコマンドの実行中にエラーが発生しました");
+            logger.LogError(ex, "ログインコマンドの実行中にエラーが発生しました");
+            console.ShowError(ex, "ログインコマンドの実行中にエラーが発生しました");
             return 1;
         }
     }
@@ -59,23 +49,23 @@ public class LoginCommand
     {
         try
         {
-            using var progress = _console.BeginProgress("GitHubログイン");
+            using var progress = console.BeginProgress("GitHubログイン");
 
-            var success = await _authService.AuthenticateAsync();
+            var success = await authService.AuthenticateAsync();
 
             if (success)
             {
-                _console.NotifyAuthSuccess();
+                console.NotifyAuthSuccess();
                 return 0;
             }
 
-            _console.NotifyAuthFailure("ログインに失敗しました");
+            console.NotifyAuthFailure("ログインに失敗しました");
             return 1;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "ログインフロー実行中にエラーが発生しました");
-            _console.NotifyAuthFailure($"ログインエラー: {ex.Message}");
+            logger.LogError(ex, "ログインフロー実行中にエラーが発生しました");
+            console.NotifyAuthFailure($"ログインエラー: {ex.Message}");
             return 1;
         }
     }
@@ -87,13 +77,13 @@ public class LoginCommand
     {
         try
         {
-            var isAuthenticated = await _authService.IsAuthenticatedAsync();
+            var isAuthenticated = await authService.IsAuthenticatedAsync();
             string? tokenInfo = null;
 
             if (isAuthenticated)
                 try
                 {
-                    var client = await _authService.GetAuthenticatedClientAsync();
+                    var client = await authService.GetAuthenticatedClientAsync();
                     if (client != null)
                     {
                         var user = await client.User.Current();
@@ -102,16 +92,16 @@ public class LoginCommand
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "ユーザー情報の取得に失敗しました");
+                    logger.LogWarning(ex, "ユーザー情報の取得に失敗しました");
                     tokenInfo = "ユーザー情報取得失敗";
                 }
 
-            _console.ShowAuthStatus(isAuthenticated, tokenInfo);
+            console.ShowAuthStatus(isAuthenticated, tokenInfo);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "ログイン状態確認中にエラーが発生しました");
-            _console.ShowError(ex, "ログイン状態の確認に失敗しました");
+            logger.LogError(ex, "ログイン状態確認中にエラーが発生しました");
+            console.ShowError(ex, "ログイン状態の確認に失敗しました");
         }
     }
 }

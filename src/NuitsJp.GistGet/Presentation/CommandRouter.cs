@@ -29,34 +29,20 @@ public class CommandRouter(
     DownloadCommand downloadCommand,
     UploadCommand uploadCommand) : ICommandRouter
 {
-    private readonly IGitHubAuthService _authService = authService;
-    private readonly IErrorMessageService _errorMessageService = errorMessageService;
-    private readonly IGistManager _gistManager = gistManager;
-    private readonly GistSetCommand _gistSetCommand = gistSetCommand;
-    private readonly GistShowCommand _gistShowCommand = gistShowCommand;
-    private readonly GistStatusCommand _gistStatusCommand = gistStatusCommand;
-    private readonly GistClearCommand _gistClearCommand = gistClearCommand;
-    private readonly ILogger<CommandRouter> _logger = logger;
-    private readonly LoginCommand _loginCommand = loginCommand;
-    private readonly LogoutCommand _logoutCommand = logoutCommand;
-    private readonly DownloadCommand _downloadCommand = downloadCommand;
-    private readonly UploadCommand _uploadCommand = uploadCommand;
-    private readonly SyncCommand _syncCommand = syncCommand;
-    private readonly WinGetCommand _winGetCommand = winGetCommand;
 
     public async Task<int> ExecuteAsync(string[] args)
     {
         try
         {
-            _logger.LogInformation("Executing command with args: {Args}", string.Join(" ", args));
+            logger.LogInformation("Executing command with args: {Args}", string.Join(" ", args));
 
             if (args.Length == 0)
                 // 引数がない場合はwingetのヘルプを表示
-                return await _winGetCommand.ExecutePassthroughAsync(["--help"]);
+                return await winGetCommand.ExecutePassthroughAsync(["--help"]);
 
             // サイレントモードの検出と除去
             var (isSilentMode, filteredArgs) = ExtractSilentMode(args);
-            _logger.LogDebug("Silent mode: {IsSilentMode}", isSilentMode);
+            logger.LogDebug("Silent mode: {IsSilentMode}", isSilentMode);
 
             var command = NormalizeCommand(filteredArgs[0].ToLowerInvariant());
 
@@ -76,22 +62,22 @@ public class CommandRouter(
         }
         catch (COMException comEx)
         {
-            _errorMessageService.HandleComException(comEx);
+            errorMessageService.HandleComException(comEx);
             return 1;
         }
         catch (HttpRequestException httpEx)
         {
-            _errorMessageService.HandleNetworkException(httpEx);
+            errorMessageService.HandleNetworkException(httpEx);
             return 1;
         }
         catch (InvalidOperationException invEx) when (invEx.Message.Contains("not found"))
         {
-            _errorMessageService.HandlePackageNotFoundException(invEx);
+            errorMessageService.HandlePackageNotFoundException(invEx);
             return 1;
         }
         catch (Exception ex)
         {
-            _errorMessageService.HandleUnexpectedException(ex);
+            errorMessageService.HandleUnexpectedException(ex);
             return 1;
         }
     }
@@ -106,8 +92,8 @@ public class CommandRouter(
         var isLogoutCommand = command is "logout";
         var isGistSubCommand = command is "gist";
 
-        if (isLoginCommand) return await _loginCommand.ExecuteAsync(args);
-        if (isLogoutCommand) return await _logoutCommand.ExecuteAsync(args);
+        if (isLoginCommand) return await loginCommand.ExecuteAsync(args);
+        if (isLogoutCommand) return await logoutCommand.ExecuteAsync(args);
 
         if (usesFileGist) return await HandleFileGistCommandAsync(command, args);
 
@@ -120,12 +106,12 @@ public class CommandRouter(
 
         if (usesPassthrough)
         {
-            _logger.LogDebug("Routing to passthrough client for explicit command: {Command}", command);
-            return await _winGetCommand.ExecutePassthroughAsync(args);
+            logger.LogDebug("Routing to passthrough client for explicit command: {Command}", command);
+            return await winGetCommand.ExecutePassthroughAsync(args);
         }
 
-        _logger.LogDebug("Routing to passthrough client for unknown command: {Command}", command);
-        return await _winGetCommand.ExecutePassthroughAsync(args);
+        logger.LogDebug("Routing to passthrough client for unknown command: {Command}", command);
+        return await winGetCommand.ExecutePassthroughAsync(args);
     }
 
     private async Task<int> HandleGistSubCommandAsync(string[] args)
@@ -150,14 +136,14 @@ public class CommandRouter(
         }
 
         var subCommand = args[1].ToLowerInvariant();
-        _logger.LogDebug("Routing to Gist sub-command: {SubCommand}", subCommand);
+        logger.LogDebug("Routing to Gist sub-command: {SubCommand}", subCommand);
 
         return subCommand switch
         {
             "set" => await HandleGistSetAsync(args),
-            "status" => await _gistStatusCommand.ExecuteAsync(),
+            "status" => await gistStatusCommand.ExecuteAsync(),
             "show" => await HandleGistShowAsync(args),
-            "clear" => await _gistClearCommand.ExecuteAsync(),
+            "clear" => await gistClearCommand.ExecuteAsync(),
             _ => await ShowGistSubCommandHelp(subCommand)
         };
     }
@@ -180,13 +166,13 @@ public class CommandRouter(
                 i++; // Skip next argument
             }
 
-        return await _gistSetCommand.ExecuteAsync(gistId, fileName);
+        return await gistSetCommand.ExecuteAsync(gistId, fileName);
     }
 
     private async Task<int> HandleGistShowAsync(string[] args)
     {
         var raw = args.Contains("--raw");
-        return await _gistShowCommand.ExecuteAsync(raw);
+        return await gistShowCommand.ExecuteAsync(raw);
     }
 
     private Task<int> ShowGistSubCommandHelp(string invalidSubCommand)
@@ -240,22 +226,22 @@ public class CommandRouter(
     /// </summary>
     private async Task<bool> EnsureAuthenticatedAsync(bool isSilentMode = false)
     {
-        if (await _authService.IsAuthenticatedAsync()) return true;
+        if (await authService.IsAuthenticatedAsync()) return true;
 
         if (isSilentMode)
         {
-            _logger.LogError("Silent mode: Authentication required but not available");
+            logger.LogError("Silent mode: Authentication required but not available");
             System.Console.Error.WriteLine("Error: Authentication required but not available in silent mode.");
             System.Console.Error.WriteLine("Please run 'gistget login' first.");
             return false;
         }
 
-        _logger.LogInformation("認証が必要です。ログインを開始します...");
+        logger.LogInformation("認証が必要です。ログインを開始します...");
         System.Console.WriteLine("認証が必要です。GitHubログインを開始します...");
 
         // テストで期待されるAuthenticateAsyncメソッドを直接呼び出し
-        await _authService.AuthenticateAsync();
-        return await _authService.IsAuthenticatedAsync();
+        await authService.AuthenticateAsync();
+        return await authService.IsAuthenticatedAsync();
     }
 
     /// <summary>
@@ -263,53 +249,53 @@ public class CommandRouter(
     /// </summary>
     private async Task<bool> EnsureGistConfiguredAsync(bool isSilentMode = false)
     {
-        if (await _gistManager.IsConfiguredAsync()) return true;
+        if (await gistManager.IsConfiguredAsync()) return true;
 
         if (isSilentMode)
         {
-            _logger.LogError("Silent mode: Gist configuration required but not available");
+            logger.LogError("Silent mode: Gist configuration required but not available");
             System.Console.Error.WriteLine("Error: Gist configuration required but not available in silent mode.");
             System.Console.Error.WriteLine("Please run 'gistget gist set' first.");
             return false;
         }
 
-        _logger.LogInformation("Gist設定が必要です。設定を開始します...");
+        logger.LogInformation("Gist設定が必要です。設定を開始します...");
         System.Console.WriteLine("Gist設定が必要です。設定を開始します...");
 
         // GistSetCommandを実行（対話形式）
-        var result = await _gistSetCommand.ExecuteAsync(null, null);
+        var result = await gistSetCommand.ExecuteAsync(null, null);
         return result == 0;
     }
 
     private Task<int> HandleGistCommandAsync(string command, string[] args)
     {
-        _logger.LogDebug("Routing to Gist service for command: {Command}", command);
+        logger.LogDebug("Routing to Gist service for command: {Command}", command);
         return command switch
         {
-            "sync" => _syncCommand.ExecuteAsync(args),
+            "sync" => syncCommand.ExecuteAsync(args),
             _ => throw new ArgumentException($"Unsupported gist command: {command}")
         };
     }
 
     private async Task<int> HandleComCommandAsync(string command, string[] args)
     {
-        _logger.LogDebug("Routing to WinGet COM command: {Command}", command);
+        logger.LogDebug("Routing to WinGet COM command: {Command}", command);
         return command switch
         {
-            "install" => await _winGetCommand.ExecuteInstallAsync(args),
-            "uninstall" => await _winGetCommand.ExecuteUninstallAsync(args),
-            "upgrade" => await _winGetCommand.ExecuteUpgradeAsync(args),
+            "install" => await winGetCommand.ExecuteInstallAsync(args),
+            "uninstall" => await winGetCommand.ExecuteUninstallAsync(args),
+            "upgrade" => await winGetCommand.ExecuteUpgradeAsync(args),
             _ => throw new ArgumentException($"Unsupported COM command: {command}")
         };
     }
 
     private async Task<int> HandleFileGistCommandAsync(string command, string[] args)
     {
-        _logger.LogDebug("Routing to file Gist command: {Command}", command);
+        logger.LogDebug("Routing to file Gist command: {Command}", command);
         return command switch
         {
-            "download" => await _downloadCommand.ExecuteAsync(args),
-            "upload" => await _uploadCommand.ExecuteAsync(args),
+            "download" => await downloadCommand.ExecuteAsync(args),
+            "upload" => await uploadCommand.ExecuteAsync(args),
             _ => throw new ArgumentException($"Unsupported file Gist command: {command}")
         };
     }
@@ -319,7 +305,7 @@ public class CommandRouter(
     /// </summary>
     private static (bool isSilentMode, string[] filteredArgs) ExtractSilentMode(string[] args)
     {
-        var silentFlags = new[] { "--silent", "-s" };
+        string[] silentFlags = ["--silent", "-s"];
         var filteredList = new List<string>();
         var isSilentMode = false;
 

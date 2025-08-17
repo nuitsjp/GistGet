@@ -53,9 +53,9 @@ public class PackageDefinition : IEquatable<PackageDefinition>, IComparable<Pack
     public string? Version { get; init; }
     public bool? Uninstall { get; init; }
     public string? Architecture { get; init; }
-    public string? Scope { get; set; }
-    public string? Source { get; set; }
-    public string? Custom { get; set; }
+    public string? Scope { get; init; }
+    public string? Source { get; init; }
+    public string? Custom { get; init; }
     public bool? AllowHashMismatch { get; init; }
     public bool? Force { get; init; }
     public string? Header { get; init; }

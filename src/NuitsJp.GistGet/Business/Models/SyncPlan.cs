@@ -11,22 +11,22 @@ public class SyncPlan
     /// <summary>
     /// インストール対象のパッケージリスト
     /// </summary>
-    public List<PackageDefinition> ToInstall { get; set; } = [];
+    public List<PackageDefinition> ToInstall { get; } = [];
 
     /// <summary>
     /// アンインストール対象のパッケージリスト（Uninstallフラグがtrueのもの）
     /// </summary>
-    public List<PackageDefinition> ToUninstall { get; set; } = [];
+    public List<PackageDefinition> ToUninstall { get; } = [];
 
     /// <summary>
     /// 既にインストール済みのパッケージリスト（冪等性確保のためスキップ）
     /// </summary>
-    public List<PackageDefinition> AlreadyInstalled { get; set; } = [];
+    public List<PackageDefinition> AlreadyInstalled { get; } = [];
 
     /// <summary>
     /// Gist定義に存在するが、WinGetカタログで見つからないパッケージリスト
     /// </summary>
-    public List<PackageDefinition> NotFound { get; set; } = [];
+    public List<PackageDefinition> NotFound { get; } = [];
 
     /// <summary>
     /// 計画が空（実行すべき操作がない）かどうかを判定

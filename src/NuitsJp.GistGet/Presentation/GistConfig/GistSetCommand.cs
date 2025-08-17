@@ -7,21 +7,14 @@ namespace NuitsJp.GistGet.Presentation.GistConfig;
 /// <summary>
 /// Gist設定コマンドの実装（Command-Console分離版）
 /// </summary>
-public class GistSetCommand
+public class GistSetCommand(
+    IGistConfigService gistConfigService,
+    IGistConfigConsole console,
+    ILogger<GistSetCommand> logger)
 {
-    private readonly IGistConfigConsole _console;
-    private readonly IGistConfigService _gistConfigService;
-    private readonly ILogger<GistSetCommand> _logger;
-
-    public GistSetCommand(
-        IGistConfigService gistConfigService,
-        IGistConfigConsole console,
-        ILogger<GistSetCommand> logger)
-    {
-        _gistConfigService = gistConfigService ?? throw new ArgumentNullException(nameof(gistConfigService));
-        _console = console ?? throw new ArgumentNullException(nameof(console));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly IGistConfigConsole _console = console ?? throw new ArgumentNullException(nameof(console));
+    private readonly IGistConfigService _gistConfigService = gistConfigService ?? throw new ArgumentNullException(nameof(gistConfigService));
+    private readonly ILogger<GistSetCommand> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task<int> ExecuteAsync(string? gistId, string? fileName)
     {

@@ -8,17 +8,17 @@ public class SyncResult
     /// <summary>
     /// 正常にインストールされたパッケージIDのリスト
     /// </summary>
-    public List<string> InstalledPackages { get; set; } = [];
+    public List<string> InstalledPackages { get; } = [];
 
     /// <summary>
     /// 正常にアンインストールされたパッケージIDのリスト
     /// </summary>
-    public List<string> UninstalledPackages { get; set; } = [];
+    public List<string> UninstalledPackages { get; } = [];
 
     /// <summary>
     /// インストールまたはアンインストールに失敗したパッケージIDのリスト
     /// </summary>
-    public List<string> FailedPackages { get; set; } = [];
+    public List<string> FailedPackages { get; } = [];
 
     /// <summary>
     /// 再起動が必要かどうかを示すフラグ

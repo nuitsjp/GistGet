@@ -1,7 +1,4 @@
-using System.Diagnostics;
-using System.Text;
 using Microsoft.Extensions.Logging;
-using Moq;
 using NuitsJp.GistGet.Infrastructure.WinGet;
 using Shouldly;
 using Xunit.Abstractions;

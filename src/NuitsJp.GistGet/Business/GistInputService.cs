@@ -5,7 +5,7 @@ namespace NuitsJp.GistGet.Business;
 
 public class GistInputService
 {
-    private static readonly Regex GistIdPattern = new(@"^[a-fA-F0-9]{32}$", RegexOptions.Compiled);
+    private static readonly Regex GistIdPattern = new("^[a-fA-F0-9]{32}$", RegexOptions.Compiled);
 
     private static readonly Regex GistUrlPattern =
         new(@"(?:https://gist\.github\.com/[^/]+/)?([a-fA-F0-9]{32})", RegexOptions.Compiled);

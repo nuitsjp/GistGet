@@ -261,12 +261,12 @@ public class GitHubGistClientTests : IAsyncLifetime
 
         // Arrange
         var client = new GitHubGistClient(_authService, _mockLogger.Object);
-        var testGistName = GenerateTestGistName(nameof(CreateReadUpdateDelete_FullWorkflow_ShouldWork));
-        var fileName = "packages.yaml";
-        var initialContent = "# Test YAML\npackages:\n  - id: test.package\n    version: 1.0.0";
-        var updatedContent = "# Updated Test YAML\npackages:\n  - id: test.package\n    version: 2.0.0";
+        // var testGistName = GenerateTestGistName(nameof(CreateReadUpdateDelete_FullWorkflow_ShouldWork));
+        // var fileName = "packages.yaml";
+        // var initialContent = "# Test YAML\npackages:\n  - id: test.package\n    version: 1.0.0";
+        // var updatedContent = "# Updated Test YAML\npackages:\n  - id: test.package\n    version: 2.0.0";
 
-        string? createdGistId = null;
+        // string? createdGistId = null;
 
         // Act 1: Create Gist (実装待ち - GitHub APIのCreateGist)
         // createdGistId = await client.CreateAsync(testGistName, fileName, initialContent, isPublic: false);
@@ -318,7 +318,7 @@ public class GitHubGistClientTests : IAsyncLifetime
 
         // Arrange
         var client = new GitHubGistClient(_authService, _mockLogger.Object);
-        var largeContent = new string('x', 100000); // 100KB content
+        // var largeContent = new string('x', 100000); // 100KB content
 
         // このテストも Create/Update API実装後に有効化
         // GitHub Gistの制限（ファイルサイズ上限）をテストする予定

@@ -8,24 +8,16 @@ namespace NuitsJp.GistGet.Presentation.GistConfig;
 /// <summary>
 /// Gist状態確認コマンドの実装（Command-Console分離版）
 /// </summary>
-public class GistStatusCommand
+public class GistStatusCommand(
+    IGitHubAuthService authService,
+    IGistManager gistManager,
+    IGistConfigConsole console,
+    ILogger<GistStatusCommand> logger)
 {
-    private readonly IGitHubAuthService _authService;
-    private readonly IGistConfigConsole _console;
-    private readonly IGistManager _gistManager;
-    private readonly ILogger<GistStatusCommand> _logger;
-
-    public GistStatusCommand(
-        IGitHubAuthService authService,
-        IGistManager gistManager,
-        IGistConfigConsole console,
-        ILogger<GistStatusCommand> logger)
-    {
-        _authService = authService ?? throw new ArgumentNullException(nameof(authService));
-        _gistManager = gistManager ?? throw new ArgumentNullException(nameof(gistManager));
-        _console = console ?? throw new ArgumentNullException(nameof(console));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly IGitHubAuthService _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+    private readonly IGistConfigConsole _console = console ?? throw new ArgumentNullException(nameof(console));
+    private readonly IGistManager _gistManager = gistManager ?? throw new ArgumentNullException(nameof(gistManager));
+    private readonly ILogger<GistStatusCommand> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task<int> ExecuteAsync()
     {

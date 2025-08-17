@@ -198,34 +198,34 @@ public class PackageYamlConverter : IPackageYamlConverter
 
     private class PackageYamlItem
     {
-        public string Id { get; set; } = string.Empty;
-        public string? Version { get; set; }
-        public bool? Uninstall { get; set; }
-        public string? Architecture { get; set; }
-        public string? Scope { get; set; }
-        public string? Source { get; set; }
-        public string? Custom { get; set; }
+        public string Id { get; init; } = string.Empty;
+        public string? Version { get; init; }
+        public bool? Uninstall { get; init; }
+        public string? Architecture { get; init; }
+        public string? Scope { get; init; }
+        public string? Source { get; init; }
+        public string? Custom { get; init; }
     }
 
     private class PackageYamlProperties
     {
-        public string? Version { get; set; }
-        public bool? Uninstall { get; set; }
-        public string? Architecture { get; set; }
-        public string? Scope { get; set; }
-        public string? Source { get; set; }
-        public string? Custom { get; set; }
-        public bool? AllowHashMismatch { get; set; }
-        public bool? Force { get; set; }
-        public string? Header { get; set; }
-        public string? InstallerType { get; set; }
-        public string? Locale { get; set; }
-        public string? Location { get; set; }
-        public string? Log { get; set; }
-        public string? Mode { get; set; }
-        public string? Override { get; set; }
-        public bool? SkipDependencies { get; set; }
-        public bool? Confirm { get; set; }
-        public bool? WhatIf { get; set; }
+        public string? Version { get; init; }
+        public bool? Uninstall { get; init; }
+        public string? Architecture { get; init; }
+        public string? Scope { get; init; }
+        public string? Source { get; init; }
+        public string? Custom { get; init; }
+        public bool? AllowHashMismatch { get; init; }
+        public bool? Force { get; init; }
+        public string? Header { get; init; }
+        public string? InstallerType { get; init; }
+        public string? Locale { get; init; }
+        public string? Location { get; init; }
+        public string? Log { get; init; }
+        public string? Mode { get; init; }
+        public string? Override { get; init; }
+        public bool? SkipDependencies { get; init; }
+        public bool? Confirm { get; init; }
+        public bool? WhatIf { get; init; }
     }
 }

@@ -16,7 +16,7 @@ public class MockWinGetClient : IWinGetClient
     public Exception? ShouldThrowOnInstall { get; set; }
     public Exception? ShouldThrowOnUninstall { get; set; }
     public Exception? ShouldThrowOnUpgrade { get; set; }
-    public int ShouldReturnErrorCode { get; set; } = 0;
+    public int ShouldReturnErrorCode { get; } = 0;
 
     public Task InitializeAsync()
     {

@@ -2,7 +2,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NuitsJp.GistGet.Infrastructure.GitHub;
 using NuitsJp.GistGet.Presentation.Login;
-using Xunit;
 
 namespace NuitsJp.GistGet.Tests.Presentation.Commands;
 
@@ -13,19 +12,18 @@ public class LogoutCommandTests
 {
     private readonly Mock<IGitHubAuthService> _mockAuthService;
     private readonly Mock<ILogoutConsole> _mockConsole;
-    private readonly Mock<ILogger<LogoutCommand>> _mockLogger;
     private readonly LogoutCommand _command;
 
     public LogoutCommandTests()
     {
         _mockAuthService = new Mock<IGitHubAuthService>();
         _mockConsole = new Mock<ILogoutConsole>();
-        _mockLogger = new Mock<ILogger<LogoutCommand>>();
+        var mockLogger = new Mock<ILogger<LogoutCommand>>();
 
         _command = new LogoutCommand(
             _mockAuthService.Object,
             _mockConsole.Object,
-            _mockLogger.Object);
+            mockLogger.Object);
     }
 
     [Fact]
@@ -36,7 +34,7 @@ public class LogoutCommandTests
         _mockAuthService.Setup(x => x.LogoutAsync()).ReturnsAsync(true);
 
         // Act
-        var result = await _command.ExecuteAsync(new[] { "logout" });
+        var result = await _command.ExecuteAsync(["logout"]);
 
         // Assert
         Assert.Equal(0, result);
@@ -68,7 +66,7 @@ public class LogoutCommandTests
         _mockConsole.Setup(x => x.ConfirmLogout()).Returns(false);
 
         // Act
-        var result = await _command.ExecuteAsync(new[] { "logout" });
+        var result = await _command.ExecuteAsync(["logout"]);
 
         // Assert
         Assert.Equal(0, result); // キャンセルは正常終了扱い
@@ -85,7 +83,7 @@ public class LogoutCommandTests
         _mockAuthService.Setup(x => x.LogoutAsync()).ReturnsAsync(false);
 
         // Act
-        var result = await _command.ExecuteAsync(new[] { "logout" });
+        var result = await _command.ExecuteAsync(["logout"]);
 
         // Assert
         Assert.Equal(1, result);
@@ -100,7 +98,7 @@ public class LogoutCommandTests
         _mockAuthService.Setup(x => x.LogoutAsync()).ThrowsAsync(new Exception("Test exception"));
 
         // Act
-        var result = await _command.ExecuteAsync(new[] { "logout" });
+        var result = await _command.ExecuteAsync(["logout"]);
 
         // Assert
         Assert.Equal(1, result);

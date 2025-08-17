@@ -136,9 +136,11 @@ public class PackageCollectionTests
     public void Clear_ShouldRemoveAllPackages()
     {
         // Arrange
-        var collection = new PackageCollection();
-        collection.Add(new PackageDefinition("Package1"));
-        collection.Add(new PackageDefinition("Package2"));
+        var collection = new PackageCollection
+        {
+            new PackageDefinition("Package1"),
+            new PackageDefinition("Package2")
+        };
 
         // Act
         collection.Clear();

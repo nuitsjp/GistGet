@@ -7,11 +7,8 @@ namespace NuitsJp.GistGet.Presentation.Sync;
 /// <summary>
 /// Syncコマンド用コンソール実装（標準版）
 /// </summary>
-public class SyncConsole : ConsoleBase, ISyncConsole
+public class SyncConsole(ILogger<SyncConsole>? logger = null) : ConsoleBase(logger), ISyncConsole
 {
-    public SyncConsole(ILogger<SyncConsole>? logger = null) : base(logger)
-    {
-    }
 
     /// <summary>
     /// 同期開始を通知

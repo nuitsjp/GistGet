@@ -16,7 +16,6 @@ public class WinGetCommandTests
 {
     private readonly Mock<IWinGetConsole> _mockConsole;
     private readonly Mock<IPackageManagementService> _mockPackageManagementService;
-    private readonly Mock<ILogger<WinGetCommand>> _mockLogger;
     private readonly Mock<IOsService> _mockOsService;
     private readonly Mock<IWinGetClient> _mockWinGetClient;
     private readonly WinGetCommand _winGetCommand;
@@ -27,14 +26,14 @@ public class WinGetCommandTests
         _mockWinGetClient = new Mock<IWinGetClient>();
         _mockOsService = new Mock<IOsService>();
         _mockConsole = new Mock<IWinGetConsole>();
-        _mockLogger = new Mock<ILogger<WinGetCommand>>();
+        var mockLogger = new Mock<ILogger<WinGetCommand>>();
 
         _winGetCommand = new WinGetCommand(
             _mockPackageManagementService.Object,
             _mockWinGetClient.Object,
             _mockOsService.Object,
             _mockConsole.Object,
-            _mockLogger.Object);
+            mockLogger.Object);
     }
 
     #region ExecuteUninstallAsync Tests

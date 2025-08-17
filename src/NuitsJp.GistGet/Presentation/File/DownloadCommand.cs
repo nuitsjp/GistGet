@@ -7,21 +7,11 @@ namespace NuitsJp.GistGet.Presentation.File;
 /// downloadコマンドの実装
 /// Gist定義ファイルをローカルにダウンロードする
 /// </summary>
-public class DownloadCommand
+public class DownloadCommand(
+    IGistManager gistManager,
+    IFileConsole console,
+    ILogger<DownloadCommand> logger)
 {
-    private readonly IGistManager _gistManager;
-    private readonly IFileConsole _console;
-    private readonly ILogger<DownloadCommand> _logger;
-
-    public DownloadCommand(
-        IGistManager gistManager,
-        IFileConsole console,
-        ILogger<DownloadCommand> logger)
-    {
-        _gistManager = gistManager;
-        _console = console;
-        _logger = logger;
-    }
 
     /// <summary>
     /// downloadコマンドを実行
@@ -30,37 +20,37 @@ public class DownloadCommand
     {
         try
         {
-            _logger.LogInformation("downloadコマンドを開始します");
+            logger.LogInformation("downloadコマンドを開始します");
 
             // オプション解析
             var options = ParseOptions(args);
 
             // Gist設定確認
-            if (!await _gistManager.IsConfiguredAsync())
+            if (!await gistManager.IsConfiguredAsync())
             {
-                _console.ShowError(new InvalidOperationException("Gist設定がありません"),
+                console.ShowError(new InvalidOperationException("Gist設定がありません"),
                     "Gist設定がありません。先に 'gistget gist set' を実行してください。");
                 return 1;
             }
 
-            var config = await _gistManager.GetConfigurationAsync();
+            var config = await gistManager.GetConfigurationAsync();
             var fileName = config.FileName;
 
-            _console.NotifyDownloadStarting(fileName);
+            console.NotifyDownloadStarting(fileName);
 
             // Gistからコンテンツを取得
-            var content = await _gistManager.GetGistContentAsync();
+            var content = await gistManager.GetGistContentAsync();
 
             // 出力ファイルパスを決定
             var outputPath = options.OutputPath ?? (options.Interactive ?
-                _console.GetOutputFilePath(fileName) : fileName);
+                console.GetOutputFilePath(fileName) : fileName);
 
             // ファイル上書き確認
             if (System.IO.File.Exists(outputPath) && !options.Force)
             {
-                if (!options.Interactive || !_console.ConfirmFileOverwrite(outputPath))
+                if (!options.Interactive || !console.ConfirmFileOverwrite(outputPath))
                 {
-                    _logger.LogInformation("ユーザーがファイル上書きをキャンセルしました");
+                    logger.LogInformation("ユーザーがファイル上書きをキャンセルしました");
                     return 0; // キャンセルは正常終了扱い
                 }
             }
@@ -68,15 +58,15 @@ public class DownloadCommand
             // ファイルに保存
             await System.IO.File.WriteAllTextAsync(outputPath, content);
 
-            _console.NotifyDownloadSuccess(fileName, outputPath);
-            _logger.LogInformation("ダウンロードが完了しました: {OutputPath}", outputPath);
+            console.NotifyDownloadSuccess(fileName, outputPath);
+            logger.LogInformation("ダウンロードが完了しました: {OutputPath}", outputPath);
 
             return 0;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "downloadコマンドの実行中にエラーが発生しました");
-            _console.ShowError(ex, "ダウンロード処理でエラーが発生しました");
+            logger.LogError(ex, "downloadコマンドの実行中にエラーが発生しました");
+            console.ShowError(ex, "ダウンロード処理でエラーが発生しました");
             return 1;
         }
     }

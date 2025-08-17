@@ -7,14 +7,8 @@ namespace NuitsJp.GistGet.Infrastructure.WinGet;
 /// <summary>
 /// WinGetのストリーミングパススルークライアント実装
 /// </summary>
-public class WinGetPassthroughClient : IWinGetPassthroughClient
+public class WinGetPassthroughClient(ILogger<WinGetPassthroughClient> logger) : IWinGetPassthroughClient
 {
-    private readonly ILogger<WinGetPassthroughClient> _logger;
-
-    public WinGetPassthroughClient(ILogger<WinGetPassthroughClient> logger)
-    {
-        _logger = logger;
-    }
 
     /// <summary>
     /// winget.exeを実行し、引数をそのまま渡してストリーミング処理を行う
@@ -32,7 +26,7 @@ public class WinGetPassthroughClient : IWinGetPassthroughClient
             Console.InputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
             Console.OutputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
-            _logger.LogDebug("Console.OutputEncoding temporarily set to: {EncodingName}", Console.OutputEncoding.EncodingName);
+            logger.LogDebug("Console.OutputEncoding temporarily set to: {EncodingName}", Console.OutputEncoding.EncodingName);
 
             // winget.exeは常にUTF-8で出力するため、明示的にUTF-8を指定
             var psi = new ProcessStartInfo
@@ -67,13 +61,13 @@ public class WinGetPassthroughClient : IWinGetPassthroughClient
         }
         catch (System.ComponentModel.Win32Exception ex)
         {
-            _logger.LogError(ex, "winget.exe の起動に失敗しました: {Message}", ex.Message);
+            logger.LogError(ex, "winget.exe の起動に失敗しました: {Message}", ex.Message);
             Console.Error.WriteLine($"winget.exe の起動に失敗しました: {ex.Message}");
             return 1;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "エラーが発生しました: {Message}", ex.Message);
+            logger.LogError(ex, "エラーが発生しました: {Message}", ex.Message);
             Console.Error.WriteLine($"エラーが発生しました: {ex}");
             return 1;
         }
@@ -82,7 +76,7 @@ public class WinGetPassthroughClient : IWinGetPassthroughClient
             // 元のエンコーディングに復元
             Console.InputEncoding = inputEncoding;
             Console.OutputEncoding = outputEncoding;
-            _logger.LogDebug("Console encodings restored to original values");
+            logger.LogDebug("Console encodings restored to original values");
         }
     }
 

@@ -17,34 +17,28 @@ public class ProcessWrapper : IProcessWrapper
 /// <summary>
 /// プロセス実行結果の実装
 /// </summary>
-public class ProcessResult : IProcessResult
+public class ProcessResult(Process process) : IProcessResult
 {
-    private readonly Process _process;
-
-    public ProcessResult(Process process)
-    {
-        _process = process;
-    }
 
     public async Task WaitForExitAsync()
     {
-        await _process.WaitForExitAsync();
+        await process.WaitForExitAsync();
     }
 
-    public int ExitCode => _process.ExitCode;
+    public int ExitCode => process.ExitCode;
 
     public async Task<string> ReadStandardOutputAsync()
     {
-        return await _process.StandardOutput.ReadToEndAsync();
+        return await process.StandardOutput.ReadToEndAsync();
     }
 
     public async Task<string> ReadStandardErrorAsync()
     {
-        return await _process.StandardError.ReadToEndAsync();
+        return await process.StandardError.ReadToEndAsync();
     }
 
     public void Dispose()
     {
-        _process?.Dispose();
+        process?.Dispose();
     }
 }

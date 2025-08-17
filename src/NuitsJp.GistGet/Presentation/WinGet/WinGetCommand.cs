@@ -184,15 +184,14 @@ public class WinGetCommand(
     private async Task CheckAndPromptRebootAsync(string packageId)
     {
         // 簡易実装: 特定のパッケージは再起動が必要と判定
-        var rebootRequiredPackages = new[]
-        {
+        string[] rebootRequiredPackages = [
             "Microsoft.VisualStudio",
             "Microsoft.VisualStudioCode",
             "Microsoft.DotNet",
             "Git.Git",
             "Microsoft.PowerToys"
             // 他の主要なシステムレベルパッケージ
-        };
+        ];
 
         if (rebootRequiredPackages.Any(p => packageId.Contains(p, StringComparison.OrdinalIgnoreCase)))
         {

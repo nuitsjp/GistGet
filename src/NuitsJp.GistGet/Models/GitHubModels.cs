@@ -51,9 +51,9 @@ public class OAuthErrorResponse
 /// </summary>
 public class WinGetPackage
 {
-    public string Id { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string Version { get; set; } = string.Empty;
+    public string Id { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public string Version { get; init; } = string.Empty;
 }
 
 /// <summary>
@@ -61,7 +61,7 @@ public class WinGetPackage
 /// </summary>
 public class PackageList
 {
-    public List<WinGetPackage> Packages { get; set; } = [];
-    public DateTime ExportedAt { get; set; } = DateTime.UtcNow;
-    public string ExportedBy { get; set; } = "GistGet";
+    public List<WinGetPackage> Packages { get; init; } = [];
+    public DateTime ExportedAt { get; init; } = DateTime.UtcNow;
+    public string ExportedBy { get; init; } = "GistGet";
 }

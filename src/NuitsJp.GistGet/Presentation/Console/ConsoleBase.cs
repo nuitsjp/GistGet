@@ -5,21 +5,15 @@ namespace NuitsJp.GistGet.Presentation.Console;
 /// <summary>
 /// コンソール入出力サービスの共通基盤実装
 /// </summary>
-public abstract class ConsoleBase : IConsoleBase
+public abstract class ConsoleBase(ILogger? logger = null) : IConsoleBase
 {
-    private readonly ILogger? _logger;
-
-    protected ConsoleBase(ILogger? logger = null)
-    {
-        _logger = logger;
-    }
 
     /// <summary>
     /// エラーを表示（詳細度は実装に委ねる）
     /// </summary>
     public virtual void ShowError(Exception exception, string? userFriendlyMessage = null)
     {
-        _logger?.LogError(exception, "Error occurred: {Message}", exception.Message);
+        logger?.LogError(exception, "Error occurred: {Message}", exception.Message);
 
         var displayMessage = userFriendlyMessage ?? exception.Message;
         WriteErrorLine($"エラー: {displayMessage}");

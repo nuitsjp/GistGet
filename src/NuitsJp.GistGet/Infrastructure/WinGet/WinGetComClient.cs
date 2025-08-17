@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Text;
+﻿using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Management.Deployment;
 using NuitsJp.GistGet.Models;
@@ -10,21 +8,11 @@ namespace NuitsJp.GistGet.Infrastructure.WinGet;
 /// <summary>
 /// WinGet COM APIクライアント実装（アーキテクチャ改善版）
 /// </summary>
-public class WinGetComClient : IWinGetClient
+public class WinGetComClient(ILogger<WinGetComClient> logger, IWinGetPassthroughClient passthroughClient) : IWinGetClient
 {
-    private readonly ILogger<WinGetComClient> _logger;
-    private readonly IProcessWrapper _processWrapper;
-    private readonly IWinGetPassthroughClient _passthroughClient;
 
     private bool _isInitialized;
     private PackageManager? _packageManager;
-
-    public WinGetComClient(ILogger<WinGetComClient> logger, IProcessWrapper processWrapper, IWinGetPassthroughClient passthroughClient)
-    {
-        _logger = logger;
-        _processWrapper = processWrapper;
-        _passthroughClient = passthroughClient;
-    }
 
     public Task InitializeAsync()
     {
@@ -32,7 +20,7 @@ public class WinGetComClient : IWinGetClient
 
         try
         {
-            _logger.LogDebug("Initializing WinGet COM API");
+            logger.LogDebug("Initializing WinGet COM API");
 
             // 公式サンプルに合わせた簡単な初期化
             _packageManager = new PackageManager();
@@ -41,19 +29,19 @@ public class WinGetComClient : IWinGetClient
                 throw new InvalidOperationException("PackageManager instance is null after creation");
 
             _isInitialized = true;
-            _logger.LogInformation("WinGet COM API initialized successfully");
+            logger.LogInformation("WinGet COM API initialized successfully");
             return Task.CompletedTask;
         }
         catch (COMException comEx)
         {
             var errorMessage = GetCOMErrorMessage(comEx.HResult);
-            _logger.LogError(comEx, "COM API initialization failed with HRESULT: 0x{HRESULT:X8} ({ErrorMessage})",
+            logger.LogError(comEx, "COM API initialization failed with HRESULT: 0x{HRESULT:X8} ({ErrorMessage})",
                 comEx.HResult, errorMessage);
             throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to initialize COM API: {ErrorMessage}, Exception type: {ExceptionType}",
+            logger.LogError(ex, "Failed to initialize COM API: {ErrorMessage}, Exception type: {ExceptionType}",
                 ex.Message, ex.GetType().FullName);
             throw;
         }
@@ -67,7 +55,7 @@ public class WinGetComClient : IWinGetClient
 
         try
         {
-            _logger.LogInformation("Installing package: {PackageId} via COM API", packageId);
+            logger.LogInformation("Installing package: {PackageId} via COM API", packageId);
 
             // 実際のCOM API呼び出し（公式サンプルに基づく修正）
             var catalogRef = _packageManager!.GetPredefinedPackageCatalog(PredefinedPackageCatalog.OpenWindowsCatalog);
@@ -75,7 +63,7 @@ public class WinGetComClient : IWinGetClient
 
             if (connectResult.Status != ConnectResultStatus.Ok)
             {
-                _logger.LogError("Failed to connect to winget catalog: {Status}", connectResult.Status);
+                logger.LogError("Failed to connect to winget catalog: {Status}", connectResult.Status);
                 return await FallbackToWingetExe(args, packageId, "install");
             }
 
@@ -94,7 +82,7 @@ public class WinGetComClient : IWinGetClient
             // IDで見つからない場合は名前で検索
             if (findResult.Matches.Count == 0)
             {
-                _logger.LogWarning("Package not found by ID, trying name search: {PackageId}", packageId);
+                logger.LogWarning("Package not found by ID, trying name search: {PackageId}", packageId);
                 findOptions.Filters.Clear();
                 var nameFilter = new PackageMatchFilter
                 {
@@ -108,12 +96,12 @@ public class WinGetComClient : IWinGetClient
 
             if (findResult.Matches.Count == 0)
             {
-                _logger.LogError("Package not found by ID or name: {PackageId}", packageId);
+                logger.LogError("Package not found by ID or name: {PackageId}", packageId);
                 return await FallbackToWingetExe(args, packageId, "install");
             }
 
             var package = findResult.Matches[0].CatalogPackage;
-            _logger.LogInformation("Found package: {PackageName} [{PackageId}] {Version}", package.Name, package.Id,
+            logger.LogInformation("Found package: {PackageName} [{PackageId}] {Version}", package.Name, package.Id,
                 package.DefaultInstallVersion?.Version ?? "unknown");
 
             // インストール実行（直接作成を試す）
@@ -126,25 +114,25 @@ public class WinGetComClient : IWinGetClient
 
             if (installResult.Status == InstallResultStatus.Ok)
             {
-                _logger.LogInformation("Successfully installed package: {PackageId}", packageId);
+                logger.LogInformation("Successfully installed package: {PackageId}", packageId);
                 return 0;
             }
 
             if (installResult.ExtendedErrorCode != null)
-                _logger.LogError("Installation failed: {Status}, Extended error: 0x{ExtendedError:X8}",
+                logger.LogError("Installation failed: {Status}, Extended error: 0x{ExtendedError:X8}",
                     installResult.Status, installResult.ExtendedErrorCode);
             else
-                _logger.LogError("Installation failed: {Status}", installResult.Status);
+                logger.LogError("Installation failed: {Status}", installResult.Status);
             return await FallbackToWingetExe(args, packageId, "install");
         }
         catch (COMException comEx)
         {
-            _logger.LogWarning(comEx, "COM API call failed, falling back to winget.exe: 0x{HRESULT:X8}", comEx.HResult);
+            logger.LogWarning(comEx, "COM API call failed, falling back to winget.exe: 0x{HRESULT:X8}", comEx.HResult);
             return await FallbackToWingetExe(args, packageId, "install");
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "COM API call failed, falling back to winget.exe");
+            logger.LogWarning(ex, "COM API call failed, falling back to winget.exe");
             return await FallbackToWingetExe(args, packageId, "install");
         }
     }
@@ -157,7 +145,7 @@ public class WinGetComClient : IWinGetClient
 
         try
         {
-            _logger.LogInformation("Uninstalling package: {PackageId} via winget.exe (COM API uninstall not available)",
+            logger.LogInformation("Uninstalling package: {PackageId} via winget.exe (COM API uninstall not available)",
                 packageId);
 
             // インストール済みパッケージから実際のパッケージIDを特定
@@ -168,18 +156,18 @@ public class WinGetComClient : IWinGetClient
             var actualPackageId = actualPackage?.Id ?? packageId;
 
             if (actualPackage != null)
-                _logger.LogInformation("Found installed package: {ActualPackageId} for query: {QueryPackageId}",
+                logger.LogInformation("Found installed package: {ActualPackageId} for query: {QueryPackageId}",
                     actualPackageId, packageId);
             else
-                _logger.LogWarning("Package not found in installed list, using original ID: {PackageId}", packageId);
+                logger.LogWarning("Package not found in installed list, using original ID: {PackageId}", packageId);
 
             // 実際のパッケージIDでwinget.exeを呼び出し
-            var uninstallArgs = new[] { "uninstall", actualPackageId, "--accept-source-agreements", "--disable-interactivity" };
-            return await _passthroughClient.ExecuteAsync(uninstallArgs);
+            string[] uninstallArgs = ["uninstall", actualPackageId, "--accept-source-agreements", "--disable-interactivity"];
+            return await passthroughClient.ExecuteAsync(uninstallArgs);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error uninstalling package: {PackageId}, Error: {ErrorMessage}", packageId,
+            logger.LogError(ex, "Error uninstalling package: {PackageId}, Error: {ErrorMessage}", packageId,
                 ex.Message);
             return 1;
         }
@@ -191,9 +179,9 @@ public class WinGetComClient : IWinGetClient
 
         if (args.Contains("--all"))
         {
-            _logger.LogInformation("Upgrading all packages (COM API - simplified implementation)");
+            logger.LogInformation("Upgrading all packages (COM API - simplified implementation)");
             await Task.Delay(100); // 短縮してテスト高速化
-            _logger.LogInformation("Successfully upgraded all packages");
+            logger.LogInformation("Successfully upgraded all packages");
             return 0;
         }
 
@@ -202,14 +190,14 @@ public class WinGetComClient : IWinGetClient
 
         try
         {
-            _logger.LogInformation("Upgrading package: {PackageId} (COM API - simplified implementation)", packageId);
+            logger.LogInformation("Upgrading package: {PackageId} (COM API - simplified implementation)", packageId);
             await Task.Delay(50); // 短縮してテスト高速化
-            _logger.LogInformation("Successfully upgraded: {PackageId}", packageId);
+            logger.LogInformation("Successfully upgraded: {PackageId}", packageId);
             return 0;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error upgrading package: {PackageId}, Error: {ErrorMessage}", packageId ?? "unknown",
+            logger.LogError(ex, "Error upgrading package: {PackageId}, Error: {ErrorMessage}", packageId ?? "unknown",
                 ex.Message);
             return 1;
         }
@@ -228,7 +216,7 @@ public class WinGetComClient : IWinGetClient
 
         try
         {
-            _logger.LogDebug("Getting installed packages via COM API");
+            logger.LogDebug("Getting installed packages via COM API");
 
             // インストール済みパッケージカタログを取得
             var installedCatalogRef = _packageManager!.GetLocalPackageCatalog(LocalPackageCatalog.InstalledPackages);
@@ -236,7 +224,7 @@ public class WinGetComClient : IWinGetClient
 
             if (connectResult.Status != ConnectResultStatus.Ok)
             {
-                _logger.LogError("Failed to connect to installed packages catalog: {Status}", connectResult.Status);
+                logger.LogError("Failed to connect to installed packages catalog: {Status}", connectResult.Status);
                 return packages;
             }
 
@@ -263,15 +251,15 @@ public class WinGetComClient : IWinGetClient
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to process installed package at index {Index}", i);
+                    logger.LogWarning(ex, "Failed to process installed package at index {Index}", i);
                 }
 
-            _logger.LogInformation("Retrieved {Count} installed packages", packages.Count);
+            logger.LogInformation("Retrieved {Count} installed packages", packages.Count);
             return packages;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to get installed packages");
+            logger.LogError(ex, "Failed to get installed packages");
             return packages;
         }
     }
@@ -288,7 +276,7 @@ public class WinGetComClient : IWinGetClient
 
         try
         {
-            _logger.LogDebug("Searching packages via COM API: {Query}", query);
+            logger.LogDebug("Searching packages via COM API: {Query}", query);
 
             // メインカタログを取得
             var catalogRef = _packageManager!.GetPredefinedPackageCatalog(PredefinedPackageCatalog.OpenWindowsCatalog);
@@ -296,7 +284,7 @@ public class WinGetComClient : IWinGetClient
 
             if (connectResult.Status != ConnectResultStatus.Ok)
             {
-                _logger.LogError("Failed to connect to package catalog: {Status}", connectResult.Status);
+                logger.LogError("Failed to connect to package catalog: {Status}", connectResult.Status);
                 return packages;
             }
 
@@ -331,23 +319,23 @@ public class WinGetComClient : IWinGetClient
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to process search result at index {Index}", i);
+                    logger.LogWarning(ex, "Failed to process search result at index {Index}", i);
                 }
 
-            _logger.LogInformation("Found {Count} packages matching '{Query}'", packages.Count, query);
+            logger.LogInformation("Found {Count} packages matching '{Query}'", packages.Count, query);
             return packages;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to search packages for query: {Query}", query);
+            logger.LogError(ex, "Failed to search packages for query: {Query}", query);
             return packages;
         }
     }
 
     public async Task<int> ExecutePassthroughAsync(string[] args)
     {
-        _logger.LogDebug("Delegating passthrough command to WinGetPassthroughClient: {Args}", string.Join(" ", args));
-        return await _passthroughClient.ExecuteAsync(args);
+        logger.LogDebug("Delegating passthrough command to WinGetPassthroughClient: {Args}", string.Join(" ", args));
+        return await passthroughClient.ExecuteAsync(args);
     }
 
 
@@ -378,14 +366,14 @@ public class WinGetComClient : IWinGetClient
             if (!args[1].StartsWith("--") && !args[1].StartsWith("-"))
                 return args[1];
 
-        _logger.LogWarning("Package ID not specified in args: {Args}", string.Join(" ", args));
+        logger.LogWarning("Package ID not specified in args: {Args}", string.Join(" ", args));
         return null;
     }
 
 
     private async Task<int> FallbackToWingetExe(string[] args, string packageId, string operation)
     {
-        _logger.LogInformation("Falling back to winget.exe for {Operation}: {PackageId}", operation, packageId);
-        return await _passthroughClient.ExecuteAsync(args);
+        logger.LogInformation("Falling back to winget.exe for {Operation}: {PackageId}", operation, packageId);
+        return await passthroughClient.ExecuteAsync(args);
     }
 }

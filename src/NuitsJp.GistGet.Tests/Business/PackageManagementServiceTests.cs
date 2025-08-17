@@ -14,19 +14,18 @@ public class PackageManagementServiceTests
 {
     private readonly Mock<IWinGetClient> _mockWinGetClient;
     private readonly Mock<IGistSyncService> _mockGistSyncService;
-    private readonly Mock<ILogger<PackageManagementService>> _mockLogger;
     private readonly PackageManagementService _packageManagementService;
 
     public PackageManagementServiceTests()
     {
         _mockWinGetClient = new Mock<IWinGetClient>();
         _mockGistSyncService = new Mock<IGistSyncService>();
-        _mockLogger = new Mock<ILogger<PackageManagementService>>();
+        var mockLogger = new Mock<ILogger<PackageManagementService>>();
 
         _packageManagementService = new PackageManagementService(
             _mockWinGetClient.Object,
             _mockGistSyncService.Object,
-            _mockLogger.Object);
+            mockLogger.Object);
     }
 
     #region InstallPackageAsync Tests
@@ -35,7 +34,7 @@ public class PackageManagementServiceTests
     public async Task InstallPackageAsync_WithValidPackageId_ShouldInstallAndUpdateGist()
     {
         // Arrange
-        var args = new[] { "install", "Git.Git" };
+        string[] args = ["install", "Git.Git"];
         _mockWinGetClient.Setup(x => x.InstallPackageAsync(args)).ReturnsAsync(0);
         _mockGistSyncService.Setup(x => x.AfterInstallAsync("Git.Git")).Returns(Task.CompletedTask);
 
@@ -52,7 +51,7 @@ public class PackageManagementServiceTests
     public async Task InstallPackageAsync_WithoutPackageId_ShouldReturnErrorCode()
     {
         // Arrange
-        var args = new[] { "install" };
+        string[] args = ["install"];
 
         // Act
         var result = await _packageManagementService.InstallPackageAsync(args);
@@ -67,7 +66,7 @@ public class PackageManagementServiceTests
     public async Task InstallPackageAsync_WhenWinGetFails_ShouldNotUpdateGist()
     {
         // Arrange
-        var args = new[] { "install", "Git.Git" };
+        string[] args = ["install", "Git.Git"];
         _mockWinGetClient.Setup(x => x.InstallPackageAsync(args)).ReturnsAsync(1);
 
         // Act
@@ -83,7 +82,7 @@ public class PackageManagementServiceTests
     public async Task InstallPackageAsync_WhenGistSyncFails_ShouldStillReturnSuccess()
     {
         // Arrange
-        var args = new[] { "install", "Git.Git" };
+        string[] args = ["install", "Git.Git"];
         _mockWinGetClient.Setup(x => x.InstallPackageAsync(args)).ReturnsAsync(0);
         _mockGistSyncService.Setup(x => x.AfterInstallAsync("Git.Git"))
             .ThrowsAsync(new Exception("Gist sync failed"));
@@ -105,7 +104,7 @@ public class PackageManagementServiceTests
     public async Task UninstallPackageAsync_WithValidPackageId_ShouldUninstallAndUpdateGist()
     {
         // Arrange
-        var args = new[] { "uninstall", "Git.Git" };
+        string[] args = ["uninstall", "Git.Git"];
         _mockWinGetClient.Setup(x => x.UninstallPackageAsync(args)).ReturnsAsync(0);
         _mockGistSyncService.Setup(x => x.AfterUninstallAsync("Git.Git")).Returns(Task.CompletedTask);
 
@@ -122,7 +121,7 @@ public class PackageManagementServiceTests
     public async Task UninstallPackageAsync_WithoutPackageId_ShouldReturnErrorCode()
     {
         // Arrange
-        var args = new[] { "uninstall" };
+        string[] args = ["uninstall"];
 
         // Act
         var result = await _packageManagementService.UninstallPackageAsync(args);
@@ -137,7 +136,7 @@ public class PackageManagementServiceTests
     public async Task UninstallPackageAsync_WhenWinGetFails_ShouldNotUpdateGist()
     {
         // Arrange
-        var args = new[] { "uninstall", "Git.Git" };
+        string[] args = ["uninstall", "Git.Git"];
         _mockWinGetClient.Setup(x => x.UninstallPackageAsync(args)).ReturnsAsync(1);
 
         // Act
@@ -157,7 +156,7 @@ public class PackageManagementServiceTests
     public async Task UpgradePackageAsync_WithValidPackageId_ShouldUpgradeAndUpdateGist()
     {
         // Arrange
-        var args = new[] { "upgrade", "Git.Git" };
+        string[] args = ["upgrade", "Git.Git"];
         _mockWinGetClient.Setup(x => x.UpgradePackageAsync(args)).ReturnsAsync(0);
         _mockGistSyncService.Setup(x => x.AfterInstallAsync("Git.Git")).Returns(Task.CompletedTask);
 
@@ -174,7 +173,7 @@ public class PackageManagementServiceTests
     public async Task UpgradePackageAsync_WithoutPackageId_ShouldReturnErrorCode()
     {
         // Arrange
-        var args = new[] { "upgrade" };
+        string[] args = ["upgrade"];
 
         // Act
         var result = await _packageManagementService.UpgradePackageAsync(args);
@@ -189,7 +188,7 @@ public class PackageManagementServiceTests
     public async Task InstallPackageAsync_WithNoGistOption_ShouldSkipGistUpdate()
     {
         // Arrange
-        var args = new[] { "install", "Git.Git", "--no-gist" };
+        string[] args = ["install", "Git.Git", "--no-gist"];
         _mockWinGetClient.Setup(x => x.InstallPackageAsync(args)).ReturnsAsync(0);
 
         // Act
@@ -205,7 +204,7 @@ public class PackageManagementServiceTests
     public async Task UninstallPackageAsync_WithNoGistOption_ShouldSkipGistUpdate()
     {
         // Arrange
-        var args = new[] { "uninstall", "Git.Git", "--no-gist" };
+        string[] args = ["uninstall", "Git.Git", "--no-gist"];
         _mockWinGetClient.Setup(x => x.UninstallPackageAsync(args)).ReturnsAsync(0);
 
         // Act
@@ -221,7 +220,7 @@ public class PackageManagementServiceTests
     public async Task UpgradePackageAsync_WithNoGistOption_ShouldSkipGistUpdate()
     {
         // Arrange
-        var args = new[] { "upgrade", "Git.Git", "--no-gist" };
+        string[] args = ["upgrade", "Git.Git", "--no-gist"];
         _mockWinGetClient.Setup(x => x.UpgradePackageAsync(args)).ReturnsAsync(0);
 
         // Act
@@ -241,7 +240,7 @@ public class PackageManagementServiceTests
     public void ExtractPackageId_WithInstallCommand_ShouldReturnPackageId()
     {
         // Arrange
-        var args = new[] { "install", "Git.Git" };
+        string[] args = ["install", "Git.Git"];
 
         // Act
         var result = _packageManagementService.ExtractPackageId(args);
@@ -280,7 +279,7 @@ public class PackageManagementServiceTests
     public void ExtractPackageId_WithIdFlag_ShouldReturnPackageId()
     {
         // Arrange
-        var args = new[] { "install", "--id", "Git.Git" };
+        string[] args = ["install", "--id", "Git.Git"];
 
         // Act
         var result = _packageManagementService.ExtractPackageId(args);
@@ -293,7 +292,7 @@ public class PackageManagementServiceTests
     public void ExtractPackageId_WithShortIdFlag_ShouldReturnPackageId()
     {
         // Arrange
-        var args = new[] { "install", "-i", "Git.Git" };
+        string[] args = ["install", "-i", "Git.Git"];
 
         // Act
         var result = _packageManagementService.ExtractPackageId(args);
@@ -306,7 +305,7 @@ public class PackageManagementServiceTests
     public void ExtractPackageId_WithOnlyCommand_ShouldReturnNull()
     {
         // Arrange
-        var args = new[] { "install" };
+        string[] args = ["install"];
 
         // Act
         var result = _packageManagementService.ExtractPackageId(args);
@@ -319,7 +318,7 @@ public class PackageManagementServiceTests
     public void ExtractPackageId_WithOptionsOnly_ShouldReturnNull()
     {
         // Arrange
-        var args = new[] { "install", "--accept-source-agreements" };
+        string[] args = ["install", "--accept-source-agreements"];
 
         // Act
         var result = _packageManagementService.ExtractPackageId(args);

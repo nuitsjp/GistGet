@@ -8,24 +8,12 @@ namespace NuitsJp.GistGet.Presentation.File;
 /// uploadコマンドの実装
 /// ローカルファイルをGistにアップロードする
 /// </summary>
-public class UploadCommand
+public class UploadCommand(
+    IGistManager gistManager,
+    IGitHubGistClient gistClient,
+    IFileConsole console,
+    ILogger<UploadCommand> logger)
 {
-    private readonly IGistManager _gistManager;
-    private readonly IGitHubGistClient _gistClient;
-    private readonly IFileConsole _console;
-    private readonly ILogger<UploadCommand> _logger;
-
-    public UploadCommand(
-        IGistManager gistManager,
-        IGitHubGistClient gistClient,
-        IFileConsole console,
-        ILogger<UploadCommand> logger)
-    {
-        _gistManager = gistManager;
-        _gistClient = gistClient;
-        _console = console;
-        _logger = logger;
-    }
 
     /// <summary>
     /// uploadコマンドを実行
@@ -34,7 +22,7 @@ public class UploadCommand
     {
         try
         {
-            _logger.LogInformation("uploadコマンドを開始します");
+            logger.LogInformation("uploadコマンドを開始します");
 
             // オプション解析
             var options = ParseOptions(args);
@@ -42,7 +30,7 @@ public class UploadCommand
             // ファイルパスが指定されていない場合はエラー
             if (string.IsNullOrEmpty(options.FilePath))
             {
-                _console.ShowError(new ArgumentException("ファイルパスが指定されていません"),
+                console.ShowError(new ArgumentException("ファイルパスが指定されていません"),
                     "アップロードするファイルパスを指定してください。例: gistget upload packages.yaml");
                 return 1;
             }
@@ -50,38 +38,38 @@ public class UploadCommand
             // ファイル存在確認
             if (!System.IO.File.Exists(options.FilePath))
             {
-                _console.ShowError(new FileNotFoundException($"ファイルが見つかりません: {options.FilePath}"),
+                console.ShowError(new FileNotFoundException($"ファイルが見つかりません: {options.FilePath}"),
                     $"指定されたファイルが見つかりません: {options.FilePath}");
                 return 1;
             }
 
             // Gist設定確認
-            if (!await _gistManager.IsConfiguredAsync())
+            if (!await gistManager.IsConfiguredAsync())
             {
-                _console.ShowError(new InvalidOperationException("Gist設定がありません"),
+                console.ShowError(new InvalidOperationException("Gist設定がありません"),
                     "Gist設定がありません。先に 'gistget gist set' を実行してください。");
                 return 1;
             }
 
-            var config = await _gistManager.GetConfigurationAsync();
-            _console.NotifyUploadStarting(options.FilePath);
+            var config = await gistManager.GetConfigurationAsync();
+            console.NotifyUploadStarting(options.FilePath);
 
             // ファイル内容を読み込み
             var content = await System.IO.File.ReadAllTextAsync(options.FilePath);
 
             // Gistに更新
-            await _gistClient.UpdateFileContentAsync(config.GistId, config.FileName, content);
+            await gistClient.UpdateFileContentAsync(config.GistId, config.FileName, content);
 
-            _console.NotifyUploadSuccess(config.FileName);
-            _logger.LogInformation("アップロードが完了しました: {FilePath} -> {GistId}/{FileName}",
+            console.NotifyUploadSuccess(config.FileName);
+            logger.LogInformation("アップロードが完了しました: {FilePath} -> {GistId}/{FileName}",
                 options.FilePath, config.GistId, config.FileName);
 
             return 0;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "uploadコマンドの実行中にエラーが発生しました");
-            _console.ShowError(ex, "アップロード処理でエラーが発生しました");
+            logger.LogError(ex, "uploadコマンドの実行中にエラーが発生しました");
+            console.ShowError(ex, "アップロード処理でエラーが発生しました");
             return 1;
         }
     }

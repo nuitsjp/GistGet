@@ -238,7 +238,7 @@ public class GistSyncService(
             try
             {
                 _logger.LogInformation("Installing package: {PackageId}", package.Id);
-                var args = new[] { "install", package.Id, "--accept-source-agreements", "--accept-package-agreements" };
+                string[] args = ["install", package.Id, "--accept-source-agreements", "--accept-package-agreements"];
                 var exitCode = await _winGetClient.InstallPackageAsync(args);
 
                 if (exitCode == 0)
@@ -263,7 +263,7 @@ public class GistSyncService(
             try
             {
                 _logger.LogInformation("Uninstalling package: {PackageId}", package.Id);
-                var args = new[] { "uninstall", package.Id, "--accept-source-agreements" };
+                string[] args = ["uninstall", package.Id, "--accept-source-agreements"];
                 var exitCode = await _winGetClient.UninstallPackageAsync(args);
 
                 if (exitCode == 0)
@@ -290,14 +290,13 @@ public class GistSyncService(
     private bool CheckRebootRequired(List<string> installedPackages)
     {
         // 簡易実装：よく知られた再起動要求パッケージのチェック
-        var rebootRequiredPatterns = new[]
-        {
+        string[] rebootRequiredPatterns = [
             "microsoft.visualstudio",
             "docker.dockerdesktop",
             "oracle.virtualbox",
             "vmware",
             ".net"
-        };
+        ];
 
         return installedPackages.Any(packageId =>
             rebootRequiredPatterns.Any(pattern =>
