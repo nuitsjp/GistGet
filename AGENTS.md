@@ -10,7 +10,7 @@
 - `.github/`: CI and repo automation (if present).
 
 ## Build, Test, and Development Commands
-- Build: `dotnet build src/NuitsJp.GistGet.sln -c Debug`
+- Build: `dotnet build GistGet.slnx -c Debug`
 - Run locally: `dotnet run --project src/NuitsJp.GistGet -- install --id "Google.Chrome"`
 - Tests: `dotnet test src/NuitsJp.GistGet.Test -c Debug --collect:"XPlat Code Coverage"`
 - Publish (AOT, Windows x64): `dotnet publish src/NuitsJp.GistGet -c Release -r win-x64`

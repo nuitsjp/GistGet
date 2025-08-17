@@ -17,7 +17,7 @@ class Build : NukeBuild
     public static int Main () => Execute<Build>(x => x.Compile);
 
     AbsolutePath BuildScriptsDir => RootDirectory / "build-scripts";
-    AbsolutePath SolutionFile => RootDirectory / "GistGet.sln";
+    AbsolutePath SolutionFile => RootDirectory / "GistGet.slnx";
     AbsolutePath TestResultsDirectory => RootDirectory / ".reports" / "test-results" / "trx";
 
     Target Clean => _ => _
