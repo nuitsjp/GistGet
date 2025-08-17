@@ -160,16 +160,16 @@ public class CommandRouterTests
     {
         // Arrange
         var args = subCommand != null ? new[] { command, subCommand } : new[] { command };
-        
+
         // Set up per-test mocks for specific commands
         if (command == "gist" && subCommand == "status")
         {
             // GistStatusCommand needs these additional setups
             _mockAuthService.Setup(x => x.IsAuthenticatedAsync()).ReturnsAsync(true);
             _mockGistManager.Setup(x => x.IsConfiguredAsync()).ReturnsAsync(true);
-            _mockGistManager.Setup(x => x.GetConfigurationAsync()).ReturnsAsync(new GistConfiguration 
-            { 
-                GistId = "test-gist", 
+            _mockGistManager.Setup(x => x.GetConfigurationAsync()).ReturnsAsync(new GistConfiguration
+            {
+                GistId = "test-gist",
                 FileName = "test.yaml",
                 CreatedAt = DateTime.UtcNow,
                 LastAccessedAt = DateTime.UtcNow
@@ -183,7 +183,7 @@ public class CommandRouterTests
 
         // Assert
         result.ShouldBe(0);
-        
+
         // For CommandRouter's authentication flow, these should not be called
         // Note: Individual commands may call these, but CommandRouter should not
         // We verify CommandRouter didn't call authentication flow for these commands
