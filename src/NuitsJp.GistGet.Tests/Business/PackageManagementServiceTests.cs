@@ -185,6 +185,54 @@ public class PackageManagementServiceTests
         _mockGistSyncService.Verify(x => x.AfterInstallAsync(It.IsAny<string>()), Times.Never);
     }
 
+    [Fact]
+    public async Task InstallPackageAsync_WithNoGistOption_ShouldSkipGistUpdate()
+    {
+        // Arrange
+        var args = new[] { "install", "Git.Git", "--no-gist" };
+        _mockWinGetClient.Setup(x => x.InstallPackageAsync(args)).ReturnsAsync(0);
+
+        // Act
+        var result = await _packageManagementService.InstallPackageAsync(args);
+
+        // Assert
+        result.ShouldBe(0);
+        _mockWinGetClient.Verify(x => x.InstallPackageAsync(args), Times.Once);
+        _mockGistSyncService.Verify(x => x.AfterInstallAsync(It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UninstallPackageAsync_WithNoGistOption_ShouldSkipGistUpdate()
+    {
+        // Arrange
+        var args = new[] { "uninstall", "Git.Git", "--no-gist" };
+        _mockWinGetClient.Setup(x => x.UninstallPackageAsync(args)).ReturnsAsync(0);
+
+        // Act
+        var result = await _packageManagementService.UninstallPackageAsync(args);
+
+        // Assert
+        result.ShouldBe(0);
+        _mockWinGetClient.Verify(x => x.UninstallPackageAsync(args), Times.Once);
+        _mockGistSyncService.Verify(x => x.AfterUninstallAsync(It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpgradePackageAsync_WithNoGistOption_ShouldSkipGistUpdate()
+    {
+        // Arrange
+        var args = new[] { "upgrade", "Git.Git", "--no-gist" };
+        _mockWinGetClient.Setup(x => x.UpgradePackageAsync(args)).ReturnsAsync(0);
+
+        // Act
+        var result = await _packageManagementService.UpgradePackageAsync(args);
+
+        // Assert
+        result.ShouldBe(0);
+        _mockWinGetClient.Verify(x => x.UpgradePackageAsync(args), Times.Once);
+        _mockGistSyncService.Verify(x => x.AfterInstallAsync(It.IsAny<string>()), Times.Never);
+    }
+
     #endregion
 
     #region ExtractPackageId Tests

@@ -200,4 +200,40 @@ public class GistConfigConsole : ConsoleBase, IGistConfigConsole
 
         return gistIdOrUrl;
     }
+
+    /// <summary>
+    /// Gist設定クリアの確認を取る
+    /// </summary>
+    public bool ConfirmClearConfiguration()
+    {
+        System.Console.WriteLine();
+        System.Console.Write("現在のGist設定をクリアしますか？ (y/N): ");
+        var input = System.Console.ReadLine()?.Trim().ToLower();
+        return input == "y" || input == "yes";
+    }
+
+    /// <summary>
+    /// Gist設定クリア成功を通知
+    /// </summary>
+    public void NotifyConfigurationCleared()
+    {
+        System.Console.WriteLine();
+        System.Console.WriteLine("✅ Gist設定をクリアしました");
+    }
+
+    /// <summary>
+    /// Gist設定が既にクリア済みであることを通知
+    /// </summary>
+    public void NotifyNotConfigured()
+    {
+        System.Console.WriteLine("Gist設定は既にクリア済みです");
+    }
+
+    /// <summary>
+    /// 操作キャンセルを通知
+    /// </summary>
+    public void NotifyOperationCanceled()
+    {
+        System.Console.WriteLine("操作をキャンセルしました");
+    }
 }

@@ -299,4 +299,32 @@ public class GitHubAuthService : IGitHubAuthService
 
         return null;
     }
+
+    /// <summary>
+    /// 保存されたトークンを削除してログアウトする
+    /// </summary>
+    public async Task<bool> LogoutAsync()
+    {
+        try
+        {
+            _logger.LogInformation("GitHubからログアウトします...");
+
+            if (File.Exists(_tokenFilePath))
+            {
+                File.Delete(_tokenFilePath);
+                _logger.LogInformation("認証トークンを削除しました");
+                return true;
+            }
+            else
+            {
+                _logger.LogInformation("認証トークンが見つかりません（既にログアウト済み）");
+                return true; // 既にログアウト済みなので成功扱い
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "ログアウト処理中にエラーが発生しました: {Message}", ex.Message);
+            return false;
+        }
+    }
 }

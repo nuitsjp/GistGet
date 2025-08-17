@@ -31,6 +31,9 @@ public class PackageManagementService : IPackageManagementService
             return 1;
         }
 
+        // --no-gistオプションの確認
+        var skipGistUpdate = args.Contains("--no-gist");
+
         try
         {
             _logger.LogInformation("Installing package: {PackageId}", packageId);
@@ -42,8 +45,15 @@ public class PackageManagementService : IPackageManagementService
             {
                 _logger.LogInformation("Package installation successful: {PackageId}", packageId);
 
-                // Gist自動更新
-                await UpdateGistAfterInstallAsync(packageId);
+                // Gist自動更新（--no-gistオプションが指定されていない場合のみ）
+                if (!skipGistUpdate)
+                {
+                    await UpdateGistAfterInstallAsync(packageId);
+                }
+                else
+                {
+                    _logger.LogInformation("Skipping Gist update due to --no-gist option");
+                }
             }
             else
             {
@@ -68,6 +78,9 @@ public class PackageManagementService : IPackageManagementService
             return 1;
         }
 
+        // --no-gistオプションの確認
+        var skipGistUpdate = args.Contains("--no-gist");
+
         try
         {
             _logger.LogInformation("Uninstalling package: {PackageId}", packageId);
@@ -79,8 +92,15 @@ public class PackageManagementService : IPackageManagementService
             {
                 _logger.LogInformation("Package uninstallation successful: {PackageId}", packageId);
 
-                // Gist自動更新
-                await UpdateGistAfterUninstallAsync(packageId);
+                // Gist自動更新（--no-gistオプションが指定されていない場合のみ）
+                if (!skipGistUpdate)
+                {
+                    await UpdateGistAfterUninstallAsync(packageId);
+                }
+                else
+                {
+                    _logger.LogInformation("Skipping Gist update due to --no-gist option");
+                }
             }
             else
             {
@@ -105,6 +125,9 @@ public class PackageManagementService : IPackageManagementService
             return 1;
         }
 
+        // --no-gistオプションの確認
+        var skipGistUpdate = args.Contains("--no-gist");
+
         try
         {
             _logger.LogInformation("Upgrading package: {PackageId}", packageId);
@@ -115,8 +138,17 @@ public class PackageManagementService : IPackageManagementService
             if (exitCode == 0)
             {
                 _logger.LogInformation("Package upgrade successful: {PackageId}", packageId);
+
+                // Gist自動更新（--no-gistオプションが指定されていない場合のみ）
                 // アップグレードは既存パッケージの更新なので、インストール扱いでGist更新
-                await UpdateGistAfterInstallAsync(packageId);
+                if (!skipGistUpdate)
+                {
+                    await UpdateGistAfterInstallAsync(packageId);
+                }
+                else
+                {
+                    _logger.LogInformation("Skipping Gist update due to --no-gist option");
+                }
             }
             else
             {

@@ -57,4 +57,24 @@ public interface IGistConfigConsole : IConsoleBase
     /// </summary>
     /// <param name="reason">設定エラーの理由</param>
     void NotifyConfigurationError(string reason);
+
+    /// <summary>
+    /// Gist設定クリアの確認を取る
+    /// </summary>
+    bool ConfirmClearConfiguration();
+
+    /// <summary>
+    /// Gist設定クリア成功を通知
+    /// </summary>
+    void NotifyConfigurationCleared();
+
+    /// <summary>
+    /// Gist設定が既にクリア済みであることを通知
+    /// </summary>
+    void NotifyNotConfigured();
+
+    /// <summary>
+    /// 操作キャンセルを通知
+    /// </summary>
+    void NotifyOperationCanceled();
 }

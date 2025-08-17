@@ -12,6 +12,7 @@ using NuitsJp.GistGet.Presentation.GistConfig;
 using NuitsJp.GistGet.Presentation.Login;
 using NuitsJp.GistGet.Presentation.Sync;
 using NuitsJp.GistGet.Presentation.WinGet;
+using NuitsJp.GistGet.Presentation.File;
 // using NuitsJp.GistGet.Presentation.Commands; // 旧Commands名前空間をコメントアウト
 
 namespace NuitsJp.GistGet;
@@ -53,17 +54,23 @@ public static class AppHost
 
                 // Console abstractions
                 services.AddSingleton<ILoginConsole, LoginConsole>();
+                services.AddSingleton<ILogoutConsole, LogoutConsole>();
                 services.AddSingleton<IGistConfigConsole, GistConfigConsole>();
                 services.AddSingleton<ISyncConsole, SyncConsole>();
                 services.AddSingleton<IWinGetConsole, WinGetConsole>();
+                services.AddSingleton<IFileConsole, FileConsole>();
 
                 // Commands with new namespace structure
                 services.AddSingleton<LoginCommand>();
+                services.AddSingleton<LogoutCommand>();
                 services.AddSingleton<GistSetCommand>();
                 services.AddSingleton<GistStatusCommand>();
                 services.AddSingleton<GistShowCommand>();
+                services.AddSingleton<GistClearCommand>();
                 services.AddSingleton<SyncCommand>();
                 services.AddSingleton<WinGetCommand>();
+                services.AddSingleton<DownloadCommand>();
+                services.AddSingleton<UploadCommand>();
 
                 // Business services
                 services.AddSingleton<IGistConfigService, GistConfigService>();

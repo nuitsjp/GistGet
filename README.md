@@ -53,6 +53,7 @@ gistget show --id Git.Git  # → winget show --id Git.Git
 | pin | - | パススルー | - | ローカルバージョン固定 |
 | **認証管理（GistGet独自実装）** |
 | login | - | 独立実装 | - | GitHubログイン・トークン管理 |
+| logout | - | 独立実装 | - | GitHubログアウト・トークン削除 |
 | configure | - | パススルー | - | システム構成 |
 | download | - | パススルー | - | インストーラDL |
 | repair | - | パススルー | - | パッケージ修復 |

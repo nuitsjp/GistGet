@@ -37,7 +37,7 @@ public class GistStatusCommand
             if (!isAuthenticated)
             {
                 _console.ShowGistStatus(false, false);
-                return 1;
+                return 0; // 認証されていない状態の表示は正常終了
             }
 
             // Gist設定状態確認

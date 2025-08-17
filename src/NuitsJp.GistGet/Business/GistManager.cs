@@ -109,6 +109,24 @@ public class GistManager(
         }
     }
 
+    public async Task ClearConfigurationAsync()
+    {
+        _logger.LogInformation("Gist設定をクリアします");
+        await _storage.DeleteConfigurationAsync();
+        _logger.LogDebug("Gist設定をクリアしました");
+    }
+
+    public async Task<string> GetGistContentAsync()
+    {
+        var config = await LoadConfigurationAsync();
+        _logger.LogDebug("Gistからコンテンツを取得します: {GistId}/{FileName}", config.GistId, config.FileName);
+
+        var content = await _gistClient.GetFileContentAsync(config.GistId, config.FileName);
+        _logger.LogDebug("Gistコンテンツを取得しました: {Length}文字", content.Length);
+
+        return content;
+    }
+
     private async Task<GistConfiguration> LoadConfigurationAsync()
     {
         var config = await _storage.LoadGistConfigurationAsync();

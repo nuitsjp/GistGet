@@ -104,6 +104,40 @@ public class GitHubAuthServiceTests : IDisposable
         Assert.Null(token);
     }
 
+    [Fact]
+    public async Task LogoutAsync_ShouldDeleteTokenFile_WhenTokenExists()
+    {
+        // Arrange
+        const string testToken = "test_github_token_12345";
+        var service = CreateTestService();
+        await service.SaveTokenAsync(testToken); // トークンを保存
+
+        var tokenFilePath = Path.Combine(_testTokenDirectory, "token.json");
+        Assert.True(File.Exists(tokenFilePath), "前提条件：トークンファイルが存在する");
+
+        // Act
+        var result = await service.LogoutAsync();
+
+        // Assert
+        Assert.True(result, "ログアウトが成功すること");
+        Assert.False(File.Exists(tokenFilePath), "トークンファイルが削除されること");
+    }
+
+    [Fact]
+    public async Task LogoutAsync_ShouldReturnTrue_WhenTokenFileDoesNotExist()
+    {
+        // Arrange
+        var service = CreateTestService();
+        var tokenFilePath = Path.Combine(_testTokenDirectory, "token.json");
+        Assert.False(File.Exists(tokenFilePath), "前提条件：トークンファイルが存在しない");
+
+        // Act
+        var result = await service.LogoutAsync();
+
+        // Assert
+        Assert.True(result, "既にログアウト済みなので成功扱い");
+    }
+
     private GitHubAuthService CreateTestService()
     {
         // テスト用のGitHubAuthServiceを作成

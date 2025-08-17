@@ -38,4 +38,9 @@ public interface IGitHubAuthService
     /// DPAPIで暗号化されたトークンを復号化して読み込む（テスト用公開メソッド）
     /// </summary>
     Task<string?> LoadTokenAsync();
+
+    /// <summary>
+    /// 保存されたトークンを削除してログアウトする
+    /// </summary>
+    Task<bool> LogoutAsync();
 }

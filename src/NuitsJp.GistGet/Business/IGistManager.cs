@@ -9,4 +9,6 @@ public interface IGistManager
     Task UpdateGistPackagesAsync(PackageCollection packages);
     Task<GistConfiguration> GetConfigurationAsync();
     Task ValidateGistAccessAsync(string gistId);
+    Task ClearConfigurationAsync();
+    Task<string> GetGistContentAsync();
 }

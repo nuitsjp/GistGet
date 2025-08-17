@@ -6,6 +6,7 @@ using NuitsJp.GistGet.Presentation.GistConfig;
 using NuitsJp.GistGet.Presentation.Login;
 using NuitsJp.GistGet.Presentation.Sync;
 using NuitsJp.GistGet.Presentation.WinGet;
+using NuitsJp.GistGet.Presentation.File;
 
 namespace NuitsJp.GistGet.Presentation;
 
@@ -16,13 +17,17 @@ public class CommandRouter(
     GistSetCommand gistSetCommand,
     GistStatusCommand gistStatusCommand,
     GistShowCommand gistShowCommand,
+    GistClearCommand gistClearCommand,
     SyncCommand syncCommand,
     WinGetCommand winGetCommand,
     ILogger<CommandRouter> logger,
     IErrorMessageService errorMessageService,
     IGitHubAuthService authService,
     IGistManager gistManager,
-    LoginCommand loginCommand) : ICommandRouter
+    LoginCommand loginCommand,
+    LogoutCommand logoutCommand,
+    DownloadCommand downloadCommand,
+    UploadCommand uploadCommand) : ICommandRouter
 {
     private readonly IGitHubAuthService _authService = authService;
     private readonly IErrorMessageService _errorMessageService = errorMessageService;
@@ -30,8 +35,12 @@ public class CommandRouter(
     private readonly GistSetCommand _gistSetCommand = gistSetCommand;
     private readonly GistShowCommand _gistShowCommand = gistShowCommand;
     private readonly GistStatusCommand _gistStatusCommand = gistStatusCommand;
+    private readonly GistClearCommand _gistClearCommand = gistClearCommand;
     private readonly ILogger<CommandRouter> _logger = logger;
     private readonly LoginCommand _loginCommand = loginCommand;
+    private readonly LogoutCommand _logoutCommand = logoutCommand;
+    private readonly DownloadCommand _downloadCommand = downloadCommand;
+    private readonly UploadCommand _uploadCommand = uploadCommand;
     private readonly SyncCommand _syncCommand = syncCommand;
     private readonly WinGetCommand _winGetCommand = winGetCommand;
 
@@ -49,7 +58,7 @@ public class CommandRouter(
             var (isSilentMode, filteredArgs) = ExtractSilentMode(args);
             _logger.LogDebug("Silent mode: {IsSilentMode}", isSilentMode);
 
-            var command = filteredArgs[0].ToLowerInvariant();
+            var command = NormalizeCommand(filteredArgs[0].ToLowerInvariant());
 
             // 認証・Gist設定が必要なコマンドを判定
             if (RequiresAuthentication(command, filteredArgs))
@@ -91,12 +100,16 @@ public class CommandRouter(
     {
         var usesCom = command is "install" or "uninstall" or "upgrade";
         var usesGist = command is "sync";
+        var usesFileGist = command is "download" or "upload";
         var usesPassthrough = command is "export" or "import" or "list" or "search" or "show";
         var isLoginCommand = command is "login";
+        var isLogoutCommand = command is "logout";
         var isGistSubCommand = command is "gist";
 
         if (isLoginCommand) return await _loginCommand.ExecuteAsync(args);
+        if (isLogoutCommand) return await _logoutCommand.ExecuteAsync(args);
 
+        if (usesFileGist) return await HandleFileGistCommandAsync(command, args);
 
         if (isGistSubCommand) return await HandleGistSubCommandAsync(args);
 
@@ -125,6 +138,7 @@ public class CommandRouter(
             System.Console.WriteLine("  set [--gist-id <id>] [--file <filename>]  - Gist設定を行います");
             System.Console.WriteLine("  status                                     - 現在のGist設定状態を表示します");
             System.Console.WriteLine("  show [--raw]                              - Gistの内容を表示します");
+            System.Console.WriteLine("  clear                                      - Gist設定をクリアします");
             System.Console.WriteLine();
             System.Console.WriteLine("Examples:");
             System.Console.WriteLine("  gistget gist set --gist-id abc123 --file packages.yaml");
@@ -143,6 +157,7 @@ public class CommandRouter(
             "set" => await HandleGistSetAsync(args),
             "status" => await _gistStatusCommand.ExecuteAsync(),
             "show" => await HandleGistShowAsync(args),
+            "clear" => await _gistClearCommand.ExecuteAsync(),
             _ => await ShowGistSubCommandHelp(subCommand)
         };
     }
@@ -182,6 +197,7 @@ public class CommandRouter(
         System.Console.WriteLine("  set     - Gist設定を行います");
         System.Console.WriteLine("  status  - 現在のGist設定状態を表示します");
         System.Console.WriteLine("  show    - Gistの内容を表示します");
+        System.Console.WriteLine("  clear   - Gist設定をクリアします");
         System.Console.WriteLine();
         System.Console.WriteLine("Use 'gistget gist' for more information.");
         return Task.FromResult(1);
@@ -197,7 +213,8 @@ public class CommandRouter(
         {
             "sync" => true,
             "install" or "uninstall" or "upgrade" => true,
-            "gist" when args.Length > 1 && args[1] != "status" => true,
+            "download" or "upload" => true,
+            "gist" when args.Length > 1 && args[1] is "set" or "show" => true,
             _ => false
         };
     }
@@ -212,6 +229,7 @@ public class CommandRouter(
         {
             "sync" => true,
             "install" or "uninstall" or "upgrade" => true,
+            "download" or "upload" => true,
             "gist" when args.Length > 1 && args[1] == "show" => true,
             _ => false
         };
@@ -285,6 +303,17 @@ public class CommandRouter(
         };
     }
 
+    private async Task<int> HandleFileGistCommandAsync(string command, string[] args)
+    {
+        _logger.LogDebug("Routing to file Gist command: {Command}", command);
+        return command switch
+        {
+            "download" => await _downloadCommand.ExecuteAsync(args),
+            "upload" => await _uploadCommand.ExecuteAsync(args),
+            _ => throw new ArgumentException($"Unsupported file Gist command: {command}")
+        };
+    }
+
     /// <summary>
     /// サイレントモード（--silent, -s）フラグを検出して除去
     /// </summary>
@@ -307,5 +336,25 @@ public class CommandRouter(
         }
 
         return (isSilentMode, filteredList.ToArray());
+    }
+
+    /// <summary>
+    /// コマンドエイリアスを正規コマンドに変換する
+    /// </summary>
+    private static string NormalizeCommand(string command)
+    {
+        var aliasMap = new Dictionary<string, string>
+        {
+            { "add", "install" },
+            { "remove", "uninstall" },
+            { "rm", "uninstall" },
+            { "update", "upgrade" },
+            { "ls", "list" },
+            { "find", "search" },
+            { "view", "show" },
+            { "config", "settings" }
+        };
+
+        return aliasMap.TryGetValue(command, out var normalizedCommand) ? normalizedCommand : command;
     }
 }
