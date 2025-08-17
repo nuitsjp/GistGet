@@ -54,7 +54,6 @@ public class GistConfigServiceTests
         result.IsSuccess.ShouldBeTrue();
 
         // 実行順序の検証
-        var invocations = new List<string>();
         _mockAuthService.Verify(x => x.IsAuthenticatedAsync(), Times.Once);
         _mockGistManager.Verify(x => x.ValidateGistAccessAsync("test-gist-id"), Times.Once);
         _mockStorage.Verify(x => x.SaveGistConfigurationAsync(It.Is<GistConfiguration>(c =>
@@ -221,6 +220,7 @@ public class GistConfigServiceTests
 
         // Assert - Business層: 認証失敗時のビジネスルール検証
         result.IsSuccess.ShouldBeFalse();
+        result.ErrorMessage.ShouldNotBeNull();
         result.ErrorMessage.ShouldContain("GitHub認証が必要です");
         // 認証が失敗した場合は後続処理は実行されない
         _mockGistManager.Verify(x => x.ValidateGistAccessAsync(It.IsAny<string>()), Times.Never);
@@ -242,6 +242,7 @@ public class GistConfigServiceTests
 
         // Assert - Business層: 無効なGist IDに対するバリデーションルール検証
         result.IsSuccess.ShouldBeFalse();
+        result.ErrorMessage.ShouldNotBeNull();
         result.ErrorMessage.ShouldContain("有効なGist IDが必要です");
         // バリデーション失敗時は後続処理は実行されない
         _mockGistManager.Verify(x => x.ValidateGistAccessAsync(It.IsAny<string>()), Times.Never);
@@ -262,6 +263,7 @@ public class GistConfigServiceTests
 
         // Assert - Business層: Infrastructure層エラーの適切なハンドリング検証
         result.IsSuccess.ShouldBeFalse();
+        result.ErrorMessage.ShouldNotBeNull();
         result.ErrorMessage.ShouldContain("設定エラー: Gist does not exist");
         // エラー発生時は保存処理は実行されない
         _mockStorage.Verify(x => x.SaveGistConfigurationAsync(It.IsAny<GistConfiguration>()), Times.Never);

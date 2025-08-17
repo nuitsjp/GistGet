@@ -50,18 +50,6 @@ public class GistConfigConsole : ConsoleBase, IGistConfigConsole
     }
 
     /// <summary>
-    /// 現在のGist設定を表示
-    /// </summary>
-    public void ShowCurrentConfiguration(string gistId, string fileName)
-    {
-        System.Console.WriteLine();
-        System.Console.WriteLine("=== 現在のGist設定 ===");
-        System.Console.WriteLine($"Gist ID: {gistId}");
-        System.Console.WriteLine($"ファイル名: {fileName}");
-        System.Console.WriteLine($"Gist URL: https://gist.github.com/{gistId}");
-    }
-
-    /// <summary>
     /// Gist設定状態を表示
     /// </summary>
     public void ShowGistStatus(bool isAuthenticated, bool isConfigured, string? gistId = null, string? fileName = null)

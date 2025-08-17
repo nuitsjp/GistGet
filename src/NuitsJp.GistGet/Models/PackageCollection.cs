@@ -4,12 +4,7 @@ namespace NuitsJp.GistGet.Models;
 
 public class PackageCollection : IEnumerable<PackageDefinition>
 {
-    private readonly HashSet<PackageDefinition> _packages;
-
-    public PackageCollection()
-    {
-        _packages = [];
-    }
+    private readonly HashSet<PackageDefinition> _packages = [];
 
     public int Count => _packages.Count;
 
@@ -33,9 +28,6 @@ public class PackageCollection : IEnumerable<PackageDefinition>
 
     public bool Remove(PackageDefinition package)
     {
-        if (package == null)
-            return false;
-
         return _packages.Remove(package);
     }
 

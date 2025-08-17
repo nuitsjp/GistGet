@@ -7,21 +7,15 @@ namespace NuitsJp.GistGet.Business;
 
 public class PackageYamlConverter : IPackageYamlConverter
 {
-    private readonly IDeserializer _deserializer;
-    private readonly ISerializer _serializer;
-
-    public PackageYamlConverter()
-    {
-        _serializer = new SerializerBuilder()
-            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-            .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)
-            .Build();
-
-        _deserializer = new DeserializerBuilder()
-            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-            .IgnoreUnmatchedProperties()
-            .Build();
-    }
+    private readonly IDeserializer _deserializer = new DeserializerBuilder()
+        .WithNamingConvention(CamelCaseNamingConvention.Instance)
+        .IgnoreUnmatchedProperties()
+        .Build();
+    
+    private readonly ISerializer _serializer = new SerializerBuilder()
+        .WithNamingConvention(CamelCaseNamingConvention.Instance)
+        .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)
+        .Build();
 
     public string ToYaml(PackageCollection packages)
     {
@@ -98,12 +92,12 @@ public class PackageYamlConverter : IPackageYamlConverter
     public PackageCollection FromYaml(string yaml)
     {
         if (string.IsNullOrWhiteSpace(yaml))
-            return new PackageCollection();
+            return [];
 
         try
         {
             // 辞書形式として解析を試行
-            return TryDeserializeDictionaryFormat(yaml) ?? TryDeserializeLegacyFormat(yaml);
+            return TryDeserializeDictionaryFormat(yaml);
         }
         catch (YamlException ex)
         {
@@ -115,74 +109,37 @@ public class PackageYamlConverter : IPackageYamlConverter
         }
     }
 
-    private PackageCollection? TryDeserializeDictionaryFormat(string yaml)
+    private PackageCollection TryDeserializeDictionaryFormat(string yaml)
     {
-        try
-        {
-            var dictionaryModel = _deserializer.Deserialize<Dictionary<string, PackageYamlProperties>>(yaml);
-
-            if (dictionaryModel == null) return null;
-
-            var collection = new PackageCollection();
-            foreach (var kvp in dictionaryModel)
-            {
-                if (string.IsNullOrWhiteSpace(kvp.Key))
-                    continue;
-
-                var props = kvp.Value ?? new PackageYamlProperties();
-                var package = new PackageDefinition(
-                    kvp.Key,
-                    props.Version,
-                    props.Uninstall,
-                    props.Architecture,
-                    props.Scope,
-                    props.Source,
-                    props.Custom,
-                    props.AllowHashMismatch,
-                    props.Force,
-                    props.Header,
-                    props.InstallerType,
-                    props.Locale,
-                    props.Location,
-                    props.Log,
-                    props.Mode,
-                    props.Override,
-                    props.SkipDependencies,
-                    props.Confirm,
-                    props.WhatIf
-                );
-
-                collection.Add(package);
-            }
-
-            return collection;
-        }
-        catch (YamlException)
-        {
-            return null; // 辞書形式で失敗した場合はnullを返す
-        }
-    }
-
-    private PackageCollection TryDeserializeLegacyFormat(string yaml)
-    {
-        var yamlModel = _deserializer.Deserialize<PackageYamlModel>(yaml);
-
-        if (yamlModel?.Packages == null) return [];
+        var dictionaryModel = _deserializer.Deserialize<Dictionary<string, PackageYamlProperties?>>(yaml);
 
         var collection = new PackageCollection();
-        foreach (var item in yamlModel.Packages)
+        foreach (var kvp in dictionaryModel)
         {
-            if (string.IsNullOrWhiteSpace(item.Id))
+            if (string.IsNullOrWhiteSpace(kvp.Key))
                 continue;
 
+            var props = kvp.Value ?? new PackageYamlProperties();
             var package = new PackageDefinition(
-                item.Id,
-                item.Version,
-                item.Uninstall,
-                item.Architecture,
-                item.Scope,
-                item.Source,
-                item.Custom
+                kvp.Key,
+                props.Version,
+                props.Uninstall,
+                props.Architecture,
+                props.Scope,
+                props.Source,
+                props.Custom,
+                props.AllowHashMismatch,
+                props.Force,
+                props.Header,
+                props.InstallerType,
+                props.Locale,
+                props.Location,
+                props.Log,
+                props.Mode,
+                props.Override,
+                props.SkipDependencies,
+                props.Confirm,
+                props.WhatIf
             );
 
             collection.Add(package);
@@ -191,24 +148,9 @@ public class PackageYamlConverter : IPackageYamlConverter
         return collection;
     }
 
-    private class PackageYamlModel
-    {
-        public List<PackageYamlItem> Packages { get; set; } = [];
-    }
-
-    private class PackageYamlItem
-    {
-        public string Id { get; init; } = string.Empty;
-        public string? Version { get; init; }
-        public bool? Uninstall { get; init; }
-        public string? Architecture { get; init; }
-        public string? Scope { get; init; }
-        public string? Source { get; init; }
-        public string? Custom { get; init; }
-    }
-
     private class PackageYamlProperties
     {
+        // ReSharper disable UnusedAutoPropertyAccessor.Local
         public string? Version { get; init; }
         public bool? Uninstall { get; init; }
         public string? Architecture { get; init; }
@@ -227,5 +169,6 @@ public class PackageYamlConverter : IPackageYamlConverter
         public bool? SkipDependencies { get; init; }
         public bool? Confirm { get; init; }
         public bool? WhatIf { get; init; }
+        // ReSharper restore UnusedAutoPropertyAccessor.Local
     }
 }

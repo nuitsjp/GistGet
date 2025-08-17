@@ -1,4 +1,4 @@
-using NuitsJp.GistGet.Presentation.Console;
+﻿using NuitsJp.GistGet.Presentation.Console;
 
 namespace NuitsJp.GistGet.Presentation.Login;
 
@@ -36,15 +36,6 @@ public class LogoutConsole : ConsoleBase, ILogoutConsole
     {
         System.Console.WriteLine();
         System.Console.WriteLine($"❌ ログアウトに失敗しました: {message}");
-    }
-
-    /// <summary>
-    /// 既にログアウト済みを通知
-    /// </summary>
-    public void NotifyAlreadyLoggedOut()
-    {
-        System.Console.WriteLine();
-        System.Console.WriteLine("ℹ️  既にログアウト済みです");
     }
 
     /// <summary>

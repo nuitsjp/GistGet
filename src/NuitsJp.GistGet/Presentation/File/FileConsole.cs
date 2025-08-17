@@ -1,4 +1,4 @@
-using NuitsJp.GistGet.Presentation.Console;
+﻿using NuitsJp.GistGet.Presentation.Console;
 
 namespace NuitsJp.GistGet.Presentation.File;
 
@@ -26,15 +26,6 @@ public class FileConsole : ConsoleBase, IFileConsole
     }
 
     /// <summary>
-    /// ダウンロード失敗を通知
-    /// </summary>
-    public void NotifyDownloadFailure(string fileName, string message)
-    {
-        System.Console.WriteLine();
-        System.Console.WriteLine($"❌ {fileName} のダウンロードに失敗しました: {message}");
-    }
-
-    /// <summary>
     /// アップロード開始を通知
     /// </summary>
     public void NotifyUploadStarting(string filePath)
@@ -49,15 +40,6 @@ public class FileConsole : ConsoleBase, IFileConsole
     {
         System.Console.WriteLine();
         System.Console.WriteLine($"✅ {fileName} をGistにアップロードしました");
-    }
-
-    /// <summary>
-    /// アップロード失敗を通知
-    /// </summary>
-    public void NotifyUploadFailure(string filePath, string message)
-    {
-        System.Console.WriteLine();
-        System.Console.WriteLine($"❌ {filePath} のアップロードに失敗しました: {message}");
     }
 
     /// <summary>

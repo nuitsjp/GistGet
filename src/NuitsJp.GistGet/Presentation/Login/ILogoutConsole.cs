@@ -1,4 +1,4 @@
-using NuitsJp.GistGet.Presentation.Console;
+﻿using NuitsJp.GistGet.Presentation.Console;
 
 namespace NuitsJp.GistGet.Presentation.Login;
 
@@ -23,9 +23,4 @@ public interface ILogoutConsole : IConsoleBase
     /// ログアウト失敗を通知
     /// </summary>
     void NotifyLogoutFailure(string message);
-
-    /// <summary>
-    /// 既にログアウト済みを通知
-    /// </summary>
-    void NotifyAlreadyLoggedOut();
 }

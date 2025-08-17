@@ -231,8 +231,8 @@ public class CommandRouter(
         if (isSilentMode)
         {
             logger.LogError("Silent mode: Authentication required but not available");
-            System.Console.Error.WriteLine("Error: Authentication required but not available in silent mode.");
-            System.Console.Error.WriteLine("Please run 'gistget login' first.");
+            await System.Console.Error.WriteLineAsync("Error: Authentication required but not available in silent mode.");
+            await System.Console.Error.WriteLineAsync("Please run 'gistget login' first.");
             return false;
         }
 
@@ -254,8 +254,8 @@ public class CommandRouter(
         if (isSilentMode)
         {
             logger.LogError("Silent mode: Gist configuration required but not available");
-            System.Console.Error.WriteLine("Error: Gist configuration required but not available in silent mode.");
-            System.Console.Error.WriteLine("Please run 'gistget gist set' first.");
+            await System.Console.Error.WriteLineAsync("Error: Gist configuration required but not available in silent mode.");
+            await System.Console.Error.WriteLineAsync("Please run 'gistget gist set' first.");
             return false;
         }
 
@@ -341,6 +341,6 @@ public class CommandRouter(
             { "config", "settings" }
         };
 
-        return aliasMap.TryGetValue(command, out var normalizedCommand) ? normalizedCommand : command;
+        return aliasMap.GetValueOrDefault(command, command);
     }
 }

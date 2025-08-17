@@ -14,10 +14,12 @@ namespace NuitsJp.GistGet.Tests.Presentation.Commands;
 [Trait("Category", "Unit")]
 public class WinGetCommandTests
 {
+    // ReSharper disable PrivateFieldCanBeConvertedToLocalVariable
     private readonly Mock<IWinGetConsole> _mockConsole;
     private readonly Mock<IPackageManagementService> _mockPackageManagementService;
     private readonly Mock<IOsService> _mockOsService;
     private readonly Mock<IWinGetClient> _mockWinGetClient;
+    // ReSharper restore PrivateFieldCanBeConvertedToLocalVariable
     private readonly WinGetCommand _winGetCommand;
 
     public WinGetCommandTests()

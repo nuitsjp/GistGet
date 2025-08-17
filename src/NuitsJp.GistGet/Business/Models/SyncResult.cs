@@ -38,6 +38,7 @@ public class SyncResult
     /// <summary>
     /// 処理されたパッケージの総数を取得
     /// </summary>
+    // ReSharper disable once UnusedMember.Global
     public int TotalProcessedCount => InstalledPackages.Count + UninstalledPackages.Count + FailedPackages.Count;
 
     /// <summary>

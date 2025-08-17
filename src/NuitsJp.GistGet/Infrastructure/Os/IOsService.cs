@@ -1,4 +1,4 @@
-namespace NuitsJp.GistGet.Infrastructure.Os;
+﻿namespace NuitsJp.GistGet.Infrastructure.Os;
 
 /// <summary>
 /// オペレーティングシステム操作のインターフェース
@@ -16,12 +16,6 @@ public interface IOsService
     /// システムシャットダウンを実行
     /// </summary>
     /// <returns>シャットダウンコマンドの実行タスク</returns>
+    // ReSharper disable once UnusedMember.Global
     Task ExecuteShutdownAsync();
-
-    /// <summary>
-    /// システム再起動を実行（指定時間後）
-    /// </summary>
-    /// <param name="delaySeconds">再起動までの遅延時間（秒）</param>
-    /// <returns>再起動コマンドの実行タスク</returns>
-    Task ExecuteRebootAsync(int delaySeconds);
 }

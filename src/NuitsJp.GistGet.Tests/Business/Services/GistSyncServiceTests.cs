@@ -340,8 +340,10 @@ public class GistSyncServiceTests
     {
         // Arrange
         var packageId = "Git.Git";
-        var existingPackages = new PackageCollection();
-        existingPackages.Add(new PackageDefinition(packageId));
+        var existingPackages = new PackageCollection
+        {
+            new PackageDefinition(packageId)
+        };
         _mockGistManager.Setup(x => x.GetGistPackagesAsync()).ReturnsAsync(existingPackages);
 
         // Act

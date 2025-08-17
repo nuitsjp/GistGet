@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NuitsJp.GistGet.Business;
 using NuitsJp.GistGet.Infrastructure.GitHub;
 using NuitsJp.GistGet.Models;
@@ -48,7 +48,7 @@ public class GistShowCommand(
 
             try
             {
-                using var progress = _console.BeginProgress("Gistコンテンツ取得");
+                _console.BeginProgress("Gistコンテンツ取得");
 
                 // パッケージ取得
                 var packages = await _gistManager.GetGistPackagesAsync();

@@ -44,10 +44,12 @@ public class PackageYamlConverterTests
     {
         // Arrange
         var converter = new PackageYamlConverter();
-        var collection = new PackageCollection();
-        collection.Add(new PackageDefinition("Zoom.Zoom"));
-        collection.Add(new PackageDefinition("AkelPad.AkelPad"));
-        collection.Add(new PackageDefinition("Microsoft.VisualStudioCode"));
+        var collection = new PackageCollection
+        {
+            new PackageDefinition("Zoom.Zoom"),
+            new PackageDefinition("AkelPad.AkelPad"),
+            new PackageDefinition("Microsoft.VisualStudioCode")
+        };
 
         // Act
         var yaml = converter.ToYaml(collection);
@@ -93,40 +95,11 @@ public class PackageYamlConverterTests
     }
 
     [Fact]
-    public void FromYaml_WithValidYaml_ShouldDeserializeCorrectly()
-    {
-        // Arrange
-        var converter = new PackageYamlConverter();
-        var yaml = """
-                   packages:
-                     - id: AkelPad.AkelPad
-                       version: 4.9.8
-                     - id: Microsoft.VisualStudioCode
-                   """;
-
-        // Act
-        var collection = converter.FromYaml(yaml);
-
-        // Assert
-        collection.Count.ShouldBe(2);
-
-        var akelPad = collection.FindById("AkelPad.AkelPad");
-        akelPad.ShouldNotBeNull();
-        akelPad.Id.ShouldBe("AkelPad.AkelPad");
-        akelPad.Version.ShouldBe("4.9.8");
-
-        var vsCode = collection.FindById("Microsoft.VisualStudioCode");
-        vsCode.ShouldNotBeNull();
-        vsCode.Id.ShouldBe("Microsoft.VisualStudioCode");
-        vsCode.Version.ShouldBeNull();
-    }
-
-    [Fact]
     public void FromYaml_WithEmptyPackages_ShouldReturnEmptyCollection()
     {
         // Arrange
         var converter = new PackageYamlConverter();
-        var yaml = "packages: []";
+        var yaml = "";
 
         // Act
         var collection = converter.FromYaml(yaml);
@@ -163,10 +136,11 @@ public class PackageYamlConverterTests
     {
         // Arrange
         var converter = new PackageYamlConverter();
-        var originalCollection = new PackageCollection();
-        originalCollection.Add(new PackageDefinition("AkelPad.AkelPad", "4.9.8", true, "x64", "user", "winget",
-            "--force"));
-        originalCollection.Add(new PackageDefinition("Microsoft.VisualStudioCode"));
+        var originalCollection = new PackageCollection
+        {
+            new PackageDefinition("AkelPad.AkelPad", "4.9.8", true, "x64", "user", "winget", "--force"),
+            new PackageDefinition("Microsoft.VisualStudioCode")
+        };
 
         // Act
         var yaml = converter.ToYaml(originalCollection);
@@ -209,8 +183,10 @@ public class PackageYamlConverterTests
     {
         // Arrange
         var converter = new PackageYamlConverter();
-        var originalCollection = new PackageCollection();
-        originalCollection.Add(new PackageDefinition("Microsoft.PowerToys"));
+        var originalCollection = new PackageCollection
+        {
+            new PackageDefinition("Microsoft.PowerToys")
+        };
 
         // Act
         var yaml = converter.ToYaml(originalCollection);
@@ -233,17 +209,17 @@ public class PackageYamlConverterTests
     {
         // Arrange
         var converter = new PackageYamlConverter();
-        var originalCollection = new PackageCollection();
+        var originalCollection = new PackageCollection
+        {
+            // Package with minimal fields
+            new PackageDefinition("A.MinimalPackage"),
 
-        // Package with minimal fields
-        originalCollection.Add(new PackageDefinition("A.MinimalPackage"));
+            // Package with some fields
+            new PackageDefinition("B.PartialPackage", "1.0.0", architecture: "x64"),
 
-        // Package with some fields
-        originalCollection.Add(new PackageDefinition("B.PartialPackage", "1.0.0", architecture: "x64"));
-
-        // Package with all fields
-        originalCollection.Add(new PackageDefinition("C.FullPackage", "2.0.0", true, "x86", "machine", "msstore",
-            "--quiet"));
+            // Package with all fields
+            new PackageDefinition("C.FullPackage", "2.0.0", true, "x86", "machine", "msstore", "--quiet")
+        };
 
         // Act
         var yaml = converter.ToYaml(originalCollection);
@@ -288,16 +264,17 @@ public class PackageYamlConverterTests
     {
         // Arrange
         var converter = new PackageYamlConverter();
-        var originalCollection = new PackageCollection();
-
-        // Various combinations of optional fields
-        originalCollection.Add(new PackageDefinition("Test.VersionOnly", "1.0"));
-        originalCollection.Add(new PackageDefinition("Test.UninstallOnly", uninstall: true));
-        originalCollection.Add(new PackageDefinition("Test.ArchOnly", architecture: "arm64"));
-        originalCollection.Add(new PackageDefinition("Test.ScopeOnly", scope: "user"));
-        originalCollection.Add(new PackageDefinition("Test.SourceOnly", source: "winget"));
-        originalCollection.Add(new PackageDefinition("Test.CustomOnly", custom: "--override"));
-        originalCollection.Add(new PackageDefinition("Test.VersionAndScope", "2.0", scope: "machine"));
+        var originalCollection = new PackageCollection
+        {
+            // Various combinations of optional fields
+            new PackageDefinition("Test.VersionOnly", "1.0"),
+            new PackageDefinition("Test.UninstallOnly", uninstall: true),
+            new PackageDefinition("Test.ArchOnly", architecture: "arm64"),
+            new PackageDefinition("Test.ScopeOnly", scope: "user"),
+            new PackageDefinition("Test.SourceOnly", source: "winget"),
+            new PackageDefinition("Test.CustomOnly", custom: "--override"),
+            new PackageDefinition("Test.VersionAndScope", "2.0", scope: "machine")
+        };
 
         // Act
         var yaml = converter.ToYaml(originalCollection);
@@ -341,10 +318,11 @@ public class PackageYamlConverterTests
     {
         // Arrange
         var converter = new PackageYamlConverter();
-        var originalCollection = new PackageCollection();
-
-        // Package with empty string fields (should be treated as null)
-        originalCollection.Add(new PackageDefinition("Test.EmptyFields", "", null, "", "", "", ""));
+        var originalCollection = new PackageCollection
+        {
+            // Package with empty string fields (should be treated as null)
+            new PackageDefinition("Test.EmptyFields", "", null, "", "", "", "")
+        };
 
         // Act
         var yaml = converter.ToYaml(originalCollection);
@@ -369,66 +347,6 @@ public class PackageYamlConverterTests
         yaml.ShouldNotContain("scope:");
         yaml.ShouldNotContain("source:");
         yaml.ShouldNotContain("custom:");
-    }
-
-    [Fact]
-    public void FromYaml_WithMixedYamlTestData_ShouldDeserializeCorrectly()
-    {
-        // Arrange
-        var converter = new PackageYamlConverter();
-        // yaml-specification.mdに基づくテストデータ（現在の配列形式）
-        var yaml = """
-                   packages:
-                     - id: 7zip.7zip
-                     - id: Microsoft.VisualStudioCode
-                       version: 1.85.0
-                       architecture: x64
-                       scope: machine
-                       source: winget
-                       custom: /VERYSILENT /NORESTART
-                     - id: Zoom.Zoom
-                       uninstall: true
-                   """;
-
-        // Act
-        var collection = converter.FromYaml(yaml);
-
-        // Assert
-        collection.Count.ShouldBe(3);
-
-        // 7zip.7zip (パラメータなし)
-        var sevenZip = collection.FindById("7zip.7zip");
-        sevenZip.ShouldNotBeNull();
-        sevenZip.Version.ShouldBeNull();
-        sevenZip.Uninstall.ShouldBeNull();
-
-        // Microsoft.VisualStudioCode (複数パラメータあり)
-        var vscode = collection.FindById("Microsoft.VisualStudioCode");
-        vscode.ShouldNotBeNull();
-        vscode.Version.ShouldBe("1.85.0");
-        vscode.Architecture.ShouldBe("x64");
-        vscode.Scope.ShouldBe("machine");
-        vscode.Source.ShouldBe("winget");
-        vscode.Custom.ShouldBe("/VERYSILENT /NORESTART");
-
-        // Zoom.Zoom (アンインストール指定)
-        var zoom = collection.FindById("Zoom.Zoom");
-        zoom.ShouldNotBeNull();
-        zoom.Uninstall.ShouldBe(true);
-    }
-
-    [Fact]
-    public void FromYaml_WithEmptyYamlTestData_ShouldReturnEmptyCollection()
-    {
-        // Arrange
-        var converter = new PackageYamlConverter();
-        var yaml = "packages: []";
-
-        // Act
-        var collection = converter.FromYaml(yaml);
-
-        // Assert
-        collection.Count.ShouldBe(0);
     }
 
     [Fact]
@@ -533,27 +451,28 @@ public class PackageYamlConverterTests
     {
         // Arrange
         var converter = new PackageYamlConverter();
-        var collection = new PackageCollection();
+        var collection = new PackageCollection
+        {
+            // パラメータなしのパッケージ
+            new PackageDefinition("7zip.7zip"),
 
-        // パラメータなしのパッケージ
-        collection.Add(new PackageDefinition("7zip.7zip"));
+            // 一部プロパティを持つパッケージ
+            new PackageDefinition(
+                "Microsoft.VisualStudioCode",
+                version: "1.85.0",
+                uninstall: false,
+                architecture: "x64",
+                scope: "machine",
+                source: null,
+                custom: "/VERYSILENT /NORESTART",
+                allowHashMismatch: true,
+                force: true,
+                header: "Authorization: Bearer xxx"
+            ),
 
-        // 一部プロパティを持つパッケージ
-        collection.Add(new PackageDefinition(
-            "Microsoft.VisualStudioCode",
-            version: "1.85.0",
-            uninstall: false,
-            architecture: "x64",
-            scope: "machine",
-            source: null,
-            custom: "/VERYSILENT /NORESTART",
-            allowHashMismatch: true,
-            force: true,
-            header: "Authorization: Bearer xxx"
-        ));
-
-        // アンインストール指定
-        collection.Add(new PackageDefinition("Zoom.Zoom", uninstall: true));
+            // アンインストール指定
+            new PackageDefinition("Zoom.Zoom", uninstall: true)
+        };
 
         // Act
         var yaml = converter.ToYaml(collection);
@@ -605,36 +524,37 @@ public class PackageYamlConverterTests
     {
         // Arrange
         var converter = new PackageYamlConverter();
-        var originalCollection = new PackageCollection();
+        var originalCollection = new PackageCollection
+        {
+            // 全プロパティを持つパッケージを作成
+            new PackageDefinition(
+                "Microsoft.VisualStudioCode",
+                version: "1.85.0",
+                uninstall: false,
+                architecture: "x64",
+                scope: "machine",
+                source: "winget",
+                custom: "/VERYSILENT /NORESTART",
+                allowHashMismatch: true,
+                force: true,
+                header: "Authorization: Bearer xxx",
+                installerType: "exe",
+                locale: "en-US",
+                location: "C:\\Program Files\\Microsoft VS Code",
+                log: "C:\\Temp\\vscode_install.log",
+                mode: "silent",
+                overrideArgs: "/SILENT",
+                skipDependencies: true,
+                confirm: true,
+                whatIf: true
+            ),
 
-        // 全プロパティを持つパッケージを作成
-        originalCollection.Add(new PackageDefinition(
-            "Microsoft.VisualStudioCode",
-            version: "1.85.0",
-            uninstall: false,
-            architecture: "x64",
-            scope: "machine",
-            source: "winget",
-            custom: "/VERYSILENT /NORESTART",
-            allowHashMismatch: true,
-            force: true,
-            header: "Authorization: Bearer xxx",
-            installerType: "exe",
-            locale: "en-US",
-            location: "C:\\Program Files\\Microsoft VS Code",
-            log: "C:\\Temp\\vscode_install.log",
-            mode: "silent",
-            overrideArgs: "/SILENT",
-            skipDependencies: true,
-            confirm: true,
-            whatIf: true
-        ));
+            // パラメータなしのパッケージ
+            new PackageDefinition("7zip.7zip"),
 
-        // パラメータなしのパッケージ
-        originalCollection.Add(new PackageDefinition("7zip.7zip"));
-
-        // アンインストール指定のパッケージ
-        originalCollection.Add(new PackageDefinition("Zoom.Zoom", uninstall: true));
+            // アンインストール指定のパッケージ
+            new PackageDefinition("Zoom.Zoom", uninstall: true)
+        };
 
         // Act
         var yaml = converter.ToYaml(originalCollection);

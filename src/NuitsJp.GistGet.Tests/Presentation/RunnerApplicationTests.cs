@@ -17,7 +17,7 @@ public class RunnerApplicationTests
 
         var services = new ServiceCollection()
             .AddLogging(b => b.AddDebug())
-            .AddSingleton<ICommandRouter>(commandService.Object)
+            .AddSingleton(commandService.Object)
             .BuildServiceProvider();
 
         var host = Mock.Of<IHost>(h => h.Services == services);

@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NuitsJp.GistGet.Business.Models;
 using NuitsJp.GistGet.Business.Services;
 
@@ -38,7 +38,7 @@ public class GistSetCommand(
                 FileName = configuration.Value.fileName
             };
 
-            using var progress = _console.BeginProgress("Gist設定保存");
+            _console.BeginProgress("Gist設定保存");
 
             var result = await _gistConfigService.ConfigureGistAsync(request);
 

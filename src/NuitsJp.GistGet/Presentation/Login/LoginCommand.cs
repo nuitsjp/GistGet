@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NuitsJp.GistGet.Infrastructure.GitHub;
 
 namespace NuitsJp.GistGet.Presentation.Login;
@@ -28,7 +28,6 @@ public class LoginCommand(
                     await ShowAuthStatusAsync();
                     return 0;
 
-                case "":
                 default:
                     // デフォルトはログインフロー実行
                     return await ExecuteAuthenticationAsync();
@@ -49,7 +48,7 @@ public class LoginCommand(
     {
         try
         {
-            using var progress = console.BeginProgress("GitHubログイン");
+            console.BeginProgress("GitHubログイン");
 
             var success = await authService.AuthenticateAsync();
 

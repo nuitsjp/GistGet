@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NuitsJp.GistGet.Business;
 using NuitsJp.GistGet.Infrastructure.GitHub;
 
@@ -78,10 +78,8 @@ public class UploadCommand(
     {
         var options = new UploadOptions();
 
-        for (int i = 0; i < args.Length; i++)
+        foreach (var arg in args)
         {
-            var arg = args[i];
-
             // オプションフラグをスキップして、最初の引数をファイルパスとして扱う
             if (arg.StartsWith("--") || arg.StartsWith("-"))
             {

@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using NuitsJp.GistGet.Models;
 
@@ -6,7 +6,7 @@ namespace NuitsJp.GistGet.Infrastructure.Storage;
 
 public class GistConfigurationStorage : IGistConfigurationStorage
 {
-    private static readonly SemaphoreSlim _fileSemaphore = new(1, 1);
+    private static readonly SemaphoreSlim FileSemaphore = new(1, 1);
 
     public GistConfigurationStorage(string appDataDirectory)
     {
@@ -25,7 +25,7 @@ public class GistConfigurationStorage : IGistConfigurationStorage
 
         configuration.Validate();
 
-        await _fileSemaphore.WaitAsync();
+        await FileSemaphore.WaitAsync();
         try
         {
             // ディレクトリが存在しない場合は作成
@@ -53,7 +53,7 @@ public class GistConfigurationStorage : IGistConfigurationStorage
         // UnauthorizedAccessException はそのまま投げる
         finally
         {
-            _fileSemaphore.Release();
+            FileSemaphore.Release();
         }
     }
 
@@ -62,7 +62,7 @@ public class GistConfigurationStorage : IGistConfigurationStorage
         if (!File.Exists(FilePath))
             return null;
 
-        await _fileSemaphore.WaitAsync();
+        await FileSemaphore.WaitAsync();
         try
         {
             // 暗号化されたファイルを読み込み
@@ -95,7 +95,7 @@ public class GistConfigurationStorage : IGistConfigurationStorage
         }
         finally
         {
-            _fileSemaphore.Release();
+            FileSemaphore.Release();
         }
     }
 
@@ -115,7 +115,7 @@ public class GistConfigurationStorage : IGistConfigurationStorage
 
     public async Task DeleteConfigurationAsync()
     {
-        await _fileSemaphore.WaitAsync();
+        await FileSemaphore.WaitAsync();
         try
         {
             if (File.Exists(FilePath))
@@ -134,7 +134,7 @@ public class GistConfigurationStorage : IGistConfigurationStorage
         }
         finally
         {
-            _fileSemaphore.Release();
+            FileSemaphore.Release();
         }
 
         await Task.CompletedTask;

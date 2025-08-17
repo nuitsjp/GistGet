@@ -1,4 +1,4 @@
-using Octokit;
+﻿using Octokit;
 
 namespace NuitsJp.GistGet.Infrastructure.GitHub;
 
@@ -26,17 +26,8 @@ public interface IGitHubAuthService
     /// <summary>
     /// 認証状態を表示する
     /// </summary>
+    // ReSharper disable once UnusedMember.Global
     Task ShowAuthStatusAsync();
-
-    /// <summary>
-    /// トークンをDPAPIで暗号化して保存する（テスト用公開メソッド）
-    /// </summary>
-    Task SaveTokenAsync(string token);
-
-    /// <summary>
-    /// DPAPIで暗号化されたトークンを復号化して読み込む（テスト用公開メソッド）
-    /// </summary>
-    Task<string?> LoadTokenAsync();
 
     /// <summary>
     /// 保存されたトークンを削除してログアウトする

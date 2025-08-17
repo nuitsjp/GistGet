@@ -1,4 +1,4 @@
-using System.Security.AccessControl;
+﻿using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
 using NuitsJp.GistGet.Infrastructure.Storage;
@@ -163,39 +163,40 @@ public class GistConfigurationStorageTests : IDisposable
         var config2 = new GistConfiguration("concurrent_test_2", "test2.yaml");
 
         // Act: 並行して読み書きを実行
-        var tasks = new List<Task>();
-
-        // 書き込みタスク
-        tasks.Add(Task.Run(async () =>
-        {
-            for (var i = 0; i < 10; i++)
-            {
-                await _storage.SaveGistConfigurationAsync(config1);
-                await Task.Delay(10);
-            }
-        }));
-
-        // 別の書き込みタスク
-        tasks.Add(Task.Run(async () =>
-        {
-            for (var i = 0; i < 10; i++)
-            {
-                await _storage.SaveGistConfigurationAsync(config2);
-                await Task.Delay(15);
-            }
-        }));
-
-        // 読み込みタスク
         var readResults = new List<GistConfiguration?>();
-        tasks.Add(Task.Run(async () =>
+        var tasks = new List<Task>
         {
-            for (var i = 0; i < 20; i++)
+            // 書き込みタスク
+            Task.Run(async () =>
             {
-                var config = await _storage.LoadGistConfigurationAsync();
-                readResults.Add(config);
-                await Task.Delay(5);
-            }
-        }));
+                for (var i = 0; i < 10; i++)
+                {
+                    await _storage.SaveGistConfigurationAsync(config1);
+                    await Task.Delay(10);
+                }
+            }),
+
+            // 別の書き込みタスク
+            Task.Run(async () =>
+            {
+                for (var i = 0; i < 10; i++)
+                {
+                    await _storage.SaveGistConfigurationAsync(config2);
+                    await Task.Delay(15);
+                }
+            }),
+
+            // 読み込みタスク
+            Task.Run(async () =>
+            {
+                for (var i = 0; i < 20; i++)
+                {
+                    var config = await _storage.LoadGistConfigurationAsync();
+                    readResults.Add(config);
+                    await Task.Delay(5);
+                }
+            })
+        };
 
         await Task.WhenAll(tasks);
 
@@ -300,7 +301,7 @@ public class GistConfigurationStorageTests : IDisposable
             await _storage.SaveGistConfigurationAsync(config);
             var loaded = await _storage.LoadGistConfigurationAsync();
             loaded.ShouldNotBeNull();
-            loaded!.GistId.ShouldBe(largeGistId);
+            loaded.GistId.ShouldBe(largeGistId);
             loaded.FileName.ShouldBe(largeFileName);
         });
     }

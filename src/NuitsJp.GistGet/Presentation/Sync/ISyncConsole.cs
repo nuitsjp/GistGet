@@ -54,5 +54,6 @@ public enum SyncUserAction
     ForceReboot,
 
     /// <summary>キャンセル</summary>
+    // ReSharper disable once UnusedMember.Global
     Cancel
 }

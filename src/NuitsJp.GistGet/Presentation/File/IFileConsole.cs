@@ -1,4 +1,4 @@
-using NuitsJp.GistGet.Presentation.Console;
+﻿using NuitsJp.GistGet.Presentation.Console;
 
 namespace NuitsJp.GistGet.Presentation.File;
 
@@ -19,11 +19,6 @@ public interface IFileConsole : IConsoleBase
     void NotifyDownloadSuccess(string fileName, string filePath);
 
     /// <summary>
-    /// ダウンロード失敗を通知
-    /// </summary>
-    void NotifyDownloadFailure(string fileName, string message);
-
-    /// <summary>
     /// アップロード開始を通知
     /// </summary>
     void NotifyUploadStarting(string filePath);
@@ -32,11 +27,6 @@ public interface IFileConsole : IConsoleBase
     /// アップロード成功を通知
     /// </summary>
     void NotifyUploadSuccess(string fileName);
-
-    /// <summary>
-    /// アップロード失敗を通知
-    /// </summary>
-    void NotifyUploadFailure(string filePath, string message);
 
     /// <summary>
     /// ファイル上書き確認を取る

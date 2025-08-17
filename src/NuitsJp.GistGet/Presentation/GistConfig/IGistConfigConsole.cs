@@ -1,4 +1,4 @@
-using NuitsJp.GistGet.Presentation.Console;
+﻿using NuitsJp.GistGet.Presentation.Console;
 
 namespace NuitsJp.GistGet.Presentation.GistConfig;
 
@@ -27,13 +27,6 @@ public interface IGistConfigConsole : IConsoleBase
     /// <param name="gistId">設定されたGist ID</param>
     /// <param name="fileName">設定されたファイル名</param>
     void NotifyConfigurationSaved(string gistId, string fileName);
-
-    /// <summary>
-    /// 現在のGist設定を表示
-    /// </summary>
-    /// <param name="gistId">現在のGist ID</param>
-    /// <param name="fileName">現在のファイル名</param>
-    void ShowCurrentConfiguration(string gistId, string fileName);
 
     /// <summary>
     /// Gist設定状態を表示

@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Octokit;
 
 namespace NuitsJp.GistGet.Infrastructure.GitHub;
@@ -18,10 +18,9 @@ public class GitHubGistClient(GitHubAuthService authService, ILogger<GitHubGistC
             var client = await _authService.GetAuthenticatedClientAsync();
             var gist = await client!.Gist.Get(gistId);
 
-            if (gist?.Files == null || !gist.Files.ContainsKey(fileName))
+            if (gist?.Files == null || !gist.Files.TryGetValue(fileName, out var file))
                 throw new InvalidOperationException($"File '{fileName}' not found in Gist {gistId}");
 
-            var file = gist.Files[fileName];
             if (string.IsNullOrEmpty(file.Content))
             {
                 _logger.LogWarning("File '{FileName}' in Gist {GistId} has no content", fileName, gistId);

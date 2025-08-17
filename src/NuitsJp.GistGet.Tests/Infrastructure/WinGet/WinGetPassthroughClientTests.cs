@@ -1,7 +1,6 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NuitsJp.GistGet.Infrastructure.WinGet;
 using Shouldly;
-using Xunit.Abstractions;
 
 namespace NuitsJp.GistGet.Tests.Infrastructure.WinGet;
 
@@ -9,11 +8,9 @@ namespace NuitsJp.GistGet.Tests.Infrastructure.WinGet;
 public class WinGetPassthroughClientTests
 {
     private readonly ILogger<WinGetPassthroughClient> _logger;
-    private readonly ITestOutputHelper _testOutput;
 
-    public WinGetPassthroughClientTests(ITestOutputHelper testOutput)
+    public WinGetPassthroughClientTests()
     {
-        _testOutput = testOutput;
         var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
         _logger = loggerFactory.CreateLogger<WinGetPassthroughClient>();
     }

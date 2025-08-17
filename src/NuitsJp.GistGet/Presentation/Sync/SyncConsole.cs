@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NuitsJp.GistGet.Business.Models;
 using NuitsJp.GistGet.Presentation.Console;
 
@@ -39,7 +39,7 @@ public class SyncConsole(ILogger<SyncConsole>? logger = null) : ConsoleBase(logg
 
         foreach (var package in packagesRequiringReboot) System.Console.WriteLine($"  - {package}");
 
-        return PromptForConfirmation("今すぐ再起動しますか？", false);
+        return PromptForConfirmation("今すぐ再起動しますか？");
     }
 
     /// <summary>
@@ -110,7 +110,6 @@ public class SyncConsole(ILogger<SyncConsole>? logger = null) : ConsoleBase(logg
         {
             "y" or "yes" => true,
             "n" or "no" => false,
-            "" => defaultValue,
             _ => defaultValue
         };
     }

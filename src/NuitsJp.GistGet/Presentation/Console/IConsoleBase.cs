@@ -1,4 +1,4 @@
-namespace NuitsJp.GistGet.Presentation.Console;
+﻿namespace NuitsJp.GistGet.Presentation.Console;
 
 /// <summary>
 /// コンソール入出力サービスの共通基盤インターフェース
@@ -24,22 +24,5 @@ public interface IConsoleBase
     /// </summary>
     /// <param name="operation">実行中の操作名</param>
     /// <returns>Disposeで進捗を終了</returns>
-    IDisposable BeginProgress(string operation);
-}
-
-/// <summary>
-/// 進捗表示インターフェース
-/// </summary>
-public interface IProgressIndicator : IDisposable
-{
-    /// <summary>
-    /// 進捗メッセージを更新
-    /// </summary>
-    /// <param name="message">進捗メッセージ</param>
-    void UpdateMessage(string message);
-
-    /// <summary>
-    /// 進捗を完了状態にする
-    /// </summary>
-    void Complete();
+    void BeginProgress(string operation);
 }

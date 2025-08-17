@@ -1,5 +1,4 @@
-using System.Diagnostics;
-using NuitsJp.GistGet.Models;
+﻿using NuitsJp.GistGet.Models;
 
 namespace NuitsJp.GistGet.Infrastructure.WinGet;
 
@@ -41,13 +40,6 @@ public interface IWinGetClient
     Task<List<PackageDefinition>> GetInstalledPackagesAsync();
 
     /// <summary>
-    /// パッケージを検索する
-    /// </summary>
-    /// <param name="query">検索クエリ</param>
-    /// <returns>見つかったパッケージのリスト</returns>
-    Task<List<PackageDefinition>> SearchPackagesAsync(string query);
-
-    /// <summary>
     /// winget.exeに引数をそのまま渡して実行する（パススルー）
     /// </summary>
     /// <param name="args">wingetコマンド引数</param>
@@ -68,41 +60,3 @@ public interface IWinGetPassthroughClient
     Task<int> ExecuteAsync(string[] args);
 }
 
-/// <summary>
-/// プロセス実行の抽象化インターフェース
-/// </summary>
-public interface IProcessWrapper
-{
-    /// <summary>
-    /// プロセスを開始する
-    /// </summary>
-    /// <param name="startInfo">プロセス開始情報</param>
-    /// <returns>開始されたプロセス</returns>
-    IProcessResult? Start(ProcessStartInfo startInfo);
-}
-
-/// <summary>
-/// プロセス実行結果の抽象化
-/// </summary>
-public interface IProcessResult : IDisposable
-{
-    /// <summary>
-    /// プロセスの終了コード
-    /// </summary>
-    int ExitCode { get; }
-
-    /// <summary>
-    /// プロセスの終了を待機する
-    /// </summary>
-    Task WaitForExitAsync();
-
-    /// <summary>
-    /// 標準出力を読み取る
-    /// </summary>
-    Task<string> ReadStandardOutputAsync();
-
-    /// <summary>
-    /// 標準エラーを読み取る
-    /// </summary>
-    Task<string> ReadStandardErrorAsync();
-}

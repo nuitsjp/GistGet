@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Moq;
 using NuitsJp.GistGet.Business;
 using NuitsJp.GistGet.Business.Models;
@@ -23,6 +23,7 @@ public class CommandRouterTests
     private readonly Mock<IGistManager> _mockGistManager;
 
     // Command dependencies
+    // ReSharper disable PrivateFieldCanBeConvertedToLocalVariable
     private readonly Mock<IGistConfigService> _mockGistConfigService;
     private readonly Mock<IGistConfigConsole> _mockGistConfigConsole;
     private readonly Mock<ILoginConsole> _mockLoginConsole;
@@ -35,6 +36,7 @@ public class CommandRouterTests
     // New command dependencies
     private readonly Mock<IFileConsole> _mockFileConsole;
     private readonly Mock<IGitHubGistClient> _mockGitHubGistClient;
+    // ReSharper restore PrivateFieldCanBeConvertedToLocalVariable
 
     private readonly CommandRouter _commandRouter;
 
@@ -169,7 +171,7 @@ public class CommandRouterTests
                 CreatedAt = DateTime.UtcNow,
                 LastAccessedAt = DateTime.UtcNow
             });
-            _mockGistManager.Setup(x => x.GetGistPackagesAsync()).ReturnsAsync(new PackageCollection());
+            _mockGistManager.Setup(x => x.GetGistPackagesAsync()).ReturnsAsync([]);
             _mockPackageYamlConverter.Setup(x => x.ToYaml(It.IsAny<PackageCollection>())).Returns("packages: []");
         }
 
@@ -182,22 +184,15 @@ public class CommandRouterTests
         _mockAuthService.Verify(x => x.AuthenticateAsync(), Times.Once);
     }
 
-    [Theory]
-    [InlineData("gist", "status")]
-    [InlineData("search")]
-    [InlineData("list")]
-    public async Task ExecuteAsync_WhenCommandDoesNotRequireAuthentication_ShouldNotCallEnsureAuthenticatedAsync(string command, string subCommand = null)
+    [Fact]
+    public async Task ExecuteAsync_WhenGistStatusCommand_ShouldNotCallEnsureAuthenticatedAsync()
     {
         // Arrange
-        string[] args = subCommand != null ? [command, subCommand] : [command];
-
-        // Set up per-test mocks for specific commands
-        if (command == "gist" && subCommand == "status")
-        {
-            // GistStatusCommand for unauthenticated users should just show status
-            _mockAuthService.Setup(x => x.IsAuthenticatedAsync()).ReturnsAsync(false);
-            _mockGistManager.Setup(x => x.IsConfiguredAsync()).ReturnsAsync(false);
-        }
+        string[] args = ["gist", "status"];
+        
+        // GistStatusCommand for unauthenticated users should just show status
+        _mockAuthService.Setup(x => x.IsAuthenticatedAsync()).ReturnsAsync(false);
+        _mockGistManager.Setup(x => x.IsConfiguredAsync()).ReturnsAsync(false);
 
         // Act
         var result = await _commandRouter.ExecuteAsync(args);
@@ -205,20 +200,28 @@ public class CommandRouterTests
         // Assert
         result.ShouldBe(0);
 
-        // For CommandRouter's authentication flow, these should not be called
-        // Note: Individual commands may call these, but CommandRouter should not
-        // We verify CommandRouter didn't call authentication flow for these commands
-        if (command == "gist" && subCommand == "status")
-        {
-            // GistStatusCommand calls IsAuthenticatedAsync directly, which is OK
-            _mockAuthService.Verify(x => x.AuthenticateAsync(), Times.Never);
-        }
-        else
-        {
-            // For search/list, neither should be called
-            _mockAuthService.Verify(x => x.IsAuthenticatedAsync(), Times.Never);
-            _mockAuthService.Verify(x => x.AuthenticateAsync(), Times.Never);
-        }
+        // GistStatusCommand calls IsAuthenticatedAsync directly, which is OK
+        // But CommandRouter should not call AuthenticateAsync
+        _mockAuthService.Verify(x => x.AuthenticateAsync(), Times.Never);
+    }
+
+    [Theory]
+    [InlineData("search")]
+    [InlineData("list")]
+    public async Task ExecuteAsync_WhenCommandDoesNotRequireAuthentication_ShouldNotCallEnsureAuthenticatedAsync(string command)
+    {
+        // Arrange
+        string[] args = [command];
+
+        // Act
+        var result = await _commandRouter.ExecuteAsync(args);
+
+        // Assert
+        result.ShouldBe(0);
+
+        // For search/list, neither should be called
+        _mockAuthService.Verify(x => x.IsAuthenticatedAsync(), Times.Never);
+        _mockAuthService.Verify(x => x.AuthenticateAsync(), Times.Never);
     }
 
     [Fact]

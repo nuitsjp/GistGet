@@ -1,7 +1,6 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NuitsJp.GistGet.Business;
 using NuitsJp.GistGet.Infrastructure.GitHub;
-using NuitsJp.GistGet.Presentation.Console;
 
 namespace NuitsJp.GistGet.Presentation.GistConfig;
 
@@ -48,12 +47,10 @@ public class GistStatusCommand(
 
                 _console.ShowGistStatus(true, true, config.GistId, config.FileName);
 
-                using var progress = _console.BeginProgress("Gist アクセス確認");
+                _console.BeginProgress("Gist アクセス確認");
 
                 // Gist存在確認
                 await _gistManager.ValidateGistAccessAsync(config.GistId);
-
-                ((IProgressIndicator)progress).UpdateMessage("パッケージ情報を取得中");
 
                 // パッケージ数取得
                 try

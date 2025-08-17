@@ -50,7 +50,7 @@ public class LogoutCommandTests
         _mockAuthService.Setup(x => x.LogoutAsync()).ReturnsAsync(true);
 
         // Act
-        var result = await _command.ExecuteAsync(new[] { "logout", "--silent" });
+        var result = await _command.ExecuteAsync(["logout", "--silent"]);
 
         // Assert
         Assert.Equal(0, result);

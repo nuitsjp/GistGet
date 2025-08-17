@@ -81,8 +81,8 @@ public class SyncCommand(IGistSyncService gistSyncService, ISyncConsole console,
     /// </summary>
     private class SyncOptions
     {
-        public bool DryRun { get; set; }
-        public bool ForceReboot { get; set; }
-        public bool SkipReboot { get; set; }
+        public bool DryRun { get; init; }
+        public bool ForceReboot { get; init; }
+        public bool SkipReboot { get; init; }
     }
 }

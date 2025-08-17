@@ -36,5 +36,6 @@ public class SyncPlan
     /// <summary>
     /// 計画の総パッケージ数を取得
     /// </summary>
+    // ReSharper disable once UnusedMember.Global
     public int TotalCount => ToInstall.Count + ToUninstall.Count + AlreadyInstalled.Count + NotFound.Count;
 }

@@ -9,7 +9,6 @@ namespace NuitsJp.GistGet.Tests.Infrastructure.GitHub;
 [Trait("Category", "RequiresGitHubToken")]
 public class GitHubGistClientTests : IAsyncLifetime
 {
-    private const string TestGistPrefix = "GISTGET_TEST";
     private readonly GitHubAuthService _authService;
     private readonly List<string> _createdGistIds = [];
     private readonly Mock<ILogger<GitHubGistClient>> _mockLogger;
@@ -40,7 +39,7 @@ public class GitHubGistClientTests : IAsyncLifetime
 
         try
         {
-            var client = new GitHubGistClient(_authService, _mockLogger.Object);
+            _ = new GitHubGistClient(_authService, _mockLogger.Object);
             // 実装予定: 24時間以上前のテストGistを検索・削除
             // GitHub APIで自分のGist一覧を取得し、命名規則に従ってクリーンアップ
         }
@@ -55,8 +54,8 @@ public class GitHubGistClientTests : IAsyncLifetime
         if (!await _authService.IsAuthenticatedAsync())
             return;
 
-        var client = new GitHubGistClient(_authService, _mockLogger.Object);
-        foreach (var gistId in _createdGistIds)
+        _ = new GitHubGistClient(_authService, _mockLogger.Object);
+        foreach (var _ in _createdGistIds)
             try
             {
                 // Gist削除APIを実装後に有効化
@@ -66,13 +65,6 @@ public class GitHubGistClientTests : IAsyncLifetime
             {
                 // 削除エラーは無視
             }
-    }
-
-    private string GenerateTestGistName(string testMethodName)
-    {
-        var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
-        var guid = Guid.NewGuid().ToString("N")[..8];
-        return $"{TestGistPrefix}_{timestamp}_{testMethodName}_{guid}";
     }
 
     [Fact]
@@ -260,7 +252,7 @@ public class GitHubGistClientTests : IAsyncLifetime
             return;
 
         // Arrange
-        var client = new GitHubGistClient(_authService, _mockLogger.Object);
+        _ = new GitHubGistClient(_authService, _mockLogger.Object);
         // var testGistName = GenerateTestGistName(nameof(CreateReadUpdateDelete_FullWorkflow_ShouldWork));
         // var fileName = "packages.yaml";
         // var initialContent = "# Test YAML\npackages:\n  - id: test.package\n    version: 1.0.0";
@@ -317,7 +309,7 @@ public class GitHubGistClientTests : IAsyncLifetime
             return;
 
         // Arrange
-        var client = new GitHubGistClient(_authService, _mockLogger.Object);
+        _ = new GitHubGistClient(_authService, _mockLogger.Object);
         // var largeContent = new string('x', 100000); // 100KB content
 
         // このテストも Create/Update API実装後に有効化
@@ -325,21 +317,4 @@ public class GitHubGistClientTests : IAsyncLifetime
     }
 
     // 統合テスト用のヘルパーメソッド
-    private async Task<bool> IsGitHubAvailable()
-    {
-        try
-        {
-            if (!await _authService.IsAuthenticatedAsync())
-                return false;
-
-            var client = new GitHubGistClient(_authService, _mockLogger.Object);
-            // 簡単な接続テスト
-            await client.ExistsAsync("ffffffffffffffffffffffffffffffff");
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
 }

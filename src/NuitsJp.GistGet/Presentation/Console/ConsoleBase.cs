@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace NuitsJp.GistGet.Presentation.Console;
 
@@ -30,9 +30,9 @@ public abstract class ConsoleBase(ILogger? logger = null) : IConsoleBase
     /// <summary>
     /// 進捗状況を表示（長時間処理用）
     /// </summary>
-    public virtual IDisposable BeginProgress(string operation)
+    public virtual void BeginProgress(string operation)
     {
-        return new SimpleProgressIndicator(operation, this);
+        WriteInfoLine($"{operation}を開始しています...");
     }
 
     /// <summary>
@@ -49,40 +49,4 @@ public abstract class ConsoleBase(ILogger? logger = null) : IConsoleBase
     /// 情報メッセージを出力（派生クラスで実装）
     /// </summary>
     protected abstract void WriteInfoLine(string message);
-
-    /// <summary>
-    /// シンプルな進捗表示実装
-    /// </summary>
-    private class SimpleProgressIndicator : IProgressIndicator
-    {
-        private readonly ConsoleBase _console;
-        private readonly string _operation;
-        private bool _disposed;
-
-        public SimpleProgressIndicator(string operation, ConsoleBase console)
-        {
-            _operation = operation;
-            _console = console;
-            _console.WriteInfoLine($"{_operation}を開始しています...");
-        }
-
-        public void UpdateMessage(string message)
-        {
-            if (!_disposed) _console.WriteInfoLine($"{_operation}: {message}");
-        }
-
-        public void Complete()
-        {
-            if (!_disposed) _console.WriteInfoLine($"{_operation}が完了しました。");
-        }
-
-        public void Dispose()
-        {
-            if (!_disposed)
-            {
-                Complete();
-                _disposed = true;
-            }
-        }
-    }
 }

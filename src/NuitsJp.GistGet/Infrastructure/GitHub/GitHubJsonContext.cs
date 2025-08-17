@@ -13,6 +13,4 @@ namespace NuitsJp.GistGet.Infrastructure.GitHub;
 [JsonSerializable(typeof(OAuthErrorResponse))]
 [JsonSerializable(typeof(JsonElement))]
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower)]
-internal partial class GitHubJsonContext : JsonSerializerContext
-{
-}
+internal partial class GitHubJsonContext : JsonSerializerContext;

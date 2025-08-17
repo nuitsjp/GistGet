@@ -15,9 +15,7 @@ namespace NuitsJp.GistGet.Models;
 [JsonSerializable(typeof(JsonElement))]
 [JsonSerializable(typeof(TokenData))]
 [JsonSerializable(typeof(EncryptedTokenData))]
-internal partial class AppJsonContext : JsonSerializerContext
-{
-}
+internal partial class AppJsonContext : JsonSerializerContext;
 
 /// <summary>
 /// トークン情報（DPAPI暗号化前）

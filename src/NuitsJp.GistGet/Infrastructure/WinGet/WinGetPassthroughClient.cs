@@ -46,13 +46,17 @@ public class WinGetPassthroughClient(ILogger<WinGetPassthroughClient> logger) : 
                 psi.ArgumentList.Add(arg);
             }
 
-            using var proc = new Process { StartInfo = psi, EnableRaisingEvents = false };
+            using var proc = new Process();
+            proc.StartInfo = psi;
+            proc.EnableRaisingEvents = false;
 
             proc.Start();
 
+            // ReSharper disable AccessToDisposedClosure
             // 標準出力と標準エラーを並列でストリーミング処理
             var stdOutTask = Task.Run(() => PumpAsync(proc.StandardOutput, Console.Out));
             var stdErrTask = Task.Run(() => PumpAsync(proc.StandardError, Console.Error));
+            // ReSharper restore AccessToDisposedClosure
 
             await proc.WaitForExitAsync();
             await Task.WhenAll(stdOutTask, stdErrTask);
@@ -62,13 +66,13 @@ public class WinGetPassthroughClient(ILogger<WinGetPassthroughClient> logger) : 
         catch (System.ComponentModel.Win32Exception ex)
         {
             logger.LogError(ex, "winget.exe の起動に失敗しました: {Message}", ex.Message);
-            Console.Error.WriteLine($"winget.exe の起動に失敗しました: {ex.Message}");
+            await Console.Error.WriteLineAsync($"winget.exe の起動に失敗しました: {ex.Message}");
             return 1;
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "エラーが発生しました: {Message}", ex.Message);
-            Console.Error.WriteLine($"エラーが発生しました: {ex}");
+            await Console.Error.WriteLineAsync($"エラーが発生しました: {ex}");
             return 1;
         }
         finally

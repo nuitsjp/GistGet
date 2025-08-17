@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NuitsJp.GistGet.Business;
@@ -77,7 +77,6 @@ public static class AppHost
                 services.AddSingleton<IGistManager, GistManager>();
 
                 // Infrastructure
-                services.AddSingleton<IProcessWrapper, ProcessWrapper>();
                 services.AddSingleton<IOsService, OsService>();
 
                 // Supporting services used by commands/managers

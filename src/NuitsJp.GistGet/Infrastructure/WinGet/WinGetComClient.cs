@@ -34,7 +34,7 @@ public class WinGetComClient(ILogger<WinGetComClient> logger, IWinGetPassthrough
         }
         catch (COMException comEx)
         {
-            var errorMessage = GetCOMErrorMessage(comEx.HResult);
+            var errorMessage = GetComErrorMessage(comEx.HResult);
             logger.LogError(comEx, "COM API initialization failed with HRESULT: 0x{HRESULT:X8} ({ErrorMessage})",
                 comEx.HResult, errorMessage);
             throw;
@@ -173,34 +173,9 @@ public class WinGetComClient(ILogger<WinGetComClient> logger, IWinGetPassthrough
         }
     }
 
-    public async Task<int> UpgradePackageAsync(string[] args)
+    public Task<int> UpgradePackageAsync(string[] args)
     {
-        // REFACTOR段階：よりクリーンな実装に改善
-
-        if (args.Contains("--all"))
-        {
-            logger.LogInformation("Upgrading all packages (COM API - simplified implementation)");
-            await Task.Delay(100); // 短縮してテスト高速化
-            logger.LogInformation("Successfully upgraded all packages");
-            return 0;
-        }
-
-        var packageId = GetPackageId(args);
-        if (packageId == null) return 1;
-
-        try
-        {
-            logger.LogInformation("Upgrading package: {PackageId} (COM API - simplified implementation)", packageId);
-            await Task.Delay(50); // 短縮してテスト高速化
-            logger.LogInformation("Successfully upgraded: {PackageId}", packageId);
-            return 0;
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error upgrading package: {PackageId}, Error: {ErrorMessage}", packageId ?? "unknown",
-                ex.Message);
-            return 1;
-        }
+        throw new NotImplementedException();
     }
 
 
@@ -264,74 +239,6 @@ public class WinGetComClient(ILogger<WinGetComClient> logger, IWinGetPassthrough
         }
     }
 
-    /// <summary>
-    /// パッケージ検索（内部用）
-    /// </summary>
-    public async Task<List<PackageDefinition>> SearchPackagesAsync(string query)
-    {
-        if (!_isInitialized)
-            throw new InvalidOperationException("COM API not initialized");
-
-        var packages = new List<PackageDefinition>();
-
-        try
-        {
-            logger.LogDebug("Searching packages via COM API: {Query}", query);
-
-            // メインカタログを取得
-            var catalogRef = _packageManager!.GetPredefinedPackageCatalog(PredefinedPackageCatalog.OpenWindowsCatalog);
-            var connectResult = await catalogRef.ConnectAsync();
-
-            if (connectResult.Status != ConnectResultStatus.Ok)
-            {
-                logger.LogError("Failed to connect to package catalog: {Status}", connectResult.Status);
-                return packages;
-            }
-
-            // 検索条件を設定
-            var findOptions = new FindPackagesOptions();
-            var filter = new PackageMatchFilter
-            {
-                Field = PackageMatchField.Name,
-                Option = PackageFieldMatchOption.ContainsCaseInsensitive,
-                Value = query
-            };
-            findOptions.Filters.Add(filter);
-
-            var findResult = await connectResult.PackageCatalog.FindPackagesAsync(findOptions);
-
-            // 結果を処理
-            for (var i = 0; i < findResult.Matches.Count; i++)
-                try
-                {
-                    var match = findResult.Matches[i];
-                    var pkg = match.CatalogPackage;
-                    var defaultVersion = pkg.DefaultInstallVersion;
-
-                    if (defaultVersion != null)
-                    {
-                        var packageDef = new PackageDefinition(pkg.Id)
-                        {
-                            Version = defaultVersion.Version
-                        };
-                        packages.Add(packageDef);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex, "Failed to process search result at index {Index}", i);
-                }
-
-            logger.LogInformation("Found {Count} packages matching '{Query}'", packages.Count, query);
-            return packages;
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to search packages for query: {Query}", query);
-            return packages;
-        }
-    }
-
     public async Task<int> ExecutePassthroughAsync(string[] args)
     {
         logger.LogDebug("Delegating passthrough command to WinGetPassthroughClient: {Args}", string.Join(" ", args));
@@ -339,7 +246,7 @@ public class WinGetComClient(ILogger<WinGetComClient> logger, IWinGetPassthrough
     }
 
 
-    private string GetCOMErrorMessage(int hresult)
+    private string GetComErrorMessage(int hresult)
     {
         return hresult switch
         {

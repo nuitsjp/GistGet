@@ -1,4 +1,4 @@
-using NuitsJp.GistGet.Presentation.Console;
+﻿using NuitsJp.GistGet.Presentation.Console;
 
 namespace NuitsJp.GistGet.Presentation.Login;
 
@@ -8,34 +8,6 @@ namespace NuitsJp.GistGet.Presentation.Login;
 /// </summary>
 public class LoginConsole : ConsoleBase, ILoginConsole
 {
-    /// <summary>
-    /// ログイン手順を表示（Device Flow用）
-    /// </summary>
-    public void ShowAuthInstructions(string deviceCode, string userCode, string verificationUri)
-    {
-        System.Console.WriteLine();
-        System.Console.WriteLine("=== GitHubログイン ===");
-        System.Console.WriteLine("1. ブラウザで以下のURLを開いてください:");
-        System.Console.WriteLine($"   {verificationUri}");
-        System.Console.WriteLine();
-        System.Console.WriteLine("2. 以下のコードを入力してください:");
-        System.Console.WriteLine($"   {userCode}");
-        System.Console.WriteLine();
-        System.Console.WriteLine("3. ブラウザでのログイン完了後、Enterキーを押してください...");
-        System.Console.ReadLine();
-    }
-
-    /// <summary>
-    /// トークン保存の確認を取る
-    /// </summary>
-    public bool ConfirmTokenStorage()
-    {
-        System.Console.WriteLine();
-        System.Console.Write("ログイントークンをローカルに保存しますか？ (y/N): ");
-        var input = System.Console.ReadLine()?.Trim().ToLower();
-        return input == "y" || input == "yes";
-    }
-
     /// <summary>
     /// ログイン成功を通知
     /// </summary>

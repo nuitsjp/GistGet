@@ -29,4 +29,8 @@
     <ProjectReference Include="..\NuitsJp.GistGet\NuitsJp.GistGet.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Mocks\" />
+  </ItemGroup>
+
 </Project>
