@@ -189,7 +189,7 @@ public class CommandRouterTests
     {
         // Arrange
         string[] args = ["gist", "status"];
-        
+
         // GistStatusCommand for unauthenticated users should just show status
         _mockAuthService.Setup(x => x.IsAuthenticatedAsync()).ReturnsAsync(false);
         _mockGistManager.Setup(x => x.IsConfiguredAsync()).ReturnsAsync(false);
