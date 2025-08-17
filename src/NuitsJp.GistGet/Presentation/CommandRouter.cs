@@ -235,9 +235,9 @@ public class CommandRouter(
         _logger.LogInformation("認証が必要です。ログインを開始します...");
         System.Console.WriteLine("認証が必要です。GitHubログインを開始します...");
 
-        // LoginCommandを実行
-        var result = await _loginCommand.ExecuteAsync(["login"]);
-        return result == 0;
+        // テストで期待されるAuthenticateAsyncメソッドを直接呼び出し
+        await _authService.AuthenticateAsync();
+        return await _authService.IsAuthenticatedAsync();
     }
 
     /// <summary>

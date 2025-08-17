@@ -14,9 +14,9 @@ WinGetパッケージをアンインストールしてGist定義から自動削�
 
 ### 動作フロー
 
-1. **事前確認**
-   - GitHub認証の確認（未認証時は自動ログイン）
-   - Gist設定の確認（未設定時は自動設定フロー）
+1. **事前確認（CommandRouterで完了済み）**
+   - GitHub認証の確認と自動ログイン（CommandRouterで実施）
+   - Gist設定の確認と自動設定フロー（CommandRouterで実施）
    - 管理者権限の確認
 
 2. **パッケージ存在確認**
@@ -83,8 +83,8 @@ Microsoft.PowerToys:
 ### エラーハンドリング
 
 #### 認証・設定エラー
-- **GitHub未認証**: 自動的に`login`コマンドを実行
-- **Gist未設定**: 自動的に`gist set`コマンドを実行
+- **GitHub未認証**: CommandRouterで自動的に`login`コマンドを実行
+- **Gist未設定**: CommandRouterで自動的に`gist set`コマンドを実行
 - **権限不足**: 管理者権限での実行を促すメッセージを表示
 
 #### パッケージエラー
@@ -112,87 +112,81 @@ Microsoft.PowerToys:
 sequenceDiagram
     participant User as ユーザー
     participant Router as CommandRouter
-    participant UninstallCmd as UninstallCommand
-    participant AuthSvc as AuthService
-    participant GistMgr as GistManager
+    participant UninstallCmd as WinGetCommand
+    participant PackageMgmt as PackageManagementService
     participant WinGetClient as WinGetComClient
     participant GitHubClient as GitHubGistClient
 
     User->>Router: gistget uninstall Git.Git
-    Router->>UninstallCmd: ExecuteAsync("Git.Git")
     
-    note over UninstallCmd: 事前確認
-    UninstallCmd->>AuthSvc: IsAuthenticatedAsync()
-    AuthSvc-->>UninstallCmd: true
+    note over Router: 事前確認（一元化）
+    Router->>Router: RequiresAuthentication("uninstall", args)
+    Router->>Router: EnsureAuthenticatedAsync() (認証済み)
+    Router->>Router: RequiresGistConfiguration("uninstall", args)
+    Router->>Router: EnsureGistConfiguredAsync() (設定済み)
     
-    UninstallCmd->>GistMgr: IsConfiguredAsync()
-    GistMgr-->>UninstallCmd: true
+    Router->>UninstallCmd: ExecuteUninstallAsync(args)
     
-    note over UninstallCmd: インストール状態確認
-    UninstallCmd->>WinGetClient: IsInstalledAsync("Git.Git")
-    WinGetClient-->>UninstallCmd: true
+    note over UninstallCmd: パッケージ確認・アンインストール
+    UninstallCmd->>PackageMgmt: UninstallPackageAsync(args)
+    PackageMgmt->>WinGetClient: IsInstalledAsync("Git.Git")
+    WinGetClient-->>PackageMgmt: true
     
-    UninstallCmd->>WinGetClient: GetPackageInfoAsync("Git.Git")
-    WinGetClient-->>UninstallCmd: PackageInfo
+    PackageMgmt->>WinGetClient: GetPackageInfoAsync("Git.Git")
+    WinGetClient-->>PackageMgmt: PackageInfo
     
-    note over UninstallCmd: ユーザー確認
-    UninstallCmd->>User: "Git.Git v2.43.0をアンインストールしますか？"
-    User-->>UninstallCmd: Yes
+    note over PackageMgmt: ユーザー確認
+    PackageMgmt->>User: "Git.Git v2.43.0をアンインストールしますか？"
+    User-->>PackageMgmt: Yes
     
-    note over UninstallCmd: アンインストール実行
-    UninstallCmd->>WinGetClient: UninstallPackageAsync("Git.Git")
-    WinGetClient-->>UninstallCmd: UninstallResult (success)
+    PackageMgmt->>WinGetClient: UninstallPackageAsync("Git.Git")
+    WinGetClient-->>PackageMgmt: UninstallResult (success)
     
-    note over UninstallCmd: Gist定義更新
-    UninstallCmd->>GistMgr: GetGistContentAsync()
-    GistMgr->>GitHubClient: GetGistContentAsync()
-    GitHubClient-->>GistMgr: YAML content
-    GistMgr-->>UninstallCmd: Dictionary<string, PackageDefinition>
+    note over PackageMgmt: Gist定義更新
+    PackageMgmt->>GitHubClient: GetGistContentAsync()
+    GitHubClient-->>PackageMgmt: YAML content
+    PackageMgmt->>GitHubClient: UpdateGistAsync(updatedYAML)
+    GitHubClient-->>PackageMgmt: success
     
-    UninstallCmd->>GistMgr: RemovePackageDefinitionAsync("Git.Git")
-    GistMgr->>GitHubClient: UpdateGistAsync(updatedYAML)
-    GitHubClient-->>GistMgr: success
-    GistMgr-->>UninstallCmd: success
+    PackageMgmt-->>UninstallCmd: exitCode (0)
     
-    UninstallCmd->>UninstallCmd: DisplayResults()
-    UninstallCmd-->>User: アンインストール完了・Gist更新成功 (exit 0)
+    UninstallCmd->>UninstallCmd: NotifyGistUpdateResult()
+    UninstallCmd->>UninstallCmd: CheckAndPromptRebootAsync()
+    UninstallCmd-->>Router: exitCode (0)
+    Router-->>User: アンインストール完了・Gist更新成功 (exit 0)
 ```
 
 ## 実装クラス
 
-### UninstallCommand (Presentation層)
+### WinGetCommand (Presentation層)
 ```csharp
-public class UninstallCommand
+public class WinGetCommand
 {
-    public async Task<int> ExecuteAsync(string packageId, UninstallOptions options)
+    public async Task<int> ExecuteUninstallAsync(string[] args)
     {
-        // UI制御：引数解析、確認プロンプト、進捗表示、結果表示
-        // Business層への委譲：GistSyncService.UninstallAndSyncAsync()
-    }
-    
-    private async Task<bool> ConfirmUninstallAsync(PackageInfo packageInfo, bool silent)
-    {
-        // アンインストール確認プロンプトの表示
-        // --silentオプション時はtrueを返す
+        // UI制御：引数解析、進捗表示、結果表示
+        // Business層への委譲：PackageManagementService.UninstallPackageAsync()
+        // 認証・Gist設定はCommandRouterで事前に完了済み
     }
 }
 ```
 
-### GistSyncService (Business層)
+### PackageManagementService (Business層)
 ```csharp
-public class GistSyncService : IGistSyncService
+public class PackageManagementService : IPackageManagementService
 {
     // uninstallコマンド専用メソッド
-    public async Task<int> UninstallAndSyncAsync(string packageId, UninstallOptions options)
+    public async Task<int> UninstallPackageAsync(string[] args)
     {
         // 1. パッケージ存在確認
-        // 2. アンインストール実行
-        // 3. Gist定義更新
-        // 4. 結果レポート
+        // 2. ユーザー確認プロンプト
+        // 3. アンインストール実行
+        // 4. Gist定義更新
+        // 認証・Gist設定はCommandRouterで事前に完了済み
     }
     
     // アンインストール後のGist更新
-    public async Task AfterUninstallAsync(string packageId, UninstallOptions options)
+    public async Task AfterUninstallAsync(string packageId)
     {
         // Gist定義からパッケージキーを削除（辞書形式）
         // YAML辞書構造から指定キーを削除
@@ -228,14 +222,14 @@ public class UninstallResult
 ## 依存関係
 
 ### 必要なサービス
-- `IAuthService`: GitHub認証管理
-- `IGistManager`: Gist操作
+- `IPackageManagementService`: パッケージ管理とGist同期の統合
 - `IWinGetClient`: WinGetパッケージ操作
 - `ILogger<T>`: ログ出力
+- 認証・Gist設定はCommandRouterで事前管理
 
 ### 設定要件
-- GitHub認証トークン (DPAPI暗号化済み)
-- Gist設定 (GistId, FileName)
+- GitHub認証トークン (DPAPI暗号化済み) - CommandRouterで事前確認
+- Gist設定 (GistId, FileName) - CommandRouterで事前確認
 - 管理者権限（WinGetアンインストール用）
 
 ## テスト戦略

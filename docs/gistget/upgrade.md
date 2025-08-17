@@ -14,9 +14,9 @@ WinGetパッケージをアップグレードしてGist定義を自動更新す�
 
 ### 動作フロー
 
-1. **事前確認**
-   - GitHub認証の確認（未認証時は自動ログイン）
-   - Gist設定の確認（未設定時は自動設定フロー）
+1. **事前確認（CommandRouterで完了済み）**
+   - GitHub認証の確認と自動ログイン（CommandRouterで実施）
+   - Gist設定の確認と自動設定フロー（CommandRouterで実施）
    - 管理者権限の確認
 
 2. **アップグレード対象の特定**
@@ -86,8 +86,8 @@ Microsoft.PowerToys:
 ### エラーハンドリング
 
 #### 認証・設定エラー
-- **GitHub未認証**: 自動的に`login`コマンドを実行
-- **Gist未設定**: 自動的に`gist set`コマンドを実行
+- **GitHub未認証**: CommandRouterで自動的に`login`コマンドを実行
+- **Gist未設定**: CommandRouterで自動的に`gist set`コマンドを実行
 - **権限不足**: 管理者権限での実行を促すメッセージを表示
 
 #### パッケージエラー
@@ -116,83 +116,77 @@ Microsoft.PowerToys:
 sequenceDiagram
     participant User as ユーザー
     participant Router as CommandRouter
-    participant UpgradeCmd as UpgradeCommand
-    participant AuthSvc as AuthService
-    participant GistMgr as GistManager
+    participant UpgradeCmd as WinGetCommand
+    participant PackageMgmt as PackageManagementService
     participant WinGetClient as WinGetComClient
     participant GitHubClient as GitHubGistClient
 
     User->>Router: gistget upgrade Git.Git
-    Router->>UpgradeCmd: ExecuteAsync("Git.Git")
     
-    note over UpgradeCmd: 事前確認
-    UpgradeCmd->>AuthSvc: IsAuthenticatedAsync()
-    AuthSvc-->>UpgradeCmd: true
+    note over Router: 事前確認（一元化）
+    Router->>Router: RequiresAuthentication("upgrade", args)
+    Router->>Router: EnsureAuthenticatedAsync() (認証済み)
+    Router->>Router: RequiresGistConfiguration("upgrade", args)
+    Router->>Router: EnsureGistConfiguredAsync() (設定済み)
     
-    UpgradeCmd->>GistMgr: IsConfiguredAsync()
-    GistMgr-->>UpgradeCmd: true
+    Router->>UpgradeCmd: ExecuteUpgradeAsync(args)
     
-    note over UpgradeCmd: 更新可能性確認
-    UpgradeCmd->>WinGetClient: GetUpgradeablePackagesAsync()
-    WinGetClient-->>UpgradeCmd: List<UpgradeablePackage>
+    note over UpgradeCmd: パッケージ確認・アップグレード
+    UpgradeCmd->>PackageMgmt: UpgradePackageAsync(args)
+    PackageMgmt->>WinGetClient: GetUpgradeablePackagesAsync()
+    WinGetClient-->>PackageMgmt: List<UpgradeablePackage>
     
-    UpgradeCmd->>WinGetClient: GetPackageInfoAsync("Git.Git")
-    WinGetClient-->>UpgradeCmd: PackageInfo (current: 2.42.0, available: 2.43.0)
+    PackageMgmt->>WinGetClient: GetPackageInfoAsync("Git.Git")
+    WinGetClient-->>PackageMgmt: PackageInfo (current: 2.42.0, available: 2.43.0)
     
-    note over UpgradeCmd: ユーザー確認
-    UpgradeCmd->>User: "Git.Git 2.42.0 → 2.43.0にアップグレードしますか？"
-    User-->>UpgradeCmd: Yes
+    note over PackageMgmt: ユーザー確認
+    PackageMgmt->>User: "Git.Git 2.42.0 → 2.43.0にアップグレードしますか？"
+    User-->>PackageMgmt: Yes
     
-    note over UpgradeCmd: アップグレード実行
-    UpgradeCmd->>WinGetClient: UpgradePackageAsync("Git.Git")
-    WinGetClient-->>UpgradeCmd: UpgradeResult (success)
+    PackageMgmt->>WinGetClient: UpgradePackageAsync("Git.Git")
+    WinGetClient-->>PackageMgmt: UpgradeResult (success)
     
-    note over UpgradeCmd: Gist定義更新
-    UpgradeCmd->>GistMgr: GetGistContentAsync()
-    GistMgr->>GitHubClient: GetGistContentAsync()
-    GitHubClient-->>GistMgr: YAML content
-    GistMgr-->>UpgradeCmd: Dictionary<string, PackageDefinition>
+    note over PackageMgmt: Gist定義更新
+    PackageMgmt->>GitHubClient: GetGistContentAsync()
+    GitHubClient-->>PackageMgmt: YAML content
+    PackageMgmt->>GitHubClient: UpdateGistAsync(updatedYAML)
+    GitHubClient-->>PackageMgmt: success
     
-    UpgradeCmd->>GistMgr: UpdatePackageVersionAsync("Git.Git", "2.43.0")
-    GistMgr->>GitHubClient: UpdateGistAsync(updatedYAML)
-    GitHubClient-->>GistMgr: success
-    GistMgr-->>UpgradeCmd: success
+    PackageMgmt-->>UpgradeCmd: exitCode (0)
     
-    UpgradeCmd->>UpgradeCmd: DisplayResults()
-    UpgradeCmd-->>User: アップグレード完了・Gist更新成功 (exit 0)
+    UpgradeCmd->>UpgradeCmd: NotifyGistUpdateResult()
+    UpgradeCmd->>UpgradeCmd: CheckAndPromptRebootAsync()
+    UpgradeCmd-->>Router: exitCode (0)
+    Router-->>User: アップグレード完了・Gist更新成功 (exit 0)
 ```
 
 ## 実装クラス
 
-### UpgradeCommand (Presentation層)
+### WinGetCommand (Presentation層)
 ```csharp
-public class UpgradeCommand
+public class WinGetCommand
 {
-    public async Task<int> ExecuteAsync(string packageId, UpgradeOptions options)
+    public async Task<int> ExecuteUpgradeAsync(string[] args)
     {
-        // UI制御：引数解析、確認プロンプト、進捗表示、結果表示
-        // Business層への委譲：GistSyncService.UpgradeAndSyncAsync()
-    }
-    
-    private async Task<bool> ConfirmUpgradeAsync(List<UpgradeablePackage> packages, bool silent)
-    {
-        // アップグレード確認プロンプトの表示
-        // バージョン情報と変更点の表示
+        // UI制御：引数解析、進捗表示、結果表示
+        // Business層への委譲：PackageManagementService.UpgradePackageAsync()
+        // 認証・Gist設定はCommandRouterで事前に完了済み
     }
 }
 ```
 
-### GistSyncService (Business層)
+### PackageManagementService (Business層)
 ```csharp
-public class GistSyncService : IGistSyncService
+public class PackageManagementService : IPackageManagementService
 {
     // upgradeコマンド専用メソッド
-    public async Task<int> UpgradeAndSyncAsync(string packageId, UpgradeOptions options)
+    public async Task<int> UpgradePackageAsync(string[] args)
     {
         // 1. アップグレード対象パッケージの特定
-        // 2. アップグレード実行
-        // 3. Gist定義更新
-        // 4. 結果レポート
+        // 2. ユーザー確認プロンプト
+        // 3. アップグレード実行
+        // 4. Gist定義更新
+        // 認証・Gist設定はCommandRouterで事前に完了済み
     }
     
     // アップグレード後のGist更新
@@ -200,12 +194,6 @@ public class GistSyncService : IGistSyncService
     {
         // Gist定義のパッケージバージョンを更新（辞書形式）
         // パッケージIDキーのversionフィールドを更新
-    }
-    
-    private async Task<List<UpgradeablePackage>> GetUpgradeablePackagesAsync(string packageId = null)
-    {
-        // 更新可能なパッケージの抽出
-        // Gist定義との照合
     }
 }
 ```
@@ -251,14 +239,14 @@ public class UpgradeResult
 ## 依存関係
 
 ### 必要なサービス
-- `IAuthService`: GitHub認証管理
-- `IGistManager`: Gist操作
+- `IPackageManagementService`: パッケージ管理とGist同期の統合
 - `IWinGetClient`: WinGetパッケージ操作
 - `ILogger<T>`: ログ出力
+- 認証・Gist設定はCommandRouterで事前管理
 
 ### 設定要件
-- GitHub認証トークン (DPAPI暗号化済み)
-- Gist設定 (GistId, FileName)
+- GitHub認証トークン (DPAPI暗号化済み) - CommandRouterで事前確認
+- Gist設定 (GistId, FileName) - CommandRouterで事前確認
 - 管理者権限（WinGetアップグレード用）
 
 ## テスト戦略

@@ -14,9 +14,9 @@ Gistに定義されたパッケージリストとローカル環境を同期す�
 
 ### 動作フロー
 
-1. **事前確認**
-   - Gist設定の存在確認（`gist status`相当）
-   - GitHub認証の確認
+1. **事前確認（CommandRouterで完了済み）**
+   - GitHub認証の確認と自動ログイン（CommandRouterで実施）
+   - Gist設定の確認と自動設定フロー（CommandRouterで実施）
 
 2. **パッケージ定義の取得**
    - GistManagerを使用してGistからパッケージ定義辞書を取得
@@ -75,8 +75,8 @@ PackageDefinitionのuninstallプロパティに基づく処理：
 ### エラーハンドリング
 
 #### 設定エラー
-- **Gist未設定**: `gist set`コマンドの実行を促すメッセージを表示
-- **認証エラー**: `auth`コマンドの実行を促すメッセージを表示
+- **Gist未設定**: CommandRouterで自動的に`gist set`コマンドを実行
+- **認証エラー**: CommandRouterで自動的に`login`コマンドを実行
 
 #### 実行時エラー
 - **個別パッケージエラー**: エラーログ出力後、次のパッケージの処理を継続
@@ -101,15 +101,14 @@ sequenceDiagram
     participant GitHubClient as GitHubGistClient
 
     User->>Router: gistget sync
-    Router->>SyncCmd: ExecuteAsync()
     
-    note over SyncCmd: 事前確認
-    SyncCmd->>GistMgr: IsConfiguredAsync()
-    GistMgr-->>SyncCmd: true/false
+    note over Router: 事前確認（一元化）
+    Router->>Router: RequiresAuthentication("sync", args)
+    Router->>Router: EnsureAuthenticatedAsync() (自動ログイン)
+    Router->>Router: RequiresGistConfiguration("sync", args)
+    Router->>Router: EnsureGistConfiguredAsync() (自動設定)
     
-    alt Gist未設定
-        SyncCmd-->>User: "Gist設定が必要です" (exit 1)
-    end
+    Router->>SyncCmd: ExecuteAsync(args)
     
     note over SyncCmd: 同期処理開始
     SyncCmd->>SyncSvc: SyncAsync()
@@ -154,7 +153,8 @@ sequenceDiagram
     
     SyncSvc-->>SyncCmd: SyncResult
     SyncCmd->>SyncCmd: DisplayResults()
-    SyncCmd-->>User: 同期結果レポート (exit 0/1)
+    SyncCmd-->>Router: exitCode (0/1)
+    Router-->>User: 同期結果レポート (exit 0/1)
 ```
 
 ## 実装クラス
@@ -167,6 +167,7 @@ public class SyncCommand
     {
         // UI制御：引数解析、進捗表示、結果表示
         // Business層への委譲：GistSyncService.SyncAsync()
+        // 認証・Gist設定はCommandRouterで事前に完了済み
     }
 }
 ```
@@ -184,6 +185,7 @@ public class GistSyncService : IGistSyncService
         // 4. インストール/アンインストール実行
         // 5. 再起動処理
         // 6. 結果レポート
+        // 認証・Gist設定はCommandRouterで事前に完了済み
         // ※Gist更新は行わない
     }
     
@@ -235,13 +237,15 @@ public class SyncResult
 ## 依存関係
 
 ### 必要なサービス
+- `IGistSyncService`: 同期処理の統合
 - `IGistManager`: Gist操作
 - `IWinGetClient`: WinGetパッケージ操作
 - `ILogger<T>`: ログ出力
+- 認証・Gist設定はCommandRouterで事前管理
 
 ### 設定要件
-- GitHub認証トークン (DPAPI暗号化済み)
-- Gist設定 (GistId, FileName)
+- GitHub認証トークン (DPAPI暗号化済み) - CommandRouterで事前確認
+- Gist設定 (GistId, FileName) - CommandRouterで事前確認
 
 ## テスト戦略
 

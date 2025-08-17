@@ -14,9 +14,9 @@ WinGetパッケージをインストールしてGist定義を自動更新する�
 
 ### 動作フロー
 
-1. **事前確認**
-   - GitHub認証の確認（未認証時は自動ログイン）
-   - Gist設定の確認（未設定時は自動設定フロー）
+1. **事前確認（CommandRouterで完了済み）**
+   - GitHub認証の確認と自動ログイン（CommandRouterで実施）
+   - Gist設定の確認と自動設定フロー（CommandRouterで実施）
    - 管理者権限の確認
 
 2. **パッケージ存在確認**
@@ -78,8 +78,8 @@ Microsoft.PowerToys:
 ### エラーハンドリング
 
 #### 認証・設定エラー
-- **GitHub未認証**: 自動的に`login`コマンドを実行
-- **Gist未設定**: 自動的に`gist set`コマンドを実行
+- **GitHub未認証**: CommandRouterで自動的に`login`コマンドを実行
+- **Gist未設定**: CommandRouterで自動的に`gist set`コマンドを実行
 - **権限不足**: 管理者権限での実行を促すメッセージを表示
 
 #### パッケージエラー
@@ -105,80 +105,77 @@ Microsoft.PowerToys:
 sequenceDiagram
     participant User as ユーザー
     participant Router as CommandRouter
-    participant InstallCmd as InstallCommand
-    participant AuthSvc as AuthService
-    participant GistMgr as GistManager
+    participant InstallCmd as WinGetCommand
+    participant PackageMgmt as PackageManagementService
     participant WinGetClient as WinGetComClient
     participant GitHubClient as GitHubGistClient
 
     User->>Router: gistget install Git.Git
-    Router->>InstallCmd: ExecuteAsync("Git.Git")
     
-    note over InstallCmd: 事前確認
-    InstallCmd->>AuthSvc: IsAuthenticatedAsync()
-    AuthSvc-->>InstallCmd: false
-    InstallCmd->>AuthSvc: AuthenticateAsync() (自動ログイン)
-    AuthSvc-->>InstallCmd: success
+    note over Router: 事前確認（一元化）
+    Router->>Router: RequiresAuthentication("install", args)
+    Router->>Router: EnsureAuthenticatedAsync() (自動ログイン)
+    Router->>Router: RequiresGistConfiguration("install", args)
+    Router->>Router: EnsureGistConfiguredAsync() (自動設定)
     
-    InstallCmd->>GistMgr: IsConfiguredAsync()
-    GistMgr-->>InstallCmd: true
+    Router->>InstallCmd: ExecuteInstallAsync(args)
     
-    note over InstallCmd: パッケージ検索
-    InstallCmd->>WinGetClient: SearchPackageAsync("Git.Git")
-    WinGetClient-->>InstallCmd: PackageInfo
+    note over InstallCmd: パッケージ検索・インストール
+    InstallCmd->>PackageMgmt: InstallPackageAsync(args)
+    PackageMgmt->>WinGetClient: SearchPackageAsync("Git.Git")
+    WinGetClient-->>PackageMgmt: PackageInfo
     
-    note over InstallCmd: インストール状態確認
-    InstallCmd->>WinGetClient: IsInstalledAsync("Git.Git")
-    WinGetClient-->>InstallCmd: false
+    PackageMgmt->>WinGetClient: IsInstalledAsync("Git.Git")
+    WinGetClient-->>PackageMgmt: false
     
-    note over InstallCmd: インストール実行
-    InstallCmd->>WinGetClient: InstallPackageAsync("Git.Git")
-    WinGetClient-->>InstallCmd: InstallResult (success)
+    PackageMgmt->>WinGetClient: InstallPackageAsync("Git.Git")
+    WinGetClient-->>PackageMgmt: InstallResult (success)
     
-    note over InstallCmd: Gist定義更新
-    InstallCmd->>GistMgr: GetGistContentAsync()
-    GistMgr->>GitHubClient: GetGistContentAsync()
-    GitHubClient-->>GistMgr: YAML content
-    GistMgr-->>InstallCmd: Dictionary<string, PackageDefinition>
+    note over PackageMgmt: Gist定義更新
+    PackageMgmt->>GitHubClient: GetGistContentAsync()
+    GitHubClient-->>PackageMgmt: YAML content
+    PackageMgmt->>GitHubClient: UpdateGistAsync(updatedYAML)
+    GitHubClient-->>PackageMgmt: success
     
-    InstallCmd->>GistMgr: AddPackageDefinitionAsync("Git.Git", null)
-    GistMgr->>GitHubClient: UpdateGistAsync(updatedYAML)
-    GitHubClient-->>GistMgr: success
-    GistMgr-->>InstallCmd: success
+    PackageMgmt-->>InstallCmd: exitCode (0)
     
-    InstallCmd->>InstallCmd: DisplayResults()
-    InstallCmd-->>User: インストール完了・Gist更新成功 (exit 0)
+    InstallCmd->>InstallCmd: NotifyGistUpdateResult()
+    InstallCmd->>InstallCmd: CheckAndPromptRebootAsync()
+    InstallCmd-->>Router: exitCode (0)
+    Router-->>User: インストール完了・Gist更新成功 (exit 0)
 ```
 
 ## 実装クラス
 
-### InstallCommand (Presentation層)
+### WinGetCommand (Presentation層)
 ```csharp
-public class InstallCommand
+public class WinGetCommand
 {
-    public async Task<int> ExecuteAsync(string packageId, InstallOptions options)
+    public async Task<int> ExecuteInstallAsync(string[] args)
     {
         // UI制御：引数解析、進捗表示、結果表示
-        // Business層への委譲：GistSyncService.InstallAndSyncAsync()
+        // Business層への委譲：PackageManagementService.InstallPackageAsync()
+        // 認証・Gist設定はCommandRouterで事前に完了済み
     }
 }
 ```
 
-### GistSyncService (Business層)
+### PackageManagementService (Business層)
 ```csharp
-public class GistSyncService : IGistSyncService
+public class PackageManagementService : IPackageManagementService
 {
     // installコマンド専用メソッド
-    public async Task<int> InstallAndSyncAsync(string packageId, InstallOptions options)
+    public async Task<int> InstallPackageAsync(string[] args)
     {
         // 1. パッケージ検索・確認
         // 2. インストール実行
         // 3. Gist定義更新
         // 4. 結果レポート
+        // 認証・Gist設定はCommandRouterで事前に完了済み
     }
     
     // インストール後のGist更新
-    public async Task AfterInstallAsync(string packageId, InstallOptions options)
+    public async Task AfterInstallAsync(string packageId)
     {
         // Gist定義にパッケージを追加（辞書形式）
         // パッケージIDをキー、設定をValueとしてYAML保存
@@ -214,14 +211,14 @@ public class InstallResult
 ## 依存関係
 
 ### 必要なサービス
-- `IAuthService`: GitHub認証管理
-- `IGistManager`: Gist操作
+- `IPackageManagementService`: パッケージ管理とGist同期の統合
 - `IWinGetClient`: WinGetパッケージ操作
 - `ILogger<T>`: ログ出力
+- 認証・Gist設定はCommandRouterで事前管理
 
 ### 設定要件
-- GitHub認証トークン (DPAPI暗号化済み)
-- Gist設定 (GistId, FileName)
+- GitHub認証トークン (DPAPI暗号化済み) - CommandRouterで事前確認
+- Gist設定 (GistId, FileName) - CommandRouterで事前確認
 - 管理者権限（WinGetインストール用）
 
 ## テスト戦略
