@@ -1,4 +1,4 @@
-namespace NuitsJp.GistGet.Models;
+﻿namespace NuitsJp.GistGet.Models;
 
 public class PackageDefinition : IEquatable<PackageDefinition>, IComparable<PackageDefinition>
 {
@@ -6,6 +6,12 @@ public class PackageDefinition : IEquatable<PackageDefinition>, IComparable<Pack
 
     private static readonly HashSet<string> ValidArchitectures = new(StringComparer.OrdinalIgnoreCase)
         { "x86", "x64", "arm", "arm64" };
+
+    private static readonly HashSet<string> ValidModes = new(StringComparer.OrdinalIgnoreCase)
+        { "default", "silent", "interactive" };
+
+    private static readonly HashSet<string> ValidInstallerTypes = new(StringComparer.OrdinalIgnoreCase)
+        { "exe", "msi", "msix", "zip", "appx", "burn", "inno", "nullsoft", "portable" };
 
     public PackageDefinition(string id)
     {
@@ -15,9 +21,13 @@ public class PackageDefinition : IEquatable<PackageDefinition>, IComparable<Pack
         Id = id;
     }
 
-    public PackageDefinition(string id, string? version = null, string? uninstall = null,
+    public PackageDefinition(string id, string? version = null, bool? uninstall = null,
         string? architecture = null, string? scope = null,
-        string? source = null, string? custom = null) : this(id)
+        string? source = null, string? custom = null,
+        bool? allowHashMismatch = null, bool? force = null, string? header = null,
+        string? installerType = null, string? locale = null, string? location = null,
+        string? log = null, string? mode = null, string? overrideArgs = null,
+        bool? skipDependencies = null, bool? confirm = null, bool? whatIf = null) : this(id)
     {
         Version = version;
         Uninstall = uninstall;
@@ -25,15 +35,39 @@ public class PackageDefinition : IEquatable<PackageDefinition>, IComparable<Pack
         Scope = scope;
         Source = source;
         Custom = custom;
+        AllowHashMismatch = allowHashMismatch;
+        Force = force;
+        Header = header;
+        InstallerType = installerType;
+        Locale = locale;
+        Location = location;
+        Log = log;
+        Mode = mode;
+        Override = overrideArgs;
+        SkipDependencies = skipDependencies;
+        Confirm = confirm;
+        WhatIf = whatIf;
     }
 
     public string Id { get; }
     public string? Version { get; init; }
-    public string? Uninstall { get; init; }
+    public bool? Uninstall { get; init; }
     public string? Architecture { get; init; }
     public string? Scope { get; set; }
     public string? Source { get; set; }
     public string? Custom { get; set; }
+    public bool? AllowHashMismatch { get; init; }
+    public bool? Force { get; init; }
+    public string? Header { get; init; }
+    public string? InstallerType { get; init; }
+    public string? Locale { get; init; }
+    public string? Location { get; init; }
+    public string? Log { get; init; }
+    public string? Mode { get; init; }
+    public string? Override { get; init; }
+    public bool? SkipDependencies { get; init; }
+    public bool? Confirm { get; init; }
+    public bool? WhatIf { get; init; }
 
     public int CompareTo(PackageDefinition? other)
     {
@@ -59,6 +93,12 @@ public class PackageDefinition : IEquatable<PackageDefinition>, IComparable<Pack
         if (!string.IsNullOrWhiteSpace(Architecture) && !ValidArchitectures.Contains(Architecture))
             throw new ArgumentException(
                 $"Invalid architecture '{Architecture}'. Valid architectures are: {string.Join(", ", ValidArchitectures)}");
+
+        if (!string.IsNullOrWhiteSpace(Mode) && !ValidModes.Contains(Mode))
+            throw new ArgumentException($"Invalid mode '{Mode}'. Valid modes are: {string.Join(", ", ValidModes)}");
+
+        if (!string.IsNullOrWhiteSpace(InstallerType) && !ValidInstallerTypes.Contains(InstallerType))
+            throw new ArgumentException($"Invalid installer type '{InstallerType}'. Valid types are: {string.Join(", ", ValidInstallerTypes)}");
     }
 
     public override bool Equals(object? obj)

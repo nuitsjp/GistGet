@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Moq;
 using NuitsJp.GistGet.Business;
 using NuitsJp.GistGet.Business.Models;
@@ -130,21 +130,21 @@ public class GistConfigServiceTests
     }
 
     [Theory]
-    [InlineData(null, "storage", "gistManager", "logger")]
-    [InlineData("authService", null, "gistManager", "logger")]
-    [InlineData("authService", "storage", null, "logger")]
-    [InlineData("authService", "storage", "gistManager", null)]
+    [InlineData(false, true, true, true)]  // authService = null
+    [InlineData(true, false, true, true)]  // storage = null
+    [InlineData(true, true, false, true)]  // gistManager = null
+    [InlineData(true, true, true, false)]  // logger = null
     public void Constructor_WithNullDependencies_ShouldThrowArgumentNullException(
-        string? authService, string? storage, string? gistManager, string? logger)
+        bool hasAuthService, bool hasStorage, bool hasGistManager, bool hasLogger)
     {
         // Arrange
-        var auth = authService == null ? null : _mockAuthService.Object;
-        var stor = storage == null ? null : _mockStorage.Object;
-        var gist = gistManager == null ? null : _mockGistManager.Object;
-        var log = logger == null ? null : _mockLogger.Object;
+        var authService = hasAuthService ? _mockAuthService.Object : null;
+        var storage = hasStorage ? _mockStorage.Object : null;
+        var gistManager = hasGistManager ? _mockGistManager.Object : null;
+        var logger = hasLogger ? _mockLogger.Object : null;
 
         // Act & Assert - Business層: null依存性注入の例外処理テスト
-        Should.Throw<ArgumentNullException>(() => new GistConfigService(auth!, stor!, gist!, log!));
+        Should.Throw<ArgumentNullException>(() => new GistConfigService(authService!, storage!, gistManager!, logger!));
     }
 
     #endregion

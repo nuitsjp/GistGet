@@ -40,19 +40,18 @@ public class PackageDefinitionTests
         // Arrange
         var packageId = "AkelPad.AkelPad";
         var version = "4.9.8";
-        var uninstall = "--silent";
         var architecture = "x64";
         var scope = "user";
         var source = "winget";
         var custom = "--force";
 
         // Act
-        var package = new PackageDefinition(packageId, version, uninstall, architecture, scope, source, custom);
+        var package = new PackageDefinition(packageId, version, null, architecture, scope, source, custom);
 
         // Assert
         package.Id.ShouldBe(packageId);
         package.Version.ShouldBe(version);
-        package.Uninstall.ShouldBe(uninstall);
+        package.Uninstall.ShouldBeNull();
         package.Architecture.ShouldBe(architecture);
         package.Scope.ShouldBe(scope);
         package.Source.ShouldBe(source);
@@ -201,5 +200,63 @@ public class PackageDefinitionTests
         packages[0].Id.ShouldBe("AkelPad.AkelPad");
         packages[1].Id.ShouldBe("Microsoft.VisualStudioCode");
         packages[2].Id.ShouldBe("Zoom.Zoom");
+    }
+
+    [Fact]
+    public void Constructor_WithAllYamlSpecificationProperties_ShouldSetProperties()
+    {
+        // Arrange & Act
+        var package = new PackageDefinition(
+            id: "Microsoft.VisualStudioCode",
+            version: "1.85.0",
+            uninstall: true,
+            allowHashMismatch: true,
+            architecture: "x64",
+            custom: "/VERYSILENT /NORESTART",
+            force: true,
+            header: "Authorization: Bearer token",
+            installerType: "exe",
+            locale: "en-US",
+            location: "C:\\Program Files\\VS Code",
+            log: "C:\\Temp\\install.log",
+            mode: "silent",
+            overrideArgs: "/SILENT",
+            scope: "machine",
+            skipDependencies: true,
+            confirm: true,
+            whatIf: false
+        );
+
+        // Assert
+        package.Id.ShouldBe("Microsoft.VisualStudioCode");
+        package.Version.ShouldBe("1.85.0");
+        package.Uninstall.ShouldBe(true);
+        package.AllowHashMismatch.ShouldBe(true);
+        package.Architecture.ShouldBe("x64");
+        package.Custom.ShouldBe("/VERYSILENT /NORESTART");
+        package.Force.ShouldBe(true);
+        package.Header.ShouldBe("Authorization: Bearer token");
+        package.InstallerType.ShouldBe("exe");
+        package.Locale.ShouldBe("en-US");
+        package.Location.ShouldBe("C:\\Program Files\\VS Code");
+        package.Log.ShouldBe("C:\\Temp\\install.log");
+        package.Mode.ShouldBe("silent");
+        package.Override.ShouldBe("/SILENT");
+        package.Scope.ShouldBe("machine");
+        package.SkipDependencies.ShouldBe(true);
+        package.Confirm.ShouldBe(true);
+        package.WhatIf.ShouldBe(false);
+    }
+
+    [Fact]
+    public void UninstallProperty_ShouldSupportBooleanType()
+    {
+        // Arrange & Act
+        var package1 = new PackageDefinition("Test.Package1", uninstall: true);
+        var package2 = new PackageDefinition("Test.Package2", uninstall: false);
+
+        // Assert
+        package1.Uninstall.ShouldBe(true);
+        package2.Uninstall.ShouldBe(false);
     }
 }

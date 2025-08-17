@@ -207,7 +207,7 @@ public class GistSyncService(
         {
             var packageId = gistPackage.Id.ToLowerInvariant();
 
-            if (string.Equals(gistPackage.Uninstall, "true", StringComparison.OrdinalIgnoreCase))
+            if (gistPackage.Uninstall == true)
             {
                 // アンインストール対象
                 if (installedIds.Contains(packageId)) plan.ToUninstall.Add(gistPackage);

@@ -205,7 +205,7 @@ public class GistSyncServiceTests
         var gistPackages = new PackageCollection
         {
             new PackageDefinition("Git.Git"),
-            new PackageDefinition("Microsoft.VisualStudioCode", uninstall: "true")
+            new PackageDefinition("Microsoft.VisualStudioCode", uninstall: true)
         };
         var installedPackages = new List<PackageDefinition>
         {

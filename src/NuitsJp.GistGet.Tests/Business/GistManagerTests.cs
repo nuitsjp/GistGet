@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Moq;
 using NuitsJp.GistGet.Business;
 using NuitsJp.GistGet.Infrastructure.GitHub;
@@ -80,21 +80,21 @@ public class GistManagerTests
     }
 
     [Theory]
-    [InlineData(null, "storage", "yamlConverter", "logger")]
-    [InlineData("gistClient", null, "yamlConverter", "logger")]
-    [InlineData("gistClient", "storage", null, "logger")]
-    [InlineData("gistClient", "storage", "yamlConverter", null)]
+    [InlineData(false, true, true, true)]   // gistClient = null
+    [InlineData(true, false, true, true)]   // storage = null
+    [InlineData(true, true, false, true)]   // yamlConverter = null
+    [InlineData(true, true, true, false)]   // logger = null
     public void Constructor_WithNullDependencies_ShouldThrowArgumentNullException(
-        string? gistClient, string? storage, string? yamlConverter, string? logger)
+        bool hasGistClient, bool hasStorage, bool hasYamlConverter, bool hasLogger)
     {
         // Arrange
-        var client = gistClient == null ? null : _mockGistClient.Object;
-        var stor = storage == null ? null : _mockStorage.Object;
-        var yaml = yamlConverter == null ? null : _mockYamlConverter.Object;
-        var log = logger == null ? null : _mockLogger.Object;
+        var gistClient = hasGistClient ? _mockGistClient.Object : null;
+        var storage = hasStorage ? _mockStorage.Object : null;
+        var yamlConverter = hasYamlConverter ? _mockYamlConverter.Object : null;
+        var logger = hasLogger ? _mockLogger.Object : null;
 
         // Act & Assert - Business層: null依存性注入の例外処理テスト
-        Should.Throw<ArgumentNullException>(() => new GistManager(client!, stor!, yaml!, log!));
+        Should.Throw<ArgumentNullException>(() => new GistManager(gistClient!, storage!, yamlConverter!, logger!));
     }
 
     #endregion
