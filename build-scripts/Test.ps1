@@ -5,15 +5,24 @@ param(
     [string]$Configuration = "Release",
     [string]$Verbosity = "normal",
     [switch]$NoBuild = $true,
-    [switch]$CollectCoverage = $true
+    [switch]$CollectCoverage = $true,
+    [string]$TestResultsDirectory = ".reports/test-results/trx"
 )
 
 Write-Host "Running tests..." -ForegroundColor Green
 
 try {
+    # Create test results directory if it doesn't exist
+    if (-not (Test-Path $TestResultsDirectory)) {
+        New-Item -ItemType Directory -Path $TestResultsDirectory -Force | Out-Null
+        Write-Host "Created test results directory: $TestResultsDirectory" -ForegroundColor Green
+    }
+    
     $testArgs = @(
         "--configuration", $Configuration
         "--verbosity", $Verbosity
+        "--results-directory", $TestResultsDirectory
+        "--logger", "trx"
     )
     
     if ($NoBuild) {

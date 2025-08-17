@@ -4,7 +4,8 @@
 param(
     [switch]$IncludeCoverage = $true,
     [switch]$IncludeInspection = $true,
-    [switch]$Verbose = $false
+    [switch]$IncludeReports = $true,
+    [switch]$ShowDetails = $false
 )
 
 Write-Host "Cleaning build artifacts..." -ForegroundColor Green
@@ -22,7 +23,7 @@ try {
         if (Test-Path $fullPath) {
             Remove-Item $fullPath -Recurse -Force
             $cleanedItems += "bin: $fullPath"
-            if ($Verbose) {
+            if ($ShowDetails) {
                 Write-Host "  Removed: $fullPath" -ForegroundColor Gray
             }
         }
@@ -33,7 +34,7 @@ try {
         if (Test-Path $fullPath) {
             Remove-Item $fullPath -Recurse -Force
             $cleanedItems += "obj: $fullPath"
-            if ($Verbose) {
+            if ($ShowDetails) {
                 Write-Host "  Removed: $fullPath" -ForegroundColor Gray
             }
         }
@@ -65,11 +66,15 @@ try {
         # Remove TestResults directories
         $testResultsDirs = Get-ChildItem -Path . -Recurse -Directory -Name "TestResults" -ErrorAction SilentlyContinue
         foreach ($dir in $testResultsDirs) {
-            $fullPath = $dir.FullName
-            Remove-Item $fullPath -Recurse -Force
-            $cleanedItems += "TestResults: $fullPath"
-            if ($Verbose) {
-                Write-Host "  Removed: $fullPath" -ForegroundColor Gray
+            $fullPath = (Get-ChildItem -Path . -Recurse -Directory | Where-Object {$_.Name -eq "TestResults"}).FullName
+            if ($fullPath) {
+                foreach ($path in $fullPath) {
+                    Remove-Item $path -Recurse -Force
+                    $cleanedItems += "TestResults: $path"
+                    if ($ShowDetails) {
+                        Write-Host "  Removed: $path" -ForegroundColor Gray
+                    }
+                }
             }
         }
     }
@@ -81,8 +86,21 @@ try {
         if (Test-Path "inspection-results.xml") {
             Remove-Item "inspection-results.xml" -Force
             $cleanedItems += "Inspection results file"
-            if ($Verbose) {
+            if ($ShowDetails) {
                 Write-Host "  Removed: inspection-results.xml" -ForegroundColor Gray
+            }
+        }
+    }
+    
+    # Remove .reports directory
+    if ($IncludeReports) {
+        Write-Host "Removing .reports directory..." -ForegroundColor Yellow
+        
+        if (Test-Path ".reports") {
+            Remove-Item ".reports" -Recurse -Force
+            $cleanedItems += ".reports directory"
+            if ($ShowDetails) {
+                Write-Host "  Removed: .reports" -ForegroundColor Gray
             }
         }
     }
@@ -92,7 +110,7 @@ try {
     Write-Host "Clean completed successfully!" -ForegroundColor Green
     Write-Host "Cleaned $($cleanedItems.Count) items." -ForegroundColor Green
     
-    if ($Verbose -and $cleanedItems.Count -gt 0) {
+    if ($ShowDetails -and $cleanedItems.Count -gt 0) {
         Write-Host ""
         Write-Host "Summary of cleaned items:" -ForegroundColor Cyan
         foreach ($item in $cleanedItems) {

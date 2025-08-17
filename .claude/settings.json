@@ -45,6 +45,7 @@
       "Bash(dotnet new:*)",
       "Bash(dotnet run:*)",
       "Bash(GistGet.exe:*)",
+      "Bash(Invoke-Build:*)",
       "Bash(powershell:*)",
       "Bash(reportgenerator:*)",
       "Bash(grep:*)",

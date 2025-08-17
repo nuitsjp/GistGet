@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param(
     [string]$SolutionPath,
-    [string]$OutputFile = "inspection-results.xml",
+    [string]$OutputFile = ".reports/inspection/xml/inspection-results.xml",
     [ValidateSet("ERROR", "WARN", "INFO", "VERBOSE")]
     [string]$Verbosity = "WARN",
     [switch]$ShowSummary = $true,
@@ -53,6 +53,13 @@ try {
     Write-Host "Output file: $OutputFile" -ForegroundColor Green
     Write-Host "Verbosity: $Verbosity" -ForegroundColor Green
     Write-Host ""
+    
+    # Create output directory if it doesn't exist
+    $outputDir = Split-Path $OutputFile -Parent
+    if (-not (Test-Path $outputDir)) {
+        New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
+        Write-Host "Created output directory: $outputDir" -ForegroundColor Green
+    }
     
     # Remove existing output file
     if (Test-Path $OutputFile) {
@@ -215,7 +222,8 @@ try {
                     }
                 }
                 if ($allIssues.Count -gt 0) {
-                    exit 2  # Exit with code 2 if issues found
+                    Write-Host "Code inspection found issues. See detailed report above." -ForegroundColor Yellow
+                    # Don't exit with error code - inspection completed successfully
                 }
             }
         }

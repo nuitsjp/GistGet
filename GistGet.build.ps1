@@ -20,7 +20,7 @@ task Test Build, {
 
 # Coverage task - Generate coverage report
 task Coverage Test, {
-    exec { powershell -File "build-scripts\Coverage.ps1" -ReportDirectory "coverage-report" -ShowSummary }
+    exec { powershell -File "build-scripts\Coverage.ps1" -ShowSummary }
 }
 
 # Code Inspection task using ReSharper
@@ -30,7 +30,7 @@ task CodeInspection Build, {
 
 # Clean task
 task Clean {
-    exec { powershell -File "build-scripts\Clean.ps1" -IncludeCoverage -IncludeInspection }
+    exec { powershell -File "build-scripts\Clean.ps1" -IncludeCoverage -IncludeInspection -IncludeReports }
 }
 
 # Format check task
