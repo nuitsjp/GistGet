@@ -19,8 +19,8 @@ Gistに定義されたパッケージリストとローカル環境を同期す�
    - GitHub認証の確認
 
 2. **パッケージ定義の取得**
-   - GistManagerを使用してGistからPackageCollectionを取得
-   - YAML形式のパッケージ定義を解析
+   - GistManagerを使用してGistからパッケージ定義辞書を取得
+   - YAML形式のパッケージ定義を解析（Dictionary<string, PackageDefinition>）
 
 3. **現在の状態の取得**
    - WinGetComClientを使用してインストール済みパッケージを取得
@@ -57,18 +57,18 @@ gistget sync [options]
 
 ### パッケージ定義の処理
 
-#### Uninstallフラグの動作
-PackageDefinitionのUninstallプロパティに基づく処理：
+#### uninstallフラグの動作
+PackageDefinitionのuninstallプロパティに基づく処理：
 
-| Uninstallフラグ | インストール状態 | 動作 |
+| uninstallフラグ | インストール状態 | 動作 |
 |------------------|------------------|------|
-| `"true"` または `"1"` | インストール済み | `Uninstall-Package`実行 |
-| `"true"` または `"1"` | 未インストール | メッセージ表示のみ（何もしない） |
-| `"false"`, `"0"`, null, 空文字 | インストール済み | メッセージ表示のみ（何もしない） |
-| `"false"`, `"0"`, null, 空文字 | 未インストール | `Install-Package`実行 |
+| `true` | インストール済み | `Uninstall-Package`実行 |
+| `true` | 未インストール | メッセージ表示のみ（何もしない） |
+| `false`, null, 未指定 | インストール済み | メッセージ表示のみ（何もしない） |
+| `false`, null, 未指定 | 未インストール | `Install-Package`実行 |
 
 #### バージョン管理
-- Versionプロパティが指定されている場合は特定バージョンをインストール
+- versionプロパティが指定されている場合は特定バージョンをインストール
 - 未指定の場合は最新バージョンをインストール
 - 既に同じバージョンがインストール済みの場合はスキップ
 
@@ -115,10 +115,10 @@ sequenceDiagram
     SyncCmd->>SyncSvc: SyncAsync()
     
     note over SyncSvc: Gistパッケージ取得
-    SyncSvc->>GistMgr: GetGistPackagesAsync()
+    SyncSvc->>GistMgr: GetGistContentAsync()
     GistMgr->>GitHubClient: GetGistContentAsync()
     GitHubClient-->>GistMgr: YAML content
-    GistMgr-->>SyncSvc: PackageCollection
+    GistMgr-->>SyncSvc: Dictionary<string, PackageDefinition>
     
     note over SyncSvc: ローカル状態取得
     SyncSvc->>WinGetClient: GetInstalledPackagesAsync()
@@ -191,9 +191,9 @@ public class GistSyncService : IGistSyncService
     public void AfterInstall(string packageId) { /* syncでは何もしない */ }
     public void AfterUninstall(string packageId) { /* syncでは何もしない */ }
     
-    private SyncPlan DetectDifferences(PackageCollection gistPackages, List<PackageDefinition> installedPackages)
+    private SyncPlan DetectDifferences(Dictionary<string, PackageDefinition> gistPackages, List<PackageDefinition> installedPackages)
     {
-        // Gist定義とローカル状態の差分検出ロジック
+        // Gist定義（辞書形式）とローカル状態の差分検出ロジック
     }
     
     private bool CheckRebootRequired(List<string> installedPackages)
