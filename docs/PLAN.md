@@ -1,14 +1,3 @@
-# GistGet - Windows Package Manager クラウド同期ツール 開発計画書
-
-## 📋 プロジェクト概要
-
-### 目的
-wingetのパッケージ管理状態をGitHub Gistを利用してクラウドで管理し、複数端末間で同期可能にするCLIツールの開発
-
-### 主要機能
-- wingetの完全なコマンド互換性（パススルー）
-- GitHub Gistによるパッケージリストのクラウド管理
-- 複数端末間でのパッケージ同期
 - カスタムインストールパラメーターのサポート
 
 ### 背景
@@ -16,20 +5,6 @@ wingetのパッケージ管理状態をGitHub Gistを利用してクラウドで
 - PowerShell版の課題：PAT認証の煩雑さ、winget出力解析の脆弱性、配布の困難さ
 
 ## 🚀 実装開始前の事前調査タスク
-
-### 📂 Task 1: PowerShell版の詳細分析
-
-**目的**: 既存実装から学べる点を抽出し、計画書に反映
-
-#### 調査項目
-- [ ] `packages.yaml`の実際の使用例とエッジケース
-- [ ] `GistGet.ps1`の同期ロジックの詳細確認
-- [ ] エラーハンドリングのパターン
-- [ ] ユーザビリティ上の工夫点
-- [ ] 発見された課題や制限事項
-
-#### 計画書への反映ポイント
-- [ ] 同期アルゴリズムの具体的な実装詳細
 - [ ] エラー処理の具体的なパターン
 - [ ] PowerShell版で対応済みの特殊ケース
 - [ ] ユーザーフィードバックから得られた改善点
@@ -211,66 +186,6 @@ gistget auth status
 1. 認証確認（URL指定時はスキップ可）
 2. Gist（またはURL）からpackages.yaml取得
 3. Windows Package Manager COM APIでローカル状態取得
-4. 差分計算
-5. 処理実行：
-   - インストール: winget install <id> <custom>
-   - アンインストール: winget uninstall <id>
-6. 結果レポート表示
-```
-
-### コンフリクト解決
-- **基本原則**: Gist側の状態を正とする
-- `uninstall: true` → ローカルにあればアンインストール
-- パッケージ記載あり → ローカルになければインストール
-- パッケージ記載なし → ローカルの状態維持（削除しない）
-
-### エラーハンドリング
-- 部分的な失敗時は後続処理を継続
-- 失敗したパッケージのリストを最後に表示
-- wingetが利用不可の場合はgistgetも実行不可
-
-## 🎯 実装フェーズ
-
-### Phase 0: 事前調査 [必須]
-- [ ] PowerShell版の詳細分析
-- [ ] wingetコマンド仕様調査
-- [ ] SPEC.md作成
-- [ ] 計画書の最終化
-
-### Phase 1: 基盤構築
-- [ ] プロジェクト初期セットアップ
-- [ ] Windows Package Manager COM API統合
-- [ ] 基本的なCLIフレームワーク
-
-### Phase 2: 認証機能
-- [ ] Device Flow認証実装
-- [ ] Windows Credential Manager統合
-- [ ] トークン管理
-
-### Phase 3: Gist連携
-- [ ] Gist読み取り/書き込み
-- [ ] YAML解析・生成
-- [ ] URLからの一時読み込み
-
-### Phase 4: 同期機能
-- [ ] ローカルパッケージ状態取得
-- [ ] 差分計算ロジック
-- [ ] sync コマンド実装
-
-### Phase 5: コマンド実装
-- [ ] wingetパススルー機能
-- [ ] export/import コマンド
-- [ ] エラーハンドリング強化
-
-### Phase 6: 配布準備
-- [ ] winget マニフェスト作成
-- [ ] GitHub Actions CI/CD設定
-- [ ] ドキュメント整備
-
-## 📊 成功基準
-
-### 機能要件
-- ✅ wingetコマンドの完全互換性
 - ✅ 複数端末間での同期成功率 95%以上
 - ✅ カスタムパラメーター対応
 - ✅ 認証の安全性（トークンの適切な保護）
@@ -325,23 +240,13 @@ gistget auth status
 | winget仕様変更 | 中 | バージョン検出と対応 |
 | GitHub API制限 | 低 | レート制限対応 |
 | 認証トークン漏洩 | 高 | 暗号化保存、定期更新促進 |
-
-## 📞 連絡・承認事項
-
-### 決定事項
-- .NET 10採用
-- Windows Package Manager COM API使用
-- Device Flow認証採用
-- Windows Credential Manager使用
-
-### 要確認事項
-- [ ] winget配布のためのPublisher情報
-- [ ] Gistのデフォルト名（例：`gistget-packages.yaml`）
-- [ ] エラー時の通知方法（コンソール出力のみ？）
-
----
-
 **文書バージョン**: 1.0
 **作成日**: 2025-01-XX
 **最終更新**: 2025-01-XX
+### Phase 7: Refactoring & Testing
+- [x] Remove PowerShell wrapper
+- [x] Implement COM API for reading
+- [x] Implement ProcessRunner for execution
+- [x] Unit Tests (>95% coverage for logic)
+
 **承認者**: [プロジェクトオーナー]

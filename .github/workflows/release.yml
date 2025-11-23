@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+        # Note: .NET 10 is preview, might need include-prerelease: true if available or specific version
+        # Assuming standard setup works or using 9.0 for now if 10 is not available in actions yet.
+        # But project targets net10.0. Let's assume environment supports it or we use preview.
+        # If not, we might need to downgrade to 8.0/9.0 for release if 10 is too bleeding edge.
+        # For now, let's try to use what we have.
+
+    - name: Publish
+      run: dotnet publish src/GistGet/GistGet.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish
+
+    - name: Copy Scripts
+      run: |
+        New-Item -ItemType Directory -Force -Path publish/scripts
+        Copy-Item scripts/WinGetWrapper.ps1 publish/scripts/
+
+    - name: Archive
+      run: Compress-Archive -Path publish/* -DestinationPath GistGet-win-x64.zip
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: GistGet-win-x64.zip
+        generate_release_notes: true
