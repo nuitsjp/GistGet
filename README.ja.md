@@ -1,13 +1,19 @@
 # GistGet
 
-**GistGet** は、GitHub Gist を使用して複数のデバイス間で Windows Package Manager (`winget`) パッケージを同期するために設計された CLI ツールです。プライベートまたはパブリック Gist に保存されたシンプルな YAML 設定ファイルを利用して、インストールされているアプリケーションやツールの一貫性を保つことができます。
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/nuitsjp/GistGet)](https://github.com/nuitsjp/GistGet/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub issues](https://img.shields.io/github/issues/nuitsjp/GistGet)](https://github.com/nuitsjp/GistGet/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/nuitsjp/GistGet)](https://github.com/nuitsjp/GistGet/pulls)
+
+**GistGet** は、GitHub Gist を使用して複数のデバイス間で Windows Package Manager (`winget`) パッケージを同期するために設計された CLI ツールです。
+プライベートまたはパブリック Gist に保存されたシンプルな YAML 設定ファイルを利用して、インストールされているアプリケーションやツールの一貫性を保つことができます。
 
 ## 機能
 
--   **クラウド同期**: GitHub Gist 経由でインストール済みパッケージを同期します。
--   **Winget パススルー**: `winget` コマンドのラッパーとして `gistget` を使用できます (例: `gistget search`, `gistget install`)。
--   **クロスデバイス**: 職場や自宅のコンピュータを同期状態に保ちます。
--   **Configuration as Code**: 読みやすい `packages.yaml` 形式でソフトウェアリストを管理します。
+-   **☁️ クラウド同期**: GitHub Gist 経由でインストール済みパッケージを同期します。
+-   **🚀 Winget 完全互換**: 標準の `winget` コマンドをそのまま利用でき、さらにクラウド同期機能が統合されています (例: `gistget search`, `gistget install`)。
+-   **💻 クロスデバイス**: 職場や自宅のコンピュータを同期状態に保ちます。
+-   **📄 Configuration as Code**: 読みやすい `packages.yaml` 形式でソフトウェアリストを管理します。
 
 ## インストール
 
@@ -62,9 +68,9 @@ YAML ファイルを Gist にインポートするには:
 gistget import my-packages.yaml
 ```
 
-### Winget コマンド
+### Winget 互換コマンド
 
-`gistget` は `winget` と同様に使用できます。コマンドは基盤となる `winget` 実行可能ファイルにパススルーされます。
+GistGet は `winget` のコマンド体系を完全にサポートしています。いつものコマンドでパッケージ管理を行いながら、クラウド同期の恩恵を受けることができます。
 
 ```powershell
 gistget search vscode

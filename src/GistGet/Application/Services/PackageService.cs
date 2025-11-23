@@ -89,6 +89,22 @@ public class PackageService : IPackageService
             }
         }
 
+        // Enforce Pinning State
+        foreach (var package in gistPackages.Values)
+        {
+            if (!package.Uninstall)
+            {
+                if (!string.IsNullOrEmpty(package.Version))
+                {
+                    await _executor.PinPackageAsync(package.Id, package.Version);
+                }
+                else
+                {
+                    await _executor.UnpinPackageAsync(package.Id);
+                }
+            }
+        }
+
         return result;
     }
 
@@ -99,6 +115,16 @@ public class PackageService : IPackageService
             var packages = await _gistService.GetPackagesAsync();
             packages[package.Id] = package;
             await _gistService.SavePackagesAsync(packages);
+
+            if (!string.IsNullOrEmpty(package.Version))
+            {
+                await _executor.PinPackageAsync(package.Id, package.Version);
+            }
+            else
+            {
+                await _executor.UnpinPackageAsync(package.Id);
+            }
+
             return true;
         }
         return false;
@@ -126,7 +152,7 @@ public class PackageService : IPackageService
         if (await _executor.UpgradePackageAsync(packageId, version))
         {
             var packages = await _gistService.GetPackagesAsync();
-            
+
             // If package exists, update version. If not, add it.
             if (packages.TryGetValue(packageId, out var existingPackage))
             {
@@ -145,14 +171,24 @@ public class PackageService : IPackageService
             }
             else
             {
-                packages[packageId] = new GistGetPackage 
-                { 
-                    Id = packageId, 
-                    Version = version 
+                packages[packageId] = new GistGetPackage
+                {
+                    Id = packageId,
+                    Version = version
                 };
             }
-            
+
             await _gistService.SavePackagesAsync(packages);
+
+            if (!string.IsNullOrEmpty(version))
+            {
+                await _executor.PinPackageAsync(packageId, version);
+            }
+            else
+            {
+                await _executor.UnpinPackageAsync(packageId);
+            }
+
             return true;
         }
         return false;

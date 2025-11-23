@@ -27,7 +27,7 @@ public class AuthService : IAuthService
         client.DefaultRequestHeaders.Add("Accept", "application/json");
 
         // 1. Initiate Device Flow
-        var response = await client.PostAsync("https://github.com/login/device/code", 
+        var response = await client.PostAsync("https://github.com/login/device/code",
             new FormUrlEncodedContent(new Dictionary<string, string>
             {
                 { "client_id", ClientId },
@@ -75,7 +75,7 @@ public class AuthService : IAuthService
                     AnsiConsole.MarkupLine("[green]Successfully authenticated![/]");
                     return;
                 }
-                
+
                 // Check for errors
                 if (tokenData?.Error == "authorization_pending")
                 {
@@ -98,7 +98,7 @@ public class AuthService : IAuthService
                 }
             }
         }
-        
+
         AnsiConsole.MarkupLine("[red]Authentication timed out.[/]");
     }
 

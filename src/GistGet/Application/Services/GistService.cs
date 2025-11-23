@@ -38,7 +38,7 @@ public class GistService : IGistService
 
         if (!string.IsNullOrEmpty(gistUrl))
         {
-            try 
+            try
             {
                 var gistId = gistUrl;
                 if (gistUrl.Contains("gist.github.com"))

@@ -29,11 +29,11 @@ public class CliCommandBuilder
         rootCommand.AddCommand(BuildExportCommand());
         rootCommand.AddCommand(BuildImportCommand());
         rootCommand.AddCommand(BuildAuthCommand());
-        
+
         rootCommand.AddCommand(BuildInstallCommand());
         rootCommand.AddCommand(BuildUninstallCommand());
         rootCommand.AddCommand(BuildUpgradeCommand());
-        
+
         foreach (var cmd in BuildWingetPassthroughCommands())
         {
             rootCommand.AddCommand(cmd);
@@ -73,7 +73,7 @@ public class CliCommandBuilder
                     foreach (var pkg in result.Uninstalled) AnsiConsole.MarkupLine($"[green]Uninstalled {pkg.Id}[/]");
                     foreach (var pkg in result.Installed) AnsiConsole.MarkupLine($"[green]Installed {pkg.Id}[/]");
                     foreach (var err in result.Errors) AnsiConsole.MarkupLine($"[red]{err}[/]");
-                    
+
                     AnsiConsole.MarkupLine("[bold green]Synchronization completed![/]");
                 }
             }
@@ -175,7 +175,7 @@ public class CliCommandBuilder
         var command = new Command("install", "Install a package and save to Gist");
         var idArgument = new Argument<string>("package", "Package ID");
         var versionOption = new Option<string>("--version", "Package version");
-        
+
         command.AddArgument(idArgument);
         command.AddOption(versionOption);
 
@@ -242,7 +242,7 @@ public class CliCommandBuilder
     private Command[] BuildWingetPassthroughCommands()
     {
         var commands = new System.Collections.Generic.List<Command>();
-        var wingetCommands = new[] { 
+        var wingetCommands = new[] {
             "list", "search", "show", "source", "settings", "features",
             "hash", "validate", "configure", "download", "repair", "pin"
         };

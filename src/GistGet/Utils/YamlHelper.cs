@@ -27,7 +27,7 @@ public static class YamlHelper
             .Build();
 
         var packages = deserializer.Deserialize<Dictionary<string, GistGetPackage>>(yaml);
-        
+
         // Populate ID back into the package object
         if (packages != null)
         {

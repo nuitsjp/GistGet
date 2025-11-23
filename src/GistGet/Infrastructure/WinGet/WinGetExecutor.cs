@@ -73,6 +73,20 @@ public class WinGetExecutor : IWinGetExecutor
         return exitCode == 0;
     }
 
+    public async Task<bool> PinPackageAsync(string packageId, string version)
+    {
+        var args = new List<string> { "pin", "add", "--id", packageId, "--version", version, "--force" };
+        var (exitCode, _, _) = await _processRunner.RunAsync(_wingetExe, string.Join(" ", args));
+        return exitCode == 0;
+    }
+
+    public async Task<bool> UnpinPackageAsync(string packageId)
+    {
+        var args = new List<string> { "pin", "remove", "--id", packageId };
+        var (exitCode, _, _) = await _processRunner.RunAsync(_wingetExe, string.Join(" ", args));
+        return exitCode == 0;
+    }
+
     public async Task RunPassthroughAsync(string command, string[] args)
     {
         var allArgs = new List<string> { command };
@@ -82,13 +96,7 @@ public class WinGetExecutor : IWinGetExecutor
 
     private string ResolveWingetPath()
     {
-        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var wingetPath = Path.Combine(localAppData, "Microsoft", "WindowsApps", "winget.exe");
-        
-        if (File.Exists(wingetPath))
-        {
-            return wingetPath;
-        }
-        return "winget";
+        var localAppData = Environment.GetEnvironmentVariable("LOCALAPPDATA");
+        return Path.Combine(localAppData!, "Microsoft", "WindowsApps", "winget.exe");
     }
 }

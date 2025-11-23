@@ -21,19 +21,19 @@ public class GistGetPackage
 
     [YamlMember(Alias = "architecture", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public string? Architecture { get; set; }
-    
+
     [YamlMember(Alias = "location", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public string? Location { get; set; }
-    
+
     [YamlMember(Alias = "locale", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public string? Locale { get; set; }
-    
+
     [YamlMember(Alias = "allowHashMismatch", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
     public bool AllowHashMismatch { get; set; }
-    
+
     [YamlMember(Alias = "force", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
     public bool Force { get; set; }
-    
+
     [YamlMember(Alias = "skipDependencies", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
     public bool SkipDependencies { get; set; }
 
