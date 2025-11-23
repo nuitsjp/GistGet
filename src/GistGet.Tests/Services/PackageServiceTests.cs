@@ -95,4 +95,19 @@ public class PackageServiceTests
         Assert.Equal("Old.Package", result.Uninstalled[0].Id);
         _mockExecutor.Verify(x => x.UninstallPackageAsync("Old.Package"), Times.Once);
     }
+
+    [Fact]
+    public async Task RunPassthroughAsync_ShouldDelegateToExecutor()
+    {
+        // Arrange
+        var command = "search";
+        var args = new[] { "vscode" };
+        _mockExecutor.Setup(x => x.RunPassthroughAsync(command, args)).Returns(Task.CompletedTask);
+
+        // Act
+        await _packageService.RunPassthroughAsync(command, args);
+
+        // Assert
+        _mockExecutor.Verify(x => x.RunPassthroughAsync(command, args), Times.Once);
+    }
 }

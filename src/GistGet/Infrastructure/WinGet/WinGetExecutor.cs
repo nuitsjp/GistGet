@@ -1,4 +1,4 @@
-using GistGet.Infrastructure.System;
+using GistGet.Infrastructure.OS;
 using GistGet.Models;
 using System;
 using System.Collections.Generic;

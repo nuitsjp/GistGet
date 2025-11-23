@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace GistGet.Infrastructure.System;
+namespace GistGet.Infrastructure.OS;
 
 public interface IProcessRunner
 {

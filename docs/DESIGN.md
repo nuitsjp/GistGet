@@ -10,127 +10,101 @@ GistGetは、Windows Package Manager (winget) のパッケージ状態をGitHub 
 
 ```mermaid
 classDiagram
-    class Program {
-        +Main(args) Task~int~
+    namespace Presentation {
+        class Program {
+            +Main(args) Task~int~
+        }
+        class CliCommandBuilder {
+            +Build() RootCommand
+        }
     }
 
-    class IAuthService {
-        <<interface>>
-        +LoginAsync() Task~bool~
-        +LogoutAsync() Task
-        +IsAuthenticatedAsync() Task~bool~
-        +GetAccessTokenAsync() Task~string~
+    namespace Application {
+        class IAuthService {
+            <<interface>>
+        }
+        class AuthService {
+            +LoginAsync() Task
+        }
+        class IGistService {
+            <<interface>>
+        }
+        class GistService {
+            +GetPackagesAsync() Task~Dictionary~
+        }
+        class IPackageService {
+            <<interface>>
+        }
+        class PackageService {
+            +SyncAsync() Task~SyncResult~
+        }
     }
 
-    class AuthService {
-        -ICredentialService _credentialService
-        -string _clientId
-        +LoginAsync() Task~bool~
+    namespace Infrastructure {
+        class ICredentialService {
+            <<interface>>
+        }
+        class CredentialService {
+            +SaveCredential() bool
+        }
+        class IWinGetRepository {
+            <<interface>>
+            +GetInstalledPackagesAsync() Task~Dictionary~
+        }
+        class WinGetRepository {
+            +GetInstalledPackagesAsync() Task~Dictionary~
+        }
+        class IWinGetExecutor {
+            <<interface>>
+            +InstallPackageAsync() Task~bool~
+        }
+        class WinGetExecutor {
+            +InstallPackageAsync() Task~bool~
+        }
+        class IProcessRunner {
+            <<interface>>
+        }
+        class ProcessRunner {
+            +RunAsync() Task~Result~
+        }
     }
 
-    class ICredentialService {
-        <<interface>>
-        +GetCredential(target) string
-        +SaveCredential(target, username, password) bool
-        +DeleteCredential(target) bool
-    }
+    Program ..> CliCommandBuilder
+    CliCommandBuilder ..> IPackageService
+    CliCommandBuilder ..> IGistService
+    CliCommandBuilder ..> IAuthService
 
-    class CredentialService {
-        +GetCredential(target) string
-        +SaveCredential(target, username, password) bool
-    }
-
-    class IGistService {
-        <<interface>>
-        +GetPackagesAsync(gistUrl) Task~Dictionary~
-        +SavePackagesAsync(packages) Task~string~
-    }
-
-    class GistService {
-        -IAuthService _authService
-        +GetPackagesAsync(gistUrl) Task~Dictionary~
-        +SavePackagesAsync(packages) Task~string~
-    }
-
-    class IPackageService {
-        <<interface>>
-        +GetInstalledPackagesAsync() Task~Dictionary~
-        +InstallPackageAsync(package) Task~bool~
-        +UninstallPackageAsync(packageId) Task~bool~
-        +RunPassthroughAsync(command, args) Task
-    }
-
-    class PackageService {
-        -IWinGetCOM _winGetCom
-        -IProcessRunner _processRunner
-        +GetInstalledPackagesAsync() Task~Dictionary~
-    }
-
-    class IWinGetCOM {
-        <<interface>>
-        +GetInstalledPackagesAsync() Task~Dictionary~
-    }
-
-    class WinGetCOM {
-        +GetInstalledPackagesAsync() Task~Dictionary~
-    }
-
-    class IProcessRunner {
-        <<interface>>
-        +RunAsync(fileName, args, redirect) Task~Result~
-        +RunPassthroughAsync(fileName, args) Task
-    }
-
-    class ProcessRunner {
-        +RunAsync(fileName, args, redirect) Task~Result~
-        +RunPassthroughAsync(fileName, args) Task
-    }
-
-    class GistGetPackage {
-        +string Id
-        +string Version
-        +bool Uninstall
-        +string Custom
-    }
-
-    class YamlHelper {
-        +Serialize(packages) string
-        +Deserialize(yaml) Dictionary
-    }
-
-    Program ..> IAuthService
-    Program ..> IGistService
-    Program ..> IPackageService
-    Program ..> YamlHelper
-    
     AuthService ..|> IAuthService
     AuthService --> ICredentialService
     
-    CredentialService ..|> ICredentialService
-    
     GistService ..|> IGistService
     GistService --> IAuthService
-    GistService ..> GistGetPackage
     
     PackageService ..|> IPackageService
-    PackageService --> IWinGetCOM
-    PackageService --> IProcessRunner
-    PackageService ..> GistGetPackage
+    PackageService --> IWinGetRepository
+    PackageService --> IWinGetExecutor
 
-    WinGetCOM ..|> IWinGetCOM
+    WinGetRepository ..|> IWinGetRepository
+    WinGetExecutor ..|> IWinGetExecutor
+    WinGetExecutor --> IProcessRunner
+    
+    CredentialService ..|> ICredentialService
     ProcessRunner ..|> IProcessRunner
 ```
 
 ### 主要クラスの説明
 
-*   **Program**: アプリケーションのエントリーポイント。`System.CommandLine` を使用してCLIコマンド（`sync`, `export`, `auth` 等）を定義し、各サービスを組み合わせて処理を実行します。
-*   **AuthService**: GitHubのDevice Flowを用いた認証処理を担当します。`HttpClient` を使用してGitHubと直接通信し、取得したトークンを `CredentialService` に渡します。
-*   **CredentialService**: Windows Credential Manager (資格情報マネージャー) へのアクセスをカプセル化します。アクセストークンを安全に保存・取得します。
-*   **GistService**: GitHub Gist APIとの通信を担当します。`Octokit` ライブラリを使用し、GistからのYAML取得や保存を行います。
-*   **PackageService**: ローカルのwinget操作を統括します。読み取り操作は `IWinGetCOM` に、書き込み・実行操作は `IProcessRunner` に委譲します。
-*   **WinGetCOM**: `Microsoft.WindowsPackageManager.ComInterop` を使用して、wingetのCOM API経由でインストール済みパッケージ情報を正確に取得します。
-*   **ProcessRunner**: `System.Diagnostics.Process` を使用して `winget.exe` を直接実行します。テスト時のモック化のためにインターフェース化されています。
-*   **YamlHelper**: `packages.yaml` のシリアライズ・デシリアライズを担当します。`YamlDotNet` を使用します。
+*   **Program**: アプリケーションのエントリーポイント。DIコンテナのセットアップ（今回は手動DI）と `CliCommandBuilder` の呼び出しのみを行います。
+*   **CliCommandBuilder**: Presentation層。`System.CommandLine` を使用してCLIコマンドを構築し、Application層のサービスと紐付けます。
+*   **Application Layer**:
+    *   **PackageService**: パッケージ同期のビジネスロジック（差分計算など）を担当し、Infrastructure層の `WinGetRepository` / `WinGetExecutor` をオーケストレーションします。
+    *   **AuthService**: 認証ロジックを担当します。
+    *   **GistService**: Gist操作のロジックを担当します。
+*   **Infrastructure Layer**:
+    *   **WinGetRepository**: `Microsoft.WindowsPackageManager.ComInterop` (COM) を使用して、インストール済みパッケージ情報を読み取ります。
+    *   **WinGetExecutor**: `ProcessRunner` を使用して、`winget` コマンドによる変更操作（インストール/アンインストール）を実行します。
+    *   **CredentialService**: Windows Credential Manager へのアクセスを提供します。
+    *   **ProcessRunner**: OSプロセス実行の抽象化を提供します。
 
 ## シーケンス図
 
@@ -142,52 +116,70 @@ classDiagram
 sequenceDiagram
     participant User
     participant Program
+    participant CliCommandBuilder
     participant GistService
     participant GitHub
     participant PackageService
-    participant WinGetCOM
+    participant WinGetRepository
+    participant WinGetExecutor
     participant ProcessRunner
     participant WingetExe
 
     User->>Program: gistget sync
     activate Program
+    Program->>CliCommandBuilder: Build()
+    activate CliCommandBuilder
+    CliCommandBuilder-->>Program: RootCommand
+    deactivate CliCommandBuilder
+    Program->>CliCommandBuilder: InvokeAsync() (via RootCommand)
     
-    Note over Program: 1. Gistからパッケージ定義を取得
-    Program->>GistService: GetPackagesAsync()
+    Note over CliCommandBuilder: 1. Gistからパッケージ定義を取得
+    CliCommandBuilder->>GistService: GetPackagesAsync()
     activate GistService
     GistService->>GitHub: Gist取得 (API)
     GitHub-->>GistService: packages.yaml
-    GistService-->>Program: Dictionary<Id, Package>
+    GistService-->>CliCommandBuilder: Dictionary<Id, Package>
     deactivate GistService
 
-    Note over Program: 2. ローカルのインストール済みパッケージを取得
-    Program->>PackageService: GetInstalledPackagesAsync()
+    Note over CliCommandBuilder: 2. ローカルのインストール済みパッケージを取得
+    CliCommandBuilder->>PackageService: GetInstalledPackagesAsync()
     activate PackageService
-    PackageService->>WinGetCOM: GetInstalledPackagesAsync()
-    activate WinGetCOM
-    Note right of WinGetCOM: COM API経由で取得
-    WinGetCOM-->>PackageService: Dictionary<Id, Package>
-    deactivate WinGetCOM
-    PackageService-->>Program: Dictionary<Id, Package>
+    PackageService->>WinGetRepository: GetInstalledPackagesAsync()
+    activate WinGetRepository
+    Note right of WinGetRepository: COM API経由で取得
+    WinGetRepository-->>PackageService: Dictionary<Id, Package>
+    deactivate WinGetRepository
+    PackageService-->>CliCommandBuilder: Dictionary<Id, Package>
     deactivate PackageService
 
-    Note over Program: 3. 差分計算 (Install / Uninstall)
-    Program->>Program: Calculate Diff
+    Note over CliCommandBuilder: 3. 同期実行 (SyncAsync)
+    CliCommandBuilder->>PackageService: SyncAsync(gist, local)
+    activate PackageService
+    
+    Note right of PackageService: 差分計算 (Install / Uninstall)
 
-    Note over Program: 4. 同期実行
     loop To Uninstall
-        Program->>PackageService: UninstallPackageAsync(id)
-        PackageService->>ProcessRunner: RunAsync(winget, uninstall...)
+        PackageService->>WinGetExecutor: UninstallPackageAsync(id)
+        activate WinGetExecutor
+        WinGetExecutor->>ProcessRunner: RunAsync(winget, uninstall...)
         ProcessRunner->>WingetExe: winget uninstall ...
+        WinGetExecutor-->>PackageService: Success/Failure
+        deactivate WinGetExecutor
     end
 
     loop To Install
-        Program->>PackageService: InstallPackageAsync(pkg)
-        PackageService->>ProcessRunner: RunAsync(winget, install...)
+        PackageService->>WinGetExecutor: InstallPackageAsync(pkg)
+        activate WinGetExecutor
+        WinGetExecutor->>ProcessRunner: RunAsync(winget, install...)
         ProcessRunner->>WingetExe: winget install ...
+        WinGetExecutor-->>PackageService: Success/Failure
+        deactivate WinGetExecutor
     end
 
-    Program-->>User: 完了メッセージ
+    PackageService-->>CliCommandBuilder: SyncResult
+    deactivate PackageService
+
+    CliCommandBuilder-->>User: 完了メッセージ
     deactivate Program
 ```
 
@@ -237,7 +229,8 @@ sequenceDiagram
     *   **書き込み・実行 (Process)**: インストール、アンインストール、およびその他のパススルーコマンドには、`System.Diagnostics.Process` を使用して `winget.exe` を直接呼び出します。これにより、wingetの最新機能への追従性を高め、ユーザーへの出力（プログレスバーなど）を自然な形で提供します。PowerShellラッパーは廃止し、直接呼び出しとしました。
 
 2.  **テスト容易性の向上**:
-    *   外部プロセス実行 (`IProcessRunner`) とCOM操作 (`IWinGetCOM`) をインターフェース化し、依存性を注入可能にしました。これにより、実際のwinget環境に依存せずにロジックの単体テストが可能となり、高いコードカバレッジを実現しています。
+    *   **レイヤー化アーキテクチャ**: Presentation, Application, Infrastructure に責務を分離し、各層を疎結合にしました。
+    *   **インターフェース依存**: `PackageService` は `IWinGetRepository` と `IWinGetExecutor` に依存し、これらをモック化することで、実際のwinget環境に依存せずにビジネスロジック（同期計算など）の単体テストが可能となりました。
 
 3.  **Windows Credential Managerの利用**:
     *   セキュリティを考慮し、GitHubのアクセストークンをプレーンテキストでファイルに保存するのではなく、OS標準の資格情報マネージャーに保存する設計としました。

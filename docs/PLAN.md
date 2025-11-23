@@ -248,5 +248,6 @@ gistget auth status
 - [x] Implement COM API for reading
 - [x] Implement ProcessRunner for execution
 - [x] Unit Tests (>95% coverage for logic)
+- [x] Architectural Restructuring (Layered Architecture, CommandBuilder)
 
 **承認者**: [プロジェクトオーナー]

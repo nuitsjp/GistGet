@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
 
-namespace GistGet.Infrastructure.System;
+namespace GistGet.Infrastructure.OS;
 
 public class ProcessRunner : IProcessRunner
 {

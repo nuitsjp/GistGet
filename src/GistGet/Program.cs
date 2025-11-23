@@ -1,6 +1,6 @@
 ﻿using GistGet.Application.Services;
 using GistGet.Infrastructure.Security;
-using GistGet.Infrastructure.System;
+using GistGet.Infrastructure.OS;
 using GistGet.Infrastructure.WinGet;
 using GistGet.Presentation;
 using System.CommandLine;
