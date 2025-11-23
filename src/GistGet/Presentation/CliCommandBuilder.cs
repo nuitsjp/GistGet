@@ -30,6 +30,10 @@ public class CliCommandBuilder
         rootCommand.AddCommand(BuildImportCommand());
         rootCommand.AddCommand(BuildAuthCommand());
         
+        rootCommand.AddCommand(BuildInstallCommand());
+        rootCommand.AddCommand(BuildUninstallCommand());
+        rootCommand.AddCommand(BuildUpgradeCommand());
+        
         foreach (var cmd in BuildWingetPassthroughCommands())
         {
             rootCommand.AddCommand(cmd);
@@ -166,10 +170,82 @@ public class CliCommandBuilder
         return command;
     }
 
+    private Command BuildInstallCommand()
+    {
+        var command = new Command("install", "Install a package and save to Gist");
+        var idArgument = new Argument<string>("package", "Package ID");
+        var versionOption = new Option<string>("--version", "Package version");
+        
+        command.AddArgument(idArgument);
+        command.AddOption(versionOption);
+
+        command.SetHandler(async (string id, string? version) =>
+        {
+            var package = new GistGet.Models.GistGetPackage { Id = id, Version = version };
+            if (await _packageService.InstallAndSaveAsync(package))
+            {
+                AnsiConsole.MarkupLine($"[green]Installed and saved {id}[/]");
+            }
+            else
+            {
+                AnsiConsole.MarkupLine($"[red]Failed to install {id}[/]");
+            }
+        }, idArgument, versionOption);
+
+        return command;
+    }
+
+    private Command BuildUninstallCommand()
+    {
+        var command = new Command("uninstall", "Uninstall a package and update Gist");
+        var idArgument = new Argument<string>("package", "Package ID");
+        command.AddArgument(idArgument);
+
+        command.SetHandler(async (string id) =>
+        {
+            if (await _packageService.UninstallAndSaveAsync(id))
+            {
+                AnsiConsole.MarkupLine($"[green]Uninstalled and updated Gist for {id}[/]");
+            }
+            else
+            {
+                AnsiConsole.MarkupLine($"[red]Failed to uninstall {id}[/]");
+            }
+        }, idArgument);
+
+        return command;
+    }
+
+    private Command BuildUpgradeCommand()
+    {
+        var command = new Command("upgrade", "Upgrade a package and save to Gist");
+        var idArgument = new Argument<string>("package", "Package ID");
+        var versionOption = new Option<string>("--version", "Package version");
+        command.AddArgument(idArgument);
+        command.AddOption(versionOption);
+
+        command.SetHandler(async (string id, string? version) =>
+        {
+            if (await _packageService.UpgradeAndSaveAsync(id, version))
+            {
+                AnsiConsole.MarkupLine($"[green]Upgraded and saved {id}[/]");
+            }
+            else
+            {
+                AnsiConsole.MarkupLine($"[red]Failed to upgrade {id}[/]");
+            }
+        }, idArgument, versionOption);
+
+        return command;
+    }
+
     private Command[] BuildWingetPassthroughCommands()
     {
         var commands = new System.Collections.Generic.List<Command>();
-        var wingetCommands = new[] { "install", "uninstall", "upgrade", "list", "search", "show", "source", "settings", "features" };
+        var wingetCommands = new[] { 
+            "list", "search", "show", "source", "settings", "features",
+            "hash", "validate", "configure", "download", "repair", "pin"
+        };
 
         foreach (var cmd in wingetCommands)
         {

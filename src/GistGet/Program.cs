@@ -21,7 +21,7 @@ class Program
         // Application
         var authService = new AuthService(credentialService);
         var gistService = new GistService(authService);
-        var packageService = new PackageService(winGetRepository, winGetExecutor);
+        var packageService = new PackageService(winGetRepository, winGetExecutor, gistService);
 
         // Presentation
         var commandBuilder = new CliCommandBuilder(packageService, gistService, authService);

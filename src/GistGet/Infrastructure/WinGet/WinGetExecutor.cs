@@ -58,11 +58,26 @@ public class WinGetExecutor : IWinGetExecutor
         return exitCode == 0;
     }
 
+    public async Task<bool> UpgradePackageAsync(string packageId, string? version = null)
+    {
+        var args = new List<string> { "upgrade", "--id", packageId };
+        if (!string.IsNullOrEmpty(version))
+        {
+            args.Add("--version");
+            args.Add(version);
+        }
+        args.Add("--accept-source-agreements");
+        args.Add("--accept-package-agreements");
+
+        var (exitCode, _, _) = await _processRunner.RunAsync(_wingetExe, string.Join(" ", args));
+        return exitCode == 0;
+    }
+
     public async Task RunPassthroughAsync(string command, string[] args)
     {
-        var passthroughArgs = new List<string> { command };
-        passthroughArgs.AddRange(args);
-        await _processRunner.RunPassthroughAsync(_wingetExe, string.Join(" ", passthroughArgs));
+        var allArgs = new List<string> { command };
+        allArgs.AddRange(args);
+        await _processRunner.RunPassthroughAsync(_wingetExe, string.Join(" ", allArgs));
     }
 
     private string ResolveWingetPath()

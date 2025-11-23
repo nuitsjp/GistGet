@@ -11,4 +11,8 @@ public interface IPackageService
     Task<bool> UninstallPackageAsync(string packageId);
     Task RunPassthroughAsync(string command, string[] args);
     Task<SyncResult> SyncAsync(Dictionary<string, GistGetPackage> gistPackages, Dictionary<string, GistGetPackage> localPackages);
+    
+    Task<bool> InstallAndSaveAsync(GistGetPackage package);
+    Task<bool> UninstallAndSaveAsync(string packageId);
+    Task<bool> UpgradeAndSaveAsync(string packageId, string? version = null);
 }

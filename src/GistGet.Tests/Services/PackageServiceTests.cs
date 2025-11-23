@@ -12,13 +12,15 @@ public class PackageServiceTests
 {
     private readonly Mock<IWinGetRepository> _mockRepository;
     private readonly Mock<IWinGetExecutor> _mockExecutor;
+    private readonly Mock<IGistService> _mockGistService;
     private readonly PackageService _packageService;
 
     public PackageServiceTests()
     {
         _mockRepository = new Mock<IWinGetRepository>();
         _mockExecutor = new Mock<IWinGetExecutor>();
-        _packageService = new PackageService(_mockRepository.Object, _mockExecutor.Object);
+        _mockGistService = new Mock<IGistService>();
+        _packageService = new PackageService(_mockRepository.Object, _mockExecutor.Object, _mockGistService.Object);
     }
 
     [Fact]
@@ -109,5 +111,40 @@ public class PackageServiceTests
 
         // Assert
         _mockExecutor.Verify(x => x.RunPassthroughAsync(command, args), Times.Once);
+    }
+
+    [Fact]
+    public async Task InstallAndSaveAsync_ShouldInstallAndSave()
+    {
+        // Arrange
+        var package = new GistGetPackage { Id = "Test" };
+        _mockExecutor.Setup(x => x.InstallPackageAsync(package)).ReturnsAsync(true);
+        _mockGistService.Setup(x => x.GetPackagesAsync(null)).ReturnsAsync(new Dictionary<string, GistGetPackage>());
+
+        // Act
+        var result = await _packageService.InstallAndSaveAsync(package);
+
+        // Assert
+        Assert.True(result);
+        _mockExecutor.Verify(x => x.InstallPackageAsync(package), Times.Once);
+        _mockGistService.Verify(x => x.SavePackagesAsync(It.Is<Dictionary<string, GistGetPackage>>(d => d.ContainsKey("Test"))), Times.Once);
+    }
+
+    [Fact]
+    public async Task UninstallAndSaveAsync_ShouldUninstallAndMark()
+    {
+        // Arrange
+        var packageId = "Test";
+        _mockExecutor.Setup(x => x.UninstallPackageAsync(packageId)).ReturnsAsync(true);
+        var packages = new Dictionary<string, GistGetPackage> { { packageId, new GistGetPackage { Id = packageId } } };
+        _mockGistService.Setup(x => x.GetPackagesAsync(null)).ReturnsAsync(packages);
+
+        // Act
+        var result = await _packageService.UninstallAndSaveAsync(packageId);
+
+        // Assert
+        Assert.True(result);
+        _mockExecutor.Verify(x => x.UninstallPackageAsync(packageId), Times.Once);
+        _mockGistService.Verify(x => x.SavePackagesAsync(It.Is<Dictionary<string, GistGetPackage>>(d => d[packageId].Uninstall)), Times.Once);
     }
 }
