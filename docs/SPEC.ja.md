@@ -96,8 +96,6 @@ gistget auth <subcommand>
 その他のすべてのコマンドは `winget` にそのまま渡されます (パススルー)。
 `gistget` を `winget` のエイリアスとして使用することで、ツールを切り替えることなくシームレスに操作可能です。
 
-- `install`
-- `uninstall`
 - `upgrade`
 - `list`
 - `search`

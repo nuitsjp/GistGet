@@ -15,7 +15,7 @@ class Program
         // Infrastructure
         var credentialService = new CredentialService();
         var processRunner = new ProcessRunner();
-        var winGetRepository = new WinGetRepository();
+        var winGetRepository = new WinGetRepository(processRunner);
         var winGetExecutor = new WinGetExecutor(processRunner);
 
         // Application

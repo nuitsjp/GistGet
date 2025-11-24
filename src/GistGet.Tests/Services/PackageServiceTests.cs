@@ -25,6 +25,7 @@ public class PackageServiceTests
         // Default setup for Pin/Unpin to avoid null reference if not setup in specific tests
         _mockExecutor.Setup(x => x.PinPackageAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
         _mockExecutor.Setup(x => x.UnpinPackageAsync(It.IsAny<string>())).ReturnsAsync(true);
+        _mockRepository.Setup(x => x.GetPinnedPackagesAsync()).ReturnsAsync(new Dictionary<string, string>());
     }
 
     [Fact]
@@ -275,6 +276,12 @@ public class PackageServiceTests
             { "Pinned", new GistGetPackage { Id = "Pinned" } },
             { "Unpinned", new GistGetPackage { Id = "Unpinned" } }
         };
+
+        // Mock existing pins: "Unpinned" is currently pinned, "Pinned" is not (or pinned to wrong version)
+        _mockRepository.Setup(x => x.GetPinnedPackagesAsync()).ReturnsAsync(new Dictionary<string, string>
+        {
+            { "Unpinned", "1.0.0" }
+        });
 
         // Act
         await _packageService.SyncAsync(gistPackages, localPackages);

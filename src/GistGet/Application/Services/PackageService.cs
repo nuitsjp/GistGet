@@ -91,17 +91,38 @@ public class PackageService : IPackageService
         }
 
         // Enforce Pinning State
+        var pinnedPackages = await _repository.GetPinnedPackagesAsync();
+
         foreach (var package in gistPackages.Values)
         {
             if (!package.Uninstall)
             {
                 if (!string.IsNullOrEmpty(package.Version))
                 {
-                    await _executor.PinPackageAsync(package.Id, package.Version);
+                    // Check if already pinned to the correct version
+                    if (pinnedPackages.TryGetValue(package.Id, out var pinnedVersion))
+                    {
+                        // If pinned version is different, update pin
+                        // Note: pinnedVersion string format might differ slightly, but usually it's exact.
+                        // We might want to normalize or just re-pin if string doesn't match.
+                        if (!string.Equals(pinnedVersion, package.Version, StringComparison.OrdinalIgnoreCase))
+                        {
+                             await _executor.PinPackageAsync(package.Id, package.Version);
+                        }
+                    }
+                    else
+                    {
+                        // Not pinned, so pin it
+                        await _executor.PinPackageAsync(package.Id, package.Version);
+                    }
                 }
                 else
                 {
-                    await _executor.UnpinPackageAsync(package.Id);
+                    // Should not be pinned
+                    if (pinnedPackages.ContainsKey(package.Id))
+                    {
+                        await _executor.UnpinPackageAsync(package.Id);
+                    }
                 }
             }
         }

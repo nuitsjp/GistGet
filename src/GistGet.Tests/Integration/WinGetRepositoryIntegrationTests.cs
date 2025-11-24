@@ -1,4 +1,5 @@
 using GistGet.Infrastructure.WinGet;
+using GistGet.Infrastructure.OS;
 using Microsoft.Management.Deployment;
 using System;
 using System.Threading.Tasks;
@@ -18,7 +19,7 @@ public class WinGetRepositoryIntegrationTests
             return;
         }
 
-        var repository = new WinGetRepository();
+        var repository = new WinGetRepository(new ProcessRunner());
 
         var packages = await repository.GetInstalledPackagesAsync();
 
