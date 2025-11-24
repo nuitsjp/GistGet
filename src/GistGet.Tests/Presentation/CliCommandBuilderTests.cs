@@ -92,6 +92,22 @@ public class CliCommandBuilderTests
         )), Times.Once);
     }
     [Fact]
+    public async Task InstallCommand_ShouldAcceptIdOption()
+    {
+        // Arrange
+        var root = _builder.Build();
+        _mockPackageService.Setup(x => x.InstallAndSaveAsync(It.IsAny<GistGetPackage>()))
+            .ReturnsAsync(true);
+
+        // Act
+        await root.InvokeAsync("install --id MyPackage --version 1.2.3");
+
+        // Assert
+        _mockPackageService.Verify(x => x.InstallAndSaveAsync(It.Is<GistGetPackage>(p =>
+            p.Id == "MyPackage" &&
+            p.Version == "1.2.3")), Times.Once);
+    }
+    [Fact]
     public async Task PinAddCommand_ShouldInvokeService()
     {
         // Arrange
@@ -119,5 +135,20 @@ public class CliCommandBuilderTests
 
         // Assert
         _mockPackageService.Verify(x => x.PinRemoveAndSaveAsync("MyPackage"), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpgradeCommand_ShouldAcceptIdOption()
+    {
+        // Arrange
+        var root = _builder.Build();
+        _mockPackageService.Setup(x => x.UpgradeAndSaveAsync(It.IsAny<string>(), It.IsAny<string?>()))
+            .ReturnsAsync(true);
+
+        // Act
+        await root.InvokeAsync("upgrade --id MyPackage --version 2.0.0");
+
+        // Assert
+        _mockPackageService.Verify(x => x.UpgradeAndSaveAsync("MyPackage", "2.0.0"), Times.Once);
     }
 }

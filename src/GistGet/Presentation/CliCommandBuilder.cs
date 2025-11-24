@@ -3,6 +3,7 @@ using GistGet.Utils;
 using Spectre.Console;
 using System;
 using System.CommandLine;
+using System.CommandLine.Invocation;
 using System.CommandLine.Binding;
 using System.IO;
 using System.Threading.Tasks;
@@ -193,7 +194,8 @@ public class CliCommandBuilder
     private Command BuildInstallCommand()
     {
         var command = new Command("install", "Install a package and save to Gist");
-        var idArgument = new Argument<string>("package", "Package ID");
+        var idArgument = new Argument<string?>("package", "Package ID") { Arity = ArgumentArity.ZeroOrOne };
+        var idOption = new Option<string>("--id", "Package ID (winget compatible)");
         
         var versionOption = new Option<string>("--version", "Package version");
         var scopeOption = new Option<string>("--scope", "Install scope (user|machine)");
@@ -210,6 +212,7 @@ public class CliCommandBuilder
         var customOption = new Option<string>("--custom", "Custom arguments");
 
         command.AddArgument(idArgument);
+        command.AddOption(idOption);
         command.AddOption(versionOption);
         command.AddOption(scopeOption);
         command.AddOption(archOption);
@@ -225,7 +228,7 @@ public class CliCommandBuilder
         command.AddOption(customOption);
 
         var binder = new InstallPackageBinder(
-            idArgument, versionOption, scopeOption, archOption, locationOption,
+            idArgument, idOption, versionOption, scopeOption, archOption, locationOption,
             interactiveOption, silentOption, logOption, overrideOption, forceOption,
             skipDependenciesOption, headerOption, installerTypeOption, customOption);
 
@@ -268,13 +271,24 @@ public class CliCommandBuilder
     private Command BuildUpgradeCommand()
     {
         var command = new Command("upgrade", "Upgrade a package and save to Gist");
-        var idArgument = new Argument<string>("package", "Package ID");
+        var idArgument = new Argument<string?>("package", "Package ID") { Arity = ArgumentArity.ZeroOrOne };
+        var idOption = new Option<string>("--id", "Package ID (winget compatible)");
         var versionOption = new Option<string>("--version", "Package version");
         command.AddArgument(idArgument);
+        command.AddOption(idOption);
         command.AddOption(versionOption);
 
-        command.SetHandler(async (string id, string? version) =>
+        command.SetHandler(async (InvocationContext context) =>
         {
+            var parseResult = context.ParseResult;
+            var id = parseResult.GetValueForOption(idOption) ?? parseResult.GetValueForArgument(idArgument);
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                throw new ArgumentException("Package ID is required.");
+            }
+
+            var version = parseResult.GetValueForOption(versionOption);
+
             if (await _packageService.UpgradeAndSaveAsync(id, version))
             {
                 AnsiConsole.MarkupLine($"[green]Upgraded and saved {id}[/]");
@@ -283,7 +297,7 @@ public class CliCommandBuilder
             {
                 AnsiConsole.MarkupLine($"[red]Failed to upgrade {id}[/]");
             }
-        }, idArgument, versionOption);
+        });
 
         return command;
     }
@@ -377,7 +391,8 @@ public class CliCommandBuilder
     }
     private class InstallPackageBinder : BinderBase<GistGet.Models.GistGetPackage>
     {
-        private readonly Argument<string> _id;
+        private readonly Argument<string?> _id;
+        private readonly Option<string> _idOption;
         private readonly Option<string> _version;
         private readonly Option<string> _scope;
         private readonly Option<string> _arch;
@@ -393,7 +408,8 @@ public class CliCommandBuilder
         private readonly Option<string> _custom;
 
         public InstallPackageBinder(
-            Argument<string> id,
+            Argument<string?> id,
+            Option<string> idOption,
             Option<string> version,
             Option<string> scope,
             Option<string> arch,
@@ -409,6 +425,7 @@ public class CliCommandBuilder
             Option<string> custom)
         {
             _id = id;
+            _idOption = idOption;
             _version = version;
             _scope = scope;
             _arch = arch;
@@ -426,9 +443,16 @@ public class CliCommandBuilder
 
         protected override GistGet.Models.GistGetPackage GetBoundValue(BindingContext bindingContext)
         {
+            var id = bindingContext.ParseResult.GetValueForOption(_idOption)
+                ?? bindingContext.ParseResult.GetValueForArgument(_id);
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                throw new ArgumentException("Package ID is required.");
+            }
+
             return new GistGet.Models.GistGetPackage
             {
-                Id = bindingContext.ParseResult.GetValueForArgument(_id),
+                Id = id,
                 Version = bindingContext.ParseResult.GetValueForOption(_version),
                 Scope = bindingContext.ParseResult.GetValueForOption(_scope),
                 Architecture = bindingContext.ParseResult.GetValueForOption(_arch),

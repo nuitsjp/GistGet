@@ -33,9 +33,9 @@ public class PackageService : IPackageService
         return await _executor.UninstallPackageAsync(packageId);
     }
 
-    public async Task RunPassthroughAsync(string command, string[] args)
+    public async Task<int> RunPassthroughAsync(string command, string[] args)
     {
-        await _executor.RunPassthroughAsync(command, args);
+        return await _executor.RunPassthroughAsync(command, args);
     }
 
     public async Task<Models.SyncResult> SyncAsync(Dictionary<string, GistGetPackage> gistPackages, Dictionary<string, GistGetPackage> localPackages)

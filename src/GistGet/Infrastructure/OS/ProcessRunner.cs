@@ -35,7 +35,7 @@ public class ProcessRunner : IProcessRunner
         return (process.ExitCode, output, error);
     }
 
-    public async Task RunPassthroughAsync(string fileName, string arguments)
+    public async Task<int> RunPassthroughAsync(string fileName, string arguments)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -50,5 +50,6 @@ public class ProcessRunner : IProcessRunner
         using var process = new Process { StartInfo = startInfo };
         process.Start();
         await process.WaitForExitAsync();
+        return process.ExitCode;
     }
 }

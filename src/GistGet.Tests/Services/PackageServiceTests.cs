@@ -108,12 +108,13 @@ public class PackageServiceTests
         // Arrange
         var command = "search";
         var args = new[] { "vscode" };
-        _mockExecutor.Setup(x => x.RunPassthroughAsync(command, args)).Returns(Task.CompletedTask);
+        _mockExecutor.Setup(x => x.RunPassthroughAsync(command, args)).ReturnsAsync(0);
 
         // Act
-        await _packageService.RunPassthroughAsync(command, args);
+        var exitCode = await _packageService.RunPassthroughAsync(command, args);
 
         // Assert
+        Assert.Equal(0, exitCode);
         _mockExecutor.Verify(x => x.RunPassthroughAsync(command, args), Times.Once);
     }
 

@@ -48,4 +48,21 @@ Uninstall.Package:
         Assert.True(packages.ContainsKey("Uninstall.Package"));
         Assert.True(packages["Uninstall.Package"].Uninstall);
     }
+
+    [Fact]
+    public void Deserialize_ShouldHandleEmptyPackageEntry()
+    {
+        // Arrange
+        var yaml = @"
+Empty.Package:
+";
+
+        // Act
+        var packages = YamlHelper.Deserialize(yaml);
+
+        // Assert
+        Assert.True(packages.ContainsKey("Empty.Package"));
+        Assert.NotNull(packages["Empty.Package"]);
+        Assert.Equal("Empty.Package", packages["Empty.Package"].Id);
+    }
 }

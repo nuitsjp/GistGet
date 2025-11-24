@@ -1,9 +1,9 @@
-using GistGet.Infrastructure.OS;
-using GistGet.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using GistGet.Infrastructure.OS;
+using GistGet.Models;
 
 namespace GistGet.Infrastructure.WinGet;
 
@@ -20,6 +20,11 @@ public class WinGetExecutor : IWinGetExecutor
 
     public async Task<bool> InstallPackageAsync(GistGetPackage package)
     {
+        if (string.IsNullOrWhiteSpace(package.Id))
+        {
+            throw new ArgumentException("Package Id is required.", nameof(package));
+        }
+
         var args = new List<string>
         {
             "install",
@@ -105,12 +110,17 @@ public class WinGetExecutor : IWinGetExecutor
             args.AddRange(package.Custom.Split(' ', StringSplitOptions.RemoveEmptyEntries));
         }
 
-        var (exitCode, _, _) = await _processRunner.RunAsync(_wingetExe, string.Join(" ", args));
+        var exitCode = await _processRunner.RunPassthroughAsync(_wingetExe, string.Join(" ", args));
         return exitCode == 0;
     }
 
     public async Task<bool> UninstallPackageAsync(string packageId)
     {
+        if (string.IsNullOrWhiteSpace(packageId))
+        {
+            throw new ArgumentException("Package Id is required.", nameof(packageId));
+        }
+
         var args = new List<string>
         {
             "uninstall",
@@ -119,12 +129,17 @@ public class WinGetExecutor : IWinGetExecutor
             "--disable-interactivity"
         };
 
-        var (exitCode, _, _) = await _processRunner.RunAsync(_wingetExe, string.Join(" ", args));
+        var exitCode = await _processRunner.RunPassthroughAsync(_wingetExe, string.Join(" ", args));
         return exitCode == 0;
     }
 
     public async Task<bool> UpgradePackageAsync(string packageId, string? version = null)
     {
+        if (string.IsNullOrWhiteSpace(packageId))
+        {
+            throw new ArgumentException("Package Id is required.", nameof(packageId));
+        }
+
         var args = new List<string> { "upgrade", "--id", packageId };
         if (!string.IsNullOrEmpty(version))
         {
@@ -134,29 +149,39 @@ public class WinGetExecutor : IWinGetExecutor
         args.Add("--accept-source-agreements");
         args.Add("--accept-package-agreements");
 
-        var (exitCode, _, _) = await _processRunner.RunAsync(_wingetExe, string.Join(" ", args));
+        var exitCode = await _processRunner.RunPassthroughAsync(_wingetExe, string.Join(" ", args));
         return exitCode == 0;
     }
 
     public async Task<bool> PinPackageAsync(string packageId, string version)
     {
+        if (string.IsNullOrWhiteSpace(packageId))
+        {
+            throw new ArgumentException("Package Id is required.", nameof(packageId));
+        }
+
         var args = new List<string> { "pin", "add", "--id", packageId, "--version", version, "--force" };
-        var (exitCode, _, _) = await _processRunner.RunAsync(_wingetExe, string.Join(" ", args));
+        var exitCode = await _processRunner.RunPassthroughAsync(_wingetExe, string.Join(" ", args));
         return exitCode == 0;
     }
 
     public async Task<bool> UnpinPackageAsync(string packageId)
     {
+        if (string.IsNullOrWhiteSpace(packageId))
+        {
+            throw new ArgumentException("Package Id is required.", nameof(packageId));
+        }
+
         var args = new List<string> { "pin", "remove", "--id", packageId };
-        var (exitCode, _, _) = await _processRunner.RunAsync(_wingetExe, string.Join(" ", args));
+        var exitCode = await _processRunner.RunPassthroughAsync(_wingetExe, string.Join(" ", args));
         return exitCode == 0;
     }
 
-    public async Task RunPassthroughAsync(string command, string[] args)
+    public async Task<int> RunPassthroughAsync(string command, string[] args)
     {
         var allArgs = new List<string> { command };
         allArgs.AddRange(args);
-        await _processRunner.RunPassthroughAsync(_wingetExe, string.Join(" ", allArgs));
+        return await _processRunner.RunPassthroughAsync(_wingetExe, string.Join(" ", allArgs));
     }
 
     private string ResolveWingetPath()

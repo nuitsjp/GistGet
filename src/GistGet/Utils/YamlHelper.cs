@@ -26,22 +26,17 @@ public static class YamlHelper
             .IgnoreUnmatchedProperties()
             .Build();
 
-        var packages = deserializer.Deserialize<Dictionary<string, GistGetPackage>>(yaml);
+        var packages = deserializer.Deserialize<Dictionary<string, GistGetPackage>>(yaml)
+                       ?? new Dictionary<string, GistGetPackage>();
 
-        // Populate ID back into the package object
-        if (packages != null)
+        // Populate ID back into the package object, ensuring null entries
+        // are converted to empty package definitions.
+        var keys = new List<string>(packages.Keys);
+        foreach (var key in keys)
         {
-            foreach (var kvp in packages)
-            {
-                if (kvp.Value != null)
-                {
-                    kvp.Value.Id = kvp.Key;
-                }
-            }
-        }
-        else
-        {
-            packages = new Dictionary<string, GistGetPackage>();
+            var package = packages[key] ?? new GistGetPackage();
+            package.Id = key;
+            packages[key] = package;
         }
 
         return packages;
