@@ -3,7 +3,9 @@
     Run all tests for the GistGet project.
 
 .DESCRIPTION
-    This script runs all unit tests in the GistGet.Tests project with coverage collection.
+    This script runs all tests (unit and integration) in the GistGet.Tests project with coverage collection.
+    Integration tests require authentication via Run-AuthLogin.ps1 before running.
+    If not authenticated, integration tests will be skipped automatically.
 
 .PARAMETER Configuration
     Build configuration (Debug or Release). Default is Debug.
@@ -14,12 +16,12 @@
 .EXAMPLE
     .\Run-Tests.ps1
     .\Run-Tests.ps1 -Configuration Release
-    .\Run-Tests.ps1 -CollectCoverage $false
+    .\Run-Tests.ps1 -CollectCoverage:$false
 #>
 
 param(
     [string]$Configuration = "Debug",
-    [bool]$CollectCoverage = $true
+    [switch]$CollectCoverage = $true
 )
 
 $ErrorActionPreference = "Stop"
@@ -57,7 +59,7 @@ $testArgs = @(
 
 if ($CollectCoverage) {
     $testArgs += @(
-        "--collect:XPlat Code Coverage",
+        "--collect", "XPlat Code Coverage",
         "--results-directory", "$repoRoot\TestResults"
     )
 }
