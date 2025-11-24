@@ -8,4 +8,7 @@ public interface IAuthService
     Task LogoutAsync();
     Task<string?> GetAccessTokenAsync();
     Task<bool> IsAuthenticatedAsync();
+    Task<GitHubUserInfo?> GetUserInfoAsync();
 }
+
+

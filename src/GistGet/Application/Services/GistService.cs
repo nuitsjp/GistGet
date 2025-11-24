@@ -74,7 +74,17 @@ public class GistService : IGistService
             }
 
             var gists = await client.Gist.GetAll();
-            var targetGist = gists.FirstOrDefault(g => g.Files.ContainsKey(GistFileName) || g.Description == GistDescription);
+            var matchingGists = gists
+                .Where(g => g.Files.ContainsKey(GistFileName) || g.Description == GistDescription)
+                .ToList();
+
+            if (matchingGists.Count > 1)
+            {
+                throw new InvalidOperationException(
+                    $"Multiple Gists match the criteria ({matchingGists.Count} found). Please specify the target Gist URL explicitly via the `gistUrl` argument.");
+            }
+
+            var targetGist = matchingGists.SingleOrDefault();
 
             if (targetGist != null)
             {
@@ -104,7 +114,17 @@ public class GistService : IGistService
         var yaml = YamlHelper.Serialize(packages);
 
         var gists = await client.Gist.GetAll();
-        var targetGist = gists.FirstOrDefault(g => g.Files.ContainsKey(GistFileName) || g.Description == GistDescription);
+        var matchingGists = gists
+            .Where(g => g.Files.ContainsKey(GistFileName) || g.Description == GistDescription)
+            .ToList();
+
+        if (matchingGists.Count > 1)
+        {
+            throw new InvalidOperationException(
+                $"Multiple Gists match the criteria ({matchingGists.Count} found). Please specify the target Gist URL explicitly via the `gistUrl` argument.");
+        }
+
+        var targetGist = matchingGists.SingleOrDefault();
 
         if (targetGist != null)
         {

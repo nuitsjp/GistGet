@@ -158,7 +158,25 @@ public class CliCommandBuilder
         {
             if (await _authService.IsAuthenticatedAsync())
             {
-                AnsiConsole.MarkupLine("[green]Authenticated[/]");
+                var userInfo = await _authService.GetUserInfoAsync();
+                if (userInfo != null)
+                {
+                    AnsiConsole.MarkupLine("[green]Authenticated[/]");
+                    AnsiConsole.MarkupLine($"User: [cyan]{userInfo.Login}[/]");
+                    if (!string.IsNullOrEmpty(userInfo.Name))
+                    {
+                        AnsiConsole.MarkupLine($"Name: [cyan]{userInfo.Name}[/]");
+                    }
+                    if (!string.IsNullOrEmpty(userInfo.Email))
+                    {
+                        AnsiConsole.MarkupLine($"Email: [cyan]{userInfo.Email}[/]");
+                    }
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine("[green]Authenticated[/]");
+                    AnsiConsole.MarkupLine("[yellow]Unable to fetch user information[/]");
+                }
             }
             else
             {

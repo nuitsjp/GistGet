@@ -56,4 +56,18 @@ public class CliCommandBuilderTests
         // Assert
         _mockPackageService.Verify(x => x.SyncAsync(It.IsAny<Dictionary<string, GistGetPackage>>(), It.IsAny<Dictionary<string, GistGetPackage>>()), Times.Once);
     }
+    [Fact]
+    public async Task AuthStatusCommand_ShouldShowUserInfo_WhenAuthenticated()
+    {
+        // Arrange
+        var root = _builder.Build();
+        _mockAuthService.Setup(x => x.IsAuthenticatedAsync()).ReturnsAsync(true);
+        _mockAuthService.Setup(x => x.GetUserInfoAsync()).ReturnsAsync(new GitHubUserInfo { Login = "testuser" });
+
+        // Act
+        await root.InvokeAsync("auth status");
+
+        // Assert
+        _mockAuthService.Verify(x => x.GetUserInfoAsync(), Times.Once);
+    }
 }
