@@ -136,6 +136,29 @@ public class PackageServiceTests
     }
 
     [Fact]
+    public async Task InstallAndSaveAsync_ShouldFetchPackagesBeforeInstalling()
+    {
+        // Arrange
+        var package = new GistGetPackage { Id = "Test" };
+        var packages = new Dictionary<string, GistGetPackage>();
+        var sequence = new MockSequence();
+
+        _mockGistService.InSequence(sequence)
+            .Setup(x => x.GetPackagesAsync(null)).ReturnsAsync(packages);
+        _mockExecutor.InSequence(sequence)
+            .Setup(x => x.InstallPackageAsync(package)).ReturnsAsync(true);
+        _mockGistService.InSequence(sequence)
+            .Setup(x => x.SavePackagesAsync(packages, null, null)).Returns(Task.CompletedTask);
+
+        // Act
+        await _packageService.InstallAndSaveAsync(package);
+
+        // Assert
+        _mockGistService.Verify(x => x.GetPackagesAsync(null), Times.Once);
+        _mockExecutor.Verify(x => x.InstallPackageAsync(package), Times.Once);
+    }
+
+    [Fact]
     public async Task UninstallAndSaveAsync_ShouldUninstallAndMark()
     {
         // Arrange
@@ -151,6 +174,29 @@ public class PackageServiceTests
         Assert.True(result);
         _mockExecutor.Verify(x => x.UninstallPackageAsync(packageId), Times.Once);
         _mockGistService.Verify(x => x.SavePackagesAsync(It.Is<Dictionary<string, GistGetPackage>>(d => d[packageId].Uninstall)), Times.Once);
+    }
+
+    [Fact]
+    public async Task UninstallAndSaveAsync_ShouldFetchPackagesBeforeUninstalling()
+    {
+        // Arrange
+        var packageId = "Test";
+        var packages = new Dictionary<string, GistGetPackage> { { packageId, new GistGetPackage { Id = packageId } } };
+        var sequence = new MockSequence();
+
+        _mockGistService.InSequence(sequence)
+            .Setup(x => x.GetPackagesAsync(null)).ReturnsAsync(packages);
+        _mockExecutor.InSequence(sequence)
+            .Setup(x => x.UninstallPackageAsync(packageId)).ReturnsAsync(true);
+        _mockGistService.InSequence(sequence)
+            .Setup(x => x.SavePackagesAsync(packages, null, null)).Returns(Task.CompletedTask);
+
+        // Act
+        await _packageService.UninstallAndSaveAsync(packageId);
+
+        // Assert
+        _mockGistService.Verify(x => x.GetPackagesAsync(null), Times.Once);
+        _mockExecutor.Verify(x => x.UninstallPackageAsync(packageId), Times.Once);
     }
     [Fact]
     public async Task InstallAndSaveAsync_ShouldPin_WhenVersionSpecified()
@@ -237,18 +283,67 @@ public class PackageServiceTests
         _mockExecutor.Verify(x => x.PinPackageAsync("Pinned", "1.0.0"), Times.Once);
         _mockExecutor.Verify(x => x.UnpinPackageAsync("Unpinned"), Times.Once);
     }
+
+    [Fact]
+    public async Task PinAddAndSaveAsync_ShouldFetchPackagesBeforePinning()
+    {
+        // Arrange
+        var packages = new Dictionary<string, GistGetPackage>();
+        var sequence = new MockSequence();
+
+        _mockGistService.InSequence(sequence)
+            .Setup(x => x.GetPackagesAsync(null)).ReturnsAsync(packages);
+        _mockExecutor.InSequence(sequence)
+            .Setup(x => x.PinPackageAsync("Test", "1.0.0")).ReturnsAsync(true);
+        _mockGistService.InSequence(sequence)
+            .Setup(x => x.SavePackagesAsync(packages, null, null)).Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _packageService.PinAddAndSaveAsync("Test", "1.0.0");
+
+        // Assert
+        Assert.True(result);
+        Assert.Equal("1.0.0", packages["Test"].Version);
+    }
+
+    [Fact]
+    public async Task PinRemoveAndSaveAsync_ShouldFetchPackagesBeforeUnpinning()
+    {
+        // Arrange
+        var packages = new Dictionary<string, GistGetPackage>
+        {
+            { "Test", new GistGetPackage { Id = "Test", Version = "1.0.0" } }
+        };
+        var sequence = new MockSequence();
+
+        _mockGistService.InSequence(sequence)
+            .Setup(x => x.GetPackagesAsync(null)).ReturnsAsync(packages);
+        _mockExecutor.InSequence(sequence)
+            .Setup(x => x.UnpinPackageAsync("Test")).ReturnsAsync(true);
+        _mockGistService.InSequence(sequence)
+            .Setup(x => x.SavePackagesAsync(packages, null, null)).Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _packageService.PinRemoveAndSaveAsync("Test");
+
+        // Assert
+        Assert.True(result);
+        Assert.Null(packages["Test"].Version);
+    }
     [Fact]
     public async Task InstallAndSaveAsync_ShouldReturnFalse_WhenInstallFails()
     {
         // Arrange
         var package = new GistGetPackage { Id = "Test" };
         _mockExecutor.Setup(x => x.InstallPackageAsync(package)).ReturnsAsync(false);
+        _mockGistService.Setup(x => x.GetPackagesAsync(null)).ReturnsAsync(new Dictionary<string, GistGetPackage>());
 
         // Act
         var result = await _packageService.InstallAndSaveAsync(package);
 
         // Assert
         Assert.False(result);
+        _mockGistService.Verify(x => x.GetPackagesAsync(null), Times.Once);
         _mockGistService.Verify(x => x.SavePackagesAsync(It.IsAny<Dictionary<string, GistGetPackage>>()), Times.Never);
     }
 
@@ -258,12 +353,14 @@ public class PackageServiceTests
         // Arrange
         var packageId = "Test";
         _mockExecutor.Setup(x => x.UninstallPackageAsync(packageId)).ReturnsAsync(false);
+        _mockGistService.Setup(x => x.GetPackagesAsync(null)).ReturnsAsync(new Dictionary<string, GistGetPackage>());
 
         // Act
         var result = await _packageService.UninstallAndSaveAsync(packageId);
 
         // Assert
         Assert.False(result);
+        _mockGistService.Verify(x => x.GetPackagesAsync(null), Times.Once);
         _mockGistService.Verify(x => x.SavePackagesAsync(It.IsAny<Dictionary<string, GistGetPackage>>()), Times.Never);
     }
 

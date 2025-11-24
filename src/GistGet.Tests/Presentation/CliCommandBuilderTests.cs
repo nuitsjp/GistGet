@@ -39,12 +39,15 @@ public class CliCommandBuilderTests
     }
 
     [Fact]
-    public async Task SyncCommand_ShouldInvokeService()
+    public async Task SyncCommand_ShouldInvokeServiceAndPersistDefinitions()
     {
         // Arrange
         var root = _builder.Build();
-        _mockGistService.Setup(x => x.GetPackagesAsync(It.IsAny<string?>()))
-            .ReturnsAsync(new Dictionary<string, GistGetPackage>());
+        var gistPackages = new Dictionary<string, GistGetPackage>();
+        _mockGistService.Setup(x => x.GetPackagesAsync(It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>()))
+            .ReturnsAsync(gistPackages);
+        _mockGistService.Setup(x => x.SavePackagesAsync(gistPackages, It.IsAny<string?>(), It.IsAny<string?>()))
+            .Returns(Task.CompletedTask);
         _mockPackageService.Setup(x => x.GetInstalledPackagesAsync())
             .ReturnsAsync(new Dictionary<string, GistGetPackage>());
         _mockPackageService.Setup(x => x.SyncAsync(It.IsAny<Dictionary<string, GistGetPackage>>(), It.IsAny<Dictionary<string, GistGetPackage>>()))
@@ -55,6 +58,7 @@ public class CliCommandBuilderTests
 
         // Assert
         _mockPackageService.Verify(x => x.SyncAsync(It.IsAny<Dictionary<string, GistGetPackage>>(), It.IsAny<Dictionary<string, GistGetPackage>>()), Times.Once);
+        _mockGistService.Verify(x => x.SavePackagesAsync(gistPackages, It.IsAny<string?>(), It.IsAny<string?>()), Times.Once);
     }
     [Fact]
     public async Task AuthStatusCommand_ShouldShowUserInfo_WhenAuthenticated()
@@ -79,7 +83,7 @@ public class CliCommandBuilderTests
             .ReturnsAsync(true);
 
         // Act
-        await root.InvokeAsync("install MyPackage --version 1.0.0 --scope user --interactive --silent --force");
+        await root.InvokeAsync("install --id MyPackage --version 1.0.0 --scope user --interactive --silent --force");
 
         // Assert
         _mockPackageService.Verify(x => x.InstallAndSaveAsync(It.Is<GistGetPackage>(p =>
@@ -106,6 +110,20 @@ public class CliCommandBuilderTests
         _mockPackageService.Verify(x => x.InstallAndSaveAsync(It.Is<GistGetPackage>(p =>
             p.Id == "MyPackage" &&
             p.Version == "1.2.3")), Times.Once);
+    }
+
+    [Fact]
+    public async Task InstallCommand_ShouldFailWithoutId()
+    {
+        // Arrange
+        var root = _builder.Build();
+
+        // Act
+        var exitCode = await root.InvokeAsync("install --version 1.0.0");
+
+        // Assert
+        Assert.NotEqual(0, exitCode);
+        _mockPackageService.Verify(x => x.InstallAndSaveAsync(It.IsAny<GistGetPackage>()), Times.Never);
     }
     [Fact]
     public async Task PinAddCommand_ShouldInvokeService()
@@ -135,6 +153,35 @@ public class CliCommandBuilderTests
 
         // Assert
         _mockPackageService.Verify(x => x.PinRemoveAndSaveAsync("MyPackage"), Times.Once);
+    }
+
+    [Fact]
+    public async Task UninstallCommand_ShouldRequireIdOption()
+    {
+        // Arrange
+        var root = _builder.Build();
+        _mockPackageService.Setup(x => x.UninstallAndSaveAsync(It.IsAny<string>()))
+            .ReturnsAsync(true);
+
+        // Act
+        await root.InvokeAsync("uninstall --id MyPackage");
+
+        // Assert
+        _mockPackageService.Verify(x => x.UninstallAndSaveAsync("MyPackage"), Times.Once);
+    }
+
+    [Fact]
+    public async Task UninstallCommand_ShouldFailWithoutId()
+    {
+        // Arrange
+        var root = _builder.Build();
+
+        // Act
+        var exitCode = await root.InvokeAsync("uninstall");
+
+        // Assert
+        Assert.NotEqual(0, exitCode);
+        _mockPackageService.Verify(x => x.UninstallAndSaveAsync(It.IsAny<string>()), Times.Never);
     }
 
     [Fact]

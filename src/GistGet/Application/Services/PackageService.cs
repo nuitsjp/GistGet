@@ -68,6 +68,7 @@ public class PackageService : IPackageService
             if (await _executor.UninstallPackageAsync(pkg.Id))
             {
                 result.Uninstalled.Add(pkg);
+                pkg.Uninstall = false;
             }
             else
             {
@@ -110,41 +111,45 @@ public class PackageService : IPackageService
 
     public async Task<bool> InstallAndSaveAsync(GistGetPackage package)
     {
-        if (await _executor.InstallPackageAsync(package))
+        var packages = await _gistService.GetPackagesAsync();
+        if (!await _executor.InstallPackageAsync(package))
         {
-            var packages = await _gistService.GetPackagesAsync();
-            packages[package.Id] = package;
-            await _gistService.SavePackagesAsync(packages);
-
-            if (!string.IsNullOrEmpty(package.Version))
-            {
-                await _executor.PinPackageAsync(package.Id, package.Version);
-            }
-            else
-            {
-                await _executor.UnpinPackageAsync(package.Id);
-            }
-
-            return true;
+            return false;
         }
-        return false;
+
+        package.Uninstall = false;
+        packages[package.Id] = package;
+        await _gistService.SavePackagesAsync(packages);
+
+        if (!string.IsNullOrEmpty(package.Version))
+        {
+            await _executor.PinPackageAsync(package.Id, package.Version);
+        }
+        else
+        {
+            await _executor.UnpinPackageAsync(package.Id);
+        }
+
+        return true;
     }
 
     public async Task<bool> UninstallAndSaveAsync(string packageId)
     {
-        if (await _executor.UninstallPackageAsync(packageId))
+        var packages = await _gistService.GetPackagesAsync();
+        if (!await _executor.UninstallPackageAsync(packageId))
         {
-            var packages = await _gistService.GetPackagesAsync();
-            if (packages.ContainsKey(packageId))
-            {
-                packages[packageId].Uninstall = true;
-                await _gistService.SavePackagesAsync(packages);
-            }
-            // If not in Gist, maybe add it with uninstall: true?
-            // For now, only update if exists.
-            return true;
+            return false;
         }
-        return false;
+
+        if (!packages.TryGetValue(packageId, out var package))
+        {
+            package = new GistGetPackage { Id = packageId };
+            packages[packageId] = package;
+        }
+
+        package.Uninstall = true;
+        await _gistService.SavePackagesAsync(packages);
+        return true;
     }
 
     public async Task<bool> UpgradeAndSaveAsync(string packageId, string? version = null)
@@ -195,39 +200,37 @@ public class PackageService : IPackageService
     }
     public async Task<bool> PinAddAndSaveAsync(string packageId, string version)
     {
-        if (await _executor.PinPackageAsync(packageId, version))
+        var packages = await _gistService.GetPackagesAsync();
+        if (!await _executor.PinPackageAsync(packageId, version))
         {
-            var packages = await _gistService.GetPackagesAsync();
-            if (packages.TryGetValue(packageId, out var existingPackage))
-            {
-                existingPackage.Version = version;
-            }
-            else
-            {
-                packages[packageId] = new GistGetPackage
-                {
-                    Id = packageId,
-                    Version = version
-                };
-            }
-            await _gistService.SavePackagesAsync(packages);
-            return true;
+            return false;
         }
-        return false;
+
+        if (!packages.TryGetValue(packageId, out var existingPackage))
+        {
+            existingPackage = new GistGetPackage { Id = packageId };
+            packages[packageId] = existingPackage;
+        }
+        existingPackage.Version = version;
+        existingPackage.Uninstall = false;
+        await _gistService.SavePackagesAsync(packages);
+        return true;
     }
 
     public async Task<bool> PinRemoveAndSaveAsync(string packageId)
     {
-        if (await _executor.UnpinPackageAsync(packageId))
+        var packages = await _gistService.GetPackagesAsync();
+        if (!await _executor.UnpinPackageAsync(packageId))
         {
-            var packages = await _gistService.GetPackagesAsync();
-            if (packages.TryGetValue(packageId, out var existingPackage))
-            {
-                existingPackage.Version = null; // Remove version constraint
-                await _gistService.SavePackagesAsync(packages);
-            }
-            return true;
+            return false;
         }
-        return false;
+
+        if (packages.TryGetValue(packageId, out var existingPackage))
+        {
+            existingPackage.Version = null; // Remove version constraint
+            existingPackage.Uninstall = false;
+        }
+        await _gistService.SavePackagesAsync(packages);
+        return true;
     }
 }

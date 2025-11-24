@@ -66,6 +66,10 @@ public class CliCommandBuilder
                 AnsiConsole.MarkupLine($"Found [green]{localPackages.Count}[/] installed packages.");
 
                 var result = await _packageService.SyncAsync(gistPackages, localPackages);
+                if (string.IsNullOrWhiteSpace(url))
+                {
+                    await _gistService.SavePackagesAsync(gistPackages);
+                }
 
                 if (result.Installed.Count == 0 && result.Uninstalled.Count == 0 && result.Failed.Count == 0)
                 {
@@ -194,8 +198,7 @@ public class CliCommandBuilder
     private Command BuildInstallCommand()
     {
         var command = new Command("install", "Install a package and save to Gist");
-        var idArgument = new Argument<string?>("package", "Package ID") { Arity = ArgumentArity.ZeroOrOne };
-        var idOption = new Option<string>("--id", "Package ID (winget compatible)");
+        var idOption = new Option<string>("--id", "Package ID (winget compatible)") { IsRequired = true };
         
         var versionOption = new Option<string>("--version", "Package version");
         var scopeOption = new Option<string>("--scope", "Install scope (user|machine)");
@@ -211,7 +214,6 @@ public class CliCommandBuilder
         var installerTypeOption = new Option<string>("--installer-type", "Installer type");
         var customOption = new Option<string>("--custom", "Custom arguments");
 
-        command.AddArgument(idArgument);
         command.AddOption(idOption);
         command.AddOption(versionOption);
         command.AddOption(scopeOption);
@@ -228,7 +230,7 @@ public class CliCommandBuilder
         command.AddOption(customOption);
 
         var binder = new InstallPackageBinder(
-            idArgument, idOption, versionOption, scopeOption, archOption, locationOption,
+            idOption, versionOption, scopeOption, archOption, locationOption,
             interactiveOption, silentOption, logOption, overrideOption, forceOption,
             skipDependenciesOption, headerOption, installerTypeOption, customOption);
 
@@ -250,8 +252,8 @@ public class CliCommandBuilder
     private Command BuildUninstallCommand()
     {
         var command = new Command("uninstall", "Uninstall a package and update Gist");
-        var idArgument = new Argument<string>("package", "Package ID");
-        command.AddArgument(idArgument);
+        var idOption = new Option<string>("--id", "Package ID") { IsRequired = true };
+        command.AddOption(idOption);
 
         command.SetHandler(async (string id) =>
         {
@@ -263,7 +265,7 @@ public class CliCommandBuilder
             {
                 AnsiConsole.MarkupLine($"[red]Failed to uninstall {id}[/]");
             }
-        }, idArgument);
+        }, idOption);
 
         return command;
     }
@@ -391,7 +393,6 @@ public class CliCommandBuilder
     }
     private class InstallPackageBinder : BinderBase<GistGet.Models.GistGetPackage>
     {
-        private readonly Argument<string?> _id;
         private readonly Option<string> _idOption;
         private readonly Option<string> _version;
         private readonly Option<string> _scope;
@@ -408,7 +409,6 @@ public class CliCommandBuilder
         private readonly Option<string> _custom;
 
         public InstallPackageBinder(
-            Argument<string?> id,
             Option<string> idOption,
             Option<string> version,
             Option<string> scope,
@@ -424,7 +424,6 @@ public class CliCommandBuilder
             Option<string> installerType,
             Option<string> custom)
         {
-            _id = id;
             _idOption = idOption;
             _version = version;
             _scope = scope;
@@ -444,7 +443,7 @@ public class CliCommandBuilder
         protected override GistGet.Models.GistGetPackage GetBoundValue(BindingContext bindingContext)
         {
             var id = bindingContext.ParseResult.GetValueForOption(_idOption)
-                ?? bindingContext.ParseResult.GetValueForArgument(_id);
+                ?? string.Empty;
             if (string.IsNullOrWhiteSpace(id))
             {
                 throw new ArgumentException("Package ID is required.");

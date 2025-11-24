@@ -237,3 +237,7 @@ sequenceDiagram
 
 4.  **Device Flow認証**:
     *   CLIツールとしての使い勝手を考慮し、ブラウザを起動して認証するDevice Flowを採用しました。これにより、ユーザーはPAT（Personal Access Token）を手動で発行・管理する必要がなくなります。
+
+5.  **winget パススルーと Gist 同期の徹底**:
+    *   GistGet は可能な限り winget のコマンド体系とオプションをそのままパススルーし、`install` / `uninstall` でも `--id` 指定のみを許可して YAML のキーと 1 対 1 の関係を保証します。`--query` や `--name` による曖昧指定は設計上禁止し、定義ファイルを単一情報源として扱います。
+    *   `sync`・`install`・`uninstall`・`pin` は Gist の `packages.yaml` を前後で必ず同期します。コマンド実行前に最新の定義を取得し、実行後に結果を反映して保存することで、winget へのパススルー実行とクラウド上の定義の整合性を同時に確保します。

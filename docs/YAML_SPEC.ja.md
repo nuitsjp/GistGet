@@ -28,6 +28,12 @@ YAML ファイルは、キーがパッケージ ID であり、値がインス�
   installerType: <exe|msi|msix|...>
 ```
 
+## パッケージ ID と CLI の制約
+
+GistGet は winget が提供するオプションを極力パススルーし、受け取った値をそのまま `winget.exe` に渡します。  
+その前提として `packages.yaml` における各エントリのキーは winget の `--id` と 1 対 1 で対応しなければならないため、`winget install` および `winget uninstall` の実行時には必ず `--id` を指定し、`--query` や `--name` での曖昧な指定はエラーとして拒否します。  
+これにより、YAML に記載された ID と実際に実行される winget コマンドのターゲットが完全に一致し、Gist 定義ファイルを信頼できる単一情報源として扱えます。
+
 ## パラメータ
 
 ### コアパラメータ
