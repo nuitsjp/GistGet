@@ -12,7 +12,7 @@ namespace GistGet.Application.Services;
 public class AuthService : IAuthService
 {
     private readonly ICredentialService _credentialService;
-    private const string ClientId = "Ov23liao1bXwX4qJ5w0b"; // GistGet Client ID
+    private const string ClientId = "Ov23lihQJhLB6hCnEIvS"; // GistGet Client ID
     private const string CredentialTarget = "GistGet:GitHub:AccessToken";
     private const string CredentialUsername = "GistGet";
 
@@ -25,6 +25,7 @@ public class AuthService : IAuthService
     {
         var client = new HttpClient();
         client.DefaultRequestHeaders.Add("Accept", "application/json");
+        client.DefaultRequestHeaders.Add("User-Agent", "GistGet");
 
         // 1. Initiate Device Flow
         var response = await client.PostAsync("https://github.com/login/device/code",
@@ -36,7 +37,9 @@ public class AuthService : IAuthService
 
         if (!response.IsSuccessStatusCode)
         {
-            AnsiConsole.MarkupLine("[red]Failed to initiate device flow.[/]");
+            var errorContent = await response.Content.ReadAsStringAsync();
+            AnsiConsole.MarkupLine($"[red]Failed to initiate device flow. Status: {response.StatusCode}[/]");
+            AnsiConsole.MarkupLine($"[red]Response: {errorContent}[/]");
             return;
         }
 
