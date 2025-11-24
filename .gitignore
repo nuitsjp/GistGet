@@ -1,5 +1,6 @@
 # Build and test reports
 .reports/
+metrics-report.txt
 
 # Legacy report locations (移行期間中)
 .serena/
