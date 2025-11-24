@@ -122,6 +122,46 @@ public class AuthService : IAuthService
         return !string.IsNullOrEmpty(await GetAccessTokenAsync());
     }
 
+    public async Task<GitHubUserInfo?> GetUserInfoAsync()
+    {
+        var token = await GetAccessTokenAsync();
+        if (string.IsNullOrEmpty(token))
+        {
+            return null;
+        }
+
+        var client = new HttpClient();
+        client.DefaultRequestHeaders.Add("Accept", "application/json");
+        client.DefaultRequestHeaders.Add("User-Agent", "GistGet");
+        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+        try
+        {
+            var response = await client.GetAsync("https://api.github.com/user");
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            var userResponse = await response.Content.ReadFromJsonAsync<GitHubUserResponse>();
+            if (userResponse == null)
+            {
+                return null;
+            }
+
+            return new GitHubUserInfo
+            {
+                Login = userResponse.Login,
+                Name = userResponse.Name,
+                Email = userResponse.Email
+            };
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private class DeviceCodeResponse
     {
         [JsonPropertyName("device_code")]
@@ -146,5 +186,15 @@ public class AuthService : IAuthService
         public string? Scope { get; set; }
         [JsonPropertyName("error")]
         public string? Error { get; set; }
+    }
+
+    private class GitHubUserResponse
+    {
+        [JsonPropertyName("login")]
+        public string Login { get; set; } = "";
+        [JsonPropertyName("name")]
+        public string? Name { get; set; }
+        [JsonPropertyName("email")]
+        public string? Email { get; set; }
     }
 }
