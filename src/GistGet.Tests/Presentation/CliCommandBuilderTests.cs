@@ -91,4 +91,33 @@ public class CliCommandBuilderTests
             p.Force == true
         )), Times.Once);
     }
+    [Fact]
+    public async Task PinAddCommand_ShouldInvokeService()
+    {
+        // Arrange
+        var root = _builder.Build();
+        _mockPackageService.Setup(x => x.PinAddAndSaveAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(true);
+
+        // Act
+        await root.InvokeAsync("pin add MyPackage --version 1.0.0");
+
+        // Assert
+        _mockPackageService.Verify(x => x.PinAddAndSaveAsync("MyPackage", "1.0.0"), Times.Once);
+    }
+
+    [Fact]
+    public async Task PinRemoveCommand_ShouldInvokeService()
+    {
+        // Arrange
+        var root = _builder.Build();
+        _mockPackageService.Setup(x => x.PinRemoveAndSaveAsync(It.IsAny<string>()))
+            .ReturnsAsync(true);
+
+        // Act
+        await root.InvokeAsync("pin remove MyPackage");
+
+        // Assert
+        _mockPackageService.Verify(x => x.PinRemoveAndSaveAsync("MyPackage"), Times.Once);
+    }
 }

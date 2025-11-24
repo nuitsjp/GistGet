@@ -77,6 +77,21 @@ gistget search vscode
 gistget show Microsoft.PowerToys
 ```
 
+### ピン留め (Pin)
+
+パッケージのバージョンを固定し、自動アップグレードを防ぐことができます。GistGet の `pin` コマンドは `winget pin` を実行すると同時に、`packages.yaml` にもバージョン情報を保存して同期します。
+
+```powershell
+# バージョンを固定して Gist に保存
+gistget pin add <package-id> --version <version>
+
+# ピン留めを解除して Gist を更新
+gistget pin remove <package-id>
+
+# ピン留めされているパッケージを表示 (winget pin list と同じ)
+gistget pin list
+```
+
 ## 設定
 
 GistGet は Gist 内の `packages.yaml` ファイルを使用します。

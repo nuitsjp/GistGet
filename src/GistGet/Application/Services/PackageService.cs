@@ -193,4 +193,41 @@ public class PackageService : IPackageService
         }
         return false;
     }
+    public async Task<bool> PinAddAndSaveAsync(string packageId, string version)
+    {
+        if (await _executor.PinPackageAsync(packageId, version))
+        {
+            var packages = await _gistService.GetPackagesAsync();
+            if (packages.TryGetValue(packageId, out var existingPackage))
+            {
+                existingPackage.Version = version;
+            }
+            else
+            {
+                packages[packageId] = new GistGetPackage
+                {
+                    Id = packageId,
+                    Version = version
+                };
+            }
+            await _gistService.SavePackagesAsync(packages);
+            return true;
+        }
+        return false;
+    }
+
+    public async Task<bool> PinRemoveAndSaveAsync(string packageId)
+    {
+        if (await _executor.UnpinPackageAsync(packageId))
+        {
+            var packages = await _gistService.GetPackagesAsync();
+            if (packages.TryGetValue(packageId, out var existingPackage))
+            {
+                existingPackage.Version = null; // Remove version constraint
+                await _gistService.SavePackagesAsync(packages);
+            }
+            return true;
+        }
+        return false;
+    }
 }

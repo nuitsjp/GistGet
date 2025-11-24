@@ -45,8 +45,10 @@ public class GistServiceIntegrationTests : IClassFixture<GistIntegrationTestFixt
         {
             await _fixture.GistService.SavePackagesAsync(testPackages, fileName, description);
 
-            var retrievedPackages = await _fixture.GistService.GetPackagesAsync(null, fileName, description);
             createdGistId = await _fixture.FindGistIdAsync(fileName, description);
+            Assert.False(string.IsNullOrEmpty(createdGistId), "Gist was not created.");
+
+            var retrievedPackages = await _fixture.GistService.GetPackagesAsync(null, fileName, description);
 
             Assert.NotNull(createdGistId);
             Assert.Equal(testPackages.Keys.OrderBy(x => x), retrievedPackages.Keys.OrderBy(x => x));
@@ -96,8 +98,19 @@ public class GistIntegrationTestFixture : IDisposable
             return null;
         }
 
-        var gists = await client.Gist.GetAll();
-        return gists.FirstOrDefault(g => g.Description == description || g.Files.ContainsKey(fileName))?.Id;
+        for (var i = 0; i < 3; i++)
+        {
+            var gists = await client.Gist.GetAll();
+            var target = gists.FirstOrDefault(g => g.Description == description || g.Files.ContainsKey(fileName));
+            if (target != null)
+            {
+                return target.Id;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(1));
+        }
+
+        return null;
     }
 
     public async Task DeleteGistIfExistsAsync(string? gistId)

@@ -31,10 +31,11 @@ public class GistService : IGistService
         return client;
     }
 
-    public async Task<Dictionary<string, GistGetPackage>> GetPackagesAsync(string? gistUrl = null)
+    public async Task<Dictionary<string, GistGetPackage>> GetPackagesAsync(string? gistUrl = null, string? gistFileName = null, string? gistDescription = null)
     {
         var client = await GetClientAsync();
         string? content = null;
+        var (targetFileName, targetDescription) = ResolveGistMetadata(gistFileName, gistDescription);
 
         if (!string.IsNullOrEmpty(gistUrl))
         {
@@ -47,7 +48,7 @@ public class GistService : IGistService
                 }
 
                 var gist = await client.Gist.Get(gistId);
-                if (gist.Files.TryGetValue(GistFileName, out var file))
+                if (gist.Files.TryGetValue(targetFileName, out var file))
                 {
                     content = file.Content;
                 }
@@ -75,7 +76,7 @@ public class GistService : IGistService
 
             var gists = await client.Gist.GetAll();
             var matchingGists = gists
-                .Where(g => g.Files.ContainsKey(GistFileName) || g.Description == GistDescription)
+                .Where(g => g.Files.ContainsKey(targetFileName) || g.Description == targetDescription)
                 .ToList();
 
             if (matchingGists.Count > 1)
@@ -88,9 +89,18 @@ public class GistService : IGistService
 
             if (targetGist != null)
             {
-                if (targetGist.Files.TryGetValue(GistFileName, out var file))
+                var gist = await client.Gist.Get(targetGist.Id);
+                if (gist.Files.TryGetValue(targetFileName, out var file))
                 {
                     content = file.Content;
+                }
+                else
+                {
+                    var firstYaml = gist.Files.Values.FirstOrDefault(f => f.Filename.EndsWith(".yaml") || f.Filename.EndsWith(".yml"));
+                    if (firstYaml != null)
+                    {
+                        content = firstYaml.Content;
+                    }
                 }
             }
         }
@@ -103,7 +113,7 @@ public class GistService : IGistService
         return YamlHelper.Deserialize(content);
     }
 
-    public async Task SavePackagesAsync(Dictionary<string, GistGetPackage> packages)
+    public async Task SavePackagesAsync(Dictionary<string, GistGetPackage> packages, string? gistFileName = null, string? gistDescription = null)
     {
         if (!await _authService.IsAuthenticatedAsync())
         {
@@ -112,10 +122,11 @@ public class GistService : IGistService
 
         var client = await GetClientAsync();
         var yaml = YamlHelper.Serialize(packages);
+        var (targetFileName, targetDescription) = ResolveGistMetadata(gistFileName, gistDescription);
 
         var gists = await client.Gist.GetAll();
         var matchingGists = gists
-            .Where(g => g.Files.ContainsKey(GistFileName) || g.Description == GistDescription)
+            .Where(g => g.Files.ContainsKey(targetFileName) || g.Description == targetDescription)
             .ToList();
 
         if (matchingGists.Count > 1)
@@ -130,7 +141,7 @@ public class GistService : IGistService
         {
             await client.Gist.Edit(targetGist.Id, new GistUpdate
             {
-                Files = { { GistFileName, new GistFileUpdate { Content = yaml } } }
+                Files = { { targetFileName, new GistFileUpdate { Content = yaml } } }
             });
             AnsiConsole.MarkupLine($"[green]Updated existing Gist: {targetGist.HtmlUrl}[/]");
         }
@@ -138,12 +149,19 @@ public class GistService : IGistService
         {
             var newGist = new NewGist
             {
-                Description = GistDescription,
+                Description = targetDescription,
                 Public = false,
-                Files = { { GistFileName, yaml } }
+                Files = { { targetFileName, yaml } }
             };
             var createdGist = await client.Gist.Create(newGist);
             AnsiConsole.MarkupLine($"[green]Created new Gist: {createdGist.HtmlUrl}[/]");
         }
+    }
+
+    private (string FileName, string Description) ResolveGistMetadata(string? gistFileName, string? gistDescription)
+    {
+        var fileName = string.IsNullOrWhiteSpace(gistFileName) ? GistFileName : gistFileName;
+        var description = string.IsNullOrWhiteSpace(gistDescription) ? GistDescription : gistDescription;
+        return (fileName, description);
     }
 }

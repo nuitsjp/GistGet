@@ -34,6 +34,7 @@ public class CliCommandBuilder
         rootCommand.AddCommand(BuildInstallCommand());
         rootCommand.AddCommand(BuildUninstallCommand());
         rootCommand.AddCommand(BuildUpgradeCommand());
+        rootCommand.AddCommand(BuildPinCommand());
 
         foreach (var cmd in BuildWingetPassthroughCommands())
         {
@@ -287,12 +288,75 @@ public class CliCommandBuilder
         return command;
     }
 
+    private Command BuildPinCommand()
+    {
+        var command = new Command("pin", "Manage package pins");
+
+        var add = new Command("add", "Pin a package version");
+        var addId = new Argument<string>("package", "Package ID");
+        var addVersion = new Option<string>("--version", "Version to pin") { IsRequired = true };
+        add.AddArgument(addId);
+        add.AddOption(addVersion);
+        add.SetHandler(async (string id, string version) =>
+        {
+            if (await _packageService.PinAddAndSaveAsync(id, version))
+            {
+                AnsiConsole.MarkupLine($"[green]Pinned {id} to version {version} and saved to Gist[/]");
+            }
+            else
+            {
+                AnsiConsole.MarkupLine($"[red]Failed to pin {id}[/]");
+            }
+        }, addId, addVersion);
+        command.AddCommand(add);
+
+        var remove = new Command("remove", "Remove a package pin");
+        var removeId = new Argument<string>("package", "Package ID");
+        remove.AddArgument(removeId);
+        remove.SetHandler(async (string id) =>
+        {
+            if (await _packageService.PinRemoveAndSaveAsync(id))
+            {
+                AnsiConsole.MarkupLine($"[green]Unpinned {id} and updated Gist[/]");
+            }
+            else
+            {
+                AnsiConsole.MarkupLine($"[red]Failed to unpin {id}[/]");
+            }
+        }, removeId);
+        command.AddCommand(remove);
+
+        var list = new Command("list", "List pinned packages");
+        var listArgs = new Argument<string[]>("args") { Arity = ArgumentArity.ZeroOrMore };
+        list.AddArgument(listArgs);
+        list.SetHandler(async (string[] args) =>
+        {
+            var allArgs = new System.Collections.Generic.List<string> { "list" };
+            allArgs.AddRange(args);
+            await _packageService.RunPassthroughAsync("pin", allArgs.ToArray());
+        }, listArgs);
+        command.AddCommand(list);
+
+        var reset = new Command("reset", "Reset all pins");
+        var resetArgs = new Argument<string[]>("args") { Arity = ArgumentArity.ZeroOrMore };
+        reset.AddArgument(resetArgs);
+        reset.SetHandler(async (string[] args) =>
+        {
+            var allArgs = new System.Collections.Generic.List<string> { "reset" };
+            allArgs.AddRange(args);
+            await _packageService.RunPassthroughAsync("pin", allArgs.ToArray());
+        }, resetArgs);
+        command.AddCommand(reset);
+
+        return command;
+    }
+
     private Command[] BuildWingetPassthroughCommands()
     {
         var commands = new System.Collections.Generic.List<Command>();
         var wingetCommands = new[] {
             "list", "search", "show", "source", "settings", "features",
-            "hash", "validate", "configure", "download", "repair", "pin"
+            "hash", "validate", "configure", "download", "repair"
         };
 
         foreach (var cmd in wingetCommands)

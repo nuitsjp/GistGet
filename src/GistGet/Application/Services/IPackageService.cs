@@ -15,4 +15,6 @@ public interface IPackageService
     Task<bool> InstallAndSaveAsync(GistGetPackage package);
     Task<bool> UninstallAndSaveAsync(string packageId);
     Task<bool> UpgradeAndSaveAsync(string packageId, string? version = null);
+    Task<bool> PinAddAndSaveAsync(string packageId, string version);
+    Task<bool> PinRemoveAndSaveAsync(string packageId);
 }
