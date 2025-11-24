@@ -25,14 +25,79 @@ public class WinGetExecutor : IWinGetExecutor
             "install",
             "--id", package.Id,
             "--accept-source-agreements",
-            "--accept-package-agreements",
-            "--disable-interactivity"
+            "--accept-package-agreements"
         };
+
+        // Interactivity handling
+        if (package.Interactive)
+        {
+            args.Add("--interactive");
+        }
+        else if (package.Silent)
+        {
+            args.Add("--silent");
+        }
+        else
+        {
+            args.Add("--disable-interactivity");
+        }
 
         if (!string.IsNullOrEmpty(package.Version))
         {
             args.Add("--version");
             args.Add(package.Version);
+        }
+
+        if (!string.IsNullOrEmpty(package.Scope))
+        {
+            args.Add("--scope");
+            args.Add(package.Scope);
+        }
+
+        if (!string.IsNullOrEmpty(package.Architecture))
+        {
+            args.Add("--architecture");
+            args.Add(package.Architecture);
+        }
+
+        if (!string.IsNullOrEmpty(package.Location))
+        {
+            args.Add("--location");
+            args.Add(package.Location);
+        }
+
+        if (!string.IsNullOrEmpty(package.Log))
+        {
+            args.Add("--log");
+            args.Add(package.Log);
+        }
+
+        if (!string.IsNullOrEmpty(package.Override))
+        {
+            args.Add("--override");
+            args.Add(package.Override);
+        }
+
+        if (package.Force)
+        {
+            args.Add("--force");
+        }
+
+        if (package.SkipDependencies)
+        {
+            args.Add("--skip-dependencies");
+        }
+
+        if (!string.IsNullOrEmpty(package.Header))
+        {
+            args.Add("--header");
+            args.Add(package.Header);
+        }
+
+        if (!string.IsNullOrEmpty(package.InstallerType))
+        {
+            args.Add("--installer-type");
+            args.Add(package.InstallerType);
         }
 
         if (!string.IsNullOrEmpty(package.Custom))

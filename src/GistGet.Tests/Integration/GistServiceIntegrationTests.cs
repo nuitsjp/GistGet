@@ -1,6 +1,7 @@
 using GistGet.Application.Services;
 using GistGet.Infrastructure.Security;
 using GistGet.Models;
+using Octokit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,146 +19,119 @@ namespace GistGet.Tests.Integration;
 public class GistServiceIntegrationTests : IClassFixture<GistIntegrationTestFixture>
 {
     private readonly GistIntegrationTestFixture _fixture;
-    private readonly IGistService _gistService;
-    private readonly IAuthService _authService;
 
     public GistServiceIntegrationTests(GistIntegrationTestFixture fixture)
     {
         _fixture = fixture;
-        var credentialService = new CredentialService();
-        _authService = new AuthService(credentialService);
-        _gistService = new GistService(_authService);
     }
 
     [Fact]
-    public async Task Test1_SavePackagesAsync_CreatesNewGist_WhenNoGistExists()
+    public async Task SaveAndGetPackagesAsync_WithCustomFileNameAndDescription_UsesIsolatedRandomGist()
     {
-        // 認証チェック - 認証されていない場合はスキップ
-        if (!await _authService.IsAuthenticatedAsync())
+        if (!await _fixture.IsAuthenticatedAsync())
         {
             return;
         }
 
-        // Arrange
+        var (fileName, description) = _fixture.CreateUniqueGistMetadata();
         var testPackages = new Dictionary<string, GistGetPackage>
         {
-            { "Microsoft.PowerToys", new GistGetPackage { Id = "Microsoft.PowerToys", Version = "0.75.0" } },
-            { "7zip.7zip", new GistGetPackage { Id = "7zip.7zip" } }
+            { "Test.Package", new GistGetPackage { Id = "Test.Package", Version = "1.2.3" } },
+            { "Another.Package", new GistGetPackage { Id = "Another.Package" } }
         };
 
-        // Act
-        await _gistService.SavePackagesAsync(testPackages);
-
-        // Assert
-        // Gistが作成されたことを確認するため、再度取得
-        var retrievedPackages = await _gistService.GetPackagesAsync();
-        
-        // Gistが正しく保存・取得できることを確認
-        // 注: 初回実行時はGistが作成され、2回目以降は既存のGistが更新される
-        Assert.NotNull(retrievedPackages);
-    }
-
-    [Fact]
-    public async Task Test2_GetPackagesAsync_ReturnsPackages_FromExistingGist()
-    {
-        // 認証チェック
-        if (!await _authService.IsAuthenticatedAsync())
+        string? createdGistId = null;
+        try
         {
-            return;
+            await _fixture.GistService.SavePackagesAsync(testPackages, fileName, description);
+
+            var retrievedPackages = await _fixture.GistService.GetPackagesAsync(null, fileName, description);
+            createdGistId = await _fixture.FindGistIdAsync(fileName, description);
+
+            Assert.NotNull(createdGistId);
+            Assert.Equal(testPackages.Keys.OrderBy(x => x), retrievedPackages.Keys.OrderBy(x => x));
+            var package = retrievedPackages["Test.Package"];
+            Assert.Equal("Test.Package", package.Id);
+            Assert.Equal("1.2.3", package.Version);
         }
-
-        // Arrange - Test1で作成されたGistが存在することを前提
-
-        // Act
-        var packages = await _gistService.GetPackagesAsync();
-
-        // Assert
-        // Gistが取得できることを確認（空の場合もあり得る）
-        Assert.NotNull(packages);
-    }
-
-    [Fact]
-    public async Task Test3_SavePackagesAsync_UpdatesExistingGist_WhenGistExists()
-    {
-        // 認証チェック
-        if (!await _authService.IsAuthenticatedAsync())
+        finally
         {
-            return;
-        }
-
-        // Arrange
-        var updatedPackages = new Dictionary<string, GistGetPackage>
-        {
-            { "Microsoft.PowerToys", new GistGetPackage { Id = "Microsoft.PowerToys", Version = "0.76.0" } },
-            { "7zip.7zip", new GistGetPackage { Id = "7zip.7zip" } },
-            { "Git.Git", new GistGetPackage { Id = "Git.Git", Version = "2.43.0" } }
-        };
-
-        // Act
-        await _gistService.SavePackagesAsync(updatedPackages);
-
-        // Assert
-        var retrievedPackages = await _gistService.GetPackagesAsync();
-        Assert.NotNull(retrievedPackages);
-    }
-
-    [Fact]
-    public async Task Test4_GetPackagesAsync_WithGistUrl_ReturnsPackages()
-    {
-        // 認証チェック
-        if (!await _authService.IsAuthenticatedAsync())
-        {
-            return;
-        }
-
-        // Arrange
-        // まず現在のGist URLを取得するため、一度保存して取得
-        var testPackages = new Dictionary<string, GistGetPackage>
-        {
-            { "Test.Package", new GistGetPackage { Id = "Test.Package" } }
-        };
-        await _gistService.SavePackagesAsync(testPackages);
-
-        // Act
-        var packages = await _gistService.GetPackagesAsync();
-
-        // Assert
-        Assert.NotNull(packages);
-    }
-
-    [Fact]
-    public async Task Test5_AuthenticationCheck_VerifiesCredentialStorage()
-    {
-        // 認証チェック - このテストは認証状態を確認するのみ
-        var isAuthenticated = await _authService.IsAuthenticatedAsync();
-
-        // 認証されている場合は成功、されていない場合もテストは成功（警告のみ）
-        if (!isAuthenticated)
-        {
-            // 認証されていない場合は、統合テストがスキップされたことを示す
-            Assert.True(true, "Integration tests skipped: Not authenticated. Run scripts\\Run-AuthLogin.ps1 first.");
-        }
-        else
-        {
-            // 認証されている場合は、トークンが取得できることを確認
-            var token = await _authService.GetAccessTokenAsync();
-            Assert.NotNull(token);
-            Assert.NotEmpty(token);
+            await _fixture.DeleteGistIfExistsAsync(createdGistId);
         }
     }
 }
 
 /// <summary>
 /// 結合テスト用のフィクスチャ
-/// テスト間でGist IDなどの状態を共有するために使用
+/// テスト間でGitHubへのアクセストークンや作成したGistのクリーンアップを担う
 /// </summary>
 public class GistIntegrationTestFixture : IDisposable
 {
-    public string? GistId { get; set; }
+    private readonly IAuthService _authService;
+    public IGistService GistService { get; }
+
+    public GistIntegrationTestFixture()
+    {
+        var credentialService = new CredentialService();
+        _authService = new AuthService(credentialService);
+        GistService = new GistService(_authService);
+    }
+
+    public async Task<bool> IsAuthenticatedAsync()
+    {
+        return await _authService.IsAuthenticatedAsync();
+    }
+
+    public (string FileName, string Description) CreateUniqueGistMetadata()
+    {
+        var suffix = Guid.NewGuid().ToString("N");
+        return ($"gistget-test-{suffix}.yaml", $"GistGet Test {suffix}");
+    }
+
+    public async Task<string?> FindGistIdAsync(string fileName, string description)
+    {
+        var client = await CreateGitHubClientAsync();
+        if (client == null)
+        {
+            return null;
+        }
+
+        var gists = await client.Gist.GetAll();
+        return gists.FirstOrDefault(g => g.Description == description || g.Files.ContainsKey(fileName))?.Id;
+    }
+
+    public async Task DeleteGistIfExistsAsync(string? gistId)
+    {
+        if (string.IsNullOrEmpty(gistId))
+        {
+            return;
+        }
+
+        var client = await CreateGitHubClientAsync();
+        if (client == null)
+        {
+            return;
+        }
+
+        await client.Gist.Delete(gistId);
+    }
 
     public void Dispose()
     {
-        // クリーンアップ処理
-        // ログアウトは行わない（認証状態を保持）
+    }
+
+    private async Task<GitHubClient?> CreateGitHubClientAsync()
+    {
+        var token = await _authService.GetAccessTokenAsync();
+        if (string.IsNullOrEmpty(token))
+        {
+            return null;
+        }
+
+        var client = new GitHubClient(new ProductHeaderValue("GistGet"))
+        {
+            Credentials = new Credentials(token)
+        };
+        return client;
     }
 }

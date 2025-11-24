@@ -57,4 +57,10 @@ public class GistGetPackage
 
     [YamlMember(Alias = "whatIf", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
     public bool WhatIf { get; set; }
+
+    [YamlMember(Alias = "interactive", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
+    public bool Interactive { get; set; }
+
+    [YamlMember(Alias = "silent", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
+    public bool Silent { get; set; }
 }

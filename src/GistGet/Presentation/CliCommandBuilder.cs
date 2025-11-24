@@ -3,6 +3,7 @@ using GistGet.Utils;
 using Spectre.Console;
 using System;
 using System.CommandLine;
+using System.CommandLine.Binding;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -192,23 +193,52 @@ public class CliCommandBuilder
     {
         var command = new Command("install", "Install a package and save to Gist");
         var idArgument = new Argument<string>("package", "Package ID");
+        
         var versionOption = new Option<string>("--version", "Package version");
+        var scopeOption = new Option<string>("--scope", "Install scope (user|machine)");
+        var archOption = new Option<string>("--architecture", "Architecture (x86|x64|arm|arm64)");
+        var locationOption = new Option<string>("--location", "Install location");
+        var interactiveOption = new Option<bool>("--interactive", "Request interactive installation");
+        var silentOption = new Option<bool>("--silent", "Request silent installation");
+        var logOption = new Option<string>("--log", "Log file path");
+        var overrideOption = new Option<string>("--override", "Override arguments");
+        var forceOption = new Option<bool>("--force", "Force command execution");
+        var skipDependenciesOption = new Option<bool>("--skip-dependencies", "Skip dependencies");
+        var headerOption = new Option<string>("--header", "Custom HTTP header");
+        var installerTypeOption = new Option<string>("--installer-type", "Installer type");
+        var customOption = new Option<string>("--custom", "Custom arguments");
 
         command.AddArgument(idArgument);
         command.AddOption(versionOption);
+        command.AddOption(scopeOption);
+        command.AddOption(archOption);
+        command.AddOption(locationOption);
+        command.AddOption(interactiveOption);
+        command.AddOption(silentOption);
+        command.AddOption(logOption);
+        command.AddOption(overrideOption);
+        command.AddOption(forceOption);
+        command.AddOption(skipDependenciesOption);
+        command.AddOption(headerOption);
+        command.AddOption(installerTypeOption);
+        command.AddOption(customOption);
 
-        command.SetHandler(async (string id, string? version) =>
+        var binder = new InstallPackageBinder(
+            idArgument, versionOption, scopeOption, archOption, locationOption,
+            interactiveOption, silentOption, logOption, overrideOption, forceOption,
+            skipDependenciesOption, headerOption, installerTypeOption, customOption);
+
+        command.SetHandler(async (package) =>
         {
-            var package = new GistGet.Models.GistGetPackage { Id = id, Version = version };
             if (await _packageService.InstallAndSaveAsync(package))
             {
-                AnsiConsole.MarkupLine($"[green]Installed and saved {id}[/]");
+                AnsiConsole.MarkupLine($"[green]Installed and saved {package.Id}[/]");
             }
             else
             {
-                AnsiConsole.MarkupLine($"[red]Failed to install {id}[/]");
+                AnsiConsole.MarkupLine($"[red]Failed to install {package.Id}[/]");
             }
-        }, idArgument, versionOption);
+        }, binder);
 
         return command;
     }
@@ -280,5 +310,75 @@ public class CliCommandBuilder
         }
 
         return commands.ToArray();
+    }
+    private class InstallPackageBinder : BinderBase<GistGet.Models.GistGetPackage>
+    {
+        private readonly Argument<string> _id;
+        private readonly Option<string> _version;
+        private readonly Option<string> _scope;
+        private readonly Option<string> _arch;
+        private readonly Option<string> _location;
+        private readonly Option<bool> _interactive;
+        private readonly Option<bool> _silent;
+        private readonly Option<string> _log;
+        private readonly Option<string> _override;
+        private readonly Option<bool> _force;
+        private readonly Option<bool> _skipDependencies;
+        private readonly Option<string> _header;
+        private readonly Option<string> _installerType;
+        private readonly Option<string> _custom;
+
+        public InstallPackageBinder(
+            Argument<string> id,
+            Option<string> version,
+            Option<string> scope,
+            Option<string> arch,
+            Option<string> location,
+            Option<bool> interactive,
+            Option<bool> silent,
+            Option<string> log,
+            Option<string> overrideArgs,
+            Option<bool> force,
+            Option<bool> skipDependencies,
+            Option<string> header,
+            Option<string> installerType,
+            Option<string> custom)
+        {
+            _id = id;
+            _version = version;
+            _scope = scope;
+            _arch = arch;
+            _location = location;
+            _interactive = interactive;
+            _silent = silent;
+            _log = log;
+            _override = overrideArgs;
+            _force = force;
+            _skipDependencies = skipDependencies;
+            _header = header;
+            _installerType = installerType;
+            _custom = custom;
+        }
+
+        protected override GistGet.Models.GistGetPackage GetBoundValue(BindingContext bindingContext)
+        {
+            return new GistGet.Models.GistGetPackage
+            {
+                Id = bindingContext.ParseResult.GetValueForArgument(_id),
+                Version = bindingContext.ParseResult.GetValueForOption(_version),
+                Scope = bindingContext.ParseResult.GetValueForOption(_scope),
+                Architecture = bindingContext.ParseResult.GetValueForOption(_arch),
+                Location = bindingContext.ParseResult.GetValueForOption(_location),
+                Interactive = bindingContext.ParseResult.GetValueForOption(_interactive),
+                Silent = bindingContext.ParseResult.GetValueForOption(_silent),
+                Log = bindingContext.ParseResult.GetValueForOption(_log),
+                Override = bindingContext.ParseResult.GetValueForOption(_override),
+                Force = bindingContext.ParseResult.GetValueForOption(_force),
+                SkipDependencies = bindingContext.ParseResult.GetValueForOption(_skipDependencies),
+                Header = bindingContext.ParseResult.GetValueForOption(_header),
+                InstallerType = bindingContext.ParseResult.GetValueForOption(_installerType),
+                Custom = bindingContext.ParseResult.GetValueForOption(_custom)
+            };
+        }
     }
 }

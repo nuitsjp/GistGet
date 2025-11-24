@@ -70,4 +70,25 @@ public class CliCommandBuilderTests
         // Assert
         _mockAuthService.Verify(x => x.GetUserInfoAsync(), Times.Once);
     }
+    [Fact]
+    public async Task InstallCommand_ShouldParseOptionsAndInvokeService()
+    {
+        // Arrange
+        var root = _builder.Build();
+        _mockPackageService.Setup(x => x.InstallAndSaveAsync(It.IsAny<GistGetPackage>()))
+            .ReturnsAsync(true);
+
+        // Act
+        await root.InvokeAsync("install MyPackage --version 1.0.0 --scope user --interactive --silent --force");
+
+        // Assert
+        _mockPackageService.Verify(x => x.InstallAndSaveAsync(It.Is<GistGetPackage>(p =>
+            p.Id == "MyPackage" &&
+            p.Version == "1.0.0" &&
+            p.Scope == "user" &&
+            p.Interactive == true &&
+            p.Silent == true &&
+            p.Force == true
+        )), Times.Once);
+    }
 }
