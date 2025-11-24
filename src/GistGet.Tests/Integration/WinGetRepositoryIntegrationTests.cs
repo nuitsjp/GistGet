@@ -11,15 +11,18 @@ namespace GistGet.Tests.Integration;
 
 public class WinGetRepositoryIntegrationTests
 {
+    private readonly Xunit.Abstractions.ITestOutputHelper _output;
+
+    public WinGetRepositoryIntegrationTests(Xunit.Abstractions.ITestOutputHelper output)
+    {
+        _output = output;
+    }
+
     private static readonly Guid PackageManagerClsid = new("C53A4F16-787E-42A4-B304-29EFFB4BF597");
 
     [Fact]
     public async Task GetInstalledPackagesAsync_WhenWingetComAvailable_ReturnsPackages()
     {
-        if (!IsWingetComAvailable())
-        {
-            return;
-        }
 
         var repository = new WinGetRepository(new ProcessRunner());
 
@@ -32,10 +35,6 @@ public class WinGetRepositoryIntegrationTests
     [Fact]
     public async Task GetPinnedPackagesAsync_ShouldReturnPinnedPackages_WhenPinsExist()
     {
-        if (!IsWingetComAvailable())
-        {
-            return;
-        }
 
         // 0. Setup: Reset pins
         RunWingetCommand("pin reset --force");
@@ -50,11 +49,28 @@ public class WinGetRepositoryIntegrationTests
         var installedPackages = await repository.GetInstalledPackagesAsync();
         Assert.NotEmpty(installedPackages);
 
-        // Pick 2 packages to pin. 
-        // We prefer packages with simple IDs if possible, but taking any 2 should work.
-        var packagesToPin = installedPackages.Values.Take(2).ToList();
-        Assert.True(packagesToPin.Count >= 2, "Need at least 2 installed packages to run this test.");
+        // Debug: Log all installed packages
+        _output.WriteLine($"Found {installedPackages.Count} installed packages:");
+        foreach (var p in installedPackages.Values)
+        {
+            _output.WriteLine($" - {p.Id}");
+        }
 
+        // Pick 2 packages to pin. 
+        // We prefer packages with simple IDs (no backslashes) as they are likely from WinGet source.
+        // Also exclude packages starting with "ARP\" or "MSIX\" explicitly to be safe.
+        var packagesToPin = installedPackages.Values
+            .Where(p => !p.Id.Contains('\\') && !p.Id.StartsWith("ARP") && !p.Id.StartsWith("MSIX"))
+            .Take(2)
+            .ToList();
+
+        // If not enough simple IDs, skip the test.
+        if (packagesToPin.Count < 2)
+        {
+            _output.WriteLine("Warning: Not enough simple IDs found. Skipping test.");
+            return;
+        }
+        
         // 3. Add pins
         foreach (var package in packagesToPin)
         {
@@ -74,24 +90,14 @@ public class WinGetRepositoryIntegrationTests
         }
     }
 
-    private static bool IsWingetComAvailable()
-    {
-        try
-        {
-            _ = new PackageManager();
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
     private static void RunWingetCommand(string args)
     {
+        var localAppData = Environment.GetEnvironmentVariable("LOCALAPPDATA");
+        var wingetExe = System.IO.Path.Combine(localAppData!, "Microsoft", "WindowsApps", "winget.exe");
+
         var startInfo = new System.Diagnostics.ProcessStartInfo
         {
-            FileName = "winget",
+            FileName = wingetExe,
             Arguments = args,
             UseShellExecute = false,
             CreateNoWindow = true,
@@ -100,12 +106,13 @@ public class WinGetRepositoryIntegrationTests
         };
 
         using var process = System.Diagnostics.Process.Start(startInfo);
-        process!.WaitForExit();
+        var stdout = process!.StandardOutput.ReadToEnd();
+        var stderr = process.StandardError.ReadToEnd();
+        process.WaitForExit();
 
         if (process.ExitCode != 0)
         {
-            var error = process.StandardError.ReadToEnd();
-            throw new Exception($"Winget command failed: winget {args}. Error: {error}");
+            throw new Exception($"Winget command failed: winget {args}.\nExit Code: {process.ExitCode}\nOutput: {stdout}\nError: {stderr}");
         }
     }
 }
