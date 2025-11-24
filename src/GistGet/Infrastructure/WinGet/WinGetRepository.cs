@@ -1,49 +1,50 @@
-using GistGet.Models;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using GistGet.Models;
+using Microsoft.Management.Deployment;
 
 namespace GistGet.Infrastructure.WinGet;
 
 public class WinGetRepository : IWinGetRepository
 {
-    private static readonly Guid CLSID_PackageManager = new Guid("C53A4F16-787E-42A4-B304-29EFFB4BF597");
-
     public async Task<Dictionary<string, GistGetPackage>> GetInstalledPackagesAsync()
     {
-        return await Task.Run(() =>
+        var packages = new Dictionary<string, GistGetPackage>(StringComparer.OrdinalIgnoreCase);
+
+        var packageManager = new PackageManager();
+        var catalogRef = packageManager.GetLocalPackageCatalog(LocalPackageCatalog.InstalledPackages);
+        var connectResult = await catalogRef.ConnectAsync();
+        if (connectResult.Status != ConnectResultStatus.Ok || connectResult.PackageCatalog == null)
         {
-            var packages = new Dictionary<string, GistGetPackage>();
+            return packages;
+        }
 
-            Type? type = Type.GetTypeFromCLSID(CLSID_PackageManager);
-            if (type == null) throw new InvalidOperationException("Winget COM not found. Make sure App Installer is installed.");
-
-            dynamic packageManager = Activator.CreateInstance(type)!;
-            dynamic catalogRef = packageManager.GetLocalPackageCatalog();
-            dynamic connectResult = catalogRef.Connect();
-            dynamic catalog = connectResult.PackageCatalog;
-            dynamic options = packageManager.CreateFindPackagesOptions();
-            dynamic findResult = catalog.FindPackages(options);
-
-            foreach (dynamic match in findResult.Matches)
+        var findOptions = new FindPackagesOptions();
+        var findResult = await connectResult.PackageCatalog.FindPackagesAsync(findOptions);
+        for (var i = 0; i < findResult.Matches.Count; i++)
+        {
+            var match = findResult.Matches[i];
+            var package = match.CatalogPackage;
+            var installedVersion = package.InstalledVersion;
+            if (installedVersion == null)
             {
-                dynamic package = match.Package;
-                string id = package.Id;
-
-                dynamic installedVersion = package.InstalledVersion;
-                string version = installedVersion?.Version ?? "Unknown";
-
-                if (!packages.ContainsKey(id))
-                {
-                    packages.Add(id, new GistGetPackage
-                    {
-                        Id = id,
-                        Version = version
-                    });
-                }
+                continue;
             }
 
-            return packages;
-        });
+            var id = package.Id;
+            var version = installedVersion.Version ?? "Unknown";
+
+            if (!packages.ContainsKey(id))
+            {
+                packages.Add(id, new GistGetPackage
+                {
+                    Id = id,
+                    Version = version
+                });
+            }
+        }
+
+        return packages;
     }
 }
