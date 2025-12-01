@@ -65,4 +65,21 @@ Empty.Package:
         Assert.NotNull(packages["Empty.Package"]);
         Assert.Equal("Empty.Package", packages["Empty.Package"].Id);
     }
+
+    [Fact]
+    public void Serialize_ShouldOmitUninstall_WhenFalse()
+    {
+        // Arrange
+        var packages = new Dictionary<string, GistGetPackage>
+        {
+            { "Normal.Package", new GistGetPackage { Id = "Normal.Package", Uninstall = false } }
+        };
+
+        // Act
+        var yaml = YamlHelper.Serialize(packages);
+
+        // Assert
+        Assert.Contains("Normal.Package:", yaml);
+        Assert.DoesNotContain("uninstall:", yaml);
+    }
 }
