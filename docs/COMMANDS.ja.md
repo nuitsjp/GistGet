@@ -79,36 +79,28 @@ gistget sync [--url <gist-url>]
 
 #### Gist 同期の流れ
 
-```
-1. Gist から packages.yaml を取得
-       │
-       ▼
-2. ローカルのインストール済みパッケージを取得（COM API 経由）
-       │
-       ▼
-3. 差分を計算
-   ├─ Gist に定義があり、ローカルに未インストール → インストール対象
-   └─ Gist で uninstall: true かつローカルにインストール済み → アンインストール対象
-       │
-       ▼
-4. アンインストール実行（winget uninstall）
-       │
-       ▼
-5. インストール実行（winget install）
-       │
-       ▼
-6. ピン留め状態の同期
-   ├─ Gist に version 指定あり → winget pin add
-   └─ Gist に version 指定なし → winget pin remove（既存のピン留めを解除）
-       │
-       ▼
-7. --url 省略時のみ、packages.yaml を Gist に保存
+```mermaid
+graph TD
+    A[1. Gist から packages.yaml を取得] --> B[2. ローカルのインストール済みパッケージを取得]
+    B --> C[3. 差分を計算]
+    C -- Gistに定義あり/ローカル未インストール --> D[インストール対象]
+    C -- Gistでuninstall: true/ローカル済 --> E[アンインストール対象]
+    E --> F[4. アンインストール実行]
+    D --> G[5. インストール実行]
+    F --> H[6. ピン留め状態の同期]
+    G --> H
+    H -- version指定あり --> I[winget pin add]
+    H -- version指定なし --> J[winget pin remove]
+    I --> K{7. --url 省略?}
+    J --> K
+    K -- Yes --> L[packages.yaml を Gist に保存]
+    K -- No --> M[終了]
 ```
 
 #### 備考
 
 - `--url` を指定した場合、読み取り専用モードとなり Gist への書き込みは行われません。
-- アンインストール完了後、該当パッケージの `uninstall` フラグは `false` にリセットされます。
+
 
 ---
 
@@ -148,26 +140,15 @@ gistget install --id <package-id> [options]
 
 #### Gist 同期の流れ
 
-```
-1. Gist から現在の packages.yaml を取得
-       │
-       ▼
-2. winget install を実行
-       │
-       ├─ 失敗 → エラーを返して終了
-       │
-       ▼
-3. packages.yaml を更新
-   ├─ パッケージ ID をキーとしてエントリを追加/更新
-   └─ uninstall フラグを false に設定
-       │
-       ▼
-4. Gist に packages.yaml を保存
-       │
-       ▼
-5. バージョン指定の処理
-   ├─ --version 指定あり → winget pin add でピン留め
-   └─ --version 指定なし → winget pin remove でピン留め解除
+```mermaid
+graph TD
+    A[1. Gist から packages.yaml を取得] --> B[2. winget install を実行]
+    B -- 失敗 --> C[エラー終了]
+    B -- 成功 --> D[3. packages.yaml を更新]
+    D --> E[4. Gist に packages.yaml を保存]
+    E --> F[5. バージョン指定の処理]
+    F -->|--version指定あり| G[winget pin add]
+    F -->|--version指定なし| H[winget pin remove]
 ```
 
 #### 備考
@@ -195,21 +176,12 @@ gistget uninstall --id <package-id>
 
 #### Gist 同期の流れ
 
-```
-1. Gist から現在の packages.yaml を取得
-       │
-       ▼
-2. winget uninstall を実行
-       │
-       ├─ 失敗 → エラーを返して終了
-       │
-       ▼
-3. packages.yaml を更新
-   ├─ エントリが存在する場合 → uninstall: true を設定
-   └─ エントリが存在しない場合 → 新規エントリを作成し uninstall: true を設定
-       │
-       ▼
-4. Gist に packages.yaml を保存
+```mermaid
+graph TD
+    A[1. Gist から現在の packages.yaml を取得] --> B[2. winget uninstall を実行]
+    B -- 失敗 --> C[エラー終了]
+    B -- 成功 --> D[3. packages.yaml を更新]
+    D --> E[4. Gist に packages.yaml を保存]
 ```
 
 #### 備考
@@ -234,40 +206,28 @@ gistget upgrade <package-id> [--id <package-id>] [--version <version>]
 
 | オプション | 説明 |
 |-----------|------|
-| `<package-id>` | パッケージ ID（位置引数） |
-| `--id` | パッケージ ID（オプション形式、位置引数と同等） |
+| `<package-id>` | パッケージ ID（位置引数）。指定時は Gist 同期が行われます。未指定時は winget にパススルーされます。 |
+| `--id` | パッケージ ID（オプション形式）。指定時は Gist 同期が行われます。 |
 | `--version` | アップグレード先のバージョン |
 
 #### Gist 同期の流れ
 
-```
-1. winget upgrade を実行
-       │
-       ├─ 失敗 → エラーを返して終了
-       │
-       ▼
-2. Gist から現在の packages.yaml を取得
-       │
-       ▼
-3. packages.yaml を更新
-   ├─ エントリが存在する場合
-   │   ├─ --version 指定あり → version を更新
-   │   └─ uninstall フラグを false に設定
-   └─ エントリが存在しない場合 → 新規エントリを作成
-       │
-       ▼
-4. Gist に packages.yaml を保存
-       │
-       ▼
-5. バージョン指定の処理
-   ├─ --version 指定あり → winget pin add でピン留め
-   └─ --version 指定なし → winget pin remove でピン留め解除
+```mermaid
+graph TD
+    A[1. winget upgrade を実行] --> B[2. Gist から現在の packages.yaml を取得]
+    A -- 失敗 --> Z[エラー終了]
+    B --> C[3. packages.yaml を更新]
+    C --> D[4. Gist に packages.yaml を保存]
+    D --> E[5. バージョン指定の処理]
+    E -->|--version指定あり| F[winget pin add]
+    E -->|--version指定なし| G[winget pin remove]
 ```
 
 #### 備考
 
 - `--version` を省略した場合、最新バージョンにアップグレードされ、ピン留めは解除されます。
 - `--version` を指定した場合、そのバージョンにアップグレードされ、ピン留めされます。
+- **ID 未指定時の動作:** パッケージ ID を指定しない場合、コマンドは `winget upgrade` にそのまま渡されます（パススルー）。これにより、`gistget upgrade` でアップグレード可能なパッケージ一覧を表示したり、`gistget upgrade --all` で一括アップグレードを実行したりできます。この場合、Gist との同期（`packages.yaml` の更新）は行われません。
 
 ---
 
@@ -292,22 +252,12 @@ gistget pin add <package-id> --version <version>
 
 **Gist 同期の流れ:**
 
-```
-1. Gist から現在の packages.yaml を取得
-       │
-       ▼
-2. winget pin add を実行
-       │
-       ├─ 失敗 → エラーを返して終了
-       │
-       ▼
-3. packages.yaml を更新
-   ├─ エントリが存在する場合 → version を更新
-   └─ エントリが存在しない場合 → 新規エントリを作成
-   └─ uninstall フラグを false に設定
-       │
-       ▼
-4. Gist に packages.yaml を保存
+```mermaid
+graph TD
+    A[1. Gist から現在の packages.yaml を取得] --> B[2. winget pin add を実行]
+    B -- 失敗 --> C[エラー終了]
+    B -- 成功 --> D[3. packages.yaml を更新]
+    D --> E[4. Gist に packages.yaml を保存]
 ```
 
 #### pin remove
@@ -324,20 +274,12 @@ gistget pin remove <package-id>
 
 **Gist 同期の流れ:**
 
-```
-1. Gist から現在の packages.yaml を取得
-       │
-       ▼
-2. winget pin remove を実行
-       │
-       ├─ 失敗 → エラーを返して終了
-       │
-       ▼
-3. packages.yaml を更新
-   └─ エントリが存在する場合 → version を null に設定（バージョン制約を解除）
-       │
-       ▼
-4. Gist に packages.yaml を保存
+```mermaid
+graph TD
+    A[1. Gist から現在の packages.yaml を取得] --> B[2. winget pin remove を実行]
+    B -- 失敗 --> C[エラー終了]
+    B -- 成功 --> D[3. packages.yaml を更新]
+    D --> E[4. Gist に packages.yaml を保存]
 ```
 
 #### pin list
