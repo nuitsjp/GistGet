@@ -9,7 +9,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Folder Include="新しいフォルダー\" />
+	  <PackageReference Include="UnitGenerator" Version="2.0.0">
+	    <PrivateAssets>all</PrivateAssets>
+	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	  </PackageReference>
 	</ItemGroup>
 
 </Project>
