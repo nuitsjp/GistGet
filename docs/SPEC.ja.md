@@ -56,11 +56,12 @@ GistGet は、Windows Package Manager (winget) のパッケージ管理状態を
 
 #### pinType の種類
 
-| 値 | 説明 | `upgrade --all` | `upgrade <pkg>` |
-|----|------|-----------------|-----------------|
-| `pinning` | デフォルト。`upgrade --all` から除外されるが、明示的 upgrade は可能。 | ❌ スキップ | ✅ 可能 |
-| `blocking` | `upgrade --all` から除外。明示的 upgrade も可能（v1.12.420 での動作）。 | ❌ スキップ | ✅ 可能※ |
-| `gating` | 指定バージョン範囲内のみ upgrade 可能（例: `1.7.*`）。 | 範囲内のみ | 範囲内のみ |
+| 値 | 説明 | `upgrade --all` | `upgrade <pkg>` | `upgrade --version <v>` |
+|----|------|-----------------|-----------------|-------------------------|
+| なし | pin なし。すべての upgrade 対象。 | ✅ 可能 | ✅ 可能 | ✅ 可能 |
+| `pinning` | デフォルト。`upgrade --all` から除外されるが、明示的 upgrade は可能。 | ❌ スキップ | ✅ 可能 | ✅ 可能 |
+| `blocking` | `upgrade --all` から除外。明示的 upgrade も可能（v1.12.420 での動作）。 | ❌ スキップ | ✅ 可能※ | ✅ 可能※ |
+| `gating` | 指定バージョン範囲内のみ upgrade 可能（例: `1.7.*`）。 | 範囲内のみ | 範囲内のみ | 範囲内のみ |
 
 ※ 公式ドキュメントでは blocking は明示的 upgrade もブロックとあるが、v1.12.420 では可能。
 
@@ -405,6 +406,7 @@ winget v1.12.420 での検証結果に基づく動作仕様:
 1. **バージョン指定インストールは pin を追加しない**
    - `winget install --version` だけでは pin されない
    - pin するには明示的に `winget pin add` が必要
+   - バージョン指定でインストールしても、以降の `winget upgrade` や `winget upgrade --all` でアップグレード対象になる
 
 2. **アンインストールしても pin は残る**
    - `winget uninstall` は pin を自動削除しない
@@ -417,6 +419,62 @@ winget v1.12.420 での検証結果に基づく動作仕様:
 4. **Pinning vs Blocking の実際の動作**
    - 公式ドキュメントでは blocking は `winget upgrade <id>` もブロックするとあるが、v1.12.420 では明示的 upgrade が可能
    - 実質的に pinning と blocking の違いは `upgrade --all --include-pinned` の動作のみ
+
+### バージョン固定の推奨手順
+
+特定バージョンに固定したい場合:
+
+```powershell
+# Step 1: バージョン指定でインストール
+winget install jqlang.jq --version 1.7
+
+# Step 2: インストール済みバージョンをpin
+winget pin add jqlang.jq --installed --blocking
+```
+
+### Pin後のバージョン変更
+
+pinを削除せずに別バージョンへアップグレードした場合:
+
+```powershell
+# Blocking pinがある状態で
+winget upgrade jqlang.jq --version 1.8.0
+```
+
+- アップグレードが**成功する**（v1.12.420での検証結果）
+- pinのバージョンも**新しいバージョンに自動更新**される
+
+正式な手順:
+
+```powershell
+# 1. pinを削除
+winget pin remove jqlang.jq
+
+# 2. アップグレード
+winget upgrade jqlang.jq --version 1.8.0
+
+# 3. 新しいバージョンで再度pin
+winget pin add jqlang.jq --installed --blocking
+```
+
+### Pinの確認・削除コマンド
+
+```powershell
+# 全てのpinを一覧表示
+winget pin list
+
+# 特定パッケージのpin確認
+winget pin list --id jqlang.jq
+
+# 特定パッケージのpin削除
+winget pin remove jqlang.jq
+
+# 全てのpinをリセット（確認のみ）
+winget pin reset
+
+# 全てのpinを強制リセット
+winget pin reset --force
+```
 
 ### sync の冪等性
 
