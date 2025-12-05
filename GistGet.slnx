@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/old/">
+    <Project Path="src_old/GistGet.Tests/GistGet.Tests.csproj" />
+    <Project Path="src_old/GistGet/GistGet.csproj" />
+  </Folder>
+  <Project Path="GistGet.Test/GistGet.Test.csproj" Id="602798c6-a51e-43da-80aa-2abbe0f36d3f" />
+  <Project Path="src/GistGet/GistGet.csproj" />
+</Solution>
