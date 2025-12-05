@@ -23,7 +23,7 @@
 - Convenience: `.\scripts\Run-Tests.ps1 [-Configuration Release] [-CollectCoverage $false]` handles build, tests, and coverage in one call.
 
 ## Coding Style & Naming Conventions
-- C# 12 on `net10.0-windows10.0.26100.0`; 4-space indentation, UTF-8, `nullable` enabled. Prefer `var` for locals, `readonly` fields, and `async` suffixes on asynchronous methods.
+- C# 12 on `net10.0-windows10.0.26100.0`; 4-space indentation, UTF-8 with CRLF line endings, `nullable` enabled. Prefer `var` for locals, `readonly` fields, and `async` suffixes on asynchronous methods.
 - Naming: PascalCase for public types/methods; camelCase parameters; `_camelCase` private readonly fields. Keep service/infra abstractions in corresponding `I*` interfaces.
 - Structure logic through constructors and dependency injection (no static singletons); favor small, composable methods and guard clauses for argument validation.
 
