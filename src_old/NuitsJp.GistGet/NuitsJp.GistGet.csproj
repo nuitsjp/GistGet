@@ -1,0 +1,60 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<AssemblyName>GistGet</AssemblyName>
+		<Platforms>x64;x86;ARM64</Platforms>
+
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<InvariantGlobalization>true</InvariantGlobalization>
+		
+		<!-- WinGet COM API設定 -->
+		<MicrosoftManagementDeployment-FactoryLinkage>static</MicrosoftManagementDeployment-FactoryLinkage>
+
+		<!-- ビルド最適化設定 -->
+		<PublishSingleFile>true</PublishSingleFile>
+		<SelfContained>true</SelfContained>
+		<PublishTrimmed>true</PublishTrimmed>
+		<TrimMode>partial</TrimMode>
+		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+		
+		<!-- AOTは後で検討 (COM APIとの互換性要確認) -->
+		<!-- <PublishAot>true</PublishAot> -->
+
+		<!-- バージョン情報 (WinGet配布用) -->
+		<Version>1.0.0</Version>
+		<AssemblyVersion>1.0.0.0</AssemblyVersion>
+		<FileVersion>1.0.0.0</FileVersion>
+		<Company>NuitsJp</Company>
+		<Product>GistGet</Product>
+		<Description>PowerShell module for managing WinGet installation lists on GitHub Gist</Description>
+		<Copyright>© 2024 NuitsJp</Copyright>
+		<PackageId>NuitsJp.GistGet</PackageId>
+		<PackageProjectUrl>https://github.com/nuitsjp/GistGet</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/nuitsjp/GistGet</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageTags>winget;gist;package-manager;development-tools</PackageTags>
+	</PropertyGroup>
+
+	<!-- アーキテクチャ改善: 依存性注入とログ機能を追加 -->
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.2.0" />
+		<PackageReference Include="Microsoft.WindowsPackageManager.ComInterop" Version="1.10.340" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
+		<PackageReference Include="Octokit" Version="14.0.0" />
+		<PackageReference Include="Sharprompt" Version="3.0.0" />
+		<PackageReference Include="YamlDotNet" Version="16.3.0" />
+		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+	</ItemGroup>
+
+</Project>

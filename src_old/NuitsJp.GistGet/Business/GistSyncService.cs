@@ -1,0 +1,305 @@
+using Microsoft.Extensions.Logging;
+using NuitsJp.GistGet.Business.Models;
+using NuitsJp.GistGet.Infrastructure.Os;
+using NuitsJp.GistGet.Infrastructure.WinGet;
+using NuitsJp.GistGet.Models;
+
+namespace NuitsJp.GistGet.Business;
+
+/// <summary>
+/// Gist同期サービスの実装
+/// syncコマンドのメイン処理を担当（Gist更新なし、一方向同期）
+/// </summary>
+public class GistSyncService(
+    IGistManager gistManager,
+    IWinGetClient winGetClient,
+    IOsService osService,
+    ILogger<GistSyncService> logger) : IGistSyncService
+{
+    private readonly IGistManager _gistManager = gistManager ?? throw new ArgumentNullException(nameof(gistManager));
+    private readonly ILogger<GistSyncService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IOsService _osService = osService ?? throw new ArgumentNullException(nameof(osService));
+
+    private readonly IWinGetClient
+        _winGetClient = winGetClient ?? throw new ArgumentNullException(nameof(winGetClient));
+
+    /// <summary>
+    /// install後のGist自動更新処理
+    /// </summary>
+    public async Task AfterInstallAsync(string packageId)
+    {
+        if (string.IsNullOrWhiteSpace(packageId))
+        {
+            _logger.LogWarning("AfterInstall called with empty package ID");
+            return;
+        }
+
+        try
+        {
+            _logger.LogInformation("Updating Gist after installing package: {PackageId}", packageId);
+
+            // 現在のGistパッケージリストを取得
+            var currentPackages = await _gistManager.GetGistPackagesAsync();
+
+            // パッケージが既に存在するかチェック
+            if (currentPackages.FindById(packageId) == null)
+            {
+                // 新しいパッケージを追加
+                var newPackage = new PackageDefinition(packageId);
+                currentPackages.Add(newPackage);
+
+                // Gistを更新
+                await _gistManager.UpdateGistPackagesAsync(currentPackages);
+                _logger.LogInformation("Successfully added package {PackageId} to Gist", packageId);
+            }
+            else
+            {
+                _logger.LogInformation("Package {PackageId} already exists in Gist", packageId);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update Gist after installing {PackageId}", packageId);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// uninstall後のGist自動更新処理
+    /// </summary>
+    public async Task AfterUninstallAsync(string packageId)
+    {
+        if (string.IsNullOrWhiteSpace(packageId))
+        {
+            _logger.LogWarning("AfterUninstall called with empty package ID");
+            return;
+        }
+
+        try
+        {
+            _logger.LogInformation("Updating Gist after uninstalling package: {PackageId}", packageId);
+
+            // 現在のGistパッケージリストを取得
+            var currentPackages = await _gistManager.GetGistPackagesAsync();
+
+            // パッケージを削除
+            var existingPackage = currentPackages.FindById(packageId);
+            if (existingPackage != null)
+            {
+                currentPackages.Remove(existingPackage);
+
+                // Gistを更新
+                await _gistManager.UpdateGistPackagesAsync(currentPackages);
+                _logger.LogInformation("Successfully removed package {PackageId} from Gist", packageId);
+            }
+            else
+            {
+                _logger.LogWarning("Package {PackageId} was not found in Gist, nothing to remove", packageId);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update Gist after uninstalling {PackageId}", packageId);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Gist → ローカルの一方向同期を実行
+    /// </summary>
+    public async Task<SyncResult> SyncAsync()
+    {
+        var result = new SyncResult { ExitCode = 0 };
+
+        try
+        {
+            _logger.LogInformation("Starting Gist sync operation");
+
+            // 1. 事前確認
+            if (!await _gistManager.IsConfiguredAsync())
+            {
+                _logger.LogError("Gist configuration not found. Please run 'gistget gist set' first.");
+                result.ExitCode = 1;
+                return result;
+            }
+
+            // 2. Gistからパッケージ定義取得
+            var gistPackages = await _gistManager.GetGistPackagesAsync();
+            _logger.LogInformation("Retrieved {Count} packages from Gist", gistPackages.Count);
+
+            // 3. ローカル状態取得
+            await _winGetClient.InitializeAsync();
+            var installedPackages = await _winGetClient.GetInstalledPackagesAsync();
+            _logger.LogInformation("Found {Count} installed packages locally", installedPackages.Count);
+
+            // 4. 差分検出
+            var plan = DetectDifferences(gistPackages, installedPackages);
+            _logger.LogInformation(
+                "Sync plan: {Install} to install, {Uninstall} to uninstall, {Skip} already installed, {NotFound} not found",
+                plan.ToInstall.Count, plan.ToUninstall.Count, plan.AlreadyInstalled.Count, plan.NotFound.Count);
+
+            if (plan.IsEmpty)
+            {
+                _logger.LogInformation("No changes required. System is already in sync.");
+                return result;
+            }
+
+            // 5. 同期実行
+            await ExecuteSyncPlan(plan, result);
+
+            // 6. 再起動処理
+            if (result.InstalledPackages.Count > 0)
+            {
+                result.RebootRequired = CheckRebootRequired(result.InstalledPackages);
+                if (result.RebootRequired) _logger.LogInformation("Reboot required for installed packages");
+                // 実際の再起動はSyncCommandで処理（ユーザー確認が必要）
+            }
+
+            // 7. 結果判定
+            if (result.FailedPackages.Count > 0)
+            {
+                result.ExitCode = 1;
+                _logger.LogWarning("Sync completed with {Failed} failures", result.FailedPackages.Count);
+            }
+            else
+            {
+                _logger.LogInformation("Gist sync completed successfully");
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Sync operation failed: {Message}", ex.Message);
+            result.ExitCode = 1;
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// システム再起動の実行
+    /// </summary>
+    public async Task ExecuteRebootAsync()
+    {
+        try
+        {
+            _logger.LogInformation("Executing system reboot via OsService");
+            await _osService.ExecuteRebootAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to execute system reboot: {Message}", ex.Message);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Gist定義とローカル状態の差分検出ロジック
+    /// </summary>
+    private SyncPlan DetectDifferences(PackageCollection gistPackages, List<PackageDefinition> installedPackages)
+    {
+        var plan = new SyncPlan();
+
+        // インストール済みパッケージのIDセットを作成（高速検索用）
+        var installedIds = installedPackages.Select(p => p.Id.ToLowerInvariant()).ToHashSet();
+
+        foreach (var gistPackage in gistPackages)
+        {
+            var packageId = gistPackage.Id.ToLowerInvariant();
+
+            if (gistPackage.Uninstall == true)
+            {
+                // アンインストール対象
+                if (installedIds.Contains(packageId)) plan.ToUninstall.Add(gistPackage);
+                // 既にアンインストール済みの場合は何もしない
+            }
+            else
+            {
+                // インストール対象
+                if (installedIds.Contains(packageId))
+                    // 既にインストール済み（冪等性）
+                    plan.AlreadyInstalled.Add(gistPackage);
+                else
+                    // インストールが必要
+                    plan.ToInstall.Add(gistPackage);
+            }
+        }
+
+        return plan;
+    }
+
+    /// <summary>
+    /// 同期計画を実行
+    /// </summary>
+    private async Task ExecuteSyncPlan(SyncPlan plan, SyncResult result)
+    {
+        // インストール処理
+        foreach (var package in plan.ToInstall)
+            try
+            {
+                _logger.LogInformation("Installing package: {PackageId}", package.Id);
+                string[] args = ["install", package.Id, "--accept-source-agreements", "--accept-package-agreements"];
+                var exitCode = await _winGetClient.InstallPackageAsync(args);
+
+                if (exitCode == 0)
+                {
+                    result.InstalledPackages.Add(package.Id);
+                    _logger.LogInformation("Successfully installed: {PackageId}", package.Id);
+                }
+                else
+                {
+                    result.FailedPackages.Add(package.Id);
+                    _logger.LogError("Failed to install: {PackageId}, exit code: {ExitCode}", package.Id, exitCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                result.FailedPackages.Add(package.Id);
+                _logger.LogError(ex, "Exception during install of: {PackageId}", package.Id);
+            }
+
+        // アンインストール処理
+        foreach (var package in plan.ToUninstall)
+            try
+            {
+                _logger.LogInformation("Uninstalling package: {PackageId}", package.Id);
+                string[] args = ["uninstall", package.Id, "--accept-source-agreements"];
+                var exitCode = await _winGetClient.UninstallPackageAsync(args);
+
+                if (exitCode == 0)
+                {
+                    result.UninstalledPackages.Add(package.Id);
+                    _logger.LogInformation("Successfully uninstalled: {PackageId}", package.Id);
+                }
+                else
+                {
+                    result.FailedPackages.Add(package.Id);
+                    _logger.LogError("Failed to uninstall: {PackageId}, exit code: {ExitCode}", package.Id, exitCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                result.FailedPackages.Add(package.Id);
+                _logger.LogError(ex, "Exception during uninstall of: {PackageId}", package.Id);
+            }
+    }
+
+    /// <summary>
+    /// インストールしたパッケージで再起動が必要かチェック
+    /// </summary>
+    private bool CheckRebootRequired(List<string> installedPackages)
+    {
+        // 簡易実装：よく知られた再起動要求パッケージのチェック
+        string[] rebootRequiredPatterns = [
+            "microsoft.visualstudio",
+            "docker.dockerdesktop",
+            "oracle.virtualbox",
+            "vmware",
+            ".net"
+        ];
+
+        return installedPackages.Any(packageId =>
+            rebootRequiredPatterns.Any(pattern =>
+                packageId.Contains(pattern, StringComparison.OrdinalIgnoreCase)));
+    }
+}
