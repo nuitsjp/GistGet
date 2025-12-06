@@ -12,3 +12,28 @@ public class CommandRouter(
         }
     }
 }
+
+public interface ICommand
+{
+    string Name { get; }
+    Task RunAsync(string[] args);
+}
+
+public abstract class CommandBase : ICommand
+{
+    public abstract string Name { get; }
+    protected abstract string Help { get; }
+    public Task RunAsync(string[] args)
+    {
+        if (args.Contains("-?")
+            || args.Contains("-h")
+            || args.Contains("--help"))
+        {
+
+        }
+
+        return RunInnerAsync(args);
+    }
+
+    protected abstract Task RunInnerAsync(string[] args);
+}

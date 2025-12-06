@@ -4,12 +4,14 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Folder Name="/src/">
-    <Project Path="src/GistGet.Test/GistGet.Test.csproj">
-      <Platform Project="x64" />
-    </Project>
-    <Project Path="src/GistGet/GistGet.csproj">
-      <Platform Project="x64" />
-    </Project>
+  <Folder Name="/old/">
+    <Project Path="src_old/GistGet.Tests/GistGet.Tests.csproj" />
+    <Project Path="src_old/GistGet/GistGet.csproj" />
   </Folder>
+  <Project Path="src/GistGet.Test/GistGet.Test.csproj">
+    <Platform Project="x64" />
+  </Project>
+  <Project Path="src/GistGet/GistGet.csproj">
+    <Platform Project="x64" />
+  </Project>
 </Solution>
