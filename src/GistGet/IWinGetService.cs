@@ -2,5 +2,5 @@
 
 public interface IWinGetService
 {
-    Task<WinGetPackage?> FindByIdAsync(PackageId id);
+    WinGetPackage? FindById(PackageId id);
 }

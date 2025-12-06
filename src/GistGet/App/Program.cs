@@ -8,7 +8,7 @@ var service = new WinGetService();
 
 // Test 1: jqlang.jq (更新対象あり)
 Console.WriteLine("\n--- Test 1: jqlang.jq ---");
-var jq = await service.FindByIdAsync(new PackageId("jqlang.jq"));
+var jq = service.FindById(new PackageId("jqlang.jq"));
 if (jq != null)
 {
     Console.WriteLine($"Name: {jq.Name}");
@@ -23,7 +23,7 @@ else
 
 // Test 2: Microsoft.VisualStudioCode (更新なし)
 Console.WriteLine("\n--- Test 2: Microsoft.VisualStudioCode ---");
-var vscode = await service.FindByIdAsync(new PackageId("Microsoft.VisualStudioCode"));
+var vscode = service.FindById(new PackageId("Microsoft.VisualStudioCode"));
 if (vscode != null)
 {
     Console.WriteLine($"Name: {vscode.Name}");
@@ -38,5 +38,5 @@ else
 
 // Test 3: 存在しないパッケージ
 Console.WriteLine("\n--- Test 3: NonExisting.Package ---");
-var nonExisting = await service.FindByIdAsync(new PackageId("NonExisting.Package.Id.12345"));
+var nonExisting = service.FindById(new PackageId("NonExisting.Package.Id.12345"));
 Console.WriteLine(nonExisting == null ? "Correctly returned null" : "Unexpectedly found package");

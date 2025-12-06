@@ -5,15 +5,14 @@ namespace GistGet.Test.Com;
 public class WinGetServiceTests
 {
     private readonly WinGetService _sut = new();
-
     [Fact]
-    public async Task FindByIdAsync_ExistingPackageWithUpdate_ReturnsPackageWithUsableVersion()
+    public void FindById_ExistingPackageWithUpdate_ReturnsPackageWithUsableVersion()
     {
         // Arrange
         var packageId = new PackageId("jqlang.jq");
 
         // Act
-        var result = await _sut.FindByIdAsync(packageId);
+        var result = _sut.FindById(packageId);
 
         // Assert
         Assert.NotNull(result);
@@ -23,13 +22,13 @@ public class WinGetServiceTests
     }
 
     [Fact]
-    public async Task FindByIdAsync_ExistingPackageWithoutUpdate_ReturnsPackageWithNullUsableVersion()
+    public void FindById_ExistingPackageWithoutUpdate_ReturnsPackageWithNullUsableVersion()
     {
         // Arrange
         var packageId = new PackageId("Microsoft.VisualStudioCode");
 
         // Act
-        var result = await _sut.FindByIdAsync(packageId);
+        var result = _sut.FindById(packageId);
 
         // Assert
         Assert.NotNull(result);
@@ -39,13 +38,13 @@ public class WinGetServiceTests
     }
 
     [Fact]
-    public async Task FindByIdAsync_NonExistingPackage_ReturnsNull()
+    public void FindById_NonExistingPackage_ReturnsNull()
     {
         // Arrange
         var packageId = new PackageId("NonExisting.Package.Id.12345");
 
         // Act
-        var result = await _sut.FindByIdAsync(packageId);
+        var result = _sut.FindById(packageId);
 
         // Assert
         Assert.Null(result);
