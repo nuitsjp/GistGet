@@ -1,8 +1,4 @@
 <Solution>
-  <Folder Name="/old/">
-    <Project Path="src_old/GistGet.Tests/GistGet.Tests.csproj" />
-    <Project Path="src_old/GistGet/GistGet.csproj" />
-  </Folder>
   <Project Path="src/GistGet.Test/GistGet.Test.csproj" />
   <Project Path="src/GistGet/GistGet.csproj" />
 </Solution>
