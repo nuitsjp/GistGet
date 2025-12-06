@@ -18,10 +18,31 @@
 ### 必要な環境
 
 - **OS**: Windows 10/11 (Windows 10.0.26100.0 以降)
-- **.NET SDK**: .NET 10.0 以降
+- **.NET SDK**: .NET 8.0 以降
+- **Windows SDK**: 10.0.26100.0 以降（UAP Platform を含む）
 - **IDE**: Visual Studio 2022 または Visual Studio Code (推奨)
-- **Windows Package Manager**: winget (Windows App Installer経由)
+- **Windows Package Manager**: winget (Windows App Installer 経由)
 - **PowerShell**: 5.1 以降 (スクリプト実行用)
+
+### Windows SDK のインストール
+
+WinGet COM API を使用するため、Windows SDK の **UAP Platform** コンポーネントが必要です。
+
+#### Visual Studio Installer でのインストール
+
+1. Visual Studio Installer を起動
+2. 「変更」をクリック
+3. 「個別のコンポーネント」タブを選択
+4. 以下のコンポーネントを選択してインストール：
+   - **Windows 11 SDK (10.0.26100.0)**
+   - **Windows ユニバーサル C ランタイム**
+
+#### 確認方法
+
+```powershell
+# Platform.xml が存在することを確認
+Test-Path "C:\Program Files (x86)\Windows Kits\10\Platforms\UAP\10.0.26100.0\Platform.xml"
+```
 
 ### リポジトリのクローン
 
@@ -54,29 +75,28 @@ GistGetは、レイヤー化アーキテクチャを採用しています。詳�
 GistGet/
 ├── src/
 │   ├── GistGet/                    # メインプロジェクト
-│   │   ├── Application/            # アプリケーション層
-│   │   │   └── Services/           # ビジネスロジック
-│   │   ├── Infrastructure/         # インフラストラクチャ層
-│   │   │   ├── OS/                 # OS固有の機能
-│   │   │   ├── Security/           # 認証・認可
-│   │   │   └── WinGet/             # WinGet統合
-│   │   ├── Presentation/           # プレゼンテーション層
-│   │   │   └── CliCommandBuilder/  # CLIコマンド構築
-│   │   ├── Models/                 # ドメインモデル
-│   │   ├── Utils/                  # ユーティリティ
-│   │   └── Program.cs              # エントリーポイント
-│   └── GistGet.Tests/              # テストプロジェクト
-│       ├── Presentation/           # プレゼンテーション層のテスト
-│       ├── Services/               # サービス層のテスト
-│       └── Utils/                  # ユーティリティのテスト
+│   │   ├── App/                    # アプリケーションエントリーポイント
+│   │   │   └── Program.cs          # エントリーポイント
+│   │   ├── Com/                    # WinGet COM API 連携
+│   │   │   └── WinGetService.cs    # WinGet サービス実装
+│   │   ├── IWinGetService.cs       # WinGet サービスインターフェース
+│   │   ├── WinGetPackage.cs        # パッケージモデル
+│   │   ├── PackageId.cs            # パッケージID値オブジェクト
+│   │   └── Version.cs              # バージョン値オブジェクト
+│   └── GistGet.Test/               # テストプロジェクト
+│       └── Com/                    # COM API テスト
+│           └── WinGetServiceTests.cs
 ├── scripts/                        # 開発用スクリプト
 │   ├── Run-Tests.ps1               # テスト実行スクリプト
 │   ├── Run-AuthLogin.ps1           # 認証テストスクリプト
 │   └── Collect-Metrics.ps1         # メトリクス収集スクリプト
-└── docs/                           # ドキュメント
-    ├── DESIGN.ja.md                # システム設計書
-    ├── SPEC.ja.md                  # 仕様書
-    └── YAML_SPEC.ja.md             # YAML仕様書
+├── docs/                           # ドキュメント
+│   ├── DESIGN.ja.md                # システム設計書
+│   ├── DEVELOPER_GUIDE.ja.md       # 開発者ガイド（本ドキュメント）
+│   ├── SPEC.ja.md                  # 仕様書
+│   └── YAML_SPEC.ja.md             # YAML仕様書
+└── external/                       # 外部参照
+    └── winget-cli/                 # WinGet CLI リポジトリ（サンプル参照用）
 ```
 
 ### 主要なレイヤー
@@ -92,12 +112,57 @@ GistGet/
 - `GistService`: Gist操作 (取得、更新)
 - `PackageService`: パッケージ同期のオーケストレーション
 
-#### Infrastructure層 (`Infrastructure/`)
-- 外部システムとの統合
-- `WinGetRepository`: WinGet COM APIを使用したパッケージ情報取得
-- `WinGetExecutor`: winget.exeを使用したパッケージ操作
-- `CredentialService`: Windows Credential Managerとの連携
-- `ProcessRunner`: プロセス実行の抽象化
+#### COM 層 (`Com/`)
+- WinGet COM API との統合
+- `WinGetService`: WinGet COM API を使用したパッケージ検索・情報取得
+
+### WinGet COM API について
+
+GistGet は、WinGet COM API を使用してパッケージ情報を取得します。
+
+#### 主要な依存パッケージ
+
+```xml
+<PackageReference Include="Microsoft.WindowsPackageManager.ComInterop" Version="1.10.340" />
+<PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.2.0" />
+```
+
+#### プロジェクト設定
+
+WinGet COM API を使用するには、以下の設定が必要です：
+
+```xml
+<PropertyGroup>
+  <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+  <MicrosoftManagementDeployment-FactoryLinkage>static</MicrosoftManagementDeployment-FactoryLinkage>
+</PropertyGroup>
+```
+
+- **RuntimeIdentifier**: WinGet COM API は x64 プラットフォームでのみ動作
+- **MicrosoftManagementDeployment-FactoryLinkage**: 
+  - `static` (推奨): WinGet のプロセス内で COM オブジェクトを作成
+  - `embedded`: テスト用途
+
+#### 参考資料
+
+- 実装サンプル: `external/winget-cli/samples/WinGetClientSample/`
+- GitHub: [microsoft/winget-cli](https://github.com/microsoft/winget-cli)
+
+#### 既知の問題と回避策
+
+##### IsUpdateAvailable が正しく動作しない
+
+WinGet COM API の `IsUpdateAvailable` プロパティは、更新が利用可能な場合でも `false` を返すことがあります。
+
+**回避策**: `InstalledVersion` と `AvailableVersions[0]` を比較して更新の有無を判定：
+
+```csharp
+var installedVersion = package.InstalledVersion.Version;
+var availableVersion = package.AvailableVersions.Count > 0 
+    ? package.AvailableVersions[0].Version 
+    : installedVersion;
+
+bool isUpdateAvailable = installedVersion != availableVersion;
 
 ## ビルドとテスト
 
@@ -109,7 +174,7 @@ dotnet build GistGet.sln -c Debug
 
 # 特定のプロジェクトをビルド
 dotnet build src/GistGet/GistGet.csproj -c Debug
-dotnet build src/GistGet.Tests/GistGet.Tests.csproj -c Debug
+dotnet build src/GistGet.Test/GistGet.Test.csproj -c Debug
 ```
 
 ### テストの実行
@@ -118,17 +183,17 @@ dotnet build src/GistGet.Tests/GistGet.Tests.csproj -c Debug
 
 ```powershell
 # すべてのテストを実行
-dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug
+dotnet test src/GistGet.Test/GistGet.Test.csproj -c Debug
 
 # 詳細な出力
-dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug --logger "console;verbosity=detailed"
+dotnet test src/GistGet.Test/GistGet.Test.csproj -c Debug --logger "console;verbosity=detailed"
 ```
 
 #### カバレッジ付きテスト実行
 
 ```powershell
 # カバレッジを収集してテスト実行
-dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug `
+dotnet test src/GistGet.Test/GistGet.Test.csproj -c Debug `
   --collect:"XPlat Code Coverage" `
   --results-directory TestResults
 
@@ -169,7 +234,7 @@ dotnet run --project src/GistGet/GistGet.csproj -- --help
 または、ビルド後の実行ファイルを直接実行:
 
 ```powershell
-.\src\GistGet\bin\Debug\net10.0-windows10.0.26100.0\GistGet.exe <command>
+.\src\GistGet\bin\Debug\net8.0-windows10.0.26100.0\GistGet.exe <command>
 ```
 
 ### 開発用スクリプト
@@ -302,7 +367,7 @@ Closes #123
 ### C# スタイルガイド
 
 - **言語バージョン**: C# 12
-- **ターゲットフレームワーク**: `net10.0-windows10.0.26100.0`
+- **ターゲットフレームワーク**: `net8.0-windows10.0.26100.0`
 - **インデント**: 4スペース
 - **エンコーディング**: UTF-8
 - **Nullable**: 有効 (`<Nullable>enable</Nullable>`)
@@ -551,7 +616,7 @@ GistGetプロジェクトでは、以下の統合テストを提供していま�
 
 ```powershell
 # 統合テストのみを実行
-dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug --filter "FullyQualifiedName~Integration"
+dotnet test src/GistGet.Test/GistGet.Test.csproj -c Debug --filter "FullyQualifiedName~Integration"
 
 # 特定の統合テストクラスを実行
 dotnet test --filter "FullyQualifiedName~GistServiceIntegrationTests"
@@ -677,7 +742,7 @@ public class GistServiceIntegrationTests : IClassFixture<GistIntegrationTestFixt
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/src/GistGet/bin/Debug/net10.0-windows10.0.26100.0/GistGet.exe",
+            "program": "${workspaceFolder}/src/GistGet/bin/Debug/net8.0-windows10.0.26100.0/GistGet.exe",
             "args": ["auth", "login"],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
@@ -688,7 +753,7 @@ public class GistServiceIntegrationTests : IClassFixture<GistIntegrationTestFixt
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/src/GistGet/bin/Debug/net10.0-windows10.0.26100.0/GistGet.exe",
+            "program": "${workspaceFolder}/src/GistGet/bin/Debug/net8.0-windows10.0.26100.0/GistGet.exe",
             "args": ["sync"],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
@@ -709,6 +774,18 @@ Console.WriteLine($"Installing package: {package.Id}");
 ## トラブルシューティング
 
 ### ビルドエラー
+
+#### エラー: "Could not find the Windows SDK in the registry" または "Could not read the Windows SDK's Platform.xml"
+
+**原因**: Windows SDK の UAP Platform コンポーネントがインストールされていない
+
+**解決策**:
+1. Visual Studio Installer を起動
+2. 「個別のコンポーネント」で **Windows 11 SDK (10.0.26100.0)** をインストール
+3. 以下のパスにファイルが存在することを確認：
+   ```powershell
+   Test-Path "C:\Program Files (x86)\Windows Kits\10\Platforms\UAP\10.0.26100.0\Platform.xml"
+   ```
 
 #### エラー: "The type or namespace name 'Windows' could not be found"
 
@@ -737,8 +814,8 @@ winget --version
 
 **解決策**:
 ```powershell
-dotnet build src/GistGet.Tests/GistGet.Tests.csproj
-dotnet test src/GistGet.Tests/GistGet.Tests.csproj
+dotnet build src/GistGet.Test/GistGet.Test.csproj
+dotnet test src/GistGet.Test/GistGet.Test.csproj
 ```
 
 ### 実行時エラー
