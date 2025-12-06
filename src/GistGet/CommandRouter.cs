@@ -37,3 +37,8 @@ public abstract class CommandBase : ICommand
 
     protected abstract Task RunInnerAsync(string[] args);
 }
+
+public interface IUserInterface
+{
+    void WriteLine(string message);
+}

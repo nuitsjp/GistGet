@@ -1,8 +1,13 @@
 ﻿
 using GistGet;
 using GistGet.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
 
-var router =
-    new CommandRouter(
-        new WinGetPassthroughRunner());
-await router.RunAsync(args);
+ServiceCollection services = new();
+services.AddTransient<CommandRouter>();
+services.AddTransient<IWinGetPassthroughRunner, WinGetPassthroughRunner>();
+
+await services
+    .BuildServiceProvider()
+    .GetRequiredService<CommandRouter>()
+    .RunAsync(args);
