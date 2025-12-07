@@ -1,13 +1,14 @@
 ﻿
 using GistGet;
+using GistGet.Command;
 using GistGet.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
 ServiceCollection services = new();
-services.AddTransient<CommandRouter>();
+services.AddTransient<RootCommand>();
 services.AddTransient<IWinGetPassthroughRunner, WinGetPassthroughRunner>();
 
 await services
     .BuildServiceProvider()
-    .GetRequiredService<CommandRouter>()
+    .GetRequiredService<RootCommand>()
     .RunAsync(args);
