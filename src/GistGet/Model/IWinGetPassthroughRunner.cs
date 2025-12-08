@@ -1,4 +1,4 @@
-﻿namespace GistGet;
+﻿namespace GistGet.Model;
 
 public interface IWinGetPassthroughRunner
 {

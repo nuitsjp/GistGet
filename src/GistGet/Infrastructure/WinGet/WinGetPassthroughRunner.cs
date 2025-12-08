@@ -1,6 +1,7 @@
-﻿using System.Diagnostics;
+﻿using GistGet.Model;
+using System.Diagnostics;
 
-namespace GistGet.Diagnostics;
+namespace GistGet.Infrastructure.Diagnostics;
 
 public class WinGetPassthroughRunner : IWinGetPassthroughRunner
 {
