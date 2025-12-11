@@ -1,8 +1,6 @@
 using Moq;
-using Xunit;
-using GistGet;
 
-namespace GistGet.Test.GistGet;
+namespace GistGet;
 
 public class GistGetServiceTest
 {
@@ -37,13 +35,13 @@ public class GistGetServiceTest
     }
 
     [Fact]
-    public async Task AuthLogoutAsync_CallsAuthServiceLogout_AndPrintsMessage()
+    public void AuthLogoutAsync_CallsAuthServiceLogout_AndPrintsMessage()
     {
         // Arrange
         _credentialServiceMock.Setup(x => x.DeleteCredential(It.IsAny<string>())).Returns(true);
 
         // Act
-        await _target.AuthLogoutAsync();
+        _target.AuthLogout();
 
         // Assert
         _credentialServiceMock.Verify(x => x.DeleteCredential("git:https://github.com"), Times.Once);

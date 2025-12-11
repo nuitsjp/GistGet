@@ -3,7 +3,7 @@
 public interface IGistGetService
 {
     Task AuthLoginAsync();
-    Task AuthLogoutAsync();
+    void AuthLogout();
     void AuthStatus();
 
     Task<WinGetPackage?> FindByIdAsync(PackageId id);

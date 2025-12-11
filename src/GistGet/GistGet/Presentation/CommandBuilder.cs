@@ -64,7 +64,7 @@ public class CommandBuilder(IPackageService packageService, IGistService gistSer
         command.Add(login);
 
         var logout = new Command("logout", "Logout from GitHub");
-        logout.SetHandler(async () => await gistGetService.AuthLogoutAsync());
+        logout.SetHandler(gistGetService.AuthLogout);
         command.Add(logout);
 
         var status = new Command("status", "Check authentication status");
