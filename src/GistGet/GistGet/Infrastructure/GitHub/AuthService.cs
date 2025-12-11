@@ -38,11 +38,7 @@ public class AuthService(
         return new Credential(user.Login, token.AccessToken);
     }
 
-    public Task LogoutAsync()
-    {
-        credentialService.DeleteCredential(GitHubTarget);
-        return Task.CompletedTask;
-    }
+
 
     public Task StatusAsync()
     {

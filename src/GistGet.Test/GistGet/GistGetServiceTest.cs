@@ -40,13 +40,13 @@ public class GistGetServiceTest
     public async Task AuthLogoutAsync_CallsAuthServiceLogout_AndPrintsMessage()
     {
         // Arrange
-        _authServiceMock.Setup(x => x.LogoutAsync()).Returns(Task.CompletedTask);
+        _credentialServiceMock.Setup(x => x.DeleteCredential(It.IsAny<string>())).Returns(true);
 
         // Act
         await _target.AuthLogoutAsync();
 
         // Assert
-        _authServiceMock.Verify(x => x.LogoutAsync(), Times.Once);
+        _credentialServiceMock.Verify(x => x.DeleteCredential("git:https://github.com"), Times.Once);
         _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("Logged out") || s.Contains("Log out"))), Times.Once); 
     }
 

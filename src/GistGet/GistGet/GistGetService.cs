@@ -16,7 +16,7 @@ public class GistGetService(
 
     public async Task AuthLogoutAsync()
     {
-        await authService.LogoutAsync();
+        credentialService.DeleteCredential("git:https://github.com");
         consoleService.WriteInfo("Logged out");
     }
 
