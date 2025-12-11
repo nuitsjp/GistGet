@@ -6,7 +6,7 @@ namespace GistGet.Test.GistGet;
 
 public class GistGetServiceTest
 {
-    private readonly Mock<IAuthService> _authServiceMock;
+    private readonly Mock<IGitHubService> _authServiceMock;
     private readonly Mock<IConsoleService> _consoleServiceMock;
     private readonly Mock<ICredentialService> _credentialServiceMock;
     private readonly GistGetService _target;
@@ -15,7 +15,7 @@ public class GistGetServiceTest
 
     public GistGetServiceTest()
     {
-        _authServiceMock = new Mock<IAuthService>();
+        _authServiceMock = new Mock<IGitHubService>();
         _consoleServiceMock = new Mock<IConsoleService>();
         _credentialServiceMock = new Mock<ICredentialService>();
         _target = new GistGetService(_authServiceMock.Object, _consoleServiceMock.Object, _credentialServiceMock.Object);

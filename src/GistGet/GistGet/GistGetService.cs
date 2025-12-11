@@ -3,14 +3,14 @@
 namespace GistGet;
 
 public class GistGetService(
-    IAuthService authService,
+    IGitHubService gitHubService,
     IConsoleService consoleService,
     ICredentialService credentialService) 
     : IGistGetService
 {
     public async Task AuthLoginAsync()
     {
-        var credential = await authService.LoginAsync();
+        var credential = await gitHubService.LoginAsync();
         credentialService.SaveCredential("git:https://github.com", credential);
     }
 

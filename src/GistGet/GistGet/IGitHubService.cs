@@ -1,6 +1,6 @@
 ﻿namespace GistGet;
 
-public interface IAuthService
+public interface IGitHubService
 {
     Task<Credential> LoginAsync();
 

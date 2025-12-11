@@ -2,11 +2,11 @@
 using GistGet.Presentation;
 using Octokit;
 
-namespace GistGet.Infrastructure.GitHub;
+namespace GistGet.Infrastructure;
 
-public class AuthService(
+public class GitHubService(
     ICredentialService credentialService,
-    IConsoleService consoleService) : IAuthService
+    IConsoleService consoleService) : IGitHubService
 {
     private const string ClientId = "Ov23lihQJhLB6hCnEIvS"; // GistGet Client ID
     private const string GitHubTarget = "git:https://github.com";

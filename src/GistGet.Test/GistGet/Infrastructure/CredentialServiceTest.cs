@@ -1,8 +1,7 @@
 ﻿using Shouldly;
 using Xunit;
-using GistGet;
 
-namespace GistGet.Infrastructure.Security;
+namespace GistGet.Infrastructure;
 
 [Collection("CredentialTests")]
 public class CredentialServiceTests : IDisposable

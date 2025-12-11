@@ -1,14 +1,13 @@
 ﻿using System.CommandLine;
 using GistGet;
-using GistGet.Infrastructure.GitHub;
-using GistGet.Infrastructure.Security;
+using GistGet.Infrastructure;
 using GistGet.Presentation;
 using Microsoft.Extensions.DependencyInjection;
 
 ServiceCollection services = new();
 
 // GistGet
-services.AddTransient<IAuthService, AuthService>();
+services.AddTransient<IGitHubService, GitHubService>();
 services.AddTransient<IPackageService, PackageService>();
 services.AddTransient<IGistService, GistService>();
 services.AddTransient<IGistGetService, GistGetService>();

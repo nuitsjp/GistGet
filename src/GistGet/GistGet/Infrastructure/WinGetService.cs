@@ -1,6 +1,6 @@
 ﻿using Microsoft.Management.Deployment;
 
-namespace GistGet.Infrastructure.Com;
+namespace GistGet.Infrastructure;
 
 public class WinGetService : IWinGetService
 {

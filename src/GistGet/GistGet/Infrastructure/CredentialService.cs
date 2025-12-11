@@ -3,7 +3,7 @@ using System.Text;
 using System;
 using System.Diagnostics.CodeAnalysis;
 
-namespace GistGet.Infrastructure.Security;
+namespace GistGet.Infrastructure;
 
 public class CredentialService : ICredentialService
 {
