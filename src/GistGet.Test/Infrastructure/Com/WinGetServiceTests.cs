@@ -1,6 +1,6 @@
 using GistGet.Infrastructure.Com;
 
-namespace GistGet.Test.Com;
+namespace GistGet.Test.Infrastructure.Com;
 
 public class WinGetServiceTests
 {
