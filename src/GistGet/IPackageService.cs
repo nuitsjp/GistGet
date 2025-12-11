@@ -1,3 +1,5 @@
+using GistGet.Model;
+
 namespace GistGet;
 
 public interface IPackageService

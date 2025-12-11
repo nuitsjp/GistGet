@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Binding;
 using System.CommandLine.Invocation;
 using GistGet.Model;
 using GistGet.Service;
@@ -24,19 +23,19 @@ public class CommandBuilder
     {
         var rootCommand = new RootCommand("GistGet - Windows Package Manager Cloud Sync Tool");
 
-        rootCommand.AddCommand(BuildSyncCommand());
-        rootCommand.AddCommand(BuildExportCommand());
-        rootCommand.AddCommand(BuildImportCommand());
-        rootCommand.AddCommand(BuildAuthCommand());
+        rootCommand.Add(BuildSyncCommand());
+        rootCommand.Add(BuildExportCommand());
+        rootCommand.Add(BuildImportCommand());
+        rootCommand.Add(BuildAuthCommand());
 
-        rootCommand.AddCommand(BuildInstallCommand());
-        rootCommand.AddCommand(BuildUninstallCommand());
-        rootCommand.AddCommand(BuildUpgradeCommand());
-        rootCommand.AddCommand(BuildPinCommand());
+        rootCommand.Add(BuildInstallCommand());
+        rootCommand.Add(BuildUninstallCommand());
+        rootCommand.Add(BuildUpgradeCommand());
+        rootCommand.Add(BuildPinCommand());
 
         foreach (var cmd in BuildWingetPassthroughCommands())
         {
-            rootCommand.AddCommand(cmd);
+            rootCommand.Add(cmd);
         }
 
         return rootCommand;
@@ -46,7 +45,7 @@ public class CommandBuilder
     {
         var command = new Command("sync", "Synchronize packages with Gist");
         var urlOption = new Option<string>("--url", "Gist URL to sync from (optional)");
-        command.AddOption(urlOption);
+        command.Add(urlOption);
 
         return command;
     }
@@ -55,7 +54,7 @@ public class CommandBuilder
     {
         var command = new Command("export", "Export current package state to YAML");
         var outputOption = new Option<string>("--output", "Output file path");
-        command.AddOption(outputOption);
+        command.Add(outputOption);
 
         return command;
     }
@@ -63,8 +62,8 @@ public class CommandBuilder
     private Command BuildImportCommand()
     {
         var command = new Command("import", "Import YAML file to Gist");
-        var fileArgument = new Argument<string>("file", "YAML file to import");
-        command.AddArgument(fileArgument);
+        var fileArgument = new Argument<string>("file") { Description = "YAML file to import" };
+        command.Add(fileArgument);
 
         return command;
     }
@@ -75,14 +74,14 @@ public class CommandBuilder
 
         var login = new Command("login", "Login to GitHub");
         login.SetHandler(async () => await _authService.LoginAsync());
-        command.AddCommand(login);
+        command.Add(login);
 
         var logout = new Command("logout", "Logout from GitHub");
         logout.SetHandler(async () => await _authService.LogoutAsync());
-        command.AddCommand(logout);
+        command.Add(logout);
 
         var status = new Command("status", "Check authentication status");
-        command.AddCommand(status);
+        command.Add(status);
 
         return command;
     }
@@ -106,28 +105,49 @@ public class CommandBuilder
         var installerTypeOption = new Option<string>("--installer-type", "Installer type");
         var customOption = new Option<string>("--custom", "Custom arguments");
 
-        command.AddOption(idOption);
-        command.AddOption(versionOption);
-        command.AddOption(scopeOption);
-        command.AddOption(archOption);
-        command.AddOption(locationOption);
-        command.AddOption(interactiveOption);
-        command.AddOption(silentOption);
-        command.AddOption(logOption);
-        command.AddOption(overrideOption);
-        command.AddOption(forceOption);
-        command.AddOption(skipDependenciesOption);
-        command.AddOption(headerOption);
-        command.AddOption(installerTypeOption);
-        command.AddOption(customOption);
+        command.Add(idOption);
+        command.Add(versionOption);
+        command.Add(scopeOption);
+        command.Add(archOption);
+        command.Add(locationOption);
+        command.Add(interactiveOption);
+        command.Add(silentOption);
+        command.Add(logOption);
+        command.Add(overrideOption);
+        command.Add(forceOption);
+        command.Add(skipDependenciesOption);
+        command.Add(headerOption);
+        command.Add(installerTypeOption);
+        command.Add(customOption);
 
-        var binder = new InstallPackageBinder(
-            idOption, versionOption, scopeOption, archOption, locationOption,
-            interactiveOption, silentOption, logOption, overrideOption, forceOption,
-            skipDependenciesOption, headerOption, installerTypeOption, customOption);
-
-        command.SetHandler(async (package) =>
+        command.SetHandler(async (InvocationContext context) =>
         {
+            var parseResult = context.ParseResult;
+            var id = parseResult.GetValueForOption(idOption) ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                AnsiConsole.MarkupLine("[red]Package ID is required.[/]");
+                return;
+            }
+
+            var package = new GistGetPackage
+            {
+                Id = id,
+                Version = parseResult.GetValueForOption(versionOption),
+                Scope = parseResult.GetValueForOption(scopeOption),
+                Architecture = parseResult.GetValueForOption(archOption),
+                Location = parseResult.GetValueForOption(locationOption),
+                Interactive = parseResult.GetValueForOption(interactiveOption),
+                Silent = parseResult.GetValueForOption(silentOption),
+                Log = parseResult.GetValueForOption(logOption),
+                Override = parseResult.GetValueForOption(overrideOption),
+                Force = parseResult.GetValueForOption(forceOption),
+                SkipDependencies = parseResult.GetValueForOption(skipDependenciesOption),
+                Header = parseResult.GetValueForOption(headerOption),
+                InstallerType = parseResult.GetValueForOption(installerTypeOption),
+                Custom = parseResult.GetValueForOption(customOption)
+            };
+
             if (await _packageService.InstallAndSaveAsync(package))
             {
                 AnsiConsole.MarkupLine($"[green]Installed and saved {package.Id}[/]");
@@ -136,7 +156,7 @@ public class CommandBuilder
             {
                 AnsiConsole.MarkupLine($"[red]Failed to install {package.Id}[/]");
             }
-        }, binder);
+        });
 
         return command;
     }
@@ -145,7 +165,7 @@ public class CommandBuilder
     {
         var command = new Command("uninstall", "Uninstall a package and update Gist");
         var idOption = new Option<string>("--id", "Package ID") { IsRequired = true };
-        command.AddOption(idOption);
+        command.Add(idOption);
 
         command.SetHandler(async (string id) =>
         {
@@ -169,9 +189,9 @@ public class CommandBuilder
         var idOption = new Option<string>("--id", "Package ID (winget compatible)");
         var versionOption = new Option<string>("--version", "Package version");
 
-        command.AddArgument(idArgument);
-        command.AddOption(idOption);
-        command.AddOption(versionOption);
+        command.Add(idArgument);
+        command.Add(idOption);
+        command.Add(versionOption);
 
         // Allow unmatched tokens to be collected for passthrough
         command.TreatUnmatchedTokensAsErrors = false;
@@ -255,8 +275,8 @@ public class CommandBuilder
         var add = new Command("add", "Pin a package version");
         var addId = new Argument<string>("package", "Package ID");
         var addVersion = new Option<string>("--version", "Version to pin") { IsRequired = true };
-        add.AddArgument(addId);
-        add.AddOption(addVersion);
+        add.Add(addId);
+        add.Add(addVersion);
         add.SetHandler(async (string id, string version) =>
         {
             if (await _packageService.PinAddAndSaveAsync(id, version))
@@ -268,11 +288,11 @@ public class CommandBuilder
                 AnsiConsole.MarkupLine($"[red]Failed to pin {id}[/]");
             }
         }, addId, addVersion);
-        command.AddCommand(add);
+        command.Add(add);
 
         var remove = new Command("remove", "Remove a package pin");
         var removeId = new Argument<string>("package", "Package ID");
-        remove.AddArgument(removeId);
+        remove.Add(removeId);
         remove.SetHandler(async (string id) =>
         {
             if (await _packageService.PinRemoveAndSaveAsync(id))
@@ -284,29 +304,29 @@ public class CommandBuilder
                 AnsiConsole.MarkupLine($"[red]Failed to unpin {id}[/]");
             }
         }, removeId);
-        command.AddCommand(remove);
+        command.Add(remove);
 
         var list = new Command("list", "List pinned packages");
         var listArgs = new Argument<string[]>("args") { Arity = ArgumentArity.ZeroOrMore };
-        list.AddArgument(listArgs);
+        list.Add(listArgs);
         list.SetHandler(async (string[] args) =>
         {
             var allArgs = new System.Collections.Generic.List<string> { "list" };
             allArgs.AddRange(args);
             await _packageService.RunPassthroughAsync("pin", allArgs.ToArray());
         }, listArgs);
-        command.AddCommand(list);
+        command.Add(list);
 
         var reset = new Command("reset", "Reset all pins");
         var resetArgs = new Argument<string[]>("args") { Arity = ArgumentArity.ZeroOrMore };
-        reset.AddArgument(resetArgs);
+        reset.Add(resetArgs);
         reset.SetHandler(async (string[] args) =>
         {
             var allArgs = new System.Collections.Generic.List<string> { "reset" };
             allArgs.AddRange(args);
             await _packageService.RunPassthroughAsync("pin", allArgs.ToArray());
         }, resetArgs);
-        command.AddCommand(reset);
+        command.Add(reset);
 
         return command;
     }
@@ -323,7 +343,7 @@ public class CommandBuilder
         {
             var command = new Command(cmd, $"Pass through to winget {cmd}");
             var argsArgument = new Argument<string[]>("arguments") { Arity = ArgumentArity.ZeroOrMore };
-            command.AddArgument(argsArgument);
+            command.Add(argsArgument);
 
             command.SetHandler(async (string[] arguments) =>
             {
@@ -334,82 +354,5 @@ public class CommandBuilder
         }
 
         return commands.ToArray();
-    }
-    private class InstallPackageBinder : BinderBase<GistGetPackage>
-    {
-        private readonly Option<string> _idOption;
-        private readonly Option<string> _version;
-        private readonly Option<string> _scope;
-        private readonly Option<string> _arch;
-        private readonly Option<string> _location;
-        private readonly Option<bool> _interactive;
-        private readonly Option<bool> _silent;
-        private readonly Option<string> _log;
-        private readonly Option<string> _override;
-        private readonly Option<bool> _force;
-        private readonly Option<bool> _skipDependencies;
-        private readonly Option<string> _header;
-        private readonly Option<string> _installerType;
-        private readonly Option<string> _custom;
-
-        public InstallPackageBinder(
-            Option<string> idOption,
-            Option<string> version,
-            Option<string> scope,
-            Option<string> arch,
-            Option<string> location,
-            Option<bool> interactive,
-            Option<bool> silent,
-            Option<string> log,
-            Option<string> overrideArgs,
-            Option<bool> force,
-            Option<bool> skipDependencies,
-            Option<string> header,
-            Option<string> installerType,
-            Option<string> custom)
-        {
-            _idOption = idOption;
-            _version = version;
-            _scope = scope;
-            _arch = arch;
-            _location = location;
-            _interactive = interactive;
-            _silent = silent;
-            _log = log;
-            _override = overrideArgs;
-            _force = force;
-            _skipDependencies = skipDependencies;
-            _header = header;
-            _installerType = installerType;
-            _custom = custom;
-        }
-
-        protected override GistGetPackage GetBoundValue(BindingContext bindingContext)
-        {
-            var id = bindingContext.ParseResult.GetValueForOption(_idOption)
-                ?? string.Empty;
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                throw new ArgumentException("Package ID is required.");
-            }
-
-            return new GistGetPackage
-            {
-                Id = id,
-                Version = bindingContext.ParseResult.GetValueForOption(_version),
-                Scope = bindingContext.ParseResult.GetValueForOption(_scope),
-                Architecture = bindingContext.ParseResult.GetValueForOption(_arch),
-                Location = bindingContext.ParseResult.GetValueForOption(_location),
-                Interactive = bindingContext.ParseResult.GetValueForOption(_interactive),
-                Silent = bindingContext.ParseResult.GetValueForOption(_silent),
-                Log = bindingContext.ParseResult.GetValueForOption(_log),
-                Override = bindingContext.ParseResult.GetValueForOption(_override),
-                Force = bindingContext.ParseResult.GetValueForOption(_force),
-                SkipDependencies = bindingContext.ParseResult.GetValueForOption(_skipDependencies),
-                Header = bindingContext.ParseResult.GetValueForOption(_header),
-                InstallerType = bindingContext.ParseResult.GetValueForOption(_installerType),
-                Custom = bindingContext.ParseResult.GetValueForOption(_custom)
-            };
-        }
     }
 }
