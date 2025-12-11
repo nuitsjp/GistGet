@@ -6,19 +6,8 @@ using Spectre.Console;
 
 namespace GistGet.Presentation;
 
-public class CommandBuilder
+public class CommandBuilder(IPackageService packageService, IGistService gistService, IAuthService authService)
 {
-    private readonly IPackageService _packageService;
-    private readonly IGistService _gistService;
-    private readonly IAuthService _authService;
-
-    public CommandBuilder(IPackageService packageService, IGistService gistService, IAuthService authService)
-    {
-        _packageService = packageService;
-        _gistService = gistService;
-        _authService = authService;
-    }
-
     public RootCommand Build()
     {
         var rootCommand = new RootCommand("GistGet - Windows Package Manager Cloud Sync Tool");
@@ -73,11 +62,11 @@ public class CommandBuilder
         var command = new Command("auth", "Manage authentication");
 
         var login = new Command("login", "Login to GitHub");
-        login.SetHandler(async () => await _authService.LoginAsync());
+        login.SetHandler(async () => await authService.LoginAsync());
         command.Add(login);
 
         var logout = new Command("logout", "Logout from GitHub");
-        logout.SetHandler(async () => await _authService.LogoutAsync());
+        logout.SetHandler(async () => await authService.LogoutAsync());
         command.Add(logout);
 
         var status = new Command("status", "Check authentication status");
@@ -148,7 +137,7 @@ public class CommandBuilder
                 Custom = parseResult.GetValueForOption(customOption)
             };
 
-            if (await _packageService.InstallAndSaveAsync(package))
+            if (await packageService.InstallAndSaveAsync(package))
             {
                 AnsiConsole.MarkupLine($"[green]Installed and saved {package.Id}[/]");
             }
@@ -169,7 +158,7 @@ public class CommandBuilder
 
         command.SetHandler(async (string id) =>
         {
-            if (await _packageService.UninstallAndSaveAsync(id))
+            if (await packageService.UninstallAndSaveAsync(id))
             {
                 AnsiConsole.MarkupLine($"[green]Uninstalled and updated Gist for {id}[/]");
             }
@@ -205,7 +194,7 @@ public class CommandBuilder
             // If ID is specified, perform managed upgrade
             if (!string.IsNullOrWhiteSpace(id))
             {
-                if (await _packageService.UpgradeAndSaveAsync(id, version))
+                if (await packageService.UpgradeAndSaveAsync(id, version))
                 {
                     AnsiConsole.MarkupLine($"[green]Upgraded and saved {id}[/]");
                 }
@@ -261,7 +250,7 @@ public class CommandBuilder
                 // Note: This simple reconstruction might lose order or exact formatting, 
                 // but for winget passthrough it's usually sufficient.
 
-                await _packageService.RunPassthroughAsync("upgrade", argsList.ToArray());
+                await packageService.RunPassthroughAsync("upgrade", argsList.ToArray());
             }
         });
 
@@ -279,7 +268,7 @@ public class CommandBuilder
         add.Add(addVersion);
         add.SetHandler(async (string id, string version) =>
         {
-            if (await _packageService.PinAddAndSaveAsync(id, version))
+            if (await packageService.PinAddAndSaveAsync(id, version))
             {
                 AnsiConsole.MarkupLine($"[green]Pinned {id} to version {version} and saved to Gist[/]");
             }
@@ -295,7 +284,7 @@ public class CommandBuilder
         remove.Add(removeId);
         remove.SetHandler(async (string id) =>
         {
-            if (await _packageService.PinRemoveAndSaveAsync(id))
+            if (await packageService.PinRemoveAndSaveAsync(id))
             {
                 AnsiConsole.MarkupLine($"[green]Unpinned {id} and updated Gist[/]");
             }
@@ -313,7 +302,7 @@ public class CommandBuilder
         {
             var allArgs = new System.Collections.Generic.List<string> { "list" };
             allArgs.AddRange(args);
-            await _packageService.RunPassthroughAsync("pin", allArgs.ToArray());
+            await packageService.RunPassthroughAsync("pin", allArgs.ToArray());
         }, listArgs);
         command.Add(list);
 
@@ -324,7 +313,7 @@ public class CommandBuilder
         {
             var allArgs = new System.Collections.Generic.List<string> { "reset" };
             allArgs.AddRange(args);
-            await _packageService.RunPassthroughAsync("pin", allArgs.ToArray());
+            await packageService.RunPassthroughAsync("pin", allArgs.ToArray());
         }, resetArgs);
         command.Add(reset);
 
@@ -347,7 +336,7 @@ public class CommandBuilder
 
             command.SetHandler(async (string[] arguments) =>
             {
-                await _packageService.RunPassthroughAsync(cmd, arguments);
+                await packageService.RunPassthroughAsync(cmd, arguments);
             }, argsArgument);
 
             commands.Add(command);
