@@ -22,12 +22,12 @@ public class CredentialServiceTests : IDisposable
             // Arrange
             // -------------------------------------------------------------------
             var username = "testuser";
-            var password = "testpassword";
+            var token = "testpassword"; // Renamed variable to avoid confusion, though keeping value string
 
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            var result = _sut.SaveCredential(TestTargetName, username, password);
+            var result = _sut.SaveCredential(TestTargetName, username, token);
 
             // -------------------------------------------------------------------
             // Assert
@@ -35,8 +35,9 @@ public class CredentialServiceTests : IDisposable
             result.ShouldBeTrue();
             
             // Verify persistence
-            _sut.TryGetCredential(TestTargetName, out var retrieved).ShouldBeTrue();
-            retrieved.ShouldBe(password);
+            _sut.TryGetCredential(TestTargetName, out var retrievedUser, out var retrievedToken).ShouldBeTrue();
+            retrievedUser.ShouldBe(username);
+            retrievedToken.ShouldBe(token);
         }
     }
 
@@ -48,19 +49,21 @@ public class CredentialServiceTests : IDisposable
             // -------------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------------
-            var password = "storedPassword";
-            _sut.SaveCredential(TestTargetName, "user", password);
+            var token = "storedPassword";
+            var username = "user";
+            _sut.SaveCredential(TestTargetName, username, token);
 
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            var result = _sut.TryGetCredential(TestTargetName, out var retrievedPassword);
+            var result = _sut.TryGetCredential(TestTargetName, out var retrievedUser, out var retrievedToken);
 
             // -------------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------------
             result.ShouldBeTrue();
-            retrievedPassword.ShouldBe(password);
+            retrievedUser.ShouldBe(username);
+            retrievedToken.ShouldBe(token);
         }
 
         [Fact]
@@ -74,13 +77,14 @@ public class CredentialServiceTests : IDisposable
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            var result = _sut.TryGetCredential(TestTargetName, out var retrievedPassword);
+            var result = _sut.TryGetCredential(TestTargetName, out var retrievedUser, out var retrievedToken);
 
             // -------------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------------
             result.ShouldBeFalse();
-            retrievedPassword.ShouldBeNull();
+            retrievedUser.ShouldBeNull();
+            retrievedToken.ShouldBeNull();
         }
     }
 
@@ -103,7 +107,7 @@ public class CredentialServiceTests : IDisposable
             // Assert
             // -------------------------------------------------------------------
             result.ShouldBeTrue();
-            _sut.TryGetCredential(TestTargetName, out _).ShouldBeFalse();
+            _sut.TryGetCredential(TestTargetName, out _, out _).ShouldBeFalse();
         }
 
         [Fact]

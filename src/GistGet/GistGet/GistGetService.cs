@@ -4,22 +4,35 @@ namespace GistGet;
 
 public class GistGetService(
     IAuthService authService,
-    IConsoleService consoleService) 
+    IConsoleService consoleService,
+    ICredentialService credentialService) 
     : IGistGetService
 {
-    public Task AuthLoginAsync()
+    public async Task AuthLoginAsync()
     {
-        throw new NotImplementedException();
+        await authService.LoginAsync();
     }
 
-    public Task AuthLogoutAsync()
+    public async Task AuthLogoutAsync()
     {
-        throw new NotImplementedException();
+        await authService.LogoutAsync();
+        consoleService.WriteInfo("Logged out");
     }
 
-    public Task AuthStatusAsync()
+    public async Task AuthStatusAsync()
     {
-        throw new NotImplementedException();
+        if (credentialService.TryGetCredential("git:https://github.com", out var user, out var token))
+        {
+             var maskedToken = !string.IsNullOrEmpty(token) ? new string('*', token.Length) : "**********";
+
+             consoleService.WriteInfo("github.com");
+             consoleService.WriteInfo($"  ✓ Logged in to github.com as {user} (keyring)");
+             consoleService.WriteInfo($"  ✓ Token: {maskedToken}");
+        }
+        else
+        {
+            consoleService.WriteInfo("You are not logged in.");
+        }
     }
 
     public Task<WinGetPackage?> FindByIdAsync(PackageId id)

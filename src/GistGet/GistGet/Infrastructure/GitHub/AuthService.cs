@@ -17,13 +17,4 @@ public class AuthService : IAuthService
         throw new NotImplementedException();
     }
 
-    public Task<string?> GetAccessTokenAsync()
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<bool> IsAuthenticatedAsync()
-    {
-        throw new NotImplementedException();
-    }
 }

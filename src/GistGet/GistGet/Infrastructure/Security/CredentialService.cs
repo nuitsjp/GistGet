@@ -7,15 +7,15 @@ namespace GistGet.Infrastructure.Security;
 
 public class CredentialService : ICredentialService
 {
-    public bool SaveCredential(string target, string username, string password)
+    public bool SaveCredential(string target, string username, string token)
     {
         var credential = new CREDENTIAL
         {
             Type = CRED_TYPE.GENERIC,
             TargetName = target,
             UserName = username,
-            CredentialBlobSize = Encoding.UTF8.GetByteCount(password),
-            CredentialBlob = Marshal.StringToCoTaskMemUTF8(password),
+            CredentialBlobSize = Encoding.UTF8.GetByteCount(token),
+            CredentialBlob = Marshal.StringToCoTaskMemUTF8(token),
             Persist = CRED_PERSIST.LOCAL_MACHINE
         };
 
@@ -35,19 +35,21 @@ public class CredentialService : ICredentialService
         }
     }
 
-    public bool TryGetCredential(string target, [NotNullWhen(true)] out string? password)
+    public bool TryGetCredential(string target, [NotNullWhen(true)] out string? username, [NotNullWhen(true)] out string? token)
     {
-        password = null;
+        username = null;
+        token = null;
         if (NativeMethods.CredRead(target, CRED_TYPE.GENERIC, 0, out var credentialPtr))
         {
             try
             {
                 var credential = Marshal.PtrToStructure<CREDENTIAL>(credentialPtr);
+                username = credential.UserName;
                 if (credential.CredentialBlob != IntPtr.Zero && credential.CredentialBlobSize > 0)
                 {
                     var bytes = new byte[credential.CredentialBlobSize];
                     Marshal.Copy(credential.CredentialBlob, bytes, 0, credential.CredentialBlobSize);
-                    password = Encoding.UTF8.GetString(bytes);
+                    token = Encoding.UTF8.GetString(bytes);
                     return true;
                 }
             }
