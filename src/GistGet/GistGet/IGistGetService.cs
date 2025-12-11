@@ -4,7 +4,7 @@ public interface IGistGetService
 {
     Task AuthLoginAsync();
     Task AuthLogoutAsync();
-    Task AuthStatusAsync();
+    void AuthStatus();
 
     Task<WinGetPackage?> FindByIdAsync(PackageId id);
 }

@@ -51,7 +51,7 @@ public class GistGetServiceTest
     }
 
     [Fact]
-    public async Task AuthStatusAsync_WhenNotAuthenticated_PrintsWarning()
+    public void AuthStatus_WhenNotAuthenticated_PrintsWarning()
     {
         // Arrange
         // Not mocked to return credential, so returns false by default or explicit setup
@@ -64,14 +64,14 @@ public class GistGetServiceTest
             }));
 
         // Act
-        await _target.AuthStatusAsync();
+        _target.AuthStatus();
 
         // Assert
         _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("not logged in"))), Times.Once);
     }
 
     [Fact]
-    public async Task AuthStatusAsync_WhenAuthenticated_PrintsStatus()
+    public void AuthStatus_WhenAuthenticated_PrintsStatus()
     {
         // Arrange
         var credential = new Credential("testuser", "gho_1234567890");
@@ -85,7 +85,7 @@ public class GistGetServiceTest
             }));
 
         // Act
-        await _target.AuthStatusAsync();
+        _target.AuthStatus();
 
         // Assert
         _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("github.com"))), Times.AtLeastOnce, "Should mention host");

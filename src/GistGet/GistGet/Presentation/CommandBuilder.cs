@@ -68,7 +68,7 @@ public class CommandBuilder(IPackageService packageService, IGistService gistSer
         command.Add(logout);
 
         var status = new Command("status", "Check authentication status");
-        logout.SetHandler(async () => await gistGetService.AuthStatusAsync());
+        logout.SetHandler(gistGetService.AuthStatus);
         command.Add(status);
 
         return command;

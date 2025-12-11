@@ -20,7 +20,7 @@ public class GistGetService(
         consoleService.WriteInfo("Logged out");
     }
 
-    public async Task AuthStatusAsync()
+    public void AuthStatus()
     {
         if (credentialService.TryGetCredential("git:https://github.com", out var credential))
         {
