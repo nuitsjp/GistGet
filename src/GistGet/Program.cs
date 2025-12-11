@@ -14,6 +14,7 @@ services.AddTransient<IGistGetService, GistGetService>();
 
 // Presentation
 services.AddTransient<CommandBuilder>();
+services.AddTransient<IConsoleService, ConsoleService>();
 
 await services
     .BuildServiceProvider()
