@@ -1,4 +1,4 @@
-namespace GistGet.Model;
+namespace GistGet;
 
 public class SyncResult
 {

@@ -1,4 +1,4 @@
-namespace GistGet.Model;
+using GistGet;
 
 public interface IGistService
 {

@@ -1,4 +1,4 @@
-﻿namespace GistGet.Service;
+﻿namespace GistGet;
 
 public interface IAuthService
 {

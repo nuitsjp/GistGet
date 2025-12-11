@@ -1,7 +1,5 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using GistGet.Model;
-using GistGet.Service;
 using Spectre.Console;
 
 namespace GistGet.Presentation;

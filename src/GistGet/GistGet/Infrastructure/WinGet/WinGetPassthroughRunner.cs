@@ -1,5 +1,4 @@
-﻿using GistGet.Model;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace GistGet.Infrastructure.Diagnostics;
 
