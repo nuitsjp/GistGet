@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace GistGet.Infrastructure.Security;
 
@@ -34,8 +35,9 @@ public class CredentialService : ICredentialService
         }
     }
 
-    public string? GetCredential(string target)
+    public bool TryGetCredential(string target, [NotNullWhen(true)] out string? password)
     {
+        password = null;
         if (NativeMethods.CredRead(target, CRED_TYPE.GENERIC, 0, out var credentialPtr))
         {
             try
@@ -45,7 +47,8 @@ public class CredentialService : ICredentialService
                 {
                     var bytes = new byte[credential.CredentialBlobSize];
                     Marshal.Copy(credential.CredentialBlob, bytes, 0, credential.CredentialBlobSize);
-                    return Encoding.UTF8.GetString(bytes);
+                    password = Encoding.UTF8.GetString(bytes);
+                    return true;
                 }
             }
             finally
@@ -53,7 +56,7 @@ public class CredentialService : ICredentialService
                 NativeMethods.CredFree(credentialPtr);
             }
         }
-        return null;
+        return false;
     }
 
     public bool DeleteCredential(string target)
