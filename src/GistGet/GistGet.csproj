@@ -9,6 +9,7 @@
 		<Nullable>enable</Nullable>
 		<LangVersion>latest</LangVersion>
 		<MicrosoftManagementDeployment-FactoryLinkage>static</MicrosoftManagementDeployment-FactoryLinkage>
+		<RootNamespace></RootNamespace>
 	</PropertyGroup>
 
 	<ItemGroup>
