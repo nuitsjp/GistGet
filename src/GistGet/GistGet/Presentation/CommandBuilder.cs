@@ -4,7 +4,7 @@ using Spectre.Console;
 
 namespace GistGet.Presentation;
 
-public class CommandBuilder(IPackageService packageService, IGistService gistService, IAuthService authService)
+public class CommandBuilder(IPackageService packageService, IGistService gistService, IAuthService authService, IGistGetService gistGetService)
 {
     public RootCommand Build()
     {
@@ -60,14 +60,15 @@ public class CommandBuilder(IPackageService packageService, IGistService gistSer
         var command = new Command("auth", "Manage authentication");
 
         var login = new Command("login", "Login to GitHub");
-        login.SetHandler(async () => await authService.LoginAsync());
+        login.SetHandler(async () => await gistGetService.AuthLoginAsync());
         command.Add(login);
 
         var logout = new Command("logout", "Logout from GitHub");
-        logout.SetHandler(async () => await authService.LogoutAsync());
+        logout.SetHandler(async () => await gistGetService.AuthLogoutAsync());
         command.Add(logout);
 
         var status = new Command("status", "Check authentication status");
+        logout.SetHandler(async () => await gistGetService.AuthStatusAsync());
         command.Add(status);
 
         return command;

@@ -10,6 +10,7 @@ ServiceCollection services = new();
 services.AddTransient<IAuthService, AuthService>();
 services.AddTransient<IPackageService, PackageService>();
 services.AddTransient<IGistService, GistService>();
+services.AddTransient<IGistGetService, GistGetService>();
 
 // Presentation
 services.AddTransient<CommandBuilder>();
