@@ -23,14 +23,14 @@
 - Convenience: `.\scripts\Run-Tests.ps1 [-Configuration Release] [-CollectCoverage $false]` handles build, tests, and coverage in one call.
 
 ## Coding Style & Naming Conventions
-- C# 12 on `net10.0-windows10.0.26100.0`; 4-space indentation, UTF-8, `nullable` enabled. Prefer `var` for locals, `readonly` fields, and `async` suffixes on asynchronous methods.
+- C# 12 on `net10.0-windows10.0.26100.0`; 4-space indentation, UTF-8 with CRLF line endings, `nullable` enabled. Prefer `var` for locals, `readonly` fields, and `async` suffixes on asynchronous methods.
 - Naming: PascalCase for public types/methods; camelCase parameters; `_camelCase` private readonly fields. Keep service/infra abstractions in corresponding `I*` interfaces.
 - Structure logic through constructors and dependency injection (no static singletons); favor small, composable methods and guard clauses for argument validation.
 
 ## Testing Guidelines
-- Frameworks: xUnit + Moq; tests live beside the feature area with `*Tests.cs`. Use `[Fact]` for single cases and `[Theory]` with inline data for variants.
-- Naming pattern: `Method_Scenario_ExpectedResult`. Mirror namespaces of production code to clarify intent.
+- Frameworks: xUnit + Moq + Shouldly. Use `[Fact]` for single cases and `[Theory]` with inline data for variants.
 - Coverage: keep collecting via `--collect:"XPlat Code Coverage"`; review `TestResults/coverage.cobertura.xml` before merging. Add unit tests for new branches and edge cases (GitHub auth failures, WinGet errors, YAML parsing).
+- Detailed coding guidelines: see [`.github/instructions/cs.test.instructions.md`](.github/instructions/cs.test.instructions.md) for file/class structure, naming conventions, AAA pattern, and sample code.
 
 ## Commit & Pull Request Guidelines
 - Follow Conventional Commits seen in history (`feat:`, `fix:`, `chore:`, `docs:`). Write present-tense, imperative subjects and keep scopes small.
