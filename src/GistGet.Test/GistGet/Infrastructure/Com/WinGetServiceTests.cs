@@ -2,49 +2,52 @@ namespace GistGet.Infrastructure.Com;
 
 public class WinGetServiceTests
 {
-    private readonly WinGetService _sut = new();
-    [Fact]
-    public void FindById_ExistingPackageWithUpdate_ReturnsPackageWithUsableVersion()
+    protected readonly WinGetService WinGetService = new();
+    public class FindById : WinGetServiceTests
     {
-        // Arrange
-        var packageId = new PackageId("jqlang.jq");
+        [Fact]
+        public void ExistingPackageWithUpdate_ReturnsPackageWithUsableVersion()
+        {
+            // Arrange
+            var packageId = new PackageId("jqlang.jq");
 
-        // Act
-        var result = _sut.FindById(packageId);
+            // Act
+            var result = WinGetService.FindById(packageId);
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(packageId, result.Id);
-        Assert.NotEmpty(result.Name);
-        Assert.NotNull(result.UsableVersion);
-    }
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(packageId, result.Id);
+            Assert.NotEmpty(result.Name);
+            Assert.NotNull(result.UsableVersion);
+        }
 
-    [Fact]
-    public void FindById_ExistingPackageWithoutUpdate_ReturnsPackageWithNullUsableVersion()
-    {
-        // Arrange
-        var packageId = new PackageId("Microsoft.VisualStudioCode");
+        [Fact]
+        public void ExistingPackageWithoutUpdate_ReturnsPackageWithNullUsableVersion()
+        {
+            // Arrange
+            var packageId = new PackageId("Microsoft.VisualStudioCode");
 
-        // Act
-        var result = _sut.FindById(packageId);
+            // Act
+            var result = WinGetService.FindById(packageId);
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(packageId, result.Id);
-        Assert.NotEmpty(result.Name);
-        Assert.Null(result.UsableVersion);
-    }
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(packageId, result.Id);
+            Assert.NotEmpty(result.Name);
+            Assert.Null(result.UsableVersion);
+        }
 
-    [Fact]
-    public void FindById_NonExistingPackage_ReturnsNull()
-    {
-        // Arrange
-        var packageId = new PackageId("NonExisting.Package.Id.12345");
+        [Fact]
+        public void NonExistingPackage_ReturnsNull()
+        {
+            // Arrange
+            var packageId = new PackageId("NonExisting.Package.Id.12345");
 
-        // Act
-        var result = _sut.FindById(packageId);
+            // Act
+            var result = WinGetService.FindById(packageId);
 
-        // Assert
-        Assert.Null(result);
+            // Assert
+            Assert.Null(result);
+        }
     }
 }
