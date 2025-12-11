@@ -1,7 +1,10 @@
-﻿namespace GistGet;
+﻿using Microsoft.Extensions.Logging;
+
+namespace GistGet;
 
 public class GistGetService(
-    IAuthService authService) 
+    IAuthService authService,
+    IConsoleService consoleService) 
     : IGistGetService
 {
     public Task AuthLoginAsync()
