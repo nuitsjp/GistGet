@@ -1,6 +1,6 @@
 ﻿using Microsoft.Management.Deployment;
 
-namespace GistGet.Com;
+namespace GistGet.Infrastructure.Com;
 
 public class WinGetService : IWinGetService
 {
@@ -12,7 +12,8 @@ public class WinGetService : IWinGetService
         var createCompositePackageCatalogOptions = new CreateCompositePackageCatalogOptions();
 
         var catalogs = packageManager.GetPackageCatalogs();
-        for (int i = 0; i < catalogs.Count; ++i)
+        // WinGet COM API との互換性問題を回避するため、インデックスベースでアクセス
+        for (var i = 0; i < catalogs.Count; i++)
         {
             var catalogRef = catalogs[i];
             if (!catalogRef.Info.Explicit)

@@ -1,4 +1,4 @@
-using GistGet.Com;
+using GistGet.Infrastructure.Com;
 
 namespace GistGet.Test.Com;
 
