@@ -7,21 +7,21 @@ namespace GistGet.Infrastructure.Security;
 
 public class CredentialService : ICredentialService
 {
-    public bool SaveCredential(string target, string username, string token)
+    public bool SaveCredential(string target, Credential credential)
     {
-        var credential = new CREDENTIAL
+        var credStruct = new CREDENTIAL
         {
             Type = CRED_TYPE.GENERIC,
             TargetName = target,
-            UserName = username,
-            CredentialBlobSize = Encoding.UTF8.GetByteCount(token),
-            CredentialBlob = Marshal.StringToCoTaskMemUTF8(token),
+            UserName = credential.Username,
+            CredentialBlobSize = Encoding.UTF8.GetByteCount(credential.Token),
+            CredentialBlob = Marshal.StringToCoTaskMemUTF8(credential.Token),
             Persist = CRED_PERSIST.LOCAL_MACHINE
         };
 
         try
         {
-            if (!NativeMethods.CredWrite(ref credential, 0))
+            if (!NativeMethods.CredWrite(ref credStruct, 0))
             {
                 // var error = Marshal.GetLastWin32Error();
                 // Log error?
@@ -31,25 +31,25 @@ public class CredentialService : ICredentialService
         }
         finally
         {
-            Marshal.FreeCoTaskMem(credential.CredentialBlob);
+            Marshal.FreeCoTaskMem(credStruct.CredentialBlob);
         }
     }
 
-    public bool TryGetCredential(string target, [NotNullWhen(true)] out string? username, [NotNullWhen(true)] out string? token)
+    public bool TryGetCredential(string target, [NotNullWhen(true)] out Credential? credential)
     {
-        username = null;
-        token = null;
+        credential = null;
         if (NativeMethods.CredRead(target, CRED_TYPE.GENERIC, 0, out var credentialPtr))
         {
             try
             {
-                var credential = Marshal.PtrToStructure<CREDENTIAL>(credentialPtr);
-                username = credential.UserName;
-                if (credential.CredentialBlob != IntPtr.Zero && credential.CredentialBlobSize > 0)
+                var credStruct = Marshal.PtrToStructure<CREDENTIAL>(credentialPtr);
+                var username = credStruct.UserName;
+                if (credStruct.CredentialBlob != IntPtr.Zero && credStruct.CredentialBlobSize > 0)
                 {
-                    var bytes = new byte[credential.CredentialBlobSize];
-                    Marshal.Copy(credential.CredentialBlob, bytes, 0, credential.CredentialBlobSize);
-                    token = Encoding.UTF8.GetString(bytes);
+                    var bytes = new byte[credStruct.CredentialBlobSize];
+                    Marshal.Copy(credStruct.CredentialBlob, bytes, 0, credStruct.CredentialBlobSize);
+                    var token = Encoding.UTF8.GetString(bytes);
+                    credential = new Credential(username, token);
                     return true;
                 }
             }

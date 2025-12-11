@@ -2,7 +2,7 @@
 
 public interface IAuthService
 {
-    Task LoginAsync();
+    Task<Credential> LoginAsync();
     Task LogoutAsync();
     Task StatusAsync();
 }

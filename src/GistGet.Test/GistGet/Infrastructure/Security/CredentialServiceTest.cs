@@ -1,5 +1,6 @@
 ﻿using Shouldly;
 using Xunit;
+using GistGet;
 
 namespace GistGet.Infrastructure.Security;
 
@@ -27,7 +28,7 @@ public class CredentialServiceTests : IDisposable
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            var result = _sut.SaveCredential(TestTargetName, username, token);
+            var result = _sut.SaveCredential(TestTargetName, new Credential(username, token));
 
             // -------------------------------------------------------------------
             // Assert
@@ -35,9 +36,10 @@ public class CredentialServiceTests : IDisposable
             result.ShouldBeTrue();
             
             // Verify persistence
-            _sut.TryGetCredential(TestTargetName, out var retrievedUser, out var retrievedToken).ShouldBeTrue();
-            retrievedUser.ShouldBe(username);
-            retrievedToken.ShouldBe(token);
+            _sut.TryGetCredential(TestTargetName, out var retrieved).ShouldBeTrue();
+            retrieved.ShouldNotBeNull();
+            retrieved.Username.ShouldBe(username);
+            retrieved.Token.ShouldBe(token);
         }
     }
 
@@ -51,19 +53,20 @@ public class CredentialServiceTests : IDisposable
             // -------------------------------------------------------------------
             var token = "storedPassword";
             var username = "user";
-            _sut.SaveCredential(TestTargetName, username, token);
+            _sut.SaveCredential(TestTargetName, new Credential(username, token));
 
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            var result = _sut.TryGetCredential(TestTargetName, out var retrievedUser, out var retrievedToken);
+            var result = _sut.TryGetCredential(TestTargetName, out var credential);
 
             // -------------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------------
             result.ShouldBeTrue();
-            retrievedUser.ShouldBe(username);
-            retrievedToken.ShouldBe(token);
+            credential.ShouldNotBeNull();
+            credential.Username.ShouldBe(username);
+            credential.Token.ShouldBe(token);
         }
 
         [Fact]
@@ -77,14 +80,13 @@ public class CredentialServiceTests : IDisposable
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            var result = _sut.TryGetCredential(TestTargetName, out var retrievedUser, out var retrievedToken);
+            var result = _sut.TryGetCredential(TestTargetName, out var credential);
 
             // -------------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------------
             result.ShouldBeFalse();
-            retrievedUser.ShouldBeNull();
-            retrievedToken.ShouldBeNull();
+            credential.ShouldBeNull();
         }
     }
 
@@ -96,7 +98,7 @@ public class CredentialServiceTests : IDisposable
             // -------------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------------
-            _sut.SaveCredential(TestTargetName, "user", "pass");
+            _sut.SaveCredential(TestTargetName, new Credential("user", "pass"));
 
             // -------------------------------------------------------------------
             // Act
@@ -107,7 +109,7 @@ public class CredentialServiceTests : IDisposable
             // Assert
             // -------------------------------------------------------------------
             result.ShouldBeTrue();
-            _sut.TryGetCredential(TestTargetName, out _, out _).ShouldBeFalse();
+            _sut.TryGetCredential(TestTargetName, out _).ShouldBeFalse();
         }
 
         [Fact]

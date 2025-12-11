@@ -2,7 +2,7 @@
 
 public class AuthService : IAuthService
 {
-    public Task LoginAsync()
+    public Task<Credential> LoginAsync()
     {
         throw new NotImplementedException();
     }

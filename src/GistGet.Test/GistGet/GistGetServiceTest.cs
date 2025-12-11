@@ -11,7 +11,7 @@ public class GistGetServiceTest
     private readonly Mock<ICredentialService> _credentialServiceMock;
     private readonly GistGetService _target;
 
-    delegate bool TryGetCredentialDelegate(string target, out string? username, out string? token);
+    delegate bool TryGetCredentialDelegate(string target, out Credential? credential);
 
     public GistGetServiceTest()
     {
@@ -22,16 +22,18 @@ public class GistGetServiceTest
     }
 
     [Fact]
-    public async Task AuthLoginAsync_CallsAuthServiceLogin()
+    public async Task AuthLoginAsync_CallsAuthServiceLogin_AndSavesCredential()
     {
         // Arrange
-        _authServiceMock.Setup(x => x.LoginAsync()).Returns(Task.CompletedTask);
+        var credential = new Credential("testuser", "gho_token");
+        _authServiceMock.Setup(x => x.LoginAsync()).ReturnsAsync(credential);
 
         // Act
         await _target.AuthLoginAsync();
 
         // Assert
         _authServiceMock.Verify(x => x.LoginAsync(), Times.Once);
+        _credentialServiceMock.Verify(x => x.SaveCredential("git:https://github.com", credential), Times.Once);
     }
 
     [Fact]
@@ -45,10 +47,7 @@ public class GistGetServiceTest
 
         // Assert
         _authServiceMock.Verify(x => x.LogoutAsync(), Times.Once);
-        // Note: Exact message wording might vary but checking for a call is good
         _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("Logged out") || s.Contains("Log out"))), Times.Once); 
-        // Or if we don't care about the message content yet:
-        // _consoleServiceMock.Verify(x => x.WriteInfo(It.IsAny<string>()), Times.AtLeastOnce);
     }
 
     [Fact]
@@ -57,11 +56,10 @@ public class GistGetServiceTest
         // Arrange
         // Not mocked to return credential, so returns false by default or explicit setup
         _credentialServiceMock
-            .Setup(x => x.TryGetCredential(It.IsAny<string>(), out It.Ref<string?>.IsAny, out It.Ref<string?>.IsAny))
-            .Returns(new TryGetCredentialDelegate((string target, out string? u, out string? t) => 
+            .Setup(x => x.TryGetCredential(It.IsAny<string>(), out It.Ref<Credential?>.IsAny))
+            .Returns(new TryGetCredentialDelegate((string target, out Credential? c) => 
             {
-                u = null;
-                t = null;
+                c = null;
                 return false;
             }));
 
@@ -69,7 +67,6 @@ public class GistGetServiceTest
         await _target.AuthStatusAsync();
 
         // Assert
-        // gh cli output for not logged in: "You are not logged in to any hosts." or similar
         _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("not logged in"))), Times.Once);
     }
 
@@ -77,15 +74,13 @@ public class GistGetServiceTest
     public async Task AuthStatusAsync_WhenAuthenticated_PrintsStatus()
     {
         // Arrange
-        string? token = "gho_1234567890";
-        string? user = "testuser";
+        var credential = new Credential("testuser", "gho_1234567890");
         
         _credentialServiceMock
-            .Setup(x => x.TryGetCredential("git:https://github.com", out It.Ref<string?>.IsAny, out It.Ref<string?>.IsAny))
-            .Returns(new TryGetCredentialDelegate((string target, out string? u, out string? t) => 
+            .Setup(x => x.TryGetCredential("git:https://github.com", out It.Ref<Credential?>.IsAny))
+            .Returns(new TryGetCredentialDelegate((string target, out Credential? c) => 
             {
-                u = user;
-                t = token;
+                c = credential;
                 return true;
             }));
 
@@ -93,9 +88,10 @@ public class GistGetServiceTest
         await _target.AuthStatusAsync();
 
         // Assert
-        // Check for key parts of gh cli status output
         _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("github.com"))), Times.AtLeastOnce, "Should mention host");
         _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("testuser"))), Times.AtLeastOnce, "Should mention username");
         _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("Token: **********"))), Times.AtLeastOnce, "Should mention token masked");
     }
+
+
 }
