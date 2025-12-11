@@ -1,5 +1,7 @@
 namespace GistGet.Infrastructure.Com;
 
+using Shouldly;
+
 public class WinGetServiceTests
 {
     protected readonly WinGetService WinGetService = new();
@@ -21,10 +23,10 @@ public class WinGetServiceTests
             // -------------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------------
-            Assert.NotNull(result);
-            Assert.Equal(packageId, result.Id);
-            Assert.NotEmpty(result.Name);
-            Assert.NotNull(result.UsableVersion);
+            result.ShouldNotBeNull();
+            result.Id.ShouldBe(packageId);
+            result.Name.ShouldNotBeEmpty();
+            result.UsableVersion.ShouldNotBeNull();
         }
 
         [Fact]
@@ -43,10 +45,10 @@ public class WinGetServiceTests
             // -------------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------------
-            Assert.NotNull(result);
-            Assert.Equal(packageId, result.Id);
-            Assert.NotEmpty(result.Name);
-            Assert.Null(result.UsableVersion);
+            result.ShouldNotBeNull();
+            result.Id.ShouldBe(packageId);
+            result.Name.ShouldNotBeEmpty();
+            result.UsableVersion.ShouldBeNull();
         }
 
         [Fact]
@@ -65,7 +67,7 @@ public class WinGetServiceTests
             // -------------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------------
-            Assert.Null(result);
+            result.ShouldBeNull();
         }
     }
 }
