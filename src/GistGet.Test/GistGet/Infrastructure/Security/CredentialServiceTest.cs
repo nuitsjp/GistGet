@@ -4,6 +4,7 @@ using GistGet;
 
 namespace GistGet.Infrastructure.Security;
 
+[Collection("CredentialTests")]
 public class CredentialServiceTests : IDisposable
 {
     protected readonly CredentialService _sut = new();
@@ -14,6 +15,7 @@ public class CredentialServiceTests : IDisposable
         _sut.DeleteCredential(TestTargetName);
     }
 
+    [Collection("CredentialTests")]
     public class SaveCredential : CredentialServiceTests
     {
         [Fact]
@@ -43,6 +45,7 @@ public class CredentialServiceTests : IDisposable
         }
     }
 
+    [Collection("CredentialTests")]
     public class TryGetCredential : CredentialServiceTests
     {
         [Fact]
@@ -53,7 +56,7 @@ public class CredentialServiceTests : IDisposable
             // -------------------------------------------------------------------
             var token = "storedPassword";
             var username = "user";
-            _sut.SaveCredential(TestTargetName, new Credential(username, token));
+            _sut.SaveCredential(TestTargetName, new Credential(username, token)).ShouldBeTrue();
 
             // -------------------------------------------------------------------
             // Act
@@ -90,6 +93,7 @@ public class CredentialServiceTests : IDisposable
         }
     }
 
+    [Collection("CredentialTests")]
     public class DeleteCredential : CredentialServiceTests
     {
         [Fact]
@@ -98,7 +102,7 @@ public class CredentialServiceTests : IDisposable
             // -------------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------------
-            _sut.SaveCredential(TestTargetName, new Credential("user", "pass"));
+            _sut.SaveCredential(TestTargetName, new Credential("user", "pass")).ShouldBeTrue();
 
             // -------------------------------------------------------------------
             // Act
