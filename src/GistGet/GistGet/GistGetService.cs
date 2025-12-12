@@ -5,7 +5,8 @@ namespace GistGet;
 public class GistGetService(
     IGitHubService gitHubService,
     IConsoleService consoleService,
-    ICredentialService credentialService) 
+    ICredentialService credentialService,
+    IWinGetPassthroughRunner passthroughRunner) 
     : IGistGetService
 {
     public async Task AuthLoginAsync()
@@ -39,5 +40,12 @@ public class GistGetService(
     public Task<WinGetPackage?> FindByIdAsync(PackageId id)
     {
         throw new NotImplementedException();
+    }
+
+    public Task<int> RunPassthroughAsync(string command, string[] args)
+    {
+        var fullArgs = new List<string> { command };
+        fullArgs.AddRange(args);
+        return passthroughRunner.RunAsync(fullArgs.ToArray());
     }
 }

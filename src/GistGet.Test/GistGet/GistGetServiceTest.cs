@@ -1,4 +1,6 @@
 using Moq;
+using Xunit;
+using Shouldly;
 
 namespace GistGet;
 
@@ -7,6 +9,7 @@ public class GistGetServiceTest
     private readonly Mock<IGitHubService> _authServiceMock;
     private readonly Mock<IConsoleService> _consoleServiceMock;
     private readonly Mock<ICredentialService> _credentialServiceMock;
+    private readonly Mock<IWinGetPassthroughRunner> _passthroughRunnerMock;
     private readonly GistGetService _target;
 
     delegate bool TryGetCredentialDelegate(string target, out Credential? credential);
@@ -16,7 +19,8 @@ public class GistGetServiceTest
         _authServiceMock = new Mock<IGitHubService>();
         _consoleServiceMock = new Mock<IConsoleService>();
         _credentialServiceMock = new Mock<ICredentialService>();
-        _target = new GistGetService(_authServiceMock.Object, _consoleServiceMock.Object, _credentialServiceMock.Object);
+        _passthroughRunnerMock = new Mock<IWinGetPassthroughRunner>();
+        _target = new GistGetService(_authServiceMock.Object, _consoleServiceMock.Object, _credentialServiceMock.Object, _passthroughRunnerMock.Object);
     }
 
     [Fact]
@@ -92,4 +96,26 @@ public class GistGetServiceTest
     }
 
 
+
+    [Fact]
+    public async Task RunPassthroughAsync_CallsRunner_WithCommandAndArgs()
+    {
+        // Arrange
+        var command = "search";
+        var args = new[] { "vscode", "--source", "winget" };
+        var expectedArgs = new[] { "search", "vscode", "--source", "winget" };
+        var expectedExitCode = 0;
+
+        _passthroughRunnerMock.Setup(x => x.RunAsync(It.IsAny<string[]>()))
+            .ReturnsAsync(expectedExitCode);
+
+        // Act
+        var result = await _target.RunPassthroughAsync(command, args);
+
+        // Assert
+        result.ShouldBe(expectedExitCode);
+        _passthroughRunnerMock.Verify(x => x.RunAsync(
+            It.Is<string[]>(a => a.SequenceEqual(expectedArgs))
+        ), Times.Once);
+    }
 }

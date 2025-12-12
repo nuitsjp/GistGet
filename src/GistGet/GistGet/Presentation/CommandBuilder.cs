@@ -207,7 +207,7 @@ public class CommandBuilder(IGistService gistService, IGitHubService gitHubServi
                 // If ID is missing, pass through everything to winget
                 // Reconstruct arguments from tokens
                 var tokens = parseResult.Tokens.Select(t => t.Value).ToList();
-                var argsToPass = new System.Collections.Generic.List<string>();
+                var argsToPass = new List<string>();
                 bool foundUpgrade = false;
 
                 foreach (var token in tokens)
@@ -236,7 +236,7 @@ public class CommandBuilder(IGistService gistService, IGitHubService gitHubServi
                      argsToPass.AddRange(tokens);
                 }
 
-                await gistService.RunPassthroughAsync("upgrade", argsToPass.ToArray());
+                await gistGetService.RunPassthroughAsync("upgrade", argsToPass.ToArray());
             }
         });
 
@@ -286,9 +286,9 @@ public class CommandBuilder(IGistService gistService, IGitHubService gitHubServi
         list.Add(listArgs);
         list.SetHandler(async (string[] args) =>
         {
-            var allArgs = new System.Collections.Generic.List<string> { "list" };
+            var allArgs = new List<string> { "list" };
             allArgs.AddRange(args);
-            await gistService.RunPassthroughAsync("pin", allArgs.ToArray());
+            await gistGetService.RunPassthroughAsync("pin", allArgs.ToArray());
         }, listArgs);
         command.Add(list);
 
@@ -297,9 +297,9 @@ public class CommandBuilder(IGistService gistService, IGitHubService gitHubServi
         reset.Add(resetArgs);
         reset.SetHandler(async (string[] args) =>
         {
-            var allArgs = new System.Collections.Generic.List<string> { "reset" };
+            var allArgs = new List<string> { "reset" };
             allArgs.AddRange(args);
-            await gistService.RunPassthroughAsync("pin", allArgs.ToArray());
+            await gistGetService.RunPassthroughAsync("pin", allArgs.ToArray());
         }, resetArgs);
         command.Add(reset);
 
@@ -308,7 +308,7 @@ public class CommandBuilder(IGistService gistService, IGitHubService gitHubServi
 
     private Command[] BuildWingetPassthroughCommands()
     {
-        var commands = new System.Collections.Generic.List<Command>();
+        var commands = new List<Command>();
         var wingetCommands = new[] {
             "list", "search", "show", "source", "settings", "features",
             "hash", "validate", "configure", "download", "repair"
@@ -322,7 +322,7 @@ public class CommandBuilder(IGistService gistService, IGitHubService gitHubServi
 
             command.SetHandler(async (string[] arguments) =>
             {
-                await gistService.RunPassthroughAsync(cmd, arguments);
+                await gistGetService.RunPassthroughAsync(cmd, arguments);
             }, argsArgument);
 
             commands.Add(command);

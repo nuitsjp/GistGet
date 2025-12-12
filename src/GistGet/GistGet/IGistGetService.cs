@@ -7,4 +7,5 @@ public interface IGistGetService
     void AuthStatus();
 
     Task<WinGetPackage?> FindByIdAsync(PackageId id);
+    Task<int> RunPassthroughAsync(string command, string[] args);
 }

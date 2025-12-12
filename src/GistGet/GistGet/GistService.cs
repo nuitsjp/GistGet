@@ -1,6 +1,6 @@
 namespace GistGet;
 
-public class GistService(IWinGetPassthroughRunner passthroughRunner) : IGistService
+public class GistService() : IGistService
 {
     public Task<Dictionary<string, GistGetPackage>> GetPackagesAsync(string? gistUrl = null, string? gistFileName = null, string? gistDescription = null)
     {
@@ -10,13 +10,6 @@ public class GistService(IWinGetPassthroughRunner passthroughRunner) : IGistServ
     public Task SavePackagesAsync(Dictionary<string, GistGetPackage> packages, string? gistFileName = null, string? gistDescription = null)
     {
         throw new NotImplementedException();
-    }
-
-    public Task<int> RunPassthroughAsync(string command, string[] args)
-    {
-        var fullArgs = new List<string> { command };
-        fullArgs.AddRange(args);
-        return passthroughRunner.RunAsync(fullArgs.ToArray());
     }
 
     public Task<bool> InstallAndSaveAsync(GistGetPackage package)
