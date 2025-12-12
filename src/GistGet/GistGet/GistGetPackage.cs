@@ -11,6 +11,12 @@ public class GistGetPackage
     [YamlMember(Alias = "version", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public string? Version { get; set; }
 
+    [YamlMember(Alias = "pin", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
+    public string? Pin { get; set; }
+
+    [YamlMember(Alias = "pinType", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
+    public string? PinType { get; set; }
+
     [YamlMember(Alias = "custom", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public string? Custom { get; set; }
 
@@ -34,6 +40,12 @@ public class GistGetPackage
 
     [YamlMember(Alias = "force", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
     public bool Force { get; set; }
+
+    [YamlMember(Alias = "acceptPackageAgreements", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
+    public bool AcceptPackageAgreements { get; set; }
+
+    [YamlMember(Alias = "acceptSourceAgreements", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
+    public bool AcceptSourceAgreements { get; set; }
 
     [YamlMember(Alias = "skipDependencies", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
     public bool SkipDependencies { get; set; }

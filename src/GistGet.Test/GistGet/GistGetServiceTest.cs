@@ -1,20 +1,23 @@
 using Moq;
 using Xunit;
 using Shouldly;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace GistGet;
 
-public class GistGetServiceTest
+public class GistGetServiceTests
 {
-    private readonly Mock<IGitHubService> _authServiceMock;
-    private readonly Mock<IConsoleService> _consoleServiceMock;
-    private readonly Mock<ICredentialService> _credentialServiceMock;
-    private readonly Mock<IWinGetPassthroughRunner> _passthroughRunnerMock;
-    private readonly GistGetService _target;
+    protected readonly Mock<IGitHubService> _authServiceMock;
+    protected readonly Mock<IConsoleService> _consoleServiceMock;
+    protected readonly Mock<ICredentialService> _credentialServiceMock;
+    protected readonly Mock<IWinGetPassthroughRunner> _passthroughRunnerMock;
+    protected readonly GistGetService _target;
 
-    delegate bool TryGetCredentialDelegate(string target, out Credential? credential);
+    protected delegate bool TryGetCredentialDelegate(string target, out Credential? credential);
 
-    public GistGetServiceTest()
+    public GistGetServiceTests()
     {
         _authServiceMock = new Mock<IGitHubService>();
         _consoleServiceMock = new Mock<IConsoleService>();
@@ -23,99 +26,318 @@ public class GistGetServiceTest
         _target = new GistGetService(_authServiceMock.Object, _consoleServiceMock.Object, _credentialServiceMock.Object, _passthroughRunnerMock.Object);
     }
 
-    [Fact]
-    public async Task AuthLoginAsync_CallsAuthServiceLogin_AndSavesCredential()
+    public class AuthLoginAsync : GistGetServiceTests
     {
-        // Arrange
-        var credential = new Credential("testuser", "gho_token");
-        _authServiceMock.Setup(x => x.LoginAsync()).ReturnsAsync(credential);
+        [Fact]
+        public async Task CallsAuthServiceLogin_AndSavesCredential()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var credential = new Credential("testuser", "gho_token");
+            _authServiceMock.Setup(x => x.LoginAsync()).ReturnsAsync(credential);
 
-        // Act
-        await _target.AuthLoginAsync();
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.AuthLoginAsync();
 
-        // Assert
-        _authServiceMock.Verify(x => x.LoginAsync(), Times.Once);
-        _credentialServiceMock.Verify(x => x.SaveCredential("git:https://github.com", credential), Times.Once);
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _authServiceMock.Verify(x => x.LoginAsync(), Times.Once);
+            _credentialServiceMock.Verify(x => x.SaveCredential("git:https://github.com", credential), Times.Once);
+        }
     }
 
-    [Fact]
-    public void AuthLogoutAsync_CallsAuthServiceLogout_AndPrintsMessage()
+    public class AuthLogout : GistGetServiceTests
     {
-        // Arrange
-        _credentialServiceMock.Setup(x => x.DeleteCredential(It.IsAny<string>())).Returns(true);
+        [Fact]
+        public void CallsAuthServiceLogout_AndPrintsMessage()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            _credentialServiceMock.Setup(x => x.DeleteCredential(It.IsAny<string>())).Returns(true);
 
-        // Act
-        _target.AuthLogout();
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            _target.AuthLogout();
 
-        // Assert
-        _credentialServiceMock.Verify(x => x.DeleteCredential("git:https://github.com"), Times.Once);
-        _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("Logged out") || s.Contains("Log out"))), Times.Once); 
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _credentialServiceMock.Verify(x => x.DeleteCredential("git:https://github.com"), Times.Once);
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("Logged out") || s.Contains("Log out"))), Times.Once);
+        }
     }
 
-    [Fact]
-    public void AuthStatus_WhenNotAuthenticated_PrintsWarning()
+    public class AuthStatus : GistGetServiceTests
     {
-        // Arrange
-        // Not mocked to return credential, so returns false by default or explicit setup
-        _credentialServiceMock
-            .Setup(x => x.TryGetCredential(It.IsAny<string>(), out It.Ref<Credential?>.IsAny))
-            .Returns(new TryGetCredentialDelegate((string target, out Credential? c) => 
+        [Fact]
+        public void WhenNotAuthenticated_PrintsWarning()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            // Not mocked to return credential, so returns false by default or explicit setup
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(It.IsAny<string>(), out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((string target, out Credential? c) =>
+                {
+                    c = null;
+                    return false;
+                }));
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            _target.AuthStatus();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("not logged in"))), Times.Once);
+        }
+
+        [Fact]
+        public void WhenAuthenticated_PrintsStatus()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var credential = new Credential("testuser", "gho_1234567890");
+
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential("git:https://github.com", out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((string target, out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            _target.AuthStatus();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("github.com"))), Times.AtLeastOnce, "Should mention host");
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("testuser"))), Times.AtLeastOnce, "Should mention username");
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("Token: **********"))), Times.AtLeastOnce, "Should mention token masked");
+        }
+    }
+
+    public class RunPassthroughAsync : GistGetServiceTests
+    {
+        [Fact]
+        public async Task CallsRunner_WithCommandAndArgs()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var command = "search";
+            var args = new[] { "vscode", "--source", "winget" };
+            var expectedArgs = new[] { "search", "vscode", "--source", "winget" };
+            var expectedExitCode = 0;
+
+            _passthroughRunnerMock.Setup(x => x.RunAsync(It.IsAny<string[]>()))
+                .ReturnsAsync(expectedExitCode);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await _target.RunPassthroughAsync(command, args);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.ShouldBe(expectedExitCode);
+            _passthroughRunnerMock.Verify(x => x.RunAsync(
+                It.Is<string[]>(a => a.SequenceEqual(expectedArgs))
+            ), Times.Once);
+        }
+    }
+
+    public class InstallAndSaveAsync : GistGetServiceTests
+    {
+        [Fact]
+        public async Task WhenNotLoggedIn_CallsLogin_ThenProceeds()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var package = new GistGetPackage { Id = "Test.Package" };
+            var savedCredential = new Credential("user", "token");
+            Credential? currentCredential = null;
+
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(It.IsAny<string>(), out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((string target, out Credential? c) =>
+                {
+                    c = currentCredential;
+                    return c != null;
+                }));
+
+            _authServiceMock.Setup(x => x.LoginAsync())
+                .ReturnsAsync(savedCredential);
+
+            _credentialServiceMock.Setup(x => x.SaveCredential(It.IsAny<string>(), It.IsAny<Credential>()))
+                .Callback<string, Credential>((t, c) => currentCredential = c);
+
+            // Mock passthrough to succeed so it doesn't fail later
+            _passthroughRunnerMock.Setup(x => x.RunAsync(It.IsAny<string[]>())).ReturnsAsync(0);
+
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new List<GistGetPackage>());
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.InstallAndSaveAsync(package);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _authServiceMock.Verify(x => x.LoginAsync(), Times.Once);
+            _passthroughRunnerMock.Verify(x => x.RunAsync(It.IsAny<string[]>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CallsWinGet_AndUpdatesGist_WithPinLogic()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Test.Package";
+            var installPackage = new GistGetPackage { Id = packageId, Silent = true }; // Version null
+            var existingPackages = new List<GistGetPackage>
             {
-                c = null;
-                return false;
-            }));
+                new GistGetPackage { Id = packageId, Pin = "1.2.3", PinType = "blocking" }
+            };
 
-        // Act
-        _target.AuthStatus();
+            // Credential setup
+            var credential = new Credential("user", "token");
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(It.IsAny<string>(), out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((string target, out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
 
-        // Assert
-        _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("not logged in"))), Times.Once);
-    }
+            // Gist setup
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(existingPackages);
 
-    [Fact]
-    public void AuthStatus_WhenAuthenticated_PrintsStatus()
-    {
-        // Arrange
-        var credential = new Credential("testuser", "gho_1234567890");
-        
-        _credentialServiceMock
-            .Setup(x => x.TryGetCredential("git:https://github.com", out It.Ref<Credential?>.IsAny))
-            .Returns(new TryGetCredentialDelegate((string target, out Credential? c) => 
+            // Runner setup
+            // Expect Install command with version 1.2.3 (from Pin)
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "install" &&
+                    args.Contains("--id") && args.Contains(packageId) &&
+                    args.Contains("--version") && args.Contains("1.2.3") &&
+                    args.Contains("--silent"))))
+                .ReturnsAsync(0);
+
+            // Expect Pin Add command (restore pin)
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "pin" && args[1] == "add" &&
+                    args.Contains("--id") && args.Contains(packageId) &&
+                    args.Contains("--version") && args.Contains("1.2.3") &&
+                    args.Contains("--blocking"))))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.InstallAndSaveAsync(installPackage);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _passthroughRunnerMock.VerifyAll();
+            // Verify SavePackagesAsync called with updated list (Pin/PinType preserved)
+            _authServiceMock.Verify(x => x.SavePackagesAsync(
+                credential.Token,
+                "",
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.Is<IReadOnlyList<GistGetPackage>>(list =>
+                    list.Any(p => p.Id == packageId && p.Pin == "1.2.3" && p.PinType == "blocking" && p.Silent == true)
+                )), Times.Once);
+        }
+
+        [Fact]
+        public async Task WithExplicitVersion_UpdatesPin()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Test.Package";
+            var explicitVersion = "2.0.0";
+            var installPackage = new GistGetPackage { Id = packageId, Version = explicitVersion };
+            var existingPackages = new List<GistGetPackage>
             {
-                c = credential;
-                return true;
-            }));
+                new GistGetPackage { Id = packageId, Pin = "1.0.0" }
+            };
 
-        // Act
-        _target.AuthStatus();
+            // Credential setup
+            var credential = new Credential("user", "token");
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(It.IsAny<string>(), out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((string target, out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
 
-        // Assert
-        _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("github.com"))), Times.AtLeastOnce, "Should mention host");
-        _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("testuser"))), Times.AtLeastOnce, "Should mention username");
-        _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("Token: **********"))), Times.AtLeastOnce, "Should mention token masked");
-    }
+            // Gist setup
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(existingPackages);
 
+            // Runner setup
+            // Expect Install command with explicit version 2.0.0
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "install" &&
+                    args.Contains("--id") && args.Contains(packageId) &&
+                    args.Contains("--version") && args.Contains(explicitVersion))))
+                .ReturnsAsync(0);
 
+            // Expect Pin Add command (update pin to 2.0.0)
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "pin" && args[1] == "add" &&
+                    args.Contains("--id") && args.Contains(packageId) &&
+                    args.Contains("--version") && args.Contains(explicitVersion))))
+                .ReturnsAsync(0);
 
-    [Fact]
-    public async Task RunPassthroughAsync_CallsRunner_WithCommandAndArgs()
-    {
-        // Arrange
-        var command = "search";
-        var args = new[] { "vscode", "--source", "winget" };
-        var expectedArgs = new[] { "search", "vscode", "--source", "winget" };
-        var expectedExitCode = 0;
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.InstallAndSaveAsync(installPackage);
 
-        _passthroughRunnerMock.Setup(x => x.RunAsync(It.IsAny<string[]>()))
-            .ReturnsAsync(expectedExitCode);
-
-        // Act
-        var result = await _target.RunPassthroughAsync(command, args);
-
-        // Assert
-        result.ShouldBe(expectedExitCode);
-        _passthroughRunnerMock.Verify(x => x.RunAsync(
-            It.Is<string[]>(a => a.SequenceEqual(expectedArgs))
-        ), Times.Once);
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _passthroughRunnerMock.VerifyAll();
+            // Verify SavePackagesAsync called with updated Pin
+            _authServiceMock.Verify(x => x.SavePackagesAsync(
+                credential.Token,
+                "",
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.Is<IReadOnlyList<GistGetPackage>>(list =>
+                    list.Any(p => p.Id == packageId && p.Pin == explicitVersion)
+                )), Times.Once);
+        }
     }
 }
