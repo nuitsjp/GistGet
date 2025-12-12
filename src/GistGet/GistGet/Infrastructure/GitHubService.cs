@@ -13,7 +13,6 @@ public class GitHubService(
     IConsoleService consoleService) : IGitHubService
 {
     private const string ClientId = "Ov23lihQJhLB6hCnEIvS"; // GistGet Client ID
-    private const string GitHubTarget = "git:https://github.com";
     private const string ProductHeader = "GistGet";
     private const string DefaultGistFileName = "gistget-packages.yaml";
     private const string DefaultGistDescription = "GistGet Packages";
@@ -179,7 +178,7 @@ public class GitHubService(
             return token;
         }
 
-        if (credentialService.TryGetCredential(GitHubTarget, out var credential) &&
+        if (credentialService.TryGetCredential(out var credential) &&
             !string.IsNullOrWhiteSpace(credential.Token))
         {
             return credential.Token;

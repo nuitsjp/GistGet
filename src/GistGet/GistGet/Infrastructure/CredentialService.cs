@@ -7,12 +7,23 @@ namespace GistGet.Infrastructure;
 
 public class CredentialService : ICredentialService
 {
-    public bool SaveCredential(string target, Credential credential)
+    private readonly string _targetName;
+
+    public CredentialService() : this("git:https://github.com")
+    {
+    }
+
+    public CredentialService(string targetName)
+    {
+        _targetName = targetName;
+    }
+
+    public bool SaveCredential(Credential credential)
     {
         var credStruct = new CREDENTIAL
         {
             Type = CRED_TYPE.GENERIC,
-            TargetName = target,
+            TargetName = _targetName,
             UserName = credential.Username,
             CredentialBlobSize = Encoding.UTF8.GetByteCount(credential.Token),
             CredentialBlob = Marshal.StringToCoTaskMemUTF8(credential.Token),
@@ -35,10 +46,10 @@ public class CredentialService : ICredentialService
         }
     }
 
-    public bool TryGetCredential(string target, [NotNullWhen(true)] out Credential? credential)
+    public bool TryGetCredential([NotNullWhen(true)] out Credential? credential)
     {
         credential = null;
-        if (NativeMethods.CredRead(target, CRED_TYPE.GENERIC, 0, out var credentialPtr))
+        if (NativeMethods.CredRead(_targetName, CRED_TYPE.GENERIC, 0, out var credentialPtr))
         {
             try
             {
@@ -61,9 +72,9 @@ public class CredentialService : ICredentialService
         return false;
     }
 
-    public bool DeleteCredential(string target)
+    public bool DeleteCredential()
     {
-        if (!NativeMethods.CredDelete(target, CRED_TYPE.GENERIC, 0))
+        if (!NativeMethods.CredDelete(_targetName, CRED_TYPE.GENERIC, 0))
         {
             var error = Marshal.GetLastWin32Error();
             // 1168 = ERROR_NOT_FOUND

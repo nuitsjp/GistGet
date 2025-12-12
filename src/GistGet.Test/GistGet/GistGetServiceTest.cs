@@ -15,7 +15,7 @@ public class GistGetServiceTests
     protected readonly Mock<IWinGetPassthroughRunner> _passthroughRunnerMock;
     protected readonly GistGetService _target;
 
-    protected delegate bool TryGetCredentialDelegate(string target, out Credential? credential);
+    protected delegate bool TryGetCredentialDelegate(out Credential? credential);
 
     public GistGetServiceTests()
     {
@@ -46,7 +46,7 @@ public class GistGetServiceTests
             // Assert
             // -------------------------------------------------------------------
             _authServiceMock.Verify(x => x.LoginAsync(), Times.Once);
-            _credentialServiceMock.Verify(x => x.SaveCredential("git:https://github.com", credential), Times.Once);
+            _credentialServiceMock.Verify(x => x.SaveCredential(credential), Times.Once);
         }
     }
 
@@ -58,7 +58,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------------
-            _credentialServiceMock.Setup(x => x.DeleteCredential(It.IsAny<string>())).Returns(true);
+            _credentialServiceMock.Setup(x => x.DeleteCredential()).Returns(true);
 
             // -------------------------------------------------------------------
             // Act
@@ -68,7 +68,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------------
-            _credentialServiceMock.Verify(x => x.DeleteCredential("git:https://github.com"), Times.Once);
+            _credentialServiceMock.Verify(x => x.DeleteCredential(), Times.Once);
             _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("Logged out") || s.Contains("Log out"))), Times.Once);
         }
     }
@@ -83,8 +83,8 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Not mocked to return credential, so returns false by default or explicit setup
             _credentialServiceMock
-                .Setup(x => x.TryGetCredential(It.IsAny<string>(), out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((string target, out Credential? c) =>
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
                 {
                     c = null;
                     return false;
@@ -110,8 +110,8 @@ public class GistGetServiceTests
             var credential = new Credential("testuser", "gho_1234567890");
 
             _credentialServiceMock
-                .Setup(x => x.TryGetCredential("git:https://github.com", out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((string target, out Credential? c) =>
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
                 {
                     c = credential;
                     return true;
@@ -175,8 +175,8 @@ public class GistGetServiceTests
             Credential? currentCredential = null;
 
             _credentialServiceMock
-                .Setup(x => x.TryGetCredential(It.IsAny<string>(), out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((string target, out Credential? c) =>
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
                 {
                     c = currentCredential;
                     return c != null;
@@ -185,8 +185,8 @@ public class GistGetServiceTests
             _authServiceMock.Setup(x => x.LoginAsync())
                 .ReturnsAsync(savedCredential);
 
-            _credentialServiceMock.Setup(x => x.SaveCredential(It.IsAny<string>(), It.IsAny<Credential>()))
-                .Callback<string, Credential>((t, c) => currentCredential = c);
+            _credentialServiceMock.Setup(x => x.SaveCredential(It.IsAny<Credential>()))
+                .Callback<Credential>((c) => currentCredential = c);
 
             // Mock passthrough to succeed so it doesn't fail later
             _passthroughRunnerMock.Setup(x => x.RunAsync(It.IsAny<string[]>())).ReturnsAsync(0);
@@ -223,8 +223,8 @@ public class GistGetServiceTests
             // Credential setup
             var credential = new Credential("user", "token");
             _credentialServiceMock
-                .Setup(x => x.TryGetCredential(It.IsAny<string>(), out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((string target, out Credential? c) =>
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
                 {
                     c = credential;
                     return true;
@@ -291,8 +291,8 @@ public class GistGetServiceTests
             // Credential setup
             var credential = new Credential("user", "token");
             _credentialServiceMock
-                .Setup(x => x.TryGetCredential(It.IsAny<string>(), out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((string target, out Credential? c) =>
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
                 {
                     c = credential;
                     return true;

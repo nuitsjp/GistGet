@@ -15,18 +15,18 @@ public class GistGetService(
     public async Task AuthLoginAsync()
     {
         var credential = await gitHubService.LoginAsync();
-        credentialService.SaveCredential("git:https://github.com", credential);
+        credentialService.SaveCredential(credential);
     }
 
     public void AuthLogout()
     {
-        credentialService.DeleteCredential("git:https://github.com");
+        credentialService.DeleteCredential();
         consoleService.WriteInfo("Logged out");
     }
 
     public void AuthStatus()
     {
-        if (credentialService.TryGetCredential("git:https://github.com", out var credential))
+        if (credentialService.TryGetCredential(out var credential))
         {
              var maskedToken = !string.IsNullOrEmpty(credential.Token) ? new string('*', credential.Token.Length) : "**********";
 
@@ -43,10 +43,10 @@ public class GistGetService(
     public async Task InstallAndSaveAsync(GistGetPackage package)
     {
         // 1. Auth Check & Login
-        if (!credentialService.TryGetCredential("git:https://github.com", out var credential) || credential == null)
+        if (!credentialService.TryGetCredential(out var credential) || credential == null)
         {
             await AuthLoginAsync();
-            if (!credentialService.TryGetCredential("git:https://github.com", out credential) || credential == null)
+            if (!credentialService.TryGetCredential(out credential) || credential == null)
             {
                 throw new InvalidOperationException("Failed to retrieve credentials after login.");
             }

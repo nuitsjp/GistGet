@@ -6,7 +6,7 @@ namespace GistGet.Infrastructure;
 
 public class GitHubServiceTests
 {
-    protected const string GitHubTarget = "git:https://github.com";
+
     protected readonly ICredentialService CredentialService = new CredentialService();
     protected readonly Mock<IConsoleService> ConsoleServiceMock = new();
 
@@ -30,7 +30,7 @@ public class GitHubServiceTests
 
     protected async Task<(GitHubClient Client, string Token, Gist Gist)?> CreateIsolatedGistAsync(string fileName, string description, string initialContent)
     {
-        if (!CredentialService.TryGetCredential(GitHubTarget, out var credential) || string.IsNullOrEmpty(credential.Token))
+        if (!CredentialService.TryGetCredential(out var credential) || string.IsNullOrEmpty(credential.Token))
         {
             // Skip test if no credential
             return null;
