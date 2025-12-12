@@ -4,7 +4,7 @@ using Spectre.Console;
 
 namespace GistGet.Presentation;
 
-public class CommandBuilder(IGistService gistService, IGitHubService gitHubService, IGistGetService gistGetService)
+public class CommandBuilder(IGitHubService gitHubService, IGistGetService gistGetService)
 {
     public RootCommand Build()
     {
@@ -136,14 +136,7 @@ public class CommandBuilder(IGistService gistService, IGitHubService gitHubServi
                 Custom = parseResult.GetValueForOption(customOption)
             };
 
-            if (await gistService.InstallAndSaveAsync(package))
-            {
-                AnsiConsole.MarkupLine($"[green]Installed and saved {package.Id}[/]");
-            }
-            else
-            {
-                AnsiConsole.MarkupLine($"[red]Failed to install {package.Id}[/]");
-            }
+            await gistGetService.InstallAndSaveAsync(package);
         });
 
         return command;
@@ -157,14 +150,7 @@ public class CommandBuilder(IGistService gistService, IGitHubService gitHubServi
 
         command.SetHandler(async id =>
         {
-            if (await gistService.UninstallAndSaveAsync(id))
-            {
-                AnsiConsole.MarkupLine($"[green]Uninstalled and updated Gist for {id}[/]");
-            }
-            else
-            {
-                AnsiConsole.MarkupLine($"[red]Failed to uninstall {id}[/]");
-            }
+            await gistGetService.UninstallAndSaveAsync(id);
         }, idOption);
 
         return command;
@@ -193,14 +179,7 @@ public class CommandBuilder(IGistService gistService, IGitHubService gitHubServi
             // If ID is specified, perform managed upgrade
             if (!string.IsNullOrWhiteSpace(id))
             {
-                if (await gistService.UpgradeAndSaveAsync(id, version))
-                {
-                    AnsiConsole.MarkupLine($"[green]Upgraded and saved {id}[/]");
-                }
-                else
-                {
-                    AnsiConsole.MarkupLine($"[red]Failed to upgrade {id}[/]");
-                }
+                await gistGetService.UpgradeAndSaveAsync(id, version);
             }
             else
             {
@@ -254,14 +233,7 @@ public class CommandBuilder(IGistService gistService, IGitHubService gitHubServi
         add.Add(addVersion);
         add.SetHandler(async (id, version) =>
         {
-            if (await gistService.PinAddAndSaveAsync(id, version))
-            {
-                AnsiConsole.MarkupLine($"[green]Pinned {id} to version {version} and saved to Gist[/]");
-            }
-            else
-            {
-                AnsiConsole.MarkupLine($"[red]Failed to pin {id}[/]");
-            }
+            await gistGetService.PinAddAndSaveAsync(id, version);
         }, addId, addVersion);
         command.Add(add);
 
@@ -270,14 +242,7 @@ public class CommandBuilder(IGistService gistService, IGitHubService gitHubServi
         remove.Add(removeId);
         remove.SetHandler(async id =>
         {
-            if (await gistService.PinRemoveAndSaveAsync(id))
-            {
-                AnsiConsole.MarkupLine($"[green]Unpinned {id} and updated Gist[/]");
-            }
-            else
-            {
-                AnsiConsole.MarkupLine($"[red]Failed to unpin {id}[/]");
-            }
+            await gistGetService.PinRemoveAndSaveAsync(id);
         }, removeId);
         command.Add(remove);
 

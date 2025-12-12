@@ -9,7 +9,6 @@ ServiceCollection services = new();
 
 // GistGet
 services.AddTransient<IGitHubService, GitHubService>();
-services.AddTransient<IGistService, GistService>();
 services.AddTransient<IGistGetService, GistGetService>();
 
 // Presentation

@@ -42,6 +42,31 @@ public class GistGetService(
         throw new NotImplementedException();
     }
 
+    public Task InstallAndSaveAsync(GistGetPackage package)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task UninstallAndSaveAsync(string packageId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task UpgradeAndSaveAsync(string packageId, string? version = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task PinAddAndSaveAsync(string packageId, string version)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task PinRemoveAndSaveAsync(string packageId)
+    {
+        throw new NotImplementedException();
+    }
+
     public Task<int> RunPassthroughAsync(string command, string[] args)
     {
         var fullArgs = new List<string> { command };
