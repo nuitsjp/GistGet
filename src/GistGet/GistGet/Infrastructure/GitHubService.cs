@@ -50,11 +50,17 @@ public class GitHubService(
         return request;
     }
 
-    public Task StatusAsync()
+    public async Task<TokenStatus> GetTokenStatusAsync(string token)
     {
-        // Status check is handled by GistGetService currently, as per design interpretation in plan.
-        // Plan says: "Task.CompletedTask ‚р•Ф‚· (‚Ь‚Ѕ‚НЋА‘•‚И‚µ)"
-        return Task.CompletedTask;
+        var client = CreateClient(token);
+        
+        // This call will verify the token and populate LastApiInfo with headers (including scopes)
+        var user = await client.User.Current();
+        
+        var apiInfo = client.GetLastApiInfo();
+        var scopes = apiInfo?.OauthScopes ?? new List<string>();
+
+        return new TokenStatus(user.Login, scopes.ToList());
     }
 
     public async Task<IReadOnlyList<GistGetPackage>> GetPackagesAsync(string token, string gistUrl, string gistFileName, string gistDescription)

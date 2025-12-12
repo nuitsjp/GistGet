@@ -4,7 +4,7 @@ public interface IGistGetService
 {
     Task AuthLoginAsync();
     void AuthLogout();
-    void AuthStatus();
+    Task AuthStatusAsync();
 
     Task InstallAndSaveAsync(GistGetPackage package);
     Task UninstallAndSaveAsync(string packageId);

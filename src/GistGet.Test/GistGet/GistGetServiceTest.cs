@@ -76,12 +76,11 @@ public class GistGetServiceTests
     public class AuthStatus : GistGetServiceTests
     {
         [Fact]
-        public void WhenNotAuthenticated_PrintsWarning()
+        public async Task WhenNotAuthenticated_PrintsWarning()
         {
             // -------------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------------
-            // Not mocked to return credential, so returns false by default or explicit setup
             _credentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
                 .Returns(new TryGetCredentialDelegate((out Credential? c) =>
@@ -93,7 +92,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            _target.AuthStatus();
+            await _target.AuthStatusAsync();
 
             // -------------------------------------------------------------------
             // Assert
@@ -102,13 +101,14 @@ public class GistGetServiceTests
         }
 
         [Fact]
-        public void WhenAuthenticated_PrintsStatus()
+        public async Task WhenAuthenticated_PrintsStatus()
         {
             // -------------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------------
             var credential = new Credential("testuser", "gho_1234567890");
-
+            var scopes = new List<string> { "gist", "read:org" };
+            
             _credentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
                 .Returns(new TryGetCredentialDelegate((out Credential? c) =>
@@ -117,17 +117,24 @@ public class GistGetServiceTests
                     return true;
                 }));
 
+            _authServiceMock
+                .Setup(x => x.GetTokenStatusAsync(credential.Token))
+                .ReturnsAsync(new TokenStatus("testuser", scopes));
+
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            _target.AuthStatus();
+            await _target.AuthStatusAsync();
 
             // -------------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------------
-            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("github.com"))), Times.AtLeastOnce, "Should mention host");
-            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("testuser"))), Times.AtLeastOnce, "Should mention username");
-            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("Token: **********"))), Times.AtLeastOnce, "Should mention token masked");
+            _consoleServiceMock.Verify(x => x.WriteInfo("github.com"), Times.Once);
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("✓ Logged in to github.com account testuser (keyring)"))), Times.Once);
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("- Active account: true"))), Times.Once);
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("- Git operations protocol: https"))), Times.Once);
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("- Token: gho_**********"))), Times.Once);
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("- Token scopes: 'gist', 'read:org'"))), Times.Once);
         }
     }
 

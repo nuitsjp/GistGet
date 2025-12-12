@@ -68,7 +68,7 @@ public class CommandBuilder(IGitHubService gitHubService, IGistGetService gistGe
         command.Add(logout);
 
         var status = new Command("status", "Check authentication status");
-        status.SetHandler(gistGetService.AuthStatus);
+        status.SetHandler(gistGetService.AuthStatusAsync);
         command.Add(status);
 
         return command;

@@ -24,15 +24,39 @@ public class GistGetService(
         consoleService.WriteInfo("Logged out");
     }
 
-    public void AuthStatus()
+    public async Task AuthStatusAsync()
     {
         if (credentialService.TryGetCredential(out var credential))
         {
-             var maskedToken = !string.IsNullOrEmpty(credential.Token) ? new string('*', credential.Token.Length) : "**********";
+             try
+             {
+                 var status = await gitHubService.GetTokenStatusAsync(credential.Token);
 
-             consoleService.WriteInfo("github.com");
-             consoleService.WriteInfo($"  ✓ Logged in to github.com as {credential.Username} (keyring)");
-             consoleService.WriteInfo($"  ✓ Token: {maskedToken}");
+                 var tokenSafeDisplay = "**********";
+                 if (!string.IsNullOrEmpty(credential.Token) && credential.Token.StartsWith("gho_"))
+                 {
+                     tokenSafeDisplay = "gho_**********";
+                 }
+                 else if (!string.IsNullOrEmpty(credential.Token) && credential.Token.Length > 4)
+                 {
+                     tokenSafeDisplay = credential.Token[..4] + "**********";
+                 }
+
+                 var scopesStr = string.Join(", ", status.Scopes.Select(s => $"'{s}'"));
+
+                 consoleService.WriteInfo("github.com");
+                 consoleService.WriteInfo($"  ✓ Logged in to github.com account {status.Username} (keyring)");
+                 consoleService.WriteInfo("  - Active account: true");
+                 consoleService.WriteInfo("  - Git operations protocol: https");
+                 consoleService.WriteInfo($"  - Token: {tokenSafeDisplay}");
+                 consoleService.WriteInfo($"  - Token scopes: {scopesStr}");
+             }
+             catch (Exception ex)
+             {
+                 consoleService.WriteInfo($"Failed to retrieve status from GitHub: {ex.Message}");
+                 // Still show basic info if we have credential but API failed?
+                 // Current requirement implies successful status check layout.
+             }
         }
         else
         {
@@ -123,7 +147,7 @@ public class GistGetService(
                 if (pinTypeToSet.Equals("blocking", StringComparison.OrdinalIgnoreCase)) pinArgs.Add("--blocking");
                 // gating is complex with wildcards, simplistic handling here if needed
             }
-             await passthroughRunner.RunAsync(pinArgs.ToArray());
+            await passthroughRunner.RunAsync(pinArgs.ToArray());
         }
 
 
