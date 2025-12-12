@@ -4,7 +4,7 @@ using Spectre.Console;
 
 namespace GistGet.Presentation;
 
-public class CommandBuilder(IPackageService packageService, IGistService gistService, IGitHubService gitHubService, IGistGetService gistGetService)
+public class CommandBuilder(IGistService gistService, IGitHubService gitHubService, IGistGetService gistGetService)
 {
     public RootCommand Build()
     {
@@ -136,7 +136,7 @@ public class CommandBuilder(IPackageService packageService, IGistService gistSer
                 Custom = parseResult.GetValueForOption(customOption)
             };
 
-            if (await packageService.InstallAndSaveAsync(package))
+            if (await gistService.InstallAndSaveAsync(package))
             {
                 AnsiConsole.MarkupLine($"[green]Installed and saved {package.Id}[/]");
             }
@@ -157,7 +157,7 @@ public class CommandBuilder(IPackageService packageService, IGistService gistSer
 
         command.SetHandler(async (string id) =>
         {
-            if (await packageService.UninstallAndSaveAsync(id))
+            if (await gistService.UninstallAndSaveAsync(id))
             {
                 AnsiConsole.MarkupLine($"[green]Uninstalled and updated Gist for {id}[/]");
             }
@@ -193,7 +193,7 @@ public class CommandBuilder(IPackageService packageService, IGistService gistSer
             // If ID is specified, perform managed upgrade
             if (!string.IsNullOrWhiteSpace(id))
             {
-                if (await packageService.UpgradeAndSaveAsync(id, version))
+                if (await gistService.UpgradeAndSaveAsync(id, version))
                 {
                     AnsiConsole.MarkupLine($"[green]Upgraded and saved {id}[/]");
                 }
@@ -207,49 +207,36 @@ public class CommandBuilder(IPackageService packageService, IGistService gistSer
                 // If ID is missing, pass through everything to winget
                 // Reconstruct arguments from tokens
                 var tokens = parseResult.Tokens.Select(t => t.Value).ToList();
+                var argsToPass = new System.Collections.Generic.List<string>();
+                bool foundUpgrade = false;
 
-                // We need to be careful not to duplicate "upgrade" if it's already in tokens, 
-                // but usually tokens are what follows the command.
-                // However, System.CommandLine might parse differently.
-                // Let's just grab all arguments passed to the process after "upgrade"
-                // But simpler: just use the tokens that were not matched or even all tokens?
-                // Actually, for passthrough, we want exactly what the user typed after "upgrade".
+                foreach (var token in tokens)
+                {
+                    if (!foundUpgrade && token.Equals("upgrade", StringComparison.OrdinalIgnoreCase))
+                    {
+                        foundUpgrade = true;
+                        continue;
+                    }
+                    
+                    // If we haven't found "upgrade" yet, it might be the root command or something else we want to skip.
+                    // But if we are in this handler, "upgrade" must be present.
+                    // Once we found "upgrade", everything else is an argument.
+                    if (foundUpgrade)
+                    {
+                        argsToPass.Add(token);
+                    }
+                }
 
-                // A safer approach for passthrough in this architecture might be to just take all unmatched tokens
-                // plus the matched ones if we can reconstruct them, OR just rely on the fact that 
-                // if we are here, we want to run `winget upgrade [args]`.
+                // Fallback: if "upgrade" wasn't found in tokens (unlikely), pass all tokens? 
+                // Or maybe tokens didn't include "upgrade" if it was invoked via alias? 
+                // For now assuming "upgrade" is present.
+                if (!foundUpgrade && tokens.Count > 0)
+                {
+                     // If tokens are just arguments (e.g. implied command?), pass them all.
+                     argsToPass.AddRange(tokens);
+                }
 
-                // Let's collect all tokens from the parse result that belong to this command's scope.
-                // But simpler: just pass the raw args excluding the root command?
-                // The _executor.RunPassthroughAsync takes "command" and "args".
-                // "command" is "upgrade". "args" should be the rest.
-
-                // Let's try to use the UnmatchedTokens if any, plus the values of options if they were parsed?
-                // No, if we set TreatUnmatchedTokensAsErrors = false, they end up in UnmatchedTokens.
-                // But "package" argument might have consumed something if it looked like an ID?
-                // Wait, if "package" argument is ZeroOrOne, it might consume the first arg.
-                // If `id` is null/empty, it means it didn't match or wasn't provided.
-
-                // If the user typed `gistget upgrade --all`, `--all` is unmatched (since we didn't define it).
-                // `id` (argument) will be null because `--all` starts with `-`.
-
-                // So we can collect all tokens.
-                var allTokens = parseResult.Tokens.Select(t => t.Value).ToArray();
-                // Also need to include unmatched tokens?
-                var unmatched = parseResult.UnmatchedTokens.ToArray();
-
-                // Actually, `parseResult.Tokens` contains the tokens that were parsed for this command.
-                // `parseResult.UnmatchedTokens` contains what wasn't understood.
-                // We want to reconstruct the command line.
-
-                var argsList = new System.Collections.Generic.List<string>();
-                argsList.AddRange(parseResult.Tokens.Select(t => t.Value));
-                argsList.AddRange(parseResult.UnmatchedTokens);
-
-                // Note: This simple reconstruction might lose order or exact formatting, 
-                // but for winget passthrough it's usually sufficient.
-
-                await packageService.RunPassthroughAsync("upgrade", argsList.ToArray());
+                await gistService.RunPassthroughAsync("upgrade", argsToPass.ToArray());
             }
         });
 
@@ -267,7 +254,7 @@ public class CommandBuilder(IPackageService packageService, IGistService gistSer
         add.Add(addVersion);
         add.SetHandler(async (string id, string version) =>
         {
-            if (await packageService.PinAddAndSaveAsync(id, version))
+            if (await gistService.PinAddAndSaveAsync(id, version))
             {
                 AnsiConsole.MarkupLine($"[green]Pinned {id} to version {version} and saved to Gist[/]");
             }
@@ -283,7 +270,7 @@ public class CommandBuilder(IPackageService packageService, IGistService gistSer
         remove.Add(removeId);
         remove.SetHandler(async (string id) =>
         {
-            if (await packageService.PinRemoveAndSaveAsync(id))
+            if (await gistService.PinRemoveAndSaveAsync(id))
             {
                 AnsiConsole.MarkupLine($"[green]Unpinned {id} and updated Gist[/]");
             }
@@ -301,7 +288,7 @@ public class CommandBuilder(IPackageService packageService, IGistService gistSer
         {
             var allArgs = new System.Collections.Generic.List<string> { "list" };
             allArgs.AddRange(args);
-            await packageService.RunPassthroughAsync("pin", allArgs.ToArray());
+            await gistService.RunPassthroughAsync("pin", allArgs.ToArray());
         }, listArgs);
         command.Add(list);
 
@@ -312,7 +299,7 @@ public class CommandBuilder(IPackageService packageService, IGistService gistSer
         {
             var allArgs = new System.Collections.Generic.List<string> { "reset" };
             allArgs.AddRange(args);
-            await packageService.RunPassthroughAsync("pin", allArgs.ToArray());
+            await gistService.RunPassthroughAsync("pin", allArgs.ToArray());
         }, resetArgs);
         command.Add(reset);
 
@@ -335,7 +322,7 @@ public class CommandBuilder(IPackageService packageService, IGistService gistSer
 
             command.SetHandler(async (string[] arguments) =>
             {
-                await packageService.RunPassthroughAsync(cmd, arguments);
+                await gistService.RunPassthroughAsync(cmd, arguments);
             }, argsArgument);
 
             commands.Add(command);

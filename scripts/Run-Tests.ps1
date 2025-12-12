@@ -39,7 +39,7 @@ Write-Host ""
 
 # Build the solution first
 Write-Host "Building solution..." -ForegroundColor Green
-dotnet build "$repoRoot\GistGet.sln" -c $Configuration
+dotnet build "$repoRoot\GistGet.slnx" -c $Configuration
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Build failed!" -ForegroundColor Red
     exit $LASTEXITCODE
@@ -51,7 +51,7 @@ Write-Host "Running tests..." -ForegroundColor Green
 
 $testArgs = @(
     "test",
-    "$repoRoot\src\GistGet.Tests\GistGet.Tests.csproj",
+    "$repoRoot\src\GistGet.Test\GistGet.Test.csproj",
     "-c", $Configuration,
     "--no-build",
     "--verbosity", "normal"

@@ -1,6 +1,7 @@
 ﻿using System.CommandLine;
 using GistGet;
 using GistGet.Infrastructure;
+using GistGet.Infrastructure.Diagnostics;
 using GistGet.Presentation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,7 +9,6 @@ ServiceCollection services = new();
 
 // GistGet
 services.AddTransient<IGitHubService, GitHubService>();
-services.AddTransient<IPackageService, PackageService>();
 services.AddTransient<IGistService, GistService>();
 services.AddTransient<IGistGetService, GistGetService>();
 
@@ -18,6 +18,7 @@ services.AddTransient<IConsoleService, ConsoleService>();
 
 // Infrastructure
 services.AddTransient<ICredentialService, CredentialService>();
+services.AddTransient<IWinGetPassthroughRunner, WinGetPassthroughRunner>();
 
 await services
     .BuildServiceProvider()
