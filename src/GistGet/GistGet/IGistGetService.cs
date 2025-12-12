@@ -6,7 +6,6 @@ public interface IGistGetService
     void AuthLogout();
     void AuthStatus();
 
-    Task<WinGetPackage?> FindByIdAsync(PackageId id);
     Task InstallAndSaveAsync(GistGetPackage package);
     Task UninstallAndSaveAsync(string packageId);
     Task UpgradeAndSaveAsync(string packageId, string? version = null);

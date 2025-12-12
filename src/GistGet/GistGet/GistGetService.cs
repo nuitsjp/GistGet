@@ -37,11 +37,6 @@ public class GistGetService(
         }
     }
 
-    public Task<WinGetPackage?> FindByIdAsync(PackageId id)
-    {
-        throw new NotImplementedException();
-    }
-
     public Task InstallAndSaveAsync(GistGetPackage package)
     {
         throw new NotImplementedException();
