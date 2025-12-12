@@ -1,4 +1,4 @@
-using GistGet;
+namespace GistGet;
 
 public class GistService(IWinGetPassthroughRunner passthroughRunner) : IGistService
 {

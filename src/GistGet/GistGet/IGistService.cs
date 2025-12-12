@@ -1,4 +1,4 @@
-using GistGet;
+namespace GistGet;
 
 public interface IGistService
 {
