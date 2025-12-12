@@ -5,17 +5,10 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace GistGet.Infrastructure;
 
-public class CredentialService : ICredentialService
+public class CredentialService(string targetName) : ICredentialService
 {
-    private readonly string _targetName;
-
     public CredentialService() : this("git:https://github.com")
     {
-    }
-
-    public CredentialService(string targetName)
-    {
-        _targetName = targetName;
     }
 
     public bool SaveCredential(Credential credential)
@@ -23,7 +16,7 @@ public class CredentialService : ICredentialService
         var credStruct = new CREDENTIAL
         {
             Type = CRED_TYPE.GENERIC,
-            TargetName = _targetName,
+            TargetName = targetName,
             UserName = credential.Username,
             CredentialBlobSize = Encoding.UTF8.GetByteCount(credential.Token),
             CredentialBlob = Marshal.StringToCoTaskMemUTF8(credential.Token),
@@ -49,7 +42,7 @@ public class CredentialService : ICredentialService
     public bool TryGetCredential([NotNullWhen(true)] out Credential? credential)
     {
         credential = null;
-        if (NativeMethods.CredRead(_targetName, CRED_TYPE.GENERIC, 0, out var credentialPtr))
+        if (NativeMethods.CredRead(targetName, CRED_TYPE.GENERIC, 0, out var credentialPtr))
         {
             try
             {
@@ -74,7 +67,7 @@ public class CredentialService : ICredentialService
 
     public bool DeleteCredential()
     {
-        if (!NativeMethods.CredDelete(_targetName, CRED_TYPE.GENERIC, 0))
+        if (!NativeMethods.CredDelete(targetName, CRED_TYPE.GENERIC, 0))
         {
             var error = Marshal.GetLastWin32Error();
             // 1168 = ERROR_NOT_FOUND
