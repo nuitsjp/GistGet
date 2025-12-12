@@ -24,11 +24,21 @@ public class GitHubService(
 
         var deviceFlowResponse = await client.Oauth.InitiateDeviceFlow(request);
 
-        consoleService.WriteInfo("First sequence of Device Flow complete.");
-        consoleService.WriteInfo($"Please visit {deviceFlowResponse.VerificationUri} and enter the code: {deviceFlowResponse.UserCode}");
+        // Copy user code to clipboard
+        try
+        {
+            consoleService.SetClipboard(deviceFlowResponse.UserCode);
+        }
+        catch { /* Ignore if clipboard operation fails */ }
 
-        // Open browser automatically if possible, or just let user do it.
-        // The requirement says "display code and URL".
+        // Display message in gh CLI style
+        consoleService.WriteWarning($"First copy your one-time code: {deviceFlowResponse.UserCode}");
+        consoleService.WriteInfo($"Press Enter to open {deviceFlowResponse.VerificationUri} in your browser...");
+
+        // Wait for user to press Enter
+        consoleService.ReadLine();
+
+        // Open browser after user presses Enter
         try
         {
             Process.Start(new ProcessStartInfo(deviceFlowResponse.VerificationUri) { UseShellExecute = true });
