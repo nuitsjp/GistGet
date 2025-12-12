@@ -108,7 +108,7 @@ public class CommandBuilder(IGistService gistService, IGitHubService gitHubServi
         command.Add(installerTypeOption);
         command.Add(customOption);
 
-        command.SetHandler(async (InvocationContext context) =>
+        command.SetHandler(async context =>
         {
             var parseResult = context.ParseResult;
             var id = parseResult.GetValueForOption(idOption) ?? string.Empty;
@@ -155,7 +155,7 @@ public class CommandBuilder(IGistService gistService, IGitHubService gitHubServi
         var idOption = new Option<string>("--id", "Package ID") { IsRequired = true };
         command.Add(idOption);
 
-        command.SetHandler(async (string id) =>
+        command.SetHandler(async id =>
         {
             if (await gistService.UninstallAndSaveAsync(id))
             {
@@ -184,7 +184,7 @@ public class CommandBuilder(IGistService gistService, IGitHubService gitHubServi
         // Allow unmatched tokens to be collected for passthrough
         command.TreatUnmatchedTokensAsErrors = false;
 
-        command.SetHandler(async (InvocationContext context) =>
+        command.SetHandler(async context =>
         {
             var parseResult = context.ParseResult;
             var id = parseResult.GetValueForOption(idOption) ?? parseResult.GetValueForArgument(idArgument);
@@ -252,7 +252,7 @@ public class CommandBuilder(IGistService gistService, IGitHubService gitHubServi
         var addVersion = new Option<string>("--version", "Version to pin") { IsRequired = true };
         add.Add(addId);
         add.Add(addVersion);
-        add.SetHandler(async (string id, string version) =>
+        add.SetHandler(async (id, version) =>
         {
             if (await gistService.PinAddAndSaveAsync(id, version))
             {
@@ -268,7 +268,7 @@ public class CommandBuilder(IGistService gistService, IGitHubService gitHubServi
         var remove = new Command("remove", "Remove a package pin");
         var removeId = new Argument<string>("package", "Package ID");
         remove.Add(removeId);
-        remove.SetHandler(async (string id) =>
+        remove.SetHandler(async id =>
         {
             if (await gistService.PinRemoveAndSaveAsync(id))
             {
@@ -284,7 +284,7 @@ public class CommandBuilder(IGistService gistService, IGitHubService gitHubServi
         var list = new Command("list", "List pinned packages");
         var listArgs = new Argument<string[]>("args") { Arity = ArgumentArity.ZeroOrMore };
         list.Add(listArgs);
-        list.SetHandler(async (string[] args) =>
+        list.SetHandler(async args =>
         {
             var allArgs = new List<string> { "list" };
             allArgs.AddRange(args);
@@ -295,7 +295,7 @@ public class CommandBuilder(IGistService gistService, IGitHubService gitHubServi
         var reset = new Command("reset", "Reset all pins");
         var resetArgs = new Argument<string[]>("args") { Arity = ArgumentArity.ZeroOrMore };
         reset.Add(resetArgs);
-        reset.SetHandler(async (string[] args) =>
+        reset.SetHandler(async args =>
         {
             var allArgs = new List<string> { "reset" };
             allArgs.AddRange(args);
@@ -320,7 +320,7 @@ public class CommandBuilder(IGistService gistService, IGitHubService gitHubServi
             var argsArgument = new Argument<string[]>("arguments") { Arity = ArgumentArity.ZeroOrMore };
             command.Add(argsArgument);
 
-            command.SetHandler(async (string[] arguments) =>
+            command.SetHandler(async arguments =>
             {
                 await gistGetService.RunPassthroughAsync(cmd, arguments);
             }, argsArgument);
