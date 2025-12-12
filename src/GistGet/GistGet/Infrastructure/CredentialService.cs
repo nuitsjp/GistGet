@@ -39,9 +39,9 @@ public class CredentialService(string targetName) : ICredentialService
         }
     }
 
-    public bool TryGetCredential([NotNullWhen(true)] out Credential? credential)
+    public bool TryGetCredential([NotNullWhen(true)] out Credential credential)
     {
-        credential = null;
+        credential = null!;
         if (NativeMethods.CredRead(targetName, CRED_TYPE.GENERIC, 0, out var credentialPtr))
         {
             try

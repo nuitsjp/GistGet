@@ -43,10 +43,10 @@ public class GistGetService(
     public async Task InstallAndSaveAsync(GistGetPackage package)
     {
         // 1. Auth Check & Login
-        if (!credentialService.TryGetCredential(out var credential) || credential == null)
+        if (!credentialService.TryGetCredential(out var credential))
         {
             await AuthLoginAsync();
-            if (!credentialService.TryGetCredential(out credential) || credential == null)
+            if (!credentialService.TryGetCredential(out credential))
             {
                 throw new InvalidOperationException("Failed to retrieve credentials after login.");
             }
