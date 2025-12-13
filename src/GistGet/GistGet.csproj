@@ -3,13 +3,28 @@
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
 		<TargetFramework>net8.0-windows10.0.26100.0</TargetFramework>
-		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
 		<Platforms>x64;ARM64</Platforms>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<LangVersion>latest</LangVersion>
 		<MicrosoftManagementDeployment-FactoryLinkage>static</MicrosoftManagementDeployment-FactoryLinkage>
 		<RootNamespace></RootNamespace>
+
+		<!-- パッケージ情報 -->
+		<Version>0.1.0</Version>
+		<Authors>nuitsjp</Authors>
+		<Company>nuitsjp</Company>
+		<Product>GistGet</Product>
+		<Description>Windows Package Manager Cloud Sync Tool</Description>
+		<Copyright>Copyright (c) nuitsjp. All rights reserved.</Copyright>
+		<RepositoryUrl>https://github.com/nuitsjp/GistGet</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+
+		<!-- 発行設定 -->
+		<PublishSingleFile>true</PublishSingleFile>
+		<SelfContained>true</SelfContained>
+		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
 	</PropertyGroup>
 
 	<ItemGroup>

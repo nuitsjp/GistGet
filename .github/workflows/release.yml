@@ -1,42 +1,191 @@
+# GistGet リリースワークフロー
+# タグプッシュ時に自動で GitHub Releases を作成し、winget-pkgs への PR を自動生成
+
 name: Release
 
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*.*.*'  # v0.1.0, v1.0.0 など
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  PROJECT_PATH: 'src/GistGet/GistGet.csproj'
 
 jobs:
   build:
+    name: Build (${{ matrix.rid }})
     runs-on: windows-latest
-    permissions:
-      contents: write
+    strategy:
+      matrix:
+        include:
+          - rid: win-x64
+            arch: x64
+          - rid: win-arm64
+            arch: arm64
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '10.0.x'
-        # Note: .NET 10 is preview, might need include-prerelease: true if available or specific version
-        # Assuming standard setup works or using 9.0 for now if 10 is not available in actions yet.
-        # But project targets net10.0. Let's assume environment supports it or we use preview.
-        # If not, we might need to downgrade to 8.0/9.0 for release if 10 is too bleeding edge.
-        # For now, let's try to use what we have.
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    - name: Publish
-      run: dotnet publish src/GistGet/GistGet.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish
+      - name: Get version from tag
+        id: version
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}" -replace '^v', ''
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+          echo "Version: $version"
 
-    - name: Copy Scripts
-      run: |
-        New-Item -ItemType Directory -Force -Path publish/scripts
-        Copy-Item scripts/WinGetWrapper.ps1 publish/scripts/
+      - name: Build and Publish
+        shell: pwsh
+        run: |
+          $publishPath = "artifacts/publish/${{ matrix.rid }}"
+          dotnet publish ${{ env.PROJECT_PATH }} `
+            -c Release `
+            -r ${{ matrix.rid }} `
+            -o $publishPath `
+            -p:Version=${{ steps.version.outputs.VERSION }} `
+            --self-contained true
 
-    - name: Archive
-      run: Compress-Archive -Path publish/* -DestinationPath GistGet-win-x64.zip
+      - name: Create ZIP archive
+        shell: pwsh
+        run: |
+          $zipName = "GistGet-${{ matrix.rid }}.zip"
+          Compress-Archive -Path "artifacts/publish/${{ matrix.rid }}/*" -DestinationPath "artifacts/$zipName" -Force
+          
+          # SHA256 ハッシュを計算
+          $hash = (Get-FileHash -Path "artifacts/$zipName" -Algorithm SHA256).Hash
+          echo "SHA256=$hash" >> $env:GITHUB_OUTPUT
+          echo "$hash  $zipName" | Out-File -FilePath "artifacts/$zipName.sha256" -Encoding UTF8
+          
+          echo "Created: $zipName"
+          echo "SHA256: $hash"
+        id: zip
 
-    - name: Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: GistGet-win-x64.zip
-        generate_release_notes: true
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: GistGet-${{ matrix.rid }}
+          path: |
+            artifacts/GistGet-${{ matrix.rid }}.zip
+            artifacts/GistGet-${{ matrix.rid }}.zip.sha256
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+      x64_sha256: ${{ steps.hashes.outputs.X64_SHA256 }}
+      arm64_sha256: ${{ steps.hashes.outputs.ARM64_SHA256 }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Extract SHA256 hashes
+        id: hashes
+        run: |
+          X64_HASH=$(cat artifacts/GistGet-win-x64.zip.sha256 | cut -d' ' -f1)
+          ARM64_HASH=$(cat artifacts/GistGet-win-arm64.zip.sha256 | cut -d' ' -f1)
+          echo "X64_SHA256=$X64_HASH" >> $GITHUB_OUTPUT
+          echo "ARM64_SHA256=$ARM64_HASH" >> $GITHUB_OUTPUT
+          echo "x64 SHA256: $X64_HASH"
+          echo "arm64 SHA256: $ARM64_HASH"
+
+      - name: Create SHA256SUMS.txt
+        run: |
+          cat artifacts/GistGet-win-x64.zip.sha256 > artifacts/SHA256SUMS.txt
+          cat artifacts/GistGet-win-arm64.zip.sha256 >> artifacts/SHA256SUMS.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: GistGet v${{ steps.version.outputs.VERSION }}
+          body: |
+            ## GistGet v${{ steps.version.outputs.VERSION }}
+            
+            Windows Package Manager Cloud Sync Tool
+            
+            ### インストール方法
+            
+            #### WinGet (推奨)
+            ```powershell
+            winget install nuitsjp.GistGet
+            ```
+            
+            #### 手動インストール
+            1. お使いのアーキテクチャに対応した ZIP ファイルをダウンロード
+            2. 任意のフォルダに展開
+            3. 展開したフォルダを PATH 環境変数に追加
+            
+            ### ダウンロード
+            | アーキテクチャ | ファイル | SHA256 |
+            |---------------|----------|--------|
+            | x64 | GistGet-win-x64.zip | `${{ steps.hashes.outputs.X64_SHA256 }}` |
+            | ARM64 | GistGet-win-arm64.zip | `${{ steps.hashes.outputs.ARM64_SHA256 }}` |
+            
+            ### 変更点
+            詳細は [CHANGELOG](https://github.com/nuitsjp/GistGet/blob/main/CHANGELOG.md) を参照してください。
+          files: |
+            artifacts/GistGet-win-x64.zip
+            artifacts/GistGet-win-arm64.zip
+            artifacts/SHA256SUMS.txt
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  winget-publish:
+    name: Publish to WinGet
+    needs: release
+    runs-on: windows-latest
+    # プレリリースの場合は WinGet への発行をスキップ
+    if: ${{ !contains(github.ref_name, '-') }}
+
+    steps:
+      - name: Install wingetcreate
+        shell: pwsh
+        run: |
+          # wingetcreate をインストール
+          Invoke-WebRequest -Uri https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
+
+      - name: Submit to WinGet
+        shell: pwsh
+        env:
+          WINGET_GITHUB_TOKEN: ${{ secrets.WINGET_GITHUB_TOKEN }}
+        run: |
+          $version = "${{ needs.release.outputs.version }}"
+          $x64Url = "https://github.com/nuitsjp/GistGet/releases/download/v$version/GistGet-win-x64.zip"
+          $arm64Url = "https://github.com/nuitsjp/GistGet/releases/download/v$version/GistGet-win-arm64.zip"
+          
+          # wingetcreate で PR を作成
+          # 注意: WINGET_GITHUB_TOKEN は winget-pkgs リポジトリへの書き込み権限を持つ PAT
+          ./wingetcreate.exe update nuitsjp.GistGet `
+            --version $version `
+            --urls $x64Url $arm64Url `
+            --submit `
+            --token $env:WINGET_GITHUB_TOKEN
+
