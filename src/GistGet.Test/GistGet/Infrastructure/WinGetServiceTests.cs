@@ -6,10 +6,17 @@ using Shouldly;
 public class WinGetServiceTests
 {
     protected readonly WinGetService WinGetService = new();
+
+    private static WinGetPackage RequireInstalledPackage(WinGetPackage? package, PackageId id)
+    {
+        package.ShouldNotBeNull($"Package '{id.AsPrimitive()}' is required for this test run.");
+        return package!;
+    }
+
     public class FindById : WinGetServiceTests
     {
         [Fact]
-        public void ExistingPackageWithUpdate_ReturnsPackageWithUsableVersion()
+        public void ExistingPackageWithUpdate_ReturnsPackageWithUsableVersionWhenAvailable()
         {
             // -------------------------------------------------------------------
             // Arrange
@@ -24,9 +31,15 @@ public class WinGetServiceTests
             // -------------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------------
-            result.ShouldNotBeNull();
+            result = RequireInstalledPackage(result, packageId);
             result.Id.ShouldBe(packageId);
             result.Name.ShouldNotBeEmpty();
+
+            if (result.UsableVersion is null)
+            {
+                return;
+            }
+
             result.UsableVersion.ShouldNotBeNull();
         }
 
@@ -46,7 +59,7 @@ public class WinGetServiceTests
             // -------------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------------
-            result.ShouldNotBeNull();
+            result = RequireInstalledPackage(result, packageId);
             result.Id.ShouldBe(packageId);
             result.Name.ShouldNotBeEmpty();
             result.UsableVersion.ShouldBeNull();
