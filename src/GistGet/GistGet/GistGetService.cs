@@ -230,8 +230,8 @@ public class GistGetService(
     /// <summary>
     /// パッケージをアンインストールし、Gistを更新します。
     /// </summary>
-    /// <param name="packageId">アンインストールするパッケージのID</param>
-    public async Task UninstallAndSaveAsync(string packageId)
+    /// <param name="options">アンインストールオプション</param>
+    public async Task UninstallAndSaveAsync(UninstallOptions options)
     {
         if (!credentialService.TryGetCredential(out var credential))
         {
@@ -243,10 +243,17 @@ public class GistGetService(
         }
 
         var existingPackages = await gitHubService.GetPackagesAsync(credential.Token, "packages.yaml", "GistGet packages");
-        var targetPackage = existingPackages.FirstOrDefault(p => string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase));
+        var targetPackage = existingPackages.FirstOrDefault(p => string.Equals(p.Id, options.Id, StringComparison.OrdinalIgnoreCase));
 
-        var uninstallArgs = new[] { "uninstall", "--id", packageId };
-        var exitCode = await passthroughRunner.RunAsync(uninstallArgs);
+        var uninstallArgs = new List<string> { "uninstall", "--id", options.Id };
+        
+        // オプションからフラグを追加
+        if (options.Silent) uninstallArgs.Add("--silent");
+        if (options.Interactive) uninstallArgs.Add("--interactive");
+        if (options.Force) uninstallArgs.Add("--force");
+        if (options.Scope != null) { uninstallArgs.Add("--scope"); uninstallArgs.Add(options.Scope); }
+        
+        var exitCode = await passthroughRunner.RunAsync(uninstallArgs.ToArray());
         if (exitCode != 0)
         {
             return;
@@ -254,14 +261,14 @@ public class GistGetService(
 
         if (!string.IsNullOrEmpty(targetPackage?.Pin))
         {
-            await passthroughRunner.RunAsync(new[] { "pin", "remove", "--id", packageId });
+            await passthroughRunner.RunAsync(new[] { "pin", "remove", "--id", options.Id });
         }
 
         var newPackages = existingPackages
-            .Where(p => !string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase))
+            .Where(p => !string.Equals(p.Id, options.Id, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        var packageToSave = targetPackage ?? new GistGetPackage { Id = packageId };
+        var packageToSave = targetPackage ?? new GistGetPackage { Id = options.Id };
         packageToSave.Uninstall = true;
         packageToSave.Pin = null;
         packageToSave.PinType = null;
@@ -275,9 +282,8 @@ public class GistGetService(
     /// <summary>
     /// パッケージをアップグレードし、Gistを更新します。
     /// </summary>
-    /// <param name="packageId">アップグレードするパッケージのID</param>
-    /// <param name="version">アップグレード先のバージョン（省略可）</param>
-    public async Task UpgradeAndSaveAsync(string packageId, string? version = null)
+    /// <param name="options">アップグレードオプション</param>
+    public async Task UpgradeAndSaveAsync(UpgradeOptions options)
     {
         if (!credentialService.TryGetCredential(out var credential))
         {
@@ -288,12 +294,29 @@ public class GistGetService(
             }
         }
 
-        var upgradeArgs = new List<string> { "upgrade", "--id", packageId };
-        if (!string.IsNullOrEmpty(version))
+        var upgradeArgs = new List<string> { "upgrade", "--id", options.Id };
+        if (!string.IsNullOrEmpty(options.Version))
         {
             upgradeArgs.Add("--version");
-            upgradeArgs.Add(version);
+            upgradeArgs.Add(options.Version);
         }
+        
+        // オプションからフラグを追加
+        if (options.Silent) upgradeArgs.Add("--silent");
+        if (options.Interactive) upgradeArgs.Add("--interactive");
+        if (options.Force) upgradeArgs.Add("--force");
+        if (options.AcceptPackageAgreements) upgradeArgs.Add("--accept-package-agreements");
+        if (options.AcceptSourceAgreements) upgradeArgs.Add("--accept-source-agreements");
+        if (options.AllowHashMismatch) upgradeArgs.Add("--ignore-security-hash");
+        if (options.SkipDependencies) upgradeArgs.Add("--skip-dependencies");
+        if (options.Scope != null) { upgradeArgs.Add("--scope"); upgradeArgs.Add(options.Scope); }
+        if (options.Architecture != null) { upgradeArgs.Add("--architecture"); upgradeArgs.Add(options.Architecture); }
+        if (options.Location != null) { upgradeArgs.Add("--location"); upgradeArgs.Add(options.Location); }
+        if (options.Log != null) { upgradeArgs.Add("--log"); upgradeArgs.Add(options.Log); }
+        if (options.Custom != null) { upgradeArgs.Add("--custom"); upgradeArgs.Add(options.Custom); }
+        if (options.Override != null) { upgradeArgs.Add("--override"); upgradeArgs.Add(options.Override); }
+        if (options.InstallerType != null) { upgradeArgs.Add("--installer-type"); upgradeArgs.Add(options.InstallerType); }
+        if (options.Locale != null) { upgradeArgs.Add("--locale"); upgradeArgs.Add(options.Locale); }
 
         var exitCode = await passthroughRunner.RunAsync(upgradeArgs.ToArray());
         if (exitCode != 0)
@@ -302,16 +325,16 @@ public class GistGetService(
         }
 
         var existingPackages = await gitHubService.GetPackagesAsync(credential.Token, "packages.yaml", "GistGet packages");
-        var existingPackage = existingPackages.FirstOrDefault(p => string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase));
+        var existingPackage = existingPackages.FirstOrDefault(p => string.Equals(p.Id, options.Id, StringComparison.OrdinalIgnoreCase));
 
-        var resolvedVersion = version;
+        var resolvedVersion = options.Version;
         var hasPin = !string.IsNullOrEmpty(existingPackage?.Pin);
         var pinTypeToSet = existingPackage?.PinType;
         string? pinVersionToSet = null;
 
         if (hasPin && resolvedVersion == null)
         {
-            var packageInfo = winGetService.FindById(new PackageId(packageId));
+            var packageInfo = winGetService.FindById(new PackageId(options.Id));
             resolvedVersion = packageInfo?.UsableVersion?.ToString();
         }
 
@@ -328,7 +351,7 @@ public class GistGetService(
 
         if (hasPin && !string.IsNullOrEmpty(pinVersionToSet))
         {
-            var pinArgs = new List<string> { "pin", "add", "--id", packageId, "--version", pinVersionToSet, "--force" };
+            var pinArgs = new List<string> { "pin", "add", "--id", options.Id, "--version", pinVersionToSet, "--force" };
             if (!string.IsNullOrEmpty(pinTypeToSet))
             {
                 if (pinTypeToSet.Equals("blocking", StringComparison.OrdinalIgnoreCase))
@@ -345,10 +368,10 @@ public class GistGetService(
         }
 
         var newPackages = existingPackages
-            .Where(p => !string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase))
+            .Where(p => !string.Equals(p.Id, options.Id, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        var packageToSave = existingPackage ?? new GistGetPackage { Id = packageId };
+        var packageToSave = existingPackage ?? new GistGetPackage { Id = options.Id };
         packageToSave.Uninstall = false;
 
         if (hasPin && !string.IsNullOrEmpty(pinVersionToSet))
@@ -363,6 +386,20 @@ public class GistGetService(
             packageToSave.PinType = null;
             packageToSave.Version = null;
         }
+        
+        // Gist保存対象のオプションを反映
+        packageToSave.Scope = options.Scope ?? packageToSave.Scope;
+        packageToSave.Architecture = options.Architecture ?? packageToSave.Architecture;
+        packageToSave.Location = options.Location ?? packageToSave.Location;
+        packageToSave.Locale = options.Locale ?? packageToSave.Locale;
+        packageToSave.Custom = options.Custom ?? packageToSave.Custom;
+        packageToSave.Override = options.Override ?? packageToSave.Override;
+        packageToSave.InstallerType = options.InstallerType ?? packageToSave.InstallerType;
+        if (options.Force) packageToSave.Force = options.Force;
+        if (options.AcceptPackageAgreements) packageToSave.AcceptPackageAgreements = options.AcceptPackageAgreements;
+        if (options.AcceptSourceAgreements) packageToSave.AcceptSourceAgreements = options.AcceptSourceAgreements;
+        if (options.AllowHashMismatch) packageToSave.AllowHashMismatch = options.AllowHashMismatch;
+        if (options.SkipDependencies) packageToSave.SkipDependencies = options.SkipDependencies;
 
         newPackages.Add(packageToSave);
 
@@ -374,7 +411,9 @@ public class GistGetService(
     /// </summary>
     /// <param name="packageId">PinするパッケージのID</param>
     /// <param name="version">Pinするバージョン</param>
-    public async Task PinAddAndSaveAsync(string packageId, string version)
+    /// <param name="pinType">Pinの種類（blocking, gating）。省略時は既存値を維持</param>
+    /// <param name="force">既存のPinを上書きする場合はtrue（デフォルトはtrue）</param>
+    public async Task PinAddAndSaveAsync(string packageId, string version, string? pinType = null, bool force = false)
     {
         if (!credentialService.TryGetCredential(out var credential))
         {
@@ -388,9 +427,14 @@ public class GistGetService(
         var existingPackages = await gitHubService.GetPackagesAsync(credential.Token, "packages.yaml", "GistGet packages");
         var existingPackage = existingPackages.FirstOrDefault(p => string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase));
 
-        var pinTypeToSet = existingPackage?.PinType;
+        // CLIで指定されたpinTypeがあればそれを使用、なければ既存の値を継承
+        var pinTypeToSet = pinType ?? existingPackage?.PinType;
 
-        var pinArgs = new List<string> { "pin", "add", "--id", packageId, "--version", version, "--force" };
+        var pinArgs = new List<string> { "pin", "add", "--id", packageId, "--version", version };
+        
+        // forceは常に付与（既存のpinを確実に更新するため）
+        pinArgs.Add("--force");
+        
         if (!string.IsNullOrEmpty(pinTypeToSet))
         {
             if (pinTypeToSet.Equals("blocking", StringComparison.OrdinalIgnoreCase))

@@ -35,24 +35,25 @@ public interface IGistGetService
     /// パッケージをアンインストールし、Gistの<c>packages.yaml</c>を更新します。
     /// エントリに<c>uninstall: true</c>が設定され、他デバイスでのsync時にアンインストールされます。
     /// </summary>
-    /// <param name="packageId">アンインストールするパッケージのID</param>
-    Task UninstallAndSaveAsync(string packageId);
+    /// <param name="options">アンインストールオプション（ID、スコープ、各種フラグ）</param>
+    Task UninstallAndSaveAsync(UninstallOptions options);
 
     /// <summary>
     /// パッケージをアップグレードし、Gistの<c>packages.yaml</c>を更新します。
     /// Pinがある場合は新しいバージョンに更新されます。
     /// </summary>
-    /// <param name="packageId">アップグレードするパッケージのID</param>
-    /// <param name="version">アップグレード先のバージョン（省略時は最新版）</param>
-    Task UpgradeAndSaveAsync(string packageId, string? version = null);
+    /// <param name="options">アップグレードオプション（ID、バージョン、各種フラグ）</param>
+    Task UpgradeAndSaveAsync(UpgradeOptions options);
 
     /// <summary>
     /// パッケージをピン留めし、Gistの<c>packages.yaml</c>に保存します。
     /// Pinにより<c>upgrade --all</c>から除外されます。
     /// </summary>
-    /// <param name="packageId">Pinするパッケージの ID</param>
+    /// <param name="packageId">PinするパッケージのID</param>
     /// <param name="version">Pinするバージョン（ワイルドカード使用可、例: "1.7.*"）</param>
-    Task PinAddAndSaveAsync(string packageId, string version);
+    /// <param name="pinType">Pinの種類（blocking, gating）。省略時は既存値を維持、なければ pinning</param>
+    /// <param name="force">既存のPinを上書きする場合はtrue</param>
+    Task PinAddAndSaveAsync(string packageId, string version, string? pinType = null, bool force = false);
 
     /// <summary>
     /// パッケージのピン留めを解除し、Gistの<c>packages.yaml</c>から<c>pin</c>を削除します。

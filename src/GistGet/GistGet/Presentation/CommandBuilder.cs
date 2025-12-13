@@ -166,6 +166,10 @@ public class CommandBuilder(IGistGetService gistGetService)
         var headerOption = new Option<string>("--header", "Custom HTTP header");
         var installerTypeOption = new Option<string>("--installer-type", "Installer type");
         var customOption = new Option<string>("--custom", "Custom arguments");
+        var localeOption = new Option<string>("--locale", "Locale (BCP47 format)");
+        var acceptPackageAgreementsOption = new Option<bool>("--accept-package-agreements", "Accept package license agreements");
+        var acceptSourceAgreementsOption = new Option<bool>("--accept-source-agreements", "Accept source license agreements");
+        var ignoreSecurityHashOption = new Option<bool>("--ignore-security-hash", "Ignore security hash mismatch");
 
         command.Add(idOption);
         command.Add(versionOption);
@@ -181,6 +185,10 @@ public class CommandBuilder(IGistGetService gistGetService)
         command.Add(headerOption);
         command.Add(installerTypeOption);
         command.Add(customOption);
+        command.Add(localeOption);
+        command.Add(acceptPackageAgreementsOption);
+        command.Add(acceptSourceAgreementsOption);
+        command.Add(ignoreSecurityHashOption);
 
         command.SetHandler(async context =>
         {
@@ -207,7 +215,11 @@ public class CommandBuilder(IGistGetService gistGetService)
                 SkipDependencies = parseResult.GetValueForOption(skipDependenciesOption),
                 Header = parseResult.GetValueForOption(headerOption),
                 InstallerType = parseResult.GetValueForOption(installerTypeOption),
-                Custom = parseResult.GetValueForOption(customOption)
+                Custom = parseResult.GetValueForOption(customOption),
+                Locale = parseResult.GetValueForOption(localeOption),
+                AcceptPackageAgreements = parseResult.GetValueForOption(acceptPackageAgreementsOption),
+                AcceptSourceAgreements = parseResult.GetValueForOption(acceptSourceAgreementsOption),
+                AllowHashMismatch = parseResult.GetValueForOption(ignoreSecurityHashOption)
             };
 
             await gistGetService.InstallAndSaveAsync(options);
@@ -216,16 +228,43 @@ public class CommandBuilder(IGistGetService gistGetService)
         return command;
     }
 
+
     private Command BuildUninstallCommand()
     {
         var command = new Command("uninstall", "Uninstall a package and update Gist");
         var idOption = new Option<string>("--id", "Package ID") { IsRequired = true };
+        var scopeOption = new Option<string>("--scope", "Uninstall scope (user|machine)");
+        var interactiveOption = new Option<bool>("--interactive", "Request interactive uninstall");
+        var silentOption = new Option<bool>("--silent", "Request silent uninstall");
+        var forceOption = new Option<bool>("--force", "Force command execution");
+        
         command.Add(idOption);
+        command.Add(scopeOption);
+        command.Add(interactiveOption);
+        command.Add(silentOption);
+        command.Add(forceOption);
 
-        command.SetHandler(async id =>
+        command.SetHandler(async context =>
         {
-            await gistGetService.UninstallAndSaveAsync(id);
-        }, idOption);
+            var parseResult = context.ParseResult;
+            var id = parseResult.GetValueForOption(idOption) ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                AnsiConsole.MarkupLine("[red]Package ID is required.[/]");
+                return;
+            }
+
+            var options = new UninstallOptions
+            {
+                Id = id,
+                Scope = parseResult.GetValueForOption(scopeOption),
+                Interactive = parseResult.GetValueForOption(interactiveOption),
+                Silent = parseResult.GetValueForOption(silentOption),
+                Force = parseResult.GetValueForOption(forceOption)
+            };
+
+            await gistGetService.UninstallAndSaveAsync(options);
+        });
 
         return command;
     }
@@ -236,10 +275,40 @@ public class CommandBuilder(IGistGetService gistGetService)
         var idArgument = new Argument<string?>("package", "Package ID") { Arity = ArgumentArity.ZeroOrOne };
         var idOption = new Option<string>("--id", "Package ID (winget compatible)");
         var versionOption = new Option<string>("--version", "Package version");
+        var scopeOption = new Option<string>("--scope", "Upgrade scope (user|machine)");
+        var archOption = new Option<string>("--architecture", "Architecture (x86|x64|arm|arm64)");
+        var locationOption = new Option<string>("--location", "Install location");
+        var interactiveOption = new Option<bool>("--interactive", "Request interactive upgrade");
+        var silentOption = new Option<bool>("--silent", "Request silent upgrade");
+        var logOption = new Option<string>("--log", "Log file path");
+        var overrideOption = new Option<string>("--override", "Override arguments");
+        var forceOption = new Option<bool>("--force", "Force command execution");
+        var skipDependenciesOption = new Option<bool>("--skip-dependencies", "Skip dependencies");
+        var installerTypeOption = new Option<string>("--installer-type", "Installer type");
+        var customOption = new Option<string>("--custom", "Custom arguments");
+        var localeOption = new Option<string>("--locale", "Locale (BCP47 format)");
+        var acceptPackageAgreementsOption = new Option<bool>("--accept-package-agreements", "Accept package license agreements");
+        var acceptSourceAgreementsOption = new Option<bool>("--accept-source-agreements", "Accept source license agreements");
+        var ignoreSecurityHashOption = new Option<bool>("--ignore-security-hash", "Ignore security hash mismatch");
 
         command.Add(idArgument);
         command.Add(idOption);
         command.Add(versionOption);
+        command.Add(scopeOption);
+        command.Add(archOption);
+        command.Add(locationOption);
+        command.Add(interactiveOption);
+        command.Add(silentOption);
+        command.Add(logOption);
+        command.Add(overrideOption);
+        command.Add(forceOption);
+        command.Add(skipDependenciesOption);
+        command.Add(installerTypeOption);
+        command.Add(customOption);
+        command.Add(localeOption);
+        command.Add(acceptPackageAgreementsOption);
+        command.Add(acceptSourceAgreementsOption);
+        command.Add(ignoreSecurityHashOption);
 
         // Allow unmatched tokens to be collected for passthrough
         command.TreatUnmatchedTokensAsErrors = false;
@@ -248,12 +317,32 @@ public class CommandBuilder(IGistGetService gistGetService)
         {
             var parseResult = context.ParseResult;
             var id = parseResult.GetValueForOption(idOption) ?? parseResult.GetValueForArgument(idArgument);
-            var version = parseResult.GetValueForOption(versionOption);
 
             // If ID is specified, perform managed upgrade
             if (!string.IsNullOrWhiteSpace(id))
             {
-                await gistGetService.UpgradeAndSaveAsync(id, version);
+                var options = new UpgradeOptions
+                {
+                    Id = id,
+                    Version = parseResult.GetValueForOption(versionOption),
+                    Scope = parseResult.GetValueForOption(scopeOption),
+                    Architecture = parseResult.GetValueForOption(archOption),
+                    Location = parseResult.GetValueForOption(locationOption),
+                    Interactive = parseResult.GetValueForOption(interactiveOption),
+                    Silent = parseResult.GetValueForOption(silentOption),
+                    Log = parseResult.GetValueForOption(logOption),
+                    Override = parseResult.GetValueForOption(overrideOption),
+                    Force = parseResult.GetValueForOption(forceOption),
+                    SkipDependencies = parseResult.GetValueForOption(skipDependenciesOption),
+                    InstallerType = parseResult.GetValueForOption(installerTypeOption),
+                    Custom = parseResult.GetValueForOption(customOption),
+                    Locale = parseResult.GetValueForOption(localeOption),
+                    AcceptPackageAgreements = parseResult.GetValueForOption(acceptPackageAgreementsOption),
+                    AcceptSourceAgreements = parseResult.GetValueForOption(acceptSourceAgreementsOption),
+                    AllowHashMismatch = parseResult.GetValueForOption(ignoreSecurityHashOption)
+                };
+
+                await gistGetService.UpgradeAndSaveAsync(options);
             }
             else
             {
@@ -296,6 +385,7 @@ public class CommandBuilder(IGistGetService gistGetService)
         return command;
     }
 
+
     private Command BuildPinCommand()
     {
         var command = new Command("pin", "Manage package pins");
@@ -303,12 +393,29 @@ public class CommandBuilder(IGistGetService gistGetService)
         var add = new Command("add", "Pin a package version");
         var addId = new Argument<string>("package", "Package ID");
         var addVersion = new Option<string>("--version", "Version to pin") { IsRequired = true };
+        var addBlocking = new Option<bool>("--blocking", "Use blocking pin type");
+        var addGating = new Option<bool>("--gating", "Use gating pin type");
+        var addForce = new Option<bool>("--force", "Force overwrite existing pin");
         add.Add(addId);
         add.Add(addVersion);
-        add.SetHandler(async (id, version) =>
+        add.Add(addBlocking);
+        add.Add(addGating);
+        add.Add(addForce);
+        add.SetHandler(async context =>
         {
-            await gistGetService.PinAddAndSaveAsync(id, version);
-        }, addId, addVersion);
+            var parseResult = context.ParseResult;
+            var id = parseResult.GetValueForArgument(addId);
+            var version = parseResult.GetValueForOption(addVersion) ?? string.Empty;
+            var blocking = parseResult.GetValueForOption(addBlocking);
+            var gating = parseResult.GetValueForOption(addGating);
+            var force = parseResult.GetValueForOption(addForce);
+            
+            string? pinType = null;
+            if (blocking) pinType = "blocking";
+            else if (gating) pinType = "gating";
+            
+            await gistGetService.PinAddAndSaveAsync(id, version, pinType, force);
+        });
         command.Add(add);
 
         var remove = new Command("remove", "Remove a package pin");

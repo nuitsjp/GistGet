@@ -518,7 +518,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            await _target.UpgradeAndSaveAsync(packageId);
+            await _target.UpgradeAndSaveAsync(new UpgradeOptions { Id = packageId });
 
             // -------------------------------------------------------------------
             // Assert
@@ -568,7 +568,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            await _target.UpgradeAndSaveAsync(packageId);
+            await _target.UpgradeAndSaveAsync(new UpgradeOptions { Id = packageId });
 
             // -------------------------------------------------------------------
             // Assert
@@ -627,7 +627,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            await _target.UpgradeAndSaveAsync(packageId, version);
+            await _target.UpgradeAndSaveAsync(new UpgradeOptions { Id = packageId, Version = version });
 
             // -------------------------------------------------------------------
             // Assert
@@ -668,7 +668,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            await _target.UpgradeAndSaveAsync(packageId);
+            await _target.UpgradeAndSaveAsync(new UpgradeOptions { Id = packageId });
 
             // -------------------------------------------------------------------
             // Assert
@@ -720,7 +720,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            await _target.UpgradeAndSaveAsync(packageId);
+            await _target.UpgradeAndSaveAsync(new UpgradeOptions { Id = packageId });
 
             // -------------------------------------------------------------------
             // Assert
@@ -781,7 +781,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            await _target.UninstallAndSaveAsync(packageId);
+            await _target.UninstallAndSaveAsync(new UninstallOptions { Id = packageId });
 
             // -------------------------------------------------------------------
             // Assert
@@ -852,7 +852,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            await _target.UninstallAndSaveAsync(packageId);
+            await _target.UninstallAndSaveAsync(new UninstallOptions { Id = packageId });
 
             // -------------------------------------------------------------------
             // Assert
@@ -901,7 +901,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            await _target.UninstallAndSaveAsync(packageId);
+            await _target.UninstallAndSaveAsync(new UninstallOptions { Id = packageId });
 
             // -------------------------------------------------------------------
             // Assert
@@ -948,7 +948,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            await _target.UninstallAndSaveAsync(packageId);
+            await _target.UninstallAndSaveAsync(new UninstallOptions { Id = packageId });
 
             // -------------------------------------------------------------------
             // Assert
@@ -1006,7 +1006,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            await _target.UninstallAndSaveAsync(packageId);
+            await _target.UninstallAndSaveAsync(new UninstallOptions { Id = packageId });
 
             // -------------------------------------------------------------------
             // Assert
