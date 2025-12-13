@@ -1,0 +1,13 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="GistGet.Test/GistGet.Test.csproj">
+    <Platform Project="x64" />
+  </Project>
+  <Project Path="GistGet/GistGet.csproj">
+    <Platform Project="x64" />
+  </Project>
+</Solution>

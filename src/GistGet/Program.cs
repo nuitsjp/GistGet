@@ -19,6 +19,7 @@ services.AddTransient<IConsoleService, ConsoleService>();
 services.AddTransient<ICredentialService, CredentialService>();
 services.AddTransient<IWinGetPassthroughRunner, WinGetPassthroughRunner>();
 services.AddTransient<IWinGetService, WinGetService>();
+services.AddTransient<IWinGetArgumentBuilder, WinGetArgumentBuilder>();
 
 await services
     .BuildServiceProvider()

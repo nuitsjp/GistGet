@@ -5,6 +5,7 @@ using Shouldly;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using GistGet.Infrastructure;
 
 namespace GistGet;
 
@@ -15,6 +16,7 @@ public class GistGetServiceTests
     protected readonly Mock<ICredentialService> _credentialServiceMock;
     protected readonly Mock<IWinGetPassthroughRunner> _passthroughRunnerMock;
     protected readonly Mock<IWinGetService> _winGetServiceMock;
+    protected readonly IWinGetArgumentBuilder _argumentBuilder; // Use real instance
     protected readonly GistGetService _target;
 
     protected delegate bool TryGetCredentialDelegate(out Credential? credential);
@@ -26,7 +28,14 @@ public class GistGetServiceTests
         _credentialServiceMock = new Mock<ICredentialService>();
         _passthroughRunnerMock = new Mock<IWinGetPassthroughRunner>();
         _winGetServiceMock = new Mock<IWinGetService>();
-        _target = new GistGetService(_authServiceMock.Object, _consoleServiceMock.Object, _credentialServiceMock.Object, _passthroughRunnerMock.Object, _winGetServiceMock.Object);
+        _argumentBuilder = new Infrastructure.WinGetArgumentBuilder(); // Real instance
+        _target = new GistGetService(
+            _authServiceMock.Object, 
+            _consoleServiceMock.Object, 
+            _credentialServiceMock.Object, 
+            _passthroughRunnerMock.Object, 
+            _winGetServiceMock.Object,
+            _argumentBuilder);
     }
 
     public class AuthLoginAsync : GistGetServiceTests

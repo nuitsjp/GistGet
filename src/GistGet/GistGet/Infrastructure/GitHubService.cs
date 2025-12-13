@@ -11,14 +11,10 @@ public class GitHubService(
     ICredentialService credentialService,
     IConsoleService consoleService) : IGitHubService
 {
-    private const string ClientId = "Ov23lihQJhLB6hCnEIvS"; // GistGet Client ID
-    private const string ProductHeader = "GistGet";
-    private const string DefaultGistFileName = "packages.yaml";
-    private const string DefaultGistDescription = "GistGet Packages";
 
     public async Task<Credential> LoginAsync()
     {
-        var client = new GitHubClient(new ProductHeaderValue(ProductHeader));
+        var client = new GitHubClient(new ProductHeaderValue(Constants.ProductHeader));
         var request = CreateDeviceFlowRequest();
 
         var deviceFlowResponse = await client.Oauth.InitiateDeviceFlow(request);
@@ -44,7 +40,7 @@ public class GitHubService(
         }
         catch { /* Ignore if browser cannot be opened */ }
 
-        var token = await client.Oauth.CreateAccessTokenForDeviceFlow(ClientId, deviceFlowResponse);
+        var token = await client.Oauth.CreateAccessTokenForDeviceFlow(Constants.ClientId, deviceFlowResponse);
 
         client.Credentials = new Credentials(token.AccessToken);
         var user = await client.User.Current();
@@ -54,7 +50,7 @@ public class GitHubService(
 
     protected virtual OauthDeviceFlowRequest CreateDeviceFlowRequest()
     {
-        var request = new OauthDeviceFlowRequest(ClientId);
+        var request = new OauthDeviceFlowRequest(Constants.ClientId);
         request.Scopes.Add("gist");
         return request;
     }
@@ -75,7 +71,7 @@ public class GitHubService(
     public async Task<IReadOnlyList<GistGetPackage>> GetPackagesFromUrlAsync(string url)
     {
         using var httpClient = new HttpClient();
-        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(ProductHeader);
+        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(Constants.ProductHeader);
         
         var yaml = await httpClient.GetStringAsync(url);
         
@@ -183,7 +179,7 @@ public class GitHubService(
 
     private static GitHubClient CreateClient(string? token)
     {
-        var client = new GitHubClient(new ProductHeaderValue(ProductHeader));
+        var client = new GitHubClient(new ProductHeaderValue(Constants.ProductHeader));
         if (!string.IsNullOrWhiteSpace(token))
         {
             client.Credentials = new Credentials(token);
@@ -231,8 +227,8 @@ public class GitHubService(
 
     private static (string FileName, string Description) ResolveGistMetadata(string? gistFileName, string? gistDescription)
     {
-        var fileName = string.IsNullOrWhiteSpace(gistFileName) ? DefaultGistFileName : gistFileName;
-        var description = string.IsNullOrWhiteSpace(gistDescription) ? DefaultGistDescription : gistDescription;
+        var fileName = string.IsNullOrWhiteSpace(gistFileName) ? Constants.DefaultGistFileName : gistFileName;
+        var description = string.IsNullOrWhiteSpace(gistDescription) ? Constants.DefaultGistDescription : gistDescription;
         return (fileName, description);
     }
 }

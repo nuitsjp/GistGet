@@ -29,6 +29,22 @@ public class WinGetPassthroughRunner : IWinGetPassthroughRunner
 
     private string ResolveWinGetPath()
     {
+        // 1. PATH 上の winget を探索
+        var pathEnv = Environment.GetEnvironmentVariable("PATH");
+        if (pathEnv != null)
+        {
+            var paths = pathEnv.Split(Path.PathSeparator);
+            foreach (var path in paths)
+            {
+                var fullPath = Path.Combine(path, "winget.exe");
+                if (File.Exists(fullPath))
+                {
+                    return fullPath;
+                }
+            }
+        }
+
+        // 2. フォールバック: LocalAppData
         var localAppData = Environment.GetEnvironmentVariable("LOCALAPPDATA");
         return Path.Combine(localAppData!, "Microsoft", "WindowsApps", "winget.exe");
     }
