@@ -295,6 +295,7 @@ public class CommandBuilder(IGistGetService gistGetService)
         var overrideOption = new Option<string>("--override", "Override arguments");
         var forceOption = new Option<bool>("--force", "Force command execution");
         var skipDependenciesOption = new Option<bool>("--skip-dependencies", "Skip dependencies");
+        var headerOption = new Option<string>("--header", "Custom HTTP header");
         var installerTypeOption = new Option<string>("--installer-type", "Installer type");
         var customOption = new Option<string>("--custom", "Custom arguments");
         var localeOption = new Option<string>("--locale", "Locale (BCP47 format)");
@@ -314,6 +315,7 @@ public class CommandBuilder(IGistGetService gistGetService)
         command.Add(overrideOption);
         command.Add(forceOption);
         command.Add(skipDependenciesOption);
+        command.Add(headerOption);
         command.Add(installerTypeOption);
         command.Add(customOption);
         command.Add(localeOption);
@@ -345,6 +347,7 @@ public class CommandBuilder(IGistGetService gistGetService)
                     Override = parseResult.GetValueForOption(overrideOption),
                     Force = parseResult.GetValueForOption(forceOption),
                     SkipDependencies = parseResult.GetValueForOption(skipDependenciesOption),
+                    Header = parseResult.GetValueForOption(headerOption),
                     InstallerType = parseResult.GetValueForOption(installerTypeOption),
                     Custom = parseResult.GetValueForOption(customOption),
                     Locale = parseResult.GetValueForOption(localeOption),
