@@ -183,6 +183,9 @@ jobs:
     # プレリリースの場合は WinGet への発行をスキップ
     if: ${{ !contains(github.ref_name, '-') }}
 
+    outputs:
+      pr_url: ${{ steps.submit.outputs.PR_URL }}
+
     steps:
       - name: Install wingetcreate
         shell: pwsh
@@ -191,6 +194,7 @@ jobs:
           Invoke-WebRequest -Uri https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
 
       - name: Submit to WinGet
+        id: submit
         shell: pwsh
         env:
           WINGET_GITHUB_TOKEN: ${{ secrets.WINGET_GITHUB_TOKEN }}
@@ -199,10 +203,60 @@ jobs:
           $x64Url = "https://github.com/nuitsjp/GistGet/releases/download/v$version/GistGet-win-x64.zip"
           $arm64Url = "https://github.com/nuitsjp/GistGet/releases/download/v$version/GistGet-win-arm64.zip"
           
-          # wingetcreate で PR を作成
+          # wingetcreate で PR を作成し、出力をキャプチャ
           # 注意: WINGET_GITHUB_TOKEN は winget-pkgs リポジトリへの書き込み権限を持つ PAT
-          ./wingetcreate.exe update nuitsjp.GistGet `
+          $output = ./wingetcreate.exe update nuitsjp.GistGet `
             --version $version `
             --urls $x64Url $arm64Url `
             --submit `
-            --token $env:WINGET_GITHUB_TOKEN
+            --token $env:WINGET_GITHUB_TOKEN 2>&1 | Out-String
+          
+          Write-Host $output
+          
+          # PR URL を抽出 (wingetcreate は "Pull request can be found at: <URL>" 形式で出力)
+          if ($output -match 'https://github\.com/microsoft/winget-pkgs/pull/\d+') {
+            $prUrl = $Matches[0]
+            echo "PR_URL=$prUrl" >> $env:GITHUB_OUTPUT
+            Write-Host "Extracted PR URL: $prUrl"
+          } else {
+            Write-Host "Warning: Could not extract PR URL from wingetcreate output"
+            echo "PR_URL=" >> $env:GITHUB_OUTPUT
+          }
+
+  summary:
+    name: Release Summary
+    needs: [release, winget-publish]
+    runs-on: ubuntu-latest
+    # winget-publish がスキップされても実行
+    if: ${{ always() && needs.release.result == 'success' }}
+
+    steps:
+      - name: Generate Summary
+        env:
+          VERSION: ${{ needs.release.outputs.version }}
+          PR_URL: ${{ needs.winget-publish.outputs.pr_url }}
+          WINGET_RESULT: ${{ needs.winget-publish.result }}
+        run: |
+          RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
+          
+          echo "## 🚀 リリース完了" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### GitHub Release" >> $GITHUB_STEP_SUMMARY
+          echo "- **バージョン**: v${VERSION}" >> $GITHUB_STEP_SUMMARY
+          echo "- **リリースページ**: [GistGet v${VERSION}](${RELEASE_URL})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "$WINGET_RESULT" = "success" ] && [ -n "$PR_URL" ]; then
+            echo "### WinGet" >> $GITHUB_STEP_SUMMARY
+            echo "- **ステータス**: ✅ PR 作成済み" >> $GITHUB_STEP_SUMMARY
+            echo "- **Pull Request**: [winget-pkgs PR](${PR_URL})" >> $GITHUB_STEP_SUMMARY
+          elif [ "$WINGET_RESULT" = "success" ]; then
+            echo "### WinGet" >> $GITHUB_STEP_SUMMARY
+            echo "- **ステータス**: ✅ 送信完了（PR URL 取得不可）" >> $GITHUB_STEP_SUMMARY
+          elif [ "$WINGET_RESULT" = "skipped" ]; then
+            echo "### WinGet" >> $GITHUB_STEP_SUMMARY
+            echo "- **ステータス**: ⏭️ スキップ（プレリリースのため）" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### WinGet" >> $GITHUB_STEP_SUMMARY
+            echo "- **ステータス**: ❌ 失敗" >> $GITHUB_STEP_SUMMARY
+          fi
