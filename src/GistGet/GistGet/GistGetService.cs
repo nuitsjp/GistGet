@@ -217,6 +217,8 @@ public class GistGetService(
             SkipDependencies = options.SkipDependencies,
             InstallerType = options.InstallerType,
             Locale = options.Locale,
+            AcceptPackageAgreements = options.AcceptPackageAgreements,
+            AcceptSourceAgreements = options.AcceptSourceAgreements,
             
             // インストール直後なのでuninstallはfalse
             Uninstall = false 
@@ -432,8 +434,11 @@ public class GistGetService(
 
         var pinArgs = new List<string> { "pin", "add", "--id", packageId, "--version", version };
         
-        // forceは常に付与（既存のpinを確実に更新するため）
-        pinArgs.Add("--force");
+        // force引数がtrueの場合のみ--forceを付与
+        if (force)
+        {
+            pinArgs.Add("--force");
+        }
         
         if (!string.IsNullOrEmpty(pinTypeToSet))
         {

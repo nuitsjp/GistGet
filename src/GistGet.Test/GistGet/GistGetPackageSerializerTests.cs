@@ -1,6 +1,6 @@
 using Shouldly;
 
-namespace GistGet.Test.GistGet;
+namespace GistGet;
 
 public class GistGetPackageSerializerTests
 {

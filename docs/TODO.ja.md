@@ -32,7 +32,7 @@ GistGet は Gist 上の YAML でパッケージを **ID で一意に管理** す
 ### 1-1. YAML シリアライズ時のフィールド脱落
 ### 1-2. install の custom オプションが誤っている
 ### 1-3. SerializePackages の全属性テスト
-- [ ] `acceptPackageAgreements` / `acceptSourceAgreements` が保存されない（パッケージ生成時に反映漏れ）
+- [x] `acceptPackageAgreements` / `acceptSourceAgreements` が保存されない（パッケージ生成時に反映漏れ）
   - 関連ファイル: `src/GistGet/GistGet/GistGetService.cs`
 ---
 
@@ -126,7 +126,7 @@ GistGet は Gist 上の YAML でパッケージを **ID で一意に管理** す
 | `--force` | 強制上書き | ✅ 追加（内部では使用済み） |
 
 - [x] `CommandBuilder.BuildPinCommand()` の `add` サブコマンドを拡張
-- [ ] `pin add --force` が force 引数に関係なく常に付与され、CLI オプションが無効化されている
+- [x] `pin add --force` が force 引数に関係なく常に付与され、CLI オプションが無効化されている
   - 関連ファイル: `src/GistGet/GistGet/GistGetService.cs`
 - 関連ファイル: `src/GistGet/GistGet/Presentation/CommandBuilder.cs`
 

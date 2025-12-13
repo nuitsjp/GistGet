@@ -1059,7 +1059,7 @@ public class GistGetServiceTests
                     args[1] == "add" &&
                     args.Contains("--id") && args.Contains(packageId) &&
                     args.Contains("--version") && args.Contains(version) &&
-                    args.Contains("--force"))))
+                    !args.Contains("--force"))))
                 .ReturnsAsync(0);
 
             // -------------------------------------------------------------------
@@ -1175,7 +1175,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            await _target.PinAddAndSaveAsync(packageId, version);
+            await _target.PinAddAndSaveAsync(packageId, version, force: true);
 
             // -------------------------------------------------------------------
             // Assert
@@ -1283,7 +1283,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            await _target.PinAddAndSaveAsync(packageId, version);
+            await _target.PinAddAndSaveAsync(packageId, version, force: true);
 
             // -------------------------------------------------------------------
             // Assert
