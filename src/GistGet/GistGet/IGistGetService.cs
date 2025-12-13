@@ -28,8 +28,8 @@ public interface IGistGetService
     /// パッケージをインストールし、Gistの<c>packages.yaml</c>に保存します。
     /// 既存のPinがある場合はそのバージョンでインストールし、Pinを設定します。
     /// </summary>
-    /// <param name="package">インストールするパッケージの情報（ID、バージョン、オプション）</param>
-    Task InstallAndSaveAsync(GistGetPackage package);
+    /// <param name="options">インストールオプション（ID、バージョン、各種フラグ）</param>
+    Task InstallAndSaveAsync(InstallOptions options);
 
     /// <summary>
     /// パッケージをアンインストールし、Gistの<c>packages.yaml</c>を更新します。

@@ -177,7 +177,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------------
-            var package = new GistGetPackage { Id = "Test.Package" };
+            var options = new InstallOptions { Id = "Test.Package" };
             var savedCredential = new Credential("user", "token");
             Credential? currentCredential = null;
 
@@ -205,7 +205,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            await _target.InstallAndSaveAsync(package);
+            await _target.InstallAndSaveAsync(options);
 
             // -------------------------------------------------------------------
             // Assert
@@ -221,7 +221,7 @@ public class GistGetServiceTests
             // Arrange
             // -------------------------------------------------------------------
             var packageId = "Test.Package";
-            var installPackage = new GistGetPackage { Id = packageId, Silent = true }; // Version null
+            var installOptions = new InstallOptions { Id = packageId, Silent = true }; // Version null
             var existingPackages = new List<GistGetPackage>
             {
                 new GistGetPackage { Id = packageId, Pin = "1.2.3", PinType = "blocking" }
@@ -264,7 +264,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            await _target.InstallAndSaveAsync(installPackage);
+            await _target.InstallAndSaveAsync(installOptions);
 
             // -------------------------------------------------------------------
             // Assert
@@ -289,7 +289,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             var packageId = "Test.Package";
             var explicitVersion = "2.0.0";
-            var installPackage = new GistGetPackage { Id = packageId, Version = explicitVersion };
+            var installOptions = new InstallOptions { Id = packageId, Version = explicitVersion };
             var existingPackages = new List<GistGetPackage>
             {
                 new GistGetPackage { Id = packageId, Pin = "1.0.0" }
@@ -330,7 +330,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            await _target.InstallAndSaveAsync(installPackage);
+            await _target.InstallAndSaveAsync(installOptions);
 
             // -------------------------------------------------------------------
             // Assert
@@ -355,7 +355,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             var packageId = "Test.Package";
             var explicitVersion = "2.1.0";
-            var installPackage = new GistGetPackage { Id = packageId, Version = explicitVersion };
+            var installOptions = new InstallOptions { Id = packageId, Version = explicitVersion };
 
             // Credential setup
             var credential = new Credential("user", "token");
@@ -383,7 +383,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            await _target.InstallAndSaveAsync(installPackage);
+            await _target.InstallAndSaveAsync(installOptions);
 
             // -------------------------------------------------------------------
             // Assert
@@ -406,7 +406,7 @@ public class GistGetServiceTests
             // Arrange
             // -------------------------------------------------------------------
             var packageId = "Test.Package";
-            var installPackage = new GistGetPackage
+            var installOptions = new InstallOptions
             {
                 Id = packageId,
                 AllowHashMismatch = true,
@@ -442,7 +442,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            await _target.InstallAndSaveAsync(installPackage);
+            await _target.InstallAndSaveAsync(installOptions);
 
             // -------------------------------------------------------------------
             // Assert

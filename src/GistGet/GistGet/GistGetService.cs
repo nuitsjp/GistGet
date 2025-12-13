@@ -88,8 +88,8 @@ public class GistGetService(
     /// パッケージをインストールし、Gistに保存します。
     /// 認証確認、Gist取得、バージョン解決、インストール実行、Pin設定、Gist更新を行います。
     /// </summary>
-    /// <param name="package">インストールするパッケージの情報</param>
-    public async Task InstallAndSaveAsync(GistGetPackage package)
+    /// <param name="options">インストールオプション</param>
+    public async Task InstallAndSaveAsync(InstallOptions options)
     {
         // ステップ1: 認証状態を確認し、未認証の場合はログインを促す
         if (!credentialService.TryGetCredential(out var credential))
@@ -103,23 +103,23 @@ public class GistGetService(
 
         // ステップ2: Gistから既存のパッケージ一覧を取得
         var existingPackages = await gitHubService.GetPackagesAsync(credential.Token, "", "packages.yaml", "GistGet packages");
-        var existingPackage = existingPackages.FirstOrDefault(p => string.Equals(p.Id, package.Id, StringComparison.OrdinalIgnoreCase));
+        var existingPackage = existingPackages.FirstOrDefault(p => string.Equals(p.Id, options.Id, StringComparison.OrdinalIgnoreCase));
 
         // ステップ3: Pinロジックとインストールバージョンの解決
-        string? installVersion = package.Version;
+        string? installVersion = options.Version;
         string? pinVersionToSet = null;
         // 既存のPinTypeを継承（CLI引数で未指定の場合）
         string? pinTypeToSet = existingPackage?.PinType;
 
-        if (!string.IsNullOrEmpty(package.Version))
+        if (!string.IsNullOrEmpty(options.Version))
         {
             // CLIでバージョンが明示的に指定された場合
-            installVersion = package.Version;
+            installVersion = options.Version;
 
             if (existingPackage != null && !string.IsNullOrEmpty(existingPackage.Pin))
             {
                 // Gistに既存のPinがある場合、インストールバージョンに更新
-                pinVersionToSet = package.Version;
+                pinVersionToSet = options.Version;
             }
         }
         else
@@ -134,30 +134,30 @@ public class GistGetService(
         }
 
         // ステップ4: WinGet installコマンドの引数を構築
-        var installArgs = new List<string> { "install", "--id", package.Id };
+        var installArgs = new List<string> { "install", "--id", options.Id };
         if (!string.IsNullOrEmpty(installVersion))
         {
             installArgs.Add("--version");
             installArgs.Add(installVersion);
         }
 
-        // パッケージオブジェクトからオプションフラグを追加
-        if (package.Silent) installArgs.Add("--silent");
-        if (package.Interactive) installArgs.Add("--interactive");
-        if (package.Force) installArgs.Add("--force");
-        if (package.AcceptPackageAgreements) installArgs.Add("--accept-package-agreements");
-        if (package.AcceptSourceAgreements) installArgs.Add("--accept-source-agreements");
-        if (package.AllowHashMismatch) installArgs.Add("--ignore-security-hash");
-        if (package.SkipDependencies) installArgs.Add("--skip-dependencies");
-        if (package.Scope != null) { installArgs.Add("--scope"); installArgs.Add(package.Scope); }
-        if (package.Architecture != null) { installArgs.Add("--architecture"); installArgs.Add(package.Architecture); }
-        if (package.Location != null) { installArgs.Add("--location"); installArgs.Add(package.Location); }
-        if (package.Log != null) { installArgs.Add("--log"); installArgs.Add(package.Log); }
-        if (package.Header != null) { installArgs.Add("--header"); installArgs.Add(package.Header); }
-        if (package.Custom != null) installArgs.Add(package.Custom);
-        if (package.Override != null) { installArgs.Add("--override"); installArgs.Add(package.Override); }
-        if (package.InstallerType != null) { installArgs.Add("--installer-type"); installArgs.Add(package.InstallerType); }
-        if (package.Locale != null) { installArgs.Add("--locale"); installArgs.Add(package.Locale); }
+        // オプションからフラグを追加
+        if (options.Silent) installArgs.Add("--silent");
+        if (options.Interactive) installArgs.Add("--interactive");
+        if (options.Force) installArgs.Add("--force");
+        if (options.AcceptPackageAgreements) installArgs.Add("--accept-package-agreements");
+        if (options.AcceptSourceAgreements) installArgs.Add("--accept-source-agreements");
+        if (options.AllowHashMismatch) installArgs.Add("--ignore-security-hash");
+        if (options.SkipDependencies) installArgs.Add("--skip-dependencies");
+        if (options.Scope != null) { installArgs.Add("--scope"); installArgs.Add(options.Scope); }
+        if (options.Architecture != null) { installArgs.Add("--architecture"); installArgs.Add(options.Architecture); }
+        if (options.Location != null) { installArgs.Add("--location"); installArgs.Add(options.Location); }
+        if (options.Log != null) { installArgs.Add("--log"); installArgs.Add(options.Log); }
+        if (options.Header != null) { installArgs.Add("--header"); installArgs.Add(options.Header); }
+        if (options.Custom != null) installArgs.Add(options.Custom);
+        if (options.Override != null) { installArgs.Add("--override"); installArgs.Add(options.Override); }
+        if (options.InstallerType != null) { installArgs.Add("--installer-type"); installArgs.Add(options.InstallerType); }
+        if (options.Locale != null) { installArgs.Add("--locale"); installArgs.Add(options.Locale); }
 
 
         // ステップ5: WinGet installを実行
@@ -171,7 +171,7 @@ public class GistGetService(
         // ステップ6: 必要に応じてWinGet pin addを実行
         if (!string.IsNullOrEmpty(pinVersionToSet))
         {
-            var pinArgs = new List<string> { "pin", "add", "--id", package.Id, "--version", pinVersionToSet };
+            var pinArgs = new List<string> { "pin", "add", "--id", options.Id, "--version", pinVersionToSet };
             if (!string.IsNullOrEmpty(pinTypeToSet))
             {
                 // blocking タイプの場合はフラグを追加
@@ -182,31 +182,32 @@ public class GistGetService(
 
 
         // ステップ7: パッケージリストを更新してGistに保存
-        var newPackagesList = existingPackages.Where(p => !string.Equals(p.Id, package.Id, StringComparison.OrdinalIgnoreCase)).ToList();
+        var newPackagesList = existingPackages.Where(p => !string.Equals(p.Id, options.Id, StringComparison.OrdinalIgnoreCase)).ToList();
         
         // CLI引数とGist状態をマージした新しいパッケージエントリを作成
         var versionToSave = pinVersionToSet;
         var packageToSave = new GistGetPackage
         {
-            Id = package.Id,
+            Id = options.Id,
             Version = versionToSave,
             Pin = pinVersionToSet,
             PinType = pinTypeToSet,
             
             // CLI引数のプロパティを保存
-            Silent = package.Silent,
-            Interactive = package.Interactive,
-            Force = package.Force,
-            Scope = package.Scope,
-            Architecture = package.Architecture,
-            Location = package.Location,
-            Log = package.Log,
-            Header = package.Header,
-            Custom = package.Custom,
-            Override = package.Override,
-            AllowHashMismatch = package.AllowHashMismatch,
-            SkipDependencies = package.SkipDependencies,
-            InstallerType = package.InstallerType,
+            Silent = options.Silent,
+            Interactive = options.Interactive,
+            Force = options.Force,
+            Scope = options.Scope,
+            Architecture = options.Architecture,
+            Location = options.Location,
+            Log = options.Log,
+            Header = options.Header,
+            Custom = options.Custom,
+            Override = options.Override,
+            AllowHashMismatch = options.AllowHashMismatch,
+            SkipDependencies = options.SkipDependencies,
+            InstallerType = options.InstallerType,
+            Locale = options.Locale,
             
             // インストール直後なのでuninstallはfalse
             Uninstall = false 

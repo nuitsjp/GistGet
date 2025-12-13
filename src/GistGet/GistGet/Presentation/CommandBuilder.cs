@@ -118,7 +118,7 @@ public class CommandBuilder(IGitHubService gitHubService, IGistGetService gistGe
                 return;
             }
 
-            var package = new GistGetPackage
+            var options = new InstallOptions
             {
                 Id = id,
                 Version = parseResult.GetValueForOption(versionOption),
@@ -136,7 +136,7 @@ public class CommandBuilder(IGitHubService gitHubService, IGistGetService gistGe
                 Custom = parseResult.GetValueForOption(customOption)
             };
 
-            await gistGetService.InstallAndSaveAsync(package);
+            await gistGetService.InstallAndSaveAsync(options);
         });
 
         return command;
