@@ -2,10 +2,14 @@ namespace GistGet.Infrastructure;
 
 using GistGet;
 using Shouldly;
+using Xunit;
 
+[Trait("Category", "Integration")]
 public class WinGetServiceTests
 {
     protected readonly WinGetService WinGetService = new();
+
+    private const string SkipReason = "Requires WinGet package manager COM registration.";
 
     private static WinGetPackage RequireInstalledPackage(WinGetPackage? package, PackageId id)
     {
@@ -15,7 +19,7 @@ public class WinGetServiceTests
 
     public class FindById : WinGetServiceTests
     {
-        [Fact]
+        [Fact(Skip = SkipReason)]
         public void ExistingPackageWithUpdate_ReturnsPackageWithUsableVersionWhenAvailable()
         {
             // -------------------------------------------------------------------
@@ -43,7 +47,7 @@ public class WinGetServiceTests
             result.UsableVersion.ShouldNotBeNull();
         }
 
-        [Fact]
+        [Fact(Skip = SkipReason)]
         public void ExistingPackageWithoutUpdate_ReturnsPackageWithNullUsableVersion()
         {
             // -------------------------------------------------------------------
@@ -65,7 +69,7 @@ public class WinGetServiceTests
             result.UsableVersion.ShouldBeNull();
         }
 
-        [Fact]
+        [Fact(Skip = SkipReason)]
         public void NonExistingPackage_ReturnsNull()
         {
             // -------------------------------------------------------------------
@@ -87,7 +91,7 @@ public class WinGetServiceTests
 
     public class GetAllInstalledPackages : WinGetServiceTests
     {
-        [Fact]
+        [Fact(Skip = SkipReason)]
         public void ReturnsNonEmptyList()
         {
             // -------------------------------------------------------------------
@@ -102,7 +106,7 @@ public class WinGetServiceTests
             result.Count.ShouldBeGreaterThan(0);
         }
 
-        [Fact]
+        [Fact(Skip = SkipReason)]
         public void EachPackageHasValidIdAndVersion()
         {
             // -------------------------------------------------------------------
