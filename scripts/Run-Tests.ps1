@@ -21,7 +21,8 @@
 
 param(
     [string]$Configuration = "Debug",
-    [switch]$CollectCoverage = $true
+    [switch]$CollectCoverage = $true,
+    [double]$CoverageThreshold = 95
 )
 
 $ErrorActionPreference = "Stop"
@@ -29,17 +30,21 @@ $ErrorActionPreference = "Stop"
 # Get repository root path
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Split-Path -Parent $scriptPath
+$runSettingsPath = Join-Path $repoRoot "coverlet.runsettings"
+$platform = "x64"
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "Running GistGet Tests" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "Configuration: $Configuration" -ForegroundColor Yellow
 Write-Host "Collect Coverage: $CollectCoverage" -ForegroundColor Yellow
+Write-Host "Coverage Threshold: $CoverageThreshold%" -ForegroundColor Yellow
+Write-Host "Platform: $platform" -ForegroundColor Yellow
 Write-Host ""
 
 # Build the solution first
 Write-Host "Building solution..." -ForegroundColor Green
-dotnet build "$repoRoot\src\GistGet.slnx" -c $Configuration
+dotnet build "$repoRoot\src\GistGet.slnx" -c $Configuration -p:Platform=$platform
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Build failed!" -ForegroundColor Red
     exit $LASTEXITCODE
@@ -54,13 +59,15 @@ $testArgs = @(
     "$repoRoot\src\GistGet.Test\GistGet.Test.csproj",
     "-c", $Configuration,
     "--no-build",
+    "-p:Platform=$platform",
     "--verbosity", "normal"
 )
 
 if ($CollectCoverage) {
     $testArgs += @(
         "--collect", "XPlat Code Coverage",
-        "--results-directory", "$repoRoot\TestResults"
+        "--results-directory", "$repoRoot\TestResults",
+        "--settings", $runSettingsPath
     )
 }
 
@@ -72,14 +79,20 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 
+if ($CollectCoverage) {
+    Write-Host ""
+    Write-Host "Coverage results saved to: $repoRoot\TestResults\" -ForegroundColor Yellow
+    Write-Host "Analyzing coverage..." -ForegroundColor Green
+    $analyzerScript = Join-Path $repoRoot "scripts/Analyze-Coverage.ps1"
+    & $analyzerScript -ResultsDirectory "$repoRoot\TestResults" -Threshold $CoverageThreshold
+    if ($LASTEXITCODE -ne 0) {
+        exit $LASTEXITCODE
+    }
+}
+
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "All tests passed successfully!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Cyan
-
-if ($CollectCoverage) {
-    Write-Host ""
-    Write-Host "Coverage results saved to: $repoRoot\TestResults\" -ForegroundColor Yellow
-}
 
 exit 0

@@ -1,10 +1,19 @@
-﻿using System.Runtime.InteropServices;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using GistGet.Infrastructure.Diagnostics;
 
 namespace GistGet.Presentation;
 
 public class ConsoleService : IConsoleService
 {
+    private readonly IProcessRunner _processRunner;
+
+    public ConsoleService(IProcessRunner processRunner)
+    {
+        _processRunner = processRunner;
+    }
+
     public void WriteInfo(string message)
     {
         Console.WriteLine(message);
@@ -30,22 +39,21 @@ public class ConsoleService : IConsoleService
     }
 
     [SupportedOSPlatform("windows")]
-    private static void SetClipboardWindows(string text)
+    private void SetClipboardWindows(string text)
     {
         // Use PowerShell to set clipboard on Windows
-        var process = new System.Diagnostics.Process
+        var escaped = text.Replace("'", "''");
+        var arguments = $"-Command \"Set-Clipboard -Value '{escaped}'\"";
+        var startInfo = new ProcessStartInfo
         {
-            StartInfo = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = "powershell",
-                Arguments = $"-Command \"Set-Clipboard -Value '{text.Replace("'", "''")}'\"",
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            }
+            FileName = "powershell",
+            Arguments = arguments,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
         };
-        process.Start();
-        process.WaitForExit();
+
+        _processRunner.RunAsync(startInfo).GetAwaiter().GetResult();
     }
 }

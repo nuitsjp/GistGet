@@ -4,6 +4,13 @@ namespace GistGet.Infrastructure.Diagnostics;
 
 public class WinGetPassthroughRunner : IWinGetPassthroughRunner
 {
+    private readonly IProcessRunner _processRunner;
+
+    public WinGetPassthroughRunner(IProcessRunner processRunner)
+    {
+        _processRunner = processRunner;
+    }
+
     public async Task<int> RunAsync(string[] args)
     {
         var startInfo = new ProcessStartInfo
@@ -21,10 +28,7 @@ public class WinGetPassthroughRunner : IWinGetPassthroughRunner
             startInfo.ArgumentList.Add(arg);
         }
 
-        using var process = new Process { StartInfo = startInfo };
-        process.Start();
-        await process.WaitForExitAsync();
-        return process.ExitCode;
+        return await _processRunner.RunAsync(startInfo);
     }
 
     private string ResolveWinGetPath()
