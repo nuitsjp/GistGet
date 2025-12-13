@@ -137,7 +137,7 @@ sequenceDiagram
     CliCommandBuilder->>GistService: GetPackagesAsync()
     activate GistService
     GistService->>GitHub: Gist取得 (API)
-    GitHub-->>GistService: packages.yaml
+    GitHub-->>GistService: GistGet.yaml
     GistService-->>CliCommandBuilder: Dictionary<Id, Package>
     deactivate GistService
 
@@ -240,4 +240,13 @@ sequenceDiagram
 
 5.  **winget パススルーと Gist 同期の徹底**:
     *   GistGet は可能な限り winget のコマンド体系とオプションをそのままパススルーし、`install` / `uninstall` でも `--id` 指定のみを許可して YAML のキーと 1 対 1 の関係を保証します。`--query` や `--name` による曖昧指定は設計上禁止し、定義ファイルを単一情報源として扱います。
-    *   `sync`・`install`・`uninstall`・`pin` は Gist の `packages.yaml` を前後で必ず同期します。コマンド実行前に最新の定義を取得し、実行後に結果を反映して保存することで、winget へのパススルー実行とクラウド上の定義の整合性を同時に確保します。
+    *   `sync`・`install`・`uninstall`・`pin` は Gist の `GistGet.yaml` を前後で必ず同期します。コマンド実行前に最新の定義を取得し、実行後に結果を反映して保存することで、winget へのパススルー実行とクラウド上の定義の整合性を同時に確保します。
+
+6.  **Gist の自動検索・作成 (GitHubService)**:
+    *   **検索ロジック**: URL 未指定時、認証ユーザーの全 Gist を検索し、以下のいずれかの条件に一致する Gist を特定します。
+        1.  指定されたファイル名（既定: `GistGet.yaml`）を含む Gist
+        2.  指定された説明（既定: "GistGet Packages"）と一致する Gist
+    *   **複数一致時のエラー**: 条件に一致する Gist が複数存在する場合、明示的な `--url` 指定を要求し、`InvalidOperationException` をスローします。これにより、誤った Gist への書き込みを防止します。
+    *   **自動作成**: 一致する Gist が存在しない場合、既定のファイル名と説明でプライベート Gist を新規作成します。ユーザーが明示的に Gist を作成する必要はありません。
+    *   **URL 指定時**: `--url` で明示的に Gist URL を指定した場合、検索をスキップしてその Gist を直接使用します。複数 Gist の併存時は `--url` による明示指定を推奨します。
+

@@ -10,7 +10,7 @@ on:
       - main
 
 env:
-  DOTNET_VERSION: '8.0.x'
+  DOTNET_VERSION: '10.0.x'
   SOLUTION_FILE: 'src/GistGet.slnx'
   TEST_PROJECT: 'src/GistGet.Test/GistGet.Test.csproj'
   BUILD_PLATFORM: 'x64'

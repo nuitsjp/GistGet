@@ -12,7 +12,7 @@ permissions:
   contents: write
 
 env:
-  DOTNET_VERSION: '8.0.x'
+  DOTNET_VERSION: '10.0.x'
   PROJECT_PATH: 'src/GistGet/GistGet.csproj'
 
 jobs:
