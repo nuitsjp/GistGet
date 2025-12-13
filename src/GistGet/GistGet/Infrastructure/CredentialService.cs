@@ -7,7 +7,7 @@ namespace GistGet.Infrastructure;
 
 public class CredentialService(string targetName) : ICredentialService
 {
-    public CredentialService() : this("git:https://github.com")
+    public CredentialService() : this("gistget:https://github.com/nuitsjp/GistGet")
     {
     }
 
