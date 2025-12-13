@@ -3,7 +3,7 @@
 /// <summary>
 /// GistGetの中核サービスインターフェース。
 /// GitHub Gistとの同期、WinGetコマンドの実行、認証管理を統合的に提供します。
-/// すべてのパッケージ操作はGistの<c>packages.yaml</c>と同期されます。
+/// すべてのパッケージ操作はGistの<c>GistGet.yaml</c>と同期されます。
 /// </summary>
 public interface IGistGetService
 {
@@ -25,7 +25,7 @@ public interface IGistGetService
     Task AuthStatusAsync();
 
     /// <summary>
-    /// パッケージをインストールし、Gistの<c>packages.yaml</c>に保存します。
+    /// パッケージをインストールし、Gistの<c>GistGet.yaml</c>に保存します。
     /// 既存のPinがある場合はそのバージョンでインストールし、Pinを設定します。
     /// </summary>
     /// <param name="options">インストールオプション（ID、バージョン、各種フラグ）</param>
@@ -33,7 +33,7 @@ public interface IGistGetService
     Task<int> InstallAndSaveAsync(InstallOptions options);
 
     /// <summary>
-    /// パッケージをアンインストールし、Gistの<c>packages.yaml</c>を更新します。
+    /// パッケージをアンインストールし、Gistの<c>GistGet.yaml</c>を更新します。
     /// エントリに<c>uninstall: true</c>が設定され、他デバイスでのsync時にアンインストールされます。
     /// </summary>
     /// <param name="options">アンインストールオプション（ID、スコープ、各種フラグ）</param>
@@ -41,7 +41,7 @@ public interface IGistGetService
     Task<int> UninstallAndSaveAsync(UninstallOptions options);
 
     /// <summary>
-    /// パッケージをアップグレードし、Gistの<c>packages.yaml</c>を更新します。
+    /// パッケージをアップグレードし、Gistの<c>GistGet.yaml</c>を更新します。
     /// Pinがある場合は新しいバージョンに更新されます。
     /// </summary>
     /// <param name="options">アップグレードオプション（ID、バージョン、各種フラグ）</param>
@@ -49,7 +49,7 @@ public interface IGistGetService
     Task<int> UpgradeAndSaveAsync(UpgradeOptions options);
 
     /// <summary>
-    /// パッケージをピン留めし、Gistの<c>packages.yaml</c>に保存します。
+    /// パッケージをピン留めし、Gistの<c>GistGet.yaml</c>に保存します。
     /// Pinにより<c>upgrade --all</c>から除外されます。
     /// </summary>
     /// <param name="packageId">PinするパッケージのID</param>
@@ -59,13 +59,13 @@ public interface IGistGetService
     Task PinAddAndSaveAsync(string packageId, string version, string? pinType = null, bool force = false);
 
     /// <summary>
-    /// パッケージのピン留めを解除し、Gistの<c>packages.yaml</c>から<c>pin</c>を削除します。
+    /// パッケージのピン留めを解除し、Gistの<c>GistGet.yaml</c>から<c>pin</c>を削除します。
     /// </summary>
     /// <param name="packageId">Pin解除するパッケージのID</param>
     Task PinRemoveAndSaveAsync(string packageId);
 
     /// <summary>
-    /// packages.yamlとローカル状態を同期します。
+    /// GistGet.yamlとローカル状態を同期します。
     /// 差分を検出し、インストール/アンインストール/pin設定を実行します。
     /// </summary>
     /// <param name="url">同期元の YAML URL（省略時は認証ユーザーの Gist）</param>

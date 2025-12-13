@@ -2326,7 +2326,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------------
-            var url = "https://example.com/raw/packages.yaml";
+            var url = "https://example.com/raw/GistGet.yaml";
             var packageId = "External.Package";
             var gistPackages = new List<GistGetPackage>
             {
@@ -2374,7 +2374,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------------
-            var url = "https://raw.githubusercontent.com/user/repo/packages.yaml";
+            var url = "https://raw.githubusercontent.com/user/repo/GistGet.yaml";
 
             _authServiceMock
                 .Setup(x => x.GetPackagesFromUrlAsync(url))
