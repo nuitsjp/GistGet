@@ -29,25 +29,9 @@ GistGet は Gist 上の YAML でパッケージを **ID で一意に管理** す
 ---
 
 ## 🔴 Phase 1: 重大なバグ修正（データ損失防止）
-
 ### 1-1. YAML シリアライズ時のフィールド脱落
-
-- [x] `SerializePackages()` で `pin` / `pinType` が保存されない
-  - 原因: コピーオブジェクト作成時に `Pin` / `PinType` が含まれていない
-  - 関連ファイル: `src/GistGet/GistGet/Infrastructure/GitHubService.cs`
-
 ### 1-2. install の custom オプションが誤っている
-
-- [x] `--custom` フラグなしで値だけ渡している
-  - 現状: `installArgs.Add(options.Custom)` → winget が認識しない
-  - 正しくは: `installArgs.Add("--custom"); installArgs.Add(options.Custom);`
-  - 関連ファイル: `src/GistGet/GistGet/GistGetService.cs`
-
 ### 1-3. SerializePackages の全属性テスト
-
-- [x] `SerializePackages()` ですべての属性が正しく保存されるユニットテストを追加
-  - 関連ファイル: `src/GistGet.Test/`
-
 ---
 
 ## 🟠 Phase 2: CLI オプション整備
