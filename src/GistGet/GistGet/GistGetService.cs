@@ -470,6 +470,190 @@ public class GistGetService(
     }
 
     /// <summary>
+    /// GistのpackagesとYAMLとローカル状態を同期します。
+    /// 差分を検出し、インストール/アンインストール/pin設定を実行します。
+    /// </summary>
+    /// <param name="gistUrl">同期元のGist URL（省略時は認証ユーザーのGist）</param>
+    /// <returns>同期結果（インストール/アンインストール/失敗したパッケージ一覧）</returns>
+    public async Task<SyncResult> SyncAsync(string? gistUrl = null)
+    {
+        var result = new SyncResult();
+
+        // ステップ1: 認証状態を確認
+        if (!credentialService.TryGetCredential(out var credential))
+        {
+            await AuthLoginAsync();
+            if (!credentialService.TryGetCredential(out credential))
+            {
+                throw new InvalidOperationException("Failed to retrieve credentials after login.");
+            }
+        }
+
+        // ステップ2: Gistからパッケージ一覧を取得
+        var gistPackages = await gitHubService.GetPackagesAsync(
+            credential.Token, 
+            gistUrl ?? "", 
+            "packages.yaml", 
+            "GistGet packages");
+
+        // ステップ3: ローカルのインストール済みパッケージを取得
+        var localPackages = winGetService.GetAllInstalledPackages();
+        var localPackageDict = localPackages.ToDictionary(
+            p => p.Id.AsPrimitive(), 
+            p => p, 
+            StringComparer.OrdinalIgnoreCase);
+
+        // ステップ4: Phase 1 - アンインストール（uninstall: trueのパッケージ）
+        foreach (var gistPkg in gistPackages.Where(p => p.Uninstall))
+        {
+            if (localPackageDict.ContainsKey(gistPkg.Id))
+            {
+                try
+                {
+                    var uninstallArgs = new[] { "uninstall", "--id", gistPkg.Id };
+                    var exitCode = await passthroughRunner.RunAsync(uninstallArgs);
+                    if (exitCode == 0)
+                    {
+                        result.Uninstalled.Add(gistPkg);
+                        // pinも削除
+                        await passthroughRunner.RunAsync(new[] { "pin", "remove", "--id", gistPkg.Id });
+                    }
+                    else
+                    {
+                        result.Failed.Add(gistPkg);
+                        result.Errors.Add($"Failed to uninstall {gistPkg.Id}: exit code {exitCode}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    result.Failed.Add(gistPkg);
+                    result.Errors.Add($"Failed to uninstall {gistPkg.Id}: {ex.Message}");
+                }
+            }
+        }
+
+        // ステップ5: Phase 2 - インストール（Gistにあり、ローカルにないパッケージ）
+        foreach (var gistPkg in gistPackages.Where(p => !p.Uninstall))
+        {
+            if (!localPackageDict.ContainsKey(gistPkg.Id))
+            {
+                try
+                {
+                    var installArgs = new List<string> { "install", "--id", gistPkg.Id };
+                    
+                    // Pinバージョンがある場合はそのバージョンをインストール
+                    if (!string.IsNullOrEmpty(gistPkg.Pin))
+                    {
+                        installArgs.Add("--version");
+                        installArgs.Add(gistPkg.Pin);
+                    }
+                    
+                    // インストールオプションを追加
+                    if (gistPkg.Silent) installArgs.Add("--silent");
+                    if (gistPkg.Interactive) installArgs.Add("--interactive");
+                    if (gistPkg.Force) installArgs.Add("--force");
+                    if (gistPkg.AcceptPackageAgreements) installArgs.Add("--accept-package-agreements");
+                    if (gistPkg.AcceptSourceAgreements) installArgs.Add("--accept-source-agreements");
+                    if (gistPkg.AllowHashMismatch) installArgs.Add("--ignore-security-hash");
+                    if (gistPkg.SkipDependencies) installArgs.Add("--skip-dependencies");
+                    if (gistPkg.Scope != null) { installArgs.Add("--scope"); installArgs.Add(gistPkg.Scope); }
+                    if (gistPkg.Architecture != null) { installArgs.Add("--architecture"); installArgs.Add(gistPkg.Architecture); }
+                    if (gistPkg.Location != null) { installArgs.Add("--location"); installArgs.Add(gistPkg.Location); }
+                    if (gistPkg.Log != null) { installArgs.Add("--log"); installArgs.Add(gistPkg.Log); }
+                    if (gistPkg.Header != null) { installArgs.Add("--header"); installArgs.Add(gistPkg.Header); }
+                    if (gistPkg.Custom != null) { installArgs.Add("--custom"); installArgs.Add(gistPkg.Custom); }
+                    if (gistPkg.Override != null) { installArgs.Add("--override"); installArgs.Add(gistPkg.Override); }
+                    if (gistPkg.InstallerType != null) { installArgs.Add("--installer-type"); installArgs.Add(gistPkg.InstallerType); }
+                    if (gistPkg.Locale != null) { installArgs.Add("--locale"); installArgs.Add(gistPkg.Locale); }
+
+                    var exitCode = await passthroughRunner.RunAsync(installArgs.ToArray());
+                    if (exitCode == 0)
+                    {
+                        result.Installed.Add(gistPkg);
+                        
+                        // Pinがある場合はpin addを実行
+                        if (!string.IsNullOrEmpty(gistPkg.Pin))
+                        {
+                            var pinArgs = new List<string> { "pin", "add", "--id", gistPkg.Id, "--version", gistPkg.Pin };
+                            if (!string.IsNullOrEmpty(gistPkg.PinType))
+                            {
+                                if (gistPkg.PinType.Equals("blocking", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    pinArgs.Add("--blocking");
+                                }
+                                else if (gistPkg.PinType.Equals("gating", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    pinArgs.Add("--gating");
+                                }
+                            }
+                            await passthroughRunner.RunAsync(pinArgs.ToArray());
+                        }
+                    }
+                    else
+                    {
+                        result.Failed.Add(gistPkg);
+                        result.Errors.Add($"Failed to install {gistPkg.Id}: exit code {exitCode}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    result.Failed.Add(gistPkg);
+                    result.Errors.Add($"Failed to install {gistPkg.Id}: {ex.Message}");
+                }
+            }
+        }
+
+        // ステップ6: Phase 3 - Pin同期（既にインストール済みのパッケージのpin設定を同期）
+        foreach (var gistPkg in gistPackages.Where(p => !p.Uninstall))
+        {
+            if (localPackageDict.ContainsKey(gistPkg.Id))
+            {
+                try
+                {
+                    if (!string.IsNullOrEmpty(gistPkg.Pin))
+                    {
+                        // GistにPinがある場合はローカルにPin追加/更新
+                        var pinArgs = new List<string> { "pin", "add", "--id", gistPkg.Id, "--version", gistPkg.Pin, "--force" };
+                        if (!string.IsNullOrEmpty(gistPkg.PinType))
+                        {
+                            if (gistPkg.PinType.Equals("blocking", StringComparison.OrdinalIgnoreCase))
+                            {
+                                pinArgs.Add("--blocking");
+                            }
+                            else if (gistPkg.PinType.Equals("gating", StringComparison.OrdinalIgnoreCase))
+                            {
+                                pinArgs.Add("--gating");
+                            }
+                        }
+                        var exitCode = await passthroughRunner.RunAsync(pinArgs.ToArray());
+                        if (exitCode == 0)
+                        {
+                            result.PinUpdated.Add(gistPkg);
+                        }
+                    }
+                    else
+                    {
+                        // GistにPinがない場合はローカルのPinを削除（存在する場合）
+                        // pin removeはエラーを無視（元々pinがない場合もあるため）
+                        var pinRemoveArgs = new[] { "pin", "remove", "--id", gistPkg.Id };
+                        var exitCode = await passthroughRunner.RunAsync(pinRemoveArgs);
+                        if (exitCode == 0)
+                        {
+                            result.PinRemoved.Add(gistPkg);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    result.Errors.Add($"Failed to sync pin for {gistPkg.Id}: {ex.Message}");
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
     /// 指定されたコマンドをWinGetにそのままパススルーで実行します。
     /// </summary>
     /// <param name="command">WinGetコマンド（例: list, search, show）</param>
@@ -482,3 +666,4 @@ public class GistGetService(
         return passthroughRunner.RunAsync(fullArgs.ToArray());
     }
 }
+

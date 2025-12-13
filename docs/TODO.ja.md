@@ -12,20 +12,21 @@
 
 ### sync コマンド
 
-- [ ] **`sync` コマンドが未実装**: `CommandBuilder.cs` でコマンド定義はあるが `SetHandler` がない
+- [x] **`sync` コマンドが未実装**: `CommandBuilder.cs` でコマンド定義はあるが `SetHandler` がない
   - 関連ファイル: `src/GistGet/GistGet/Presentation/CommandBuilder.cs`
-- [ ] `IGistGetService` に `SyncAsync()` メソッドが存在しない
+- [x] `IGistGetService` に `SyncAsync()` メソッドが存在しない
   - 関連ファイル: `src/GistGet/GistGet/IGistGetService.cs`
-- [ ] `IWinGetService` に `GetAllInstalledPackages()` が存在しない（sync に必要）
+- [x] `IWinGetService` に `GetAllInstalledPackages()` が存在しない（sync に必要）
   - 関連ファイル: `src/GistGet/GistGet/IWinGetService.cs`
-- [ ] `SyncResult.cs` が定義されているが未使用
+- [x] `SyncResult.cs` が定義されているが未使用
   - 関連ファイル: `src/GistGet/GistGet/SyncResult.cs`
 
-**sync の仕様要件（未実装）:**
-- [ ] `--url` 指定時の読み取り専用モード（Gist へ保存しない）
-- [ ] 差分計算（同期マトリクス）に従った処理
-- [ ] uninstall → install → pin 同期の順序
-- [ ] 冪等性・エラーハンドリング（複数パッケージ継続処理、最後にまとめて報告）
+**sync の仕様要件:**
+- [ ] `--url` 指定時の読み取り専用モード（Gist へ保存しない）※Phase 2で実装予定
+- [x] 差分計算（同期マトリクス）に従った処理
+- [x] uninstall → install → pin 同期の順序
+- [x] 冪等性・エラーハンドリング（複数パッケージ継続処理、最後にまとめて報告）
+
 
 ### export / import コマンド
 

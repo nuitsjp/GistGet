@@ -31,11 +31,85 @@ public class CommandBuilder(IGistGetService gistGetService)
     private Command BuildSyncCommand()
     {
         var command = new Command("sync", "Synchronize packages with Gist");
-        var urlOption = new Option<string>("--url", "Gist URL to sync from (optional)");
+        var urlOption = new Option<string?>("--url", "Gist URL to sync from (optional)");
         command.Add(urlOption);
+
+        command.SetHandler(async url =>
+        {
+            var result = await gistGetService.SyncAsync(url);
+
+            // 結果を表示
+            if (result.Installed.Count > 0)
+            {
+                AnsiConsole.MarkupLine($"[green]Installed {result.Installed.Count} package(s):[/]");
+                foreach (var pkg in result.Installed)
+                {
+                    AnsiConsole.MarkupLine($"  - {pkg.Id}");
+                }
+            }
+
+            if (result.Uninstalled.Count > 0)
+            {
+                AnsiConsole.MarkupLine($"[yellow]Uninstalled {result.Uninstalled.Count} package(s):[/]");
+                foreach (var pkg in result.Uninstalled)
+                {
+                    AnsiConsole.MarkupLine($"  - {pkg.Id}");
+                }
+            }
+
+            if (result.PinUpdated.Count > 0)
+            {
+                AnsiConsole.MarkupLine($"[blue]Updated pin for {result.PinUpdated.Count} package(s):[/]");
+                foreach (var pkg in result.PinUpdated)
+                {
+                    AnsiConsole.MarkupLine($"  - {pkg.Id}: {pkg.Pin}");
+                }
+            }
+
+            if (result.PinRemoved.Count > 0)
+            {
+                AnsiConsole.MarkupLine($"[blue]Removed pin for {result.PinRemoved.Count} package(s):[/]");
+                foreach (var pkg in result.PinRemoved)
+                {
+                    AnsiConsole.MarkupLine($"  - {pkg.Id}");
+                }
+            }
+
+            if (result.Failed.Count > 0)
+            {
+                AnsiConsole.MarkupLine($"[red]Failed {result.Failed.Count} package(s):[/]");
+                foreach (var pkg in result.Failed)
+                {
+                    AnsiConsole.MarkupLine($"  - {pkg.Id}");
+                }
+            }
+
+            if (result.Errors.Count > 0)
+            {
+                AnsiConsole.MarkupLine("[red]Errors:[/]");
+                foreach (var error in result.Errors)
+                {
+                    AnsiConsole.MarkupLine($"  - {error}");
+                }
+            }
+
+            if (result.Success && 
+                result.Installed.Count == 0 && 
+                result.Uninstalled.Count == 0 && 
+                result.PinUpdated.Count == 0 &&
+                result.PinRemoved.Count == 0)
+            {
+                AnsiConsole.MarkupLine("[green]Already in sync. No changes needed.[/]");
+            }
+            else if (result.Success)
+            {
+                AnsiConsole.MarkupLine("[green]Sync completed successfully.[/]");
+            }
+        }, urlOption);
 
         return command;
     }
+
 
     private Command BuildExportCommand()
     {

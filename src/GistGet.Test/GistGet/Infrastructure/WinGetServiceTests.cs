@@ -71,4 +71,40 @@ public class WinGetServiceTests
             result.ShouldBeNull();
         }
     }
+
+    public class GetAllInstalledPackages : WinGetServiceTests
+    {
+        [Fact]
+        public void ReturnsNonEmptyList()
+        {
+            // -------------------------------------------------------------------
+            // Arrange & Act
+            // -------------------------------------------------------------------
+            var result = WinGetService.GetAllInstalledPackages();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.ShouldNotBeNull();
+            result.Count.ShouldBeGreaterThan(0);
+        }
+
+        [Fact]
+        public void EachPackageHasValidIdAndVersion()
+        {
+            // -------------------------------------------------------------------
+            // Arrange & Act
+            // -------------------------------------------------------------------
+            var result = WinGetService.GetAllInstalledPackages();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            foreach (var package in result)
+            {
+                package.Id.AsPrimitive().ShouldNotBeNullOrEmpty();
+                package.Version.ToString().ShouldNotBeNullOrEmpty();
+            }
+        }
+    }
 }
