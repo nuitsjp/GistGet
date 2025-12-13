@@ -61,12 +61,12 @@ public interface IGistGetService
     Task PinRemoveAndSaveAsync(string packageId);
 
     /// <summary>
-    /// GistのpackagesとYAMLとローカル状態を同期します。
+    /// packages.yamlとローカル状態を同期します。
     /// 差分を検出し、インストール/アンインストール/pin設定を実行します。
     /// </summary>
-    /// <param name="gistUrl">同期元のGist URL（省略時は認証ユーザーのGist）</param>
+    /// <param name="url">同期元の YAML URL（省略時は認証ユーザーの Gist）</param>
     /// <returns>同期結果（インストール/アンインストール/失敗したパッケージ一覧）</returns>
-    Task<SyncResult> SyncAsync(string? gistUrl = null);
+    Task<SyncResult> SyncAsync(string? url = null);
 
     /// <summary>
     /// 指定されたコマンドをWinGetにそのままパススルーで実行します。

@@ -157,12 +157,12 @@ DeepL.DeepL:
 Gist の `packages.yaml` とローカルのパッケージ状態を同期します。
 
 ```
-gistget sync [--url <gist-url>]
+gistget sync [--url <yaml-url>]
 ```
 
 | オプション | 説明 |
 |-----------|------|
-| `--url` | 同期元の Gist URL。省略時は認証ユーザーの Gist を検索。指定時は読み取り専用モード。 |
+| `--url` | 同期元の YAML URL。Gist の Raw URL やその他の HTTP/HTTPS URL を指定可能。省略時は認証ユーザーの Gist を使用。 |
 
 **処理フロー:**
 

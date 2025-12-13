@@ -115,10 +115,10 @@ public class GitHubServiceTests
         }
     }
 
-    public class GetPackagesAsync : GitHubServiceTests
+    public class GetPackagesFromUrlAsync : GitHubServiceTests
     {
         [Fact]
-        public async Task WithGistUrl_ReturnsPackagesFromYaml()
+        public async Task WithGistRawUrl_ReturnsPackagesFromYaml()
         {
             // -------------------------------------------------------------------
             // Arrange
@@ -142,9 +142,10 @@ public class GitHubServiceTests
             try
             {
                 // -------------------------------------------------------------------
-                // Act
+                // Act - Use raw URL for the file
                 // -------------------------------------------------------------------
-                var result = await target.GetPackagesAsync(token, gist.HtmlUrl, fileName, description);
+                var rawUrl = gist.Files[fileName].RawUrl;
+                var result = await target.GetPackagesFromUrlAsync(rawUrl);
 
                 // -------------------------------------------------------------------
                 // Assert

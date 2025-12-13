@@ -104,7 +104,7 @@ public class GistGetService(
         }
 
         // ステップ2: Gistから既存のパッケージ一覧を取得
-        var existingPackages = await gitHubService.GetPackagesAsync(credential.Token, "", "packages.yaml", "GistGet packages");
+        var existingPackages = await gitHubService.GetPackagesAsync(credential.Token, "packages.yaml", "GistGet packages");
         var existingPackage = existingPackages.FirstOrDefault(p => string.Equals(p.Id, options.Id, StringComparison.OrdinalIgnoreCase));
 
         // ステップ3: Pinロジックとインストールバージョンの解決
@@ -242,7 +242,7 @@ public class GistGetService(
             }
         }
 
-        var existingPackages = await gitHubService.GetPackagesAsync(credential.Token, "", "packages.yaml", "GistGet packages");
+        var existingPackages = await gitHubService.GetPackagesAsync(credential.Token, "packages.yaml", "GistGet packages");
         var targetPackage = existingPackages.FirstOrDefault(p => string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase));
 
         var uninstallArgs = new[] { "uninstall", "--id", packageId };
@@ -301,7 +301,7 @@ public class GistGetService(
             return;
         }
 
-        var existingPackages = await gitHubService.GetPackagesAsync(credential.Token, "", "packages.yaml", "GistGet packages");
+        var existingPackages = await gitHubService.GetPackagesAsync(credential.Token, "packages.yaml", "GistGet packages");
         var existingPackage = existingPackages.FirstOrDefault(p => string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase));
 
         var resolvedVersion = version;
@@ -385,7 +385,7 @@ public class GistGetService(
             }
         }
 
-        var existingPackages = await gitHubService.GetPackagesAsync(credential.Token, "", "packages.yaml", "GistGet packages");
+        var existingPackages = await gitHubService.GetPackagesAsync(credential.Token, "packages.yaml", "GistGet packages");
         var existingPackage = existingPackages.FirstOrDefault(p => string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase));
 
         var pinTypeToSet = existingPackage?.PinType;
@@ -441,7 +441,7 @@ public class GistGetService(
         }
 
         // ステップ2: Gistから既存のパッケージ一覧を取得
-        var existingPackages = await gitHubService.GetPackagesAsync(credential.Token, "", "packages.yaml", "GistGet packages");
+        var existingPackages = await gitHubService.GetPackagesAsync(credential.Token, "packages.yaml", "GistGet packages");
         var existingPackage = existingPackages.FirstOrDefault(p => string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase));
 
         // ステップ3: WinGet pin removeを実行
@@ -473,28 +473,32 @@ public class GistGetService(
     /// GistのpackagesとYAMLとローカル状態を同期します。
     /// 差分を検出し、インストール/アンインストール/pin設定を実行します。
     /// </summary>
-    /// <param name="gistUrl">同期元のGist URL（省略時は認証ユーザーのGist）</param>
+    /// <param name="url">同期元の URL（省略時は認証ユーザーの Gist）</param>
     /// <returns>同期結果（インストール/アンインストール/失敗したパッケージ一覧）</returns>
-    public async Task<SyncResult> SyncAsync(string? gistUrl = null)
+    public async Task<SyncResult> SyncAsync(string? url = null)
     {
         var result = new SyncResult();
+        
+        IReadOnlyList<GistGetPackage> gistPackages;
 
-        // ステップ1: 認証状態を確認
-        if (!credentialService.TryGetCredential(out var credential))
+        if (!string.IsNullOrEmpty(url))
         {
-            await AuthLoginAsync();
-            if (!credentialService.TryGetCredential(out credential))
-            {
-                throw new InvalidOperationException("Failed to retrieve credentials after login.");
-            }
+            // URL 指定時: HTTP でダウンロード（認証不要）
+            gistPackages = await gitHubService.GetPackagesFromUrlAsync(url);
         }
-
-        // ステップ2: Gistからパッケージ一覧を取得
-        var gistPackages = await gitHubService.GetPackagesAsync(
-            credential.Token, 
-            gistUrl ?? "", 
-            "packages.yaml", 
-            "GistGet packages");
+        else
+        {
+            // URL 未指定時: 認証ユーザーの Gist を使用
+            if (!credentialService.TryGetCredential(out var credential))
+            {
+                await AuthLoginAsync();
+                if (!credentialService.TryGetCredential(out credential))
+                {
+                    throw new InvalidOperationException("Failed to retrieve credentials after login.");
+                }
+            }
+            gistPackages = await gitHubService.GetPackagesAsync(credential.Token, "packages.yaml", "GistGet packages");
+        }
 
         // ステップ3: ローカルのインストール済みパッケージを取得
         var localPackages = winGetService.GetAllInstalledPackages();

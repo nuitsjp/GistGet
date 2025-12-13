@@ -54,6 +54,12 @@ gistget sync
 2.  ローカルにインストールされているパッケージと比較します。
 3.  不足しているパッケージをインストールし、削除対象としてマークされたパッケージをアンインストールします。
 
+外部の YAML ファイルから同期するには:
+
+```powershell
+gistget sync --url https://gist.githubusercontent.com/user/id/raw/packages.yaml
+```
+
 ### エクスポート / インポート
 
 現在の状態を YAML ファイルにエクスポートするには:

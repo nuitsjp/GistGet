@@ -202,7 +202,7 @@ public class GistGetServiceTests
             _passthroughRunnerMock.Setup(x => x.RunAsync(It.IsAny<string[]>())).ReturnsAsync(0);
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new List<GistGetPackage>());
 
             // -------------------------------------------------------------------
@@ -242,7 +242,7 @@ public class GistGetServiceTests
 
             // Gist setup
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(existingPackages);
 
             // Runner setup
@@ -310,7 +310,7 @@ public class GistGetServiceTests
 
             // Gist setup
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(existingPackages);
 
             // Runner setup
@@ -372,7 +372,7 @@ public class GistGetServiceTests
 
             // Gist setup: no existing entry -> no pin
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new List<GistGetPackage>());
 
             // Runner setup: only install should be called
@@ -429,7 +429,7 @@ public class GistGetServiceTests
                 }));
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new List<GistGetPackage>());
 
             _passthroughRunnerMock
@@ -482,7 +482,7 @@ public class GistGetServiceTests
                 .Returns(new WinGetPackage("Test Package", new PackageId(packageId), new Version("1.0.0"), new Version("2.0.0")));
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(existingPackages);
 
             var sequence = new MockSequence();
@@ -556,7 +556,7 @@ public class GistGetServiceTests
                 }));
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(existingPackages);
 
             _passthroughRunnerMock
@@ -602,7 +602,7 @@ public class GistGetServiceTests
                 }));
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new List<GistGetPackage>());
 
             _passthroughRunnerMock
@@ -674,7 +674,7 @@ public class GistGetServiceTests
             // Assert
             // -------------------------------------------------------------------
             _passthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args => args[0] == "pin")), Times.Never);
-            _authServiceMock.Verify(x => x.GetPackagesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _authServiceMock.Verify(x => x.GetPackagesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
             _authServiceMock.Verify(x => x.SavePackagesAsync(
                 It.IsAny<string>(),
                 It.IsAny<string>(),
@@ -714,7 +714,7 @@ public class GistGetServiceTests
                 .ReturnsAsync(0);
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new List<GistGetPackage>());
 
             // -------------------------------------------------------------------
@@ -759,7 +759,7 @@ public class GistGetServiceTests
                 .Callback<Credential>(c => currentCredential = c);
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(savedCredential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(savedCredential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new List<GistGetPackage>());
 
             _passthroughRunnerMock
@@ -820,7 +820,7 @@ public class GistGetServiceTests
                 }));
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(existingPackages);
 
             var sequence = new MockSequence();
@@ -889,7 +889,7 @@ public class GistGetServiceTests
             };
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(existingPackages);
 
             _passthroughRunnerMock
@@ -936,7 +936,7 @@ public class GistGetServiceTests
 
             // Gist に該当パッケージのエントリがない
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new List<GistGetPackage>());
 
             _passthroughRunnerMock
@@ -994,7 +994,7 @@ public class GistGetServiceTests
             };
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(existingPackages);
 
             _passthroughRunnerMock
@@ -1049,7 +1049,7 @@ public class GistGetServiceTests
                 }));
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new List<GistGetPackage>());
 
             _passthroughRunnerMock
@@ -1105,7 +1105,7 @@ public class GistGetServiceTests
                 }));
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new List<GistGetPackage>());
 
             _passthroughRunnerMock
@@ -1158,7 +1158,7 @@ public class GistGetServiceTests
             };
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(existingPackages);
 
             _passthroughRunnerMock
@@ -1224,7 +1224,7 @@ public class GistGetServiceTests
                 .Callback<Credential>((c) => currentCredential = c);
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new List<GistGetPackage>());
 
             _passthroughRunnerMock.Setup(x => x.RunAsync(It.IsAny<string[]>())).ReturnsAsync(0);
@@ -1266,7 +1266,7 @@ public class GistGetServiceTests
             };
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(existingPackages);
 
             _passthroughRunnerMock
@@ -1329,7 +1329,7 @@ public class GistGetServiceTests
             };
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(existingPackages);
 
             _passthroughRunnerMock
@@ -1388,7 +1388,7 @@ public class GistGetServiceTests
             };
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(existingPackages);
 
             _passthroughRunnerMock
@@ -1434,7 +1434,7 @@ public class GistGetServiceTests
                 }));
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new List<GistGetPackage>());
 
             _passthroughRunnerMock
@@ -1493,7 +1493,7 @@ public class GistGetServiceTests
                 .Callback<Credential>((c) => currentCredential = c);
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new List<GistGetPackage>());
 
             _passthroughRunnerMock.Setup(x => x.RunAsync(It.IsAny<string[]>())).ReturnsAsync(0);
@@ -1534,7 +1534,7 @@ public class GistGetServiceTests
             };
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(existingPackages);
 
             _passthroughRunnerMock
@@ -1593,7 +1593,7 @@ public class GistGetServiceTests
                 }));
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(gistPackages);
 
             _winGetServiceMock
@@ -1647,7 +1647,7 @@ public class GistGetServiceTests
                 }));
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(gistPackages);
 
             _winGetServiceMock
@@ -1704,7 +1704,7 @@ public class GistGetServiceTests
                 }));
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(gistPackages);
 
             _winGetServiceMock
@@ -1759,7 +1759,7 @@ public class GistGetServiceTests
                 }));
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(gistPackages);
 
             _winGetServiceMock
@@ -1808,7 +1808,7 @@ public class GistGetServiceTests
                 }));
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(gistPackages);
 
             _winGetServiceMock
@@ -1867,7 +1867,7 @@ public class GistGetServiceTests
                 .Callback<Credential>((c) => currentCredential = c);
 
             _authServiceMock
-                .Setup(x => x.GetPackagesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.GetPackagesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new List<GistGetPackage>());
 
             _winGetServiceMock

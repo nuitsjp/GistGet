@@ -73,45 +73,52 @@ public class GitHubService(
         return new TokenStatus(user.Login, scopes.ToList());
     }
 
-    public async Task<IReadOnlyList<GistGetPackage>> GetPackagesAsync(string token, string gistUrl, string gistFileName, string gistDescription)
+    public async Task<IReadOnlyList<GistGetPackage>> GetPackagesFromUrlAsync(string url)
+    {
+        using var httpClient = new HttpClient();
+        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(ProductHeader);
+        
+        var yaml = await httpClient.GetStringAsync(url);
+        
+        if (string.IsNullOrWhiteSpace(yaml))
+        {
+            return Array.Empty<GistGetPackage>();
+        }
+
+        var packages = DeserializePackages(yaml);
+        return packages.OrderBy(p => p.Id, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    public async Task<IReadOnlyList<GistGetPackage>> GetPackagesAsync(string token, string gistFileName, string gistDescription)
     {
         var resolvedToken = ResolveToken(token);
+        if (string.IsNullOrWhiteSpace(resolvedToken))
+        {
+            throw new InvalidOperationException("Authentication required to fetch default Gist.");
+        }
+
         var client = CreateClient(resolvedToken);
         var (targetFileName, targetDescription) = ResolveGistMetadata(gistFileName, gistDescription);
 
-        string? content = null;
+        var gists = await client.Gist.GetAll();
+        var matchingGists = gists
+            .Where(g => g.Files.ContainsKey(targetFileName) || g.Description == targetDescription)
+            .ToList();
 
-        if (!string.IsNullOrWhiteSpace(gistUrl))
+        if (matchingGists.Count > 1)
         {
-            var gistId = ParseGistId(gistUrl);
-            var gist = await client.Gist.Get(gistId);
-            content = ExtractYamlContent(gist, targetFileName);
+            throw new InvalidOperationException(
+                $"Multiple Gists match the criteria ({matchingGists.Count} found). Please specify the target Gist URL explicitly via the `--url` argument.");
         }
-        else
+
+        var targetGist = matchingGists.SingleOrDefault();
+        if (targetGist == null)
         {
-            if (string.IsNullOrWhiteSpace(resolvedToken))
-            {
-                throw new InvalidOperationException("Authentication required to fetch default Gist.");
-            }
-
-            var gists = await client.Gist.GetAll();
-            var matchingGists = gists
-                .Where(g => g.Files.ContainsKey(targetFileName) || g.Description == targetDescription)
-                .ToList();
-
-            if (matchingGists.Count > 1)
-            {
-                throw new InvalidOperationException(
-                    $"Multiple Gists match the criteria ({matchingGists.Count} found). Please specify the target Gist URL explicitly via the `gistUrl` argument.");
-            }
-
-            var targetGist = matchingGists.SingleOrDefault();
-            if (targetGist != null)
-            {
-                var gist = await client.Gist.Get(targetGist.Id);
-                content = ExtractYamlContent(gist, targetFileName);
-            }
+            return Array.Empty<GistGetPackage>();
         }
+
+        var gist = await client.Gist.Get(targetGist.Id);
+        var content = ExtractYamlContent(gist, targetFileName);
 
         if (string.IsNullOrWhiteSpace(content))
         {

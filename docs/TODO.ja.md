@@ -2,18 +2,13 @@
 
 このファイルは、`docs/SPEC.ja.md` と現状実装の差分（仕様不一致/実装漏れ/設計ガイドライン逸脱）を列挙するバックログです。
 
-**最終更新**: 2025年12月13日（実装レビューに基づく）
+**最終更新**: 2025年12月13日（winget ヘルプとの比較に基づく追記）
 
 実施したTODOは☑に変更してください。
 
 ---
 
 ## 🔴 最優先（未実装コマンド）
-
-### sync コマンド
-**sync の仕様要件:**
-- [ ] `--url` 指定時の読み取り専用モード（Gist へ保存しない）※Phase 2で実装予定
-
 
 ### export / import コマンド
 
@@ -45,6 +40,8 @@ var copy = new GistGetPackage
 };
 ```
 
+- [ ] `SerializePackages()` ですべての属性が正しく保存されているか、全属性についてのユニットテストを追加する
+
 ### install の custom オプションが誤っている
 
 - [ ] `--custom` フラグなしで値だけ渡している
@@ -68,6 +65,160 @@ var copy = new GistGetPackage
 | `--ignore-security-hash` | ✅ (`AllowHashMismatch`) | ❌ | ✅ |
 
 - 関連ファイル: `src/GistGet/GistGet/Presentation/CommandBuilder.cs` (L76-96)
+
+winget に存在するが `InstallOptions` にも CLI にもないオプション:
+
+| オプション | 説明 | 対応要否 |
+|------------|------|:--------:|
+| `-q,--query` | パッケージの検索クエリ | ❓ |
+| `-m,--manifest` | マニフェストパス | ❓ |
+| `--name` | 名前でフィルター | ❓ |
+| `--moniker` | モニカーでフィルター | ❓ |
+| `-s,--source` | ソース指定 | ⚠️ 要検討 |
+| `-e,--exact` | 完全一致 | ⚠️ 要検討 |
+| `--allow-reboot` | 再起動許可 | ⚠️ 要検討 |
+| `--ignore-local-archive-malware-scan` | マルウェアスキャン無視 | ❓ |
+| `--dependency-source` | 依存関係ソース | ❓ |
+| `--no-upgrade` | 既存時アップグレードスキップ | ⚠️ 要検討 |
+| `--authentication-mode` | 認証モード | ❓ |
+| `--authentication-account` | 認証アカウント | ❓ |
+| `-r,--rename` | 実行ファイル名変更（ポータブル） | ❓ |
+| `--uninstall-previous` | アップグレード時に旧バージョン削除 | ⚠️ 要検討 |
+
+- 関連ファイル: `src/GistGet/GistGet/InstallOptions.cs`
+
+### uninstall コマンド
+
+CLI に存在しないオプション（現在 `--id` のみ）:
+
+| オプション | 説明 | 対応要否 |
+|------------|------|:--------:|
+| `-q,--query` | 検索クエリ | ❓ |
+| `-m,--manifest` | マニフェストパス | ❓ |
+| `--name` | 名前でフィルター | ❓ |
+| `--moniker` | モニカーでフィルター | ❓ |
+| `--product-code` | 製品コードでフィルター | ❓ |
+| `-v,--version` | バージョン指定 | ⚠️ 要検討 |
+| `--all,--all-versions` | 全バージョンアンインストール | ⚠️ 要検討 |
+| `-s,--source` | ソース指定 | ⚠️ 要検討 |
+| `-e,--exact` | 完全一致 | ⚠️ 要検討 |
+| `--scope` | スコープ（user/machine） | ⚠️ 要検討 |
+| `-i,--interactive` | 対話モード | ⚠️ 要検討 |
+| `-h,--silent` | サイレントモード | ⚠️ 要検討 |
+| `--force` | 強制実行 | ⚠️ 要検討 |
+| `--purge` | 完全削除（ポータブル） | ⚠️ 要検討 |
+| `--preserve` | ファイル保持（ポータブル） | ⚠️ 要検討 |
+| `-o,--log` | ログファイルパス | ⚠️ 要検討 |
+| `--header` | HTTPヘッダー | ❓ |
+| `--authentication-mode` | 認証モード | ❓ |
+| `--authentication-account` | 認証アカウント | ❓ |
+| `--accept-source-agreements` | ソース契約同意 | ⚠️ 要検討 |
+
+- 関連ファイル: `src/GistGet/GistGet/Presentation/CommandBuilder.cs` (BuildUninstallCommand)
+
+### upgrade コマンド
+
+CLI に存在しないオプション（現在 `--id`, `--version` のみ）:
+
+| オプション | 説明 | 対応要否 |
+|------------|------|:--------:|
+| `-q,--query` | 検索クエリ | ❓ |
+| `-m,--manifest` | マニフェストパス | ❓ |
+| `--name` | 名前でフィルター | ❓ |
+| `--moniker` | モニカーでフィルター | ❓ |
+| `-s,--source` | ソース指定 | ⚠️ 要検討 |
+| `-e,--exact` | 完全一致 | ⚠️ 要検討 |
+| `-i,--interactive` | 対話モード | ⚠️ 要検討 |
+| `-h,--silent` | サイレントモード | ⚠️ 要検討 |
+| `--purge` | 完全削除（ポータブル） | ❓ |
+| `-o,--log` | ログファイルパス | ⚠️ 要検討 |
+| `--custom` | カスタム引数 | ⚠️ 要検討 |
+| `--override` | 引数上書き | ⚠️ 要検討 |
+| `-l,--location` | インストール先 | ⚠️ 要検討 |
+| `--scope` | スコープ（user/machine） | ⚠️ 要検討 |
+| `-a,--architecture` | アーキテクチャ | ⚠️ 要検討 |
+| `--installer-type` | インストーラタイプ | ⚠️ 要検討 |
+| `--locale` | ロケール | ⚠️ 要検討 |
+| `--ignore-security-hash` | ハッシュ不一致無視 | ⚠️ 要検討 |
+| `--allow-reboot` | 再起動許可 | ⚠️ 要検討 |
+| `--skip-dependencies` | 依存関係スキップ | ⚠️ 要検討 |
+| `--ignore-local-archive-malware-scan` | マルウェアスキャン無視 | ❓ |
+| `--accept-package-agreements` | パッケージ契約同意 | ⚠️ 要検討 |
+| `--accept-source-agreements` | ソース契約同意 | ⚠️ 要検討 |
+| `--header` | HTTPヘッダー | ❓ |
+| `--authentication-mode` | 認証モード | ❓ |
+| `--authentication-account` | 認証アカウント | ❓ |
+| `-r,--recurse,--all` | 全パッケージアップグレード | ✅ パススルー対応済 |
+| `-u,--unknown,--include-unknown` | バージョン不明も含める | ⚠️ 要検討 |
+| `--pinned,--include-pinned` | ピン済みも含める | ⚠️ 要検討 |
+| `--uninstall-previous` | 旧バージョン削除 | ⚠️ 要検討 |
+| `--force` | 強制実行 | ⚠️ 要検討 |
+
+- 関連ファイル: `src/GistGet/GistGet/Presentation/CommandBuilder.cs` (BuildUpgradeCommand)
+
+### pin add コマンド
+
+CLI に存在しないオプション:
+
+| オプション | 説明 | 対応要否 |
+|------------|------|:--------:|
+| `--blocking` | ブロッキング pin | ⚠️ 要実装 |
+| `--gating` | ゲーティング pin | ⚠️ 要実装 |
+| `--installed` | インストール済みバージョンに固定 | ⚠️ 要検討 |
+| `-s,--source` | ソース指定 | ❓ |
+| `-e,--exact` | 完全一致 | ❓ |
+| `--force` | 強制上書き | ⚠️ 要検討（GistGetServiceで追加済み） |
+
+- 関連ファイル: `src/GistGet/GistGet/Presentation/CommandBuilder.cs` (BuildPinCommand)
+
+### pin remove コマンド
+
+CLI に存在しないオプション:
+
+| オプション | 説明 | 対応要否 |
+|------------|------|:--------:|
+| `-q,--query` | 検索クエリ | ❓ |
+| `--name` | 名前でフィルター | ❓ |
+| `--moniker` | モニカーでフィルター | ❓ |
+| `-s,--source` | ソース指定 | ❓ |
+| `--tag` | タグでフィルター | ❓ |
+| `--cmd,--command` | コマンドでフィルター | ❓ |
+| `-e,--exact` | 完全一致 | ❓ |
+| `--header` | HTTPヘッダー | ❓ |
+| `--authentication-mode` | 認証モード | ❓ |
+| `--authentication-account` | 認証アカウント | ❓ |
+| `--accept-source-agreements` | ソース契約同意 | ❓ |
+| `--installed` | インストール済みから解除 | ❓ |
+
+- 関連ファイル: `src/GistGet/GistGet/Presentation/CommandBuilder.cs` (BuildPinCommand)
+
+### winget パススルーコマンドの不足
+
+winget v1.12 で利用可能なコマンド一覧と GistGet の対応状況:
+
+| winget コマンド | GistGet 対応 | 備考 |
+|----------------|:------------:|------|
+| `install` | ✅ | 管理対象コマンド |
+| `show` | ✅ | パススルー |
+| `source` | ✅ | パススルー |
+| `search` | ✅ | パススルー |
+| `list` | ✅ | パススルー |
+| `upgrade` | ✅ | 管理対象コマンド |
+| `uninstall` | ✅ | 管理対象コマンド |
+| `hash` | ✅ | パススルー |
+| `validate` | ✅ | パススルー |
+| `settings` | ✅ | パススルー |
+| `features` | ✅ | パススルー |
+| `export` | ⚠️ | 定義のみ、ハンドラなし |
+| `import` | ⚠️ | 定義のみ、ハンドラなし |
+| `pin` | ✅ | 管理対象コマンド |
+| `configure` | ✅ | パススルー |
+| `download` | ✅ | パススルー |
+| `repair` | ✅ | パススルー |
+| `dscv3` | ❌ | 未実装（要検討） |
+| `mcp` | ❌ | 未実装（要検討） |
+
+- 関連ファイル: `src/GistGet/GistGet/Presentation/CommandBuilder.cs` (BuildWingetPassthroughCommands)
 
 ---
 
