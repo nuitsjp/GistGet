@@ -4,7 +4,7 @@ using Spectre.Console;
 
 namespace GistGet.Presentation;
 
-public class CommandBuilder(IGitHubService gitHubService, IGistGetService gistGetService)
+public class CommandBuilder(IGistGetService gistGetService)
 {
     public RootCommand Build()
     {
