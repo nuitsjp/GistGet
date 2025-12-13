@@ -451,13 +451,23 @@ public class GistGetService(
     /// </summary>
     /// <param name="url">同期元の URL（省略時は認証ユーザーの Gist）</param>
     /// <returns>同期結果（インストール/アンインストール/失敗したパッケージ一覧）</returns>
-    public async Task<SyncResult> SyncAsync(string? url = null)
+    public async Task<SyncResult> SyncAsync(string? url = null, string? filePath = null)
     {
         var result = new SyncResult();
         
         IReadOnlyList<GistGetPackage> gistPackages;
+ 
+        if (!string.IsNullOrEmpty(filePath))
+        {
+            if (!File.Exists(filePath))
+            {
+                throw new FileNotFoundException($"File not found: {filePath}", filePath);
+            }
 
-        if (!string.IsNullOrEmpty(url))
+            var yaml = await File.ReadAllTextAsync(filePath);
+            gistPackages = GistGetPackageSerializer.Deserialize(yaml);
+        }
+        else if (!string.IsNullOrEmpty(url))
         {
             // URL 指定時: HTTP でダウンロード（認証不要）
             gistPackages = await gitHubService.GetPackagesFromUrlAsync(url);
@@ -490,12 +500,14 @@ public class GistGetService(
             {
                 try
                 {
+                    consoleService.WriteInfo($"[sync] Uninstalling {gistPkg.Id}...");
                     var uninstallArgs = new[] { "uninstall", "--id", gistPkg.Id };
                     var exitCode = await passthroughRunner.RunAsync(uninstallArgs);
                     if (exitCode == 0)
                     {
                         result.Uninstalled.Add(gistPkg);
                         // pinも削除
+                        consoleService.WriteInfo($"[sync] Removing pin for {gistPkg.Id}...");
                         await passthroughRunner.RunAsync(new[] { "pin", "remove", "--id", gistPkg.Id });
                     }
                     else
@@ -521,6 +533,7 @@ public class GistGetService(
                 {
                     var installArgs = argumentBuilder.BuildInstallArgs(gistPkg);
 
+                    consoleService.WriteInfo($"[sync] Installing {gistPkg.Id}...");
                     var exitCode = await passthroughRunner.RunAsync(installArgs.ToArray());
                     if (exitCode == 0)
                     {
@@ -530,6 +543,7 @@ public class GistGetService(
                         if (!string.IsNullOrEmpty(gistPkg.Pin))
                         {
                             var pinArgs = argumentBuilder.BuildPinAddArgs(gistPkg.Id, gistPkg.Pin, gistPkg.PinType);
+                            consoleService.WriteInfo($"[sync] Pinning {gistPkg.Id} to {gistPkg.Pin}...");
                             await passthroughRunner.RunAsync(pinArgs);
                         }
                     }
@@ -558,6 +572,7 @@ public class GistGetService(
                     {
                         // GistにPinがある場合はローカルにPin追加/更新
                         var pinArgs = argumentBuilder.BuildPinAddArgs(gistPkg.Id, gistPkg.Pin, gistPkg.PinType, true);
+                        consoleService.WriteInfo($"[sync] Pinning {gistPkg.Id} to {gistPkg.Pin}...");
                         var exitCode = await passthroughRunner.RunAsync(pinArgs);
                         if (exitCode == 0)
                         {
@@ -569,6 +584,7 @@ public class GistGetService(
                         // GistにPinがない場合はローカルのPinを削除（存在する場合）
                         // pin removeはエラーを無視（元々pinがない場合もあるため）
                         var pinRemoveArgs = new[] { "pin", "remove", "--id", gistPkg.Id };
+                        consoleService.WriteInfo($"[sync] Removing pin for {gistPkg.Id}...");
                         var exitCode = await passthroughRunner.RunAsync(pinRemoveArgs);
                         if (exitCode == 0)
                         {
@@ -664,4 +680,3 @@ public class GistGetService(
         consoleService.WriteInfo($"Imported {packages.Count} packages to Gist");
     }
 }
-
