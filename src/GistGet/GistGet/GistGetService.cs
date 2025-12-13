@@ -428,9 +428,45 @@ public class GistGetService(
     /// パッケージのPinを削除し、Gistを更新します。
     /// </summary>
     /// <param name="packageId">Pin解除するパッケージのID</param>
-    public Task PinRemoveAndSaveAsync(string packageId)
+    public async Task PinRemoveAndSaveAsync(string packageId)
     {
-        throw new NotImplementedException();
+        // ステップ1: 認証状態を確認し、未認証の場合はログインを促す
+        if (!credentialService.TryGetCredential(out var credential))
+        {
+            await AuthLoginAsync();
+            if (!credentialService.TryGetCredential(out credential))
+            {
+                throw new InvalidOperationException("Failed to retrieve credentials after login.");
+            }
+        }
+
+        // ステップ2: Gistから既存のパッケージ一覧を取得
+        var existingPackages = await gitHubService.GetPackagesAsync(credential.Token, "", "packages.yaml", "GistGet packages");
+        var existingPackage = existingPackages.FirstOrDefault(p => string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase));
+
+        // ステップ3: WinGet pin removeを実行
+        var pinArgs = new[] { "pin", "remove", "--id", packageId };
+        var exitCode = await passthroughRunner.RunAsync(pinArgs);
+        if (exitCode != 0)
+        {
+            // pin remove 失敗時はGistを更新せずに終了
+            return;
+        }
+
+        // ステップ4: パッケージリストを更新してGistに保存
+        var newPackages = existingPackages
+            .Where(p => !string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var packageToSave = existingPackage ?? new GistGetPackage { Id = packageId };
+        // pinとpinType、versionを削除
+        packageToSave.Pin = null;
+        packageToSave.PinType = null;
+        packageToSave.Version = null;
+
+        newPackages.Add(packageToSave);
+
+        await gitHubService.SavePackagesAsync(credential.Token, "", "packages.yaml", "GistGet packages", newPackages);
     }
 
     /// <summary>

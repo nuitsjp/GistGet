@@ -396,8 +396,12 @@ gistget pin remove <package-id>
 2. `winget pin remove --id <id>` を実行
 3. 失敗時はエラー終了
 4. 成功時:
-   - `packages.yaml` から `pin` と `pinType` を削除
+   - `packages.yaml` から `pin`、`pinType`、`version` を削除
 5. Gist に `packages.yaml` を保存
+
+**注意:**
+- エントリ自体は削除されず、pin 関連フィールドのみが削除される。
+- `uninstall` 等の他のフィールドは保持される。
 
 ---
 
