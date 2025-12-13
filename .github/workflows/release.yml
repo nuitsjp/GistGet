@@ -16,8 +16,14 @@ env:
   PROJECT_PATH: 'src/GistGet/GistGet.csproj'
 
 jobs:
+  ci:
+    name: CI validation
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
   build:
     name: Build (${{ matrix.rid }})
+    needs: ci
     runs-on: windows-latest
     strategy:
       matrix:
@@ -40,7 +46,13 @@ jobs:
         id: version
         shell: pwsh
         run: |
-          $version = "${{ github.ref_name }}" -replace '^v', ''
+          $version = "${{ github.ref_name }}" -replace '^v\.?', ''
+          $version = $version.TrimStart('.')
+
+          if ([string]::IsNullOrWhiteSpace($version)) {
+            throw "Failed to parse version from tag '${{ github.ref_name }}'."
+          }
+
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
           echo "Version: $version"
 
@@ -96,6 +108,12 @@ jobs:
         id: version
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${VERSION#.}"
+
+          if [ -z "$VERSION" ]; then
+            echo "Failed to parse version from tag '${GITHUB_REF_NAME}'." >&2
+            exit 1
+          fi
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
 
@@ -188,4 +206,3 @@ jobs:
             --urls $x64Url $arm64Url `
             --submit `
             --token $env:WINGET_GITHUB_TOKEN
-
