@@ -340,6 +340,7 @@ public class GistGetService(
         packageToSave.Custom = options.Custom ?? packageToSave.Custom;
         packageToSave.Override = options.Override ?? packageToSave.Override;
         packageToSave.InstallerType = options.InstallerType ?? packageToSave.InstallerType;
+        packageToSave.Header = options.Header ?? packageToSave.Header;
         if (options.Force) packageToSave.Force = options.Force;
         if (options.AcceptPackageAgreements) packageToSave.AcceptPackageAgreements = options.AcceptPackageAgreements;
         if (options.AcceptSourceAgreements) packageToSave.AcceptSourceAgreements = options.AcceptSourceAgreements;

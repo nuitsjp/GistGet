@@ -96,6 +96,7 @@ public class WinGetArgumentBuilderTests
                 Id = "Test.Package",
                 Version = "2.0.0",
                 Scope = "machine",
+                Header = "X-Custom: header",
                 Force = true
             };
 
@@ -106,6 +107,7 @@ public class WinGetArgumentBuilderTests
                 "upgrade", "--id", "Test.Package",
                 "--version", "2.0.0",
                 "--scope", "machine",
+                "--header", "X-Custom: header",
                 "--force"
             };
 

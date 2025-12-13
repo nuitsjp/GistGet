@@ -36,6 +36,9 @@ public record UpgradeOptions
     /// <summary>インストーラータイプ</summary>
     public string? InstallerType { get; init; }
 
+    /// <summary>カスタム HTTP ヘッダー</summary>
+    public string? Header { get; init; }
+
     /// <summary>対話型アップグレード</summary>
     public bool Interactive { get; init; }
 

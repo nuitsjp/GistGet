@@ -50,13 +50,9 @@ public class WinGetArgumentBuilder : IWinGetArgumentBuilder
             options.Scope, options.Architecture, options.Location,
             options.Interactive, options.Silent, options.Log,
             options.Override, options.Force, options.SkipDependencies,
-            null, // Header not exposed in UpgradeOptions in original plan but seemingly ignored or handled differently? Let's check UpgradeOptions definition.
-            options.InstallerType, options.Custom,
+            options.Header, options.InstallerType, options.Custom,
             options.Locale, options.AcceptPackageAgreements,
             options.AcceptSourceAgreements, options.AllowHashMismatch));
-            
-        // Wait, UpgradeOptions does not have Header property in the provided content. 
-        // Passing null for Header.
 
         return args.ToArray();
     }
