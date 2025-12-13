@@ -123,6 +123,8 @@ var copy = new GistGetPackage
 - [ ] upgrade 成功後の pin 追従で「更新可能バージョン（UsableVersion）」を使用しているが、upgrade 後のインストール済みバージョンを取得すべき
   - 関連ファイル: `src/GistGet/GistGet/GistGetService.cs` (L256-258)
   - 関連ファイル: `src/GistGet/GistGet/Infrastructure/WinGetService.cs`
+- [ ] Gist に pin が無くローカルに pin がある場合、Gist を正として上書きせず pin 同期も Gist 更新も行わないため、明示 upgrade 後に Gist 側へ pin を記録する処理が必要
+  - 関連ファイル: `src/GistGet/GistGet/GistGetService.cs`
 
 ### ID 未指定時のパススルー引数再構成
 
@@ -161,11 +163,9 @@ var copy = new GistGetPackage
 
 ## 📋 csproj / 依存関係
 
-- [ ] `TargetFramework` が `net8.0-windows10.0.26100.0`（AGENTS.md は `net10.0` と記載 → 要確認）
+- [ ] `TargetFramework` を `net10.0-windows10.0.26100.0` に更新する
   - 関連ファイル: `src/GistGet/GistGet.csproj`
-- [ ] `Microsoft.Identity.Client` が未使用に見える（Octokit で認証しているため不要？）
-  - 関連ファイル: `src/GistGet/GistGet.csproj`
-- [ ] `RootNamespace` が空（意図的か確認）
+- [ ] `Microsoft.Identity.Client` を削除する（Octokit で認証しており不要）
   - 関連ファイル: `src/GistGet/GistGet.csproj`
 
 ---
