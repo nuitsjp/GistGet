@@ -46,10 +46,9 @@ public static class GistGetPackageSerializer
                 Header = package.Header,
                 InstallerType = package.InstallerType,
                 Log = package.Log,
-                Mode = package.Mode,
+
                 Override = package.Override,
-                Confirm = package.Confirm,
-                WhatIf = package.WhatIf,
+
                 Interactive = package.Interactive,
                 Silent = package.Silent
             };

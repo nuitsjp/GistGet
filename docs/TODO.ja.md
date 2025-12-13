@@ -197,25 +197,25 @@ GistGet は Gist 上の YAML でパッケージを **ID で一意に管理** す
 
 仕様書に定義されていないプロパティ（削除候補）:
 
-- [ ] `Mode` プロパティ削除
-- [ ] `Confirm` プロパティ削除
-- [ ] `WhatIf` プロパティ削除
+- [x] `Mode` プロパティ削除
+- [x] `Confirm` プロパティ削除
+- [x] `WhatIf` プロパティ削除
 - 関連ファイル: `src/GistGet/GistGet/GistGetPackage.cs`
 
 ### 5-2. Gist ファイル名の統一
 
-- [ ] `GitHubService` のデフォルトファイル名 `gistget-packages.yaml` を `packages.yaml` に統一
+- [x] `GitHubService` のデフォルトファイル名 `gistget-packages.yaml` を `packages.yaml` に統一
 - 関連ファイル: `src/GistGet/GistGet/Infrastructure/GitHubService.cs`
 
 ### 5-3. csproj 整理
 
-- [ ] `Microsoft.Identity.Client` を削除（Octokit で認証しており不要）
+- [x] `Microsoft.Identity.Client` を削除（Octokit で認証しており不要）
 - 関連ファイル: `src/GistGet/GistGet.csproj`
 
 ### 5-4. 仕様書（SPEC）の不整合修正
 
-- [ ] `sync` 節の `--pin` オプション記載を `--version` に修正
-- [ ] `sync` は Gist → ローカルの片方向同期であり、書き戻しを行わないことを明記
+- [x] `sync` 節の `--pin` オプション記載を `--version` に修正
+- [x] `sync` は Gist → ローカルの片方向同期であり、書き戻しを行わないことを明記
 - 関連ファイル: `docs/SPEC.ja.md`
 
 ---

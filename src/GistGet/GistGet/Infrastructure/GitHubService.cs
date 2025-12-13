@@ -13,7 +13,7 @@ public class GitHubService(
 {
     private const string ClientId = "Ov23lihQJhLB6hCnEIvS"; // GistGet Client ID
     private const string ProductHeader = "GistGet";
-    private const string DefaultGistFileName = "gistget-packages.yaml";
+    private const string DefaultGistFileName = "packages.yaml";
     private const string DefaultGistDescription = "GistGet Packages";
 
     public async Task<Credential> LoginAsync()

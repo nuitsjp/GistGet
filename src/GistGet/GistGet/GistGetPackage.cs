@@ -59,17 +59,14 @@ public class GistGetPackage
     [YamlMember(Alias = "log", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public string? Log { get; set; }
 
-    [YamlMember(Alias = "mode", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
-    public string? Mode { get; set; }
+
 
     [YamlMember(Alias = "override", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public string? Override { get; set; }
 
-    [YamlMember(Alias = "confirm", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
-    public bool Confirm { get; set; }
 
-    [YamlMember(Alias = "whatIf", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
-    public bool WhatIf { get; set; }
+
+
 
     [YamlMember(Alias = "interactive", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
     public bool Interactive { get; set; }

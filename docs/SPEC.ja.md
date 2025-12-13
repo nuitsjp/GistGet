@@ -178,6 +178,9 @@ gistget sync [--url <yaml-url>]
    - YAML に `pin` なし → `winget pin remove`（存在すれば）
 7. `--url` 省略時のみ、更新した `packages.yaml` を Gist に保存
 
+> [!NOTE]
+> sync は **Gist → ローカルの片方向同期**です。ローカルにのみ存在するパッケージは Gist に書き戻されません。
+
 **同期マトリクス:**
 
 以下の表は、ローカル状態（縦軸）と Gist 状態（横軸）の組み合わせに対する sync の動作を定義します。
@@ -209,7 +212,7 @@ sync はバージョンの**アップグレード/ダウングレードを行い
 | Gist: `pin: "2.0"`, ローカル: v1.5 インストール済み | pin を `2.0` に設定（アップグレードは行わない） |
 | Gist: pin なし, ローカル: v1.7 + pin あり | pin を削除（upgrade --all の対象になる） |
 
-バージョンを変更したい場合は、明示的に `gistget upgrade --id <id> --pin <version>` を実行してください。
+バージョンを変更したい場合は、明示的に `gistget upgrade --id <id> --version <version>` を実行してください。
 
 ---
 
