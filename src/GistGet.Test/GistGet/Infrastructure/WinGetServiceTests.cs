@@ -9,8 +9,6 @@ public class WinGetServiceTests
 {
     protected readonly WinGetService WinGetService = new();
 
-    private const string SkipReason = "Requires WinGet package manager COM registration.";
-
     private static WinGetPackage RequireInstalledPackage(WinGetPackage? package, PackageId id)
     {
         package.ShouldNotBeNull($"Package '{id.AsPrimitive()}' is required for this test run.");
@@ -19,7 +17,7 @@ public class WinGetServiceTests
 
     public class FindById : WinGetServiceTests
     {
-        [Fact(Skip = SkipReason)]
+        [Fact]
         public void ExistingPackageWithUpdate_ReturnsPackageWithUsableVersionWhenAvailable()
         {
             // -------------------------------------------------------------------
@@ -47,7 +45,7 @@ public class WinGetServiceTests
             result.UsableVersion.ShouldNotBeNull();
         }
 
-        [Fact(Skip = SkipReason)]
+        [Fact]
         public void ExistingPackageWithoutUpdate_ReturnsPackageWithNullUsableVersion()
         {
             // -------------------------------------------------------------------
@@ -69,7 +67,7 @@ public class WinGetServiceTests
             result.UsableVersion.ShouldBeNull();
         }
 
-        [Fact(Skip = SkipReason)]
+        [Fact]
         public void NonExistingPackage_ReturnsNull()
         {
             // -------------------------------------------------------------------
@@ -91,7 +89,7 @@ public class WinGetServiceTests
 
     public class GetAllInstalledPackages : WinGetServiceTests
     {
-        [Fact(Skip = SkipReason)]
+        [Fact]
         public void ReturnsNonEmptyList()
         {
             // -------------------------------------------------------------------
@@ -106,7 +104,7 @@ public class WinGetServiceTests
             result.Count.ShouldBeGreaterThan(0);
         }
 
-        [Fact(Skip = SkipReason)]
+        [Fact]
         public void EachPackageHasValidIdAndVersion()
         {
             // -------------------------------------------------------------------
