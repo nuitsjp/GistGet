@@ -450,4 +450,301 @@ public class GistGetServiceTests
             _passthroughRunnerMock.VerifyAll();
         }
     }
+
+    public class UninstallAndSaveAsync : GistGetServiceTests
+    {
+        [Fact]
+        public async Task WhenNotLoggedIn_PerformsLogin_AndSavesUninstallEntry()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Test.Package";
+            var savedCredential = new Credential("user", "token");
+            Credential? currentCredential = null;
+
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = currentCredential;
+                    return c != null;
+                }));
+
+            _authServiceMock.Setup(x => x.LoginAsync())
+                .ReturnsAsync(savedCredential);
+
+            _credentialServiceMock
+                .Setup(x => x.SaveCredential(It.IsAny<Credential>()))
+                .Callback<Credential>(c => currentCredential = c);
+
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(savedCredential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new List<GistGetPackage>());
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "uninstall" &&
+                    args.Contains("--id") && args.Contains(packageId))))
+                .ReturnsAsync(0);
+
+            _authServiceMock
+                .Setup(x => x.SavePackagesAsync(
+                    savedCredential.Token,
+                    "",
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.Is<IReadOnlyList<GistGetPackage>>(list =>
+                        list.Any(p => p.Id == packageId && p.Uninstall))))
+                .Returns(Task.CompletedTask);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.UninstallAndSaveAsync(packageId);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _authServiceMock.Verify(x => x.LoginAsync(), Times.Once);
+            _passthroughRunnerMock.Verify(x => x.RunAsync(
+                It.Is<string[]>(args => args[0] == "uninstall" && args.Contains("--id") && args.Contains(packageId))
+            ), Times.Once);
+            _authServiceMock.Verify(x => x.SavePackagesAsync(
+                savedCredential.Token,
+                "",
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<IReadOnlyList<GistGetPackage>>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task WhenPinned_RemovesPinAndMarksUninstall()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Test.Package";
+            var credential = new Credential("user", "token");
+            var existingPackages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = packageId, Pin = "1.0.0", PinType = "blocking" }
+            };
+
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(existingPackages);
+
+            var sequence = new MockSequence();
+
+            _passthroughRunnerMock
+                .InSequence(sequence)
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "uninstall" &&
+                    args.Contains("--id") && args.Contains(packageId))))
+                .ReturnsAsync(0);
+
+            _passthroughRunnerMock
+                .InSequence(sequence)
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "pin" && args[1] == "remove" &&
+                    args.Contains("--id") && args.Contains(packageId))))
+                .ReturnsAsync(0);
+
+            _authServiceMock
+                .Setup(x => x.SavePackagesAsync(
+                    credential.Token,
+                    "",
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.Is<IReadOnlyList<GistGetPackage>>(list =>
+                        list.Any(p => p.Id == packageId && p.Uninstall && p.Pin == null && p.PinType == null))))
+                .Returns(Task.CompletedTask);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.UninstallAndSaveAsync(packageId);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _passthroughRunnerMock.VerifyAll();
+            _authServiceMock.Verify(x => x.SavePackagesAsync(
+                credential.Token,
+                "",
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<IReadOnlyList<GistGetPackage>>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task WhenUninstallFails_DoesNotSaveOrRemovePin()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Test.Package";
+            var credential = new Credential("user", "token");
+
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            var existingPackages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = packageId, Pin = "1.2.3" }
+            };
+
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(existingPackages);
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "uninstall" &&
+                    args.Contains("--id") && args.Contains(packageId))))
+                .ReturnsAsync(1);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.UninstallAndSaveAsync(packageId);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _passthroughRunnerMock.Verify(x => x.RunAsync(
+                It.Is<string[]>(args => args[0] == "pin" && args.Contains("remove"))
+            ), Times.Never);
+            _authServiceMock.Verify(x => x.SavePackagesAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<IReadOnlyList<GistGetPackage>>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task WhenNoGistEntry_CreatesNewEntryWithUninstallTrue()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "New.Package";
+            var credential = new Credential("user", "token");
+
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            // Gist に該当パッケージのエントリがない
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new List<GistGetPackage>());
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "uninstall" &&
+                    args.Contains("--id") && args.Contains(packageId))))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.UninstallAndSaveAsync(packageId);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            // Pin がないため pin remove は呼ばれない
+            _passthroughRunnerMock.Verify(x => x.RunAsync(
+                It.Is<string[]>(args => args[0] == "pin" && args.Contains("remove"))
+            ), Times.Never);
+
+            // 新規エントリが作成され、uninstall: true で保存される
+            _authServiceMock.Verify(x => x.SavePackagesAsync(
+                credential.Token,
+                "",
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.Is<IReadOnlyList<GistGetPackage>>(list =>
+                    list.Count == 1 &&
+                    list.Any(p => p.Id == packageId && p.Uninstall && p.Pin == null)
+                )), Times.Once);
+        }
+
+        [Fact]
+        public async Task WhenNoPinExists_SkipsPinRemove()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Test.Package";
+            var credential = new Credential("user", "token");
+
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            // Gist にエントリはあるが Pin は設定されていない
+            var existingPackages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = packageId, Silent = true, Scope = "user" }
+            };
+
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(existingPackages);
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "uninstall" &&
+                    args.Contains("--id") && args.Contains(packageId))))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.UninstallAndSaveAsync(packageId);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            // Pin がないため pin remove は呼ばれない
+            _passthroughRunnerMock.Verify(x => x.RunAsync(
+                It.Is<string[]>(args => args[0] == "pin" && args.Contains("remove"))
+            ), Times.Never);
+
+            // 既存のプロパティが保持され、uninstall: true で保存される
+            _authServiceMock.Verify(x => x.SavePackagesAsync(
+                credential.Token,
+                "",
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.Is<IReadOnlyList<GistGetPackage>>(list =>
+                    list.Any(p => p.Id == packageId && p.Uninstall && p.Silent && p.Scope == "user")
+                )), Times.Once);
+        }
+    }
 }

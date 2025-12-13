@@ -221,9 +221,45 @@ public class GistGetService(
     /// パッケージをアンインストールし、Gistを更新します。
     /// </summary>
     /// <param name="packageId">アンインストールするパッケージのID</param>
-    public Task UninstallAndSaveAsync(string packageId)
+    public async Task UninstallAndSaveAsync(string packageId)
     {
-        throw new NotImplementedException();
+        if (!credentialService.TryGetCredential(out var credential))
+        {
+            await AuthLoginAsync();
+            if (!credentialService.TryGetCredential(out credential))
+            {
+                throw new InvalidOperationException("Failed to retrieve credentials after login.");
+            }
+        }
+
+        var existingPackages = await gitHubService.GetPackagesAsync(credential.Token, "", "packages.yaml", "GistGet packages");
+        var targetPackage = existingPackages.FirstOrDefault(p => string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase));
+
+        var uninstallArgs = new[] { "uninstall", "--id", packageId };
+        var exitCode = await passthroughRunner.RunAsync(uninstallArgs);
+        if (exitCode != 0)
+        {
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(targetPackage?.Pin))
+        {
+            await passthroughRunner.RunAsync(new[] { "pin", "remove", "--id", packageId });
+        }
+
+        var newPackages = existingPackages
+            .Where(p => !string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var packageToSave = targetPackage ?? new GistGetPackage { Id = packageId };
+        packageToSave.Uninstall = true;
+        packageToSave.Pin = null;
+        packageToSave.PinType = null;
+        packageToSave.Version = null;
+
+        newPackages.Add(packageToSave);
+
+        await gitHubService.SavePackagesAsync(credential.Token, "", "packages.yaml", "GistGet packages", newPackages);
     }
 
     /// <summary>
