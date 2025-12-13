@@ -17,20 +17,20 @@
 
 ### 必要な環境
 
-- **OS**: Windows 10/11 (Windows 10.0.26100.0 以降)
-- **.NET SDK**: .NET 8.0 以降
-- **Windows SDK**: 10.0.26100.0 以降（UAP Platform を含む）
-- **IDE**: Visual Studio 2022 または Visual Studio Code (推奨)
-- **Windows Package Manager**: winget (Windows App Installer 経由)
-- **PowerShell**: 5.1 以降 (スクリプト実行用)
+- **OS**: Windows 10/11（Windows 10.0.26100.0以降）
+- **.NET SDK**: .NET 8.0以降
+- **Windows SDK**: 10.0.26100.0以降（UAP Platformを含む）
+- **IDE**: Visual Studio 2022またはVisual Studio Code（推奨）
+- **Windows Package Manager**: winget（Windows App Installer経由）
+- **PowerShell**: 5.1以降（スクリプト実行用）
 
 ### Windows SDK のインストール
 
-WinGet COM API を使用するため、Windows SDK の **UAP Platform** コンポーネントが必要です。
+WinGet COM APIを使用するため、Windows SDKの**UAP Platform**コンポーネントが必要です。
 
 #### Visual Studio Installer でのインストール
 
-1. Visual Studio Installer を起動
+1. Visual Studio Installerを起動
 2. 「変更」をクリック
 3. 「個別のコンポーネント」タブを選択
 4. 以下のコンポーネントを選択してインストール：
@@ -109,16 +109,16 @@ GistGet/
 #### Application層 (`Application/Services/`)
 - ビジネスロジックの実装
 - `AuthService`: GitHub認証 (Device Flow)
-- `GistService`: Gist操作 (取得、更新)
+- `GistService`: Gist操作（取得、更新）
 - `PackageService`: パッケージ同期のオーケストレーション
 
 #### COM 層 (`Com/`)
-- WinGet COM API との統合
-- `WinGetService`: WinGet COM API を使用したパッケージ検索・情報取得
+- WinGet COM APIとの統合
+- `WinGetService`: WinGet COM APIを使用したパッケージ検索・情報取得
 
 ### WinGet COM API について
 
-GistGet は、WinGet COM API を使用してパッケージ情報を取得します。
+GistGetは、WinGet COM APIを使用してパッケージ情報を取得します。
 
 #### 主要な依存パッケージ
 
@@ -129,7 +129,7 @@ GistGet は、WinGet COM API を使用してパッケージ情報を取得しま
 
 #### プロジェクト設定
 
-WinGet COM API を使用するには、以下の設定が必要です：
+WinGet COM APIを使用するには、以下の設定が必要です：
 
 ```xml
 <PropertyGroup>
@@ -138,9 +138,9 @@ WinGet COM API を使用するには、以下の設定が必要です：
 </PropertyGroup>
 ```
 
-- **RuntimeIdentifier**: WinGet COM API は x64 プラットフォームでのみ動作
+- **RuntimeIdentifier**: WinGet COM APIはx64プラットフォームでのみ動作
 - **MicrosoftManagementDeployment-FactoryLinkage**: 
-  - `static` (推奨): WinGet のプロセス内で COM オブジェクトを作成
+    - `static`（推奨）: WinGetのプロセス内でCOMオブジェクトを作成
   - `embedded`: テスト用途
 
 #### 参考資料
@@ -152,7 +152,7 @@ WinGet COM API を使用するには、以下の設定が必要です：
 
 ##### IsUpdateAvailable が正しく動作しない
 
-WinGet COM API の `IsUpdateAvailable` プロパティは、更新が利用可能な場合でも `false` を返すことがあります。
+WinGet COM APIの`IsUpdateAvailable`プロパティは、更新が利用可能な場合でも`false`を返すことがあります。
 
 **回避策**: `InstalledVersion` と `AvailableVersions[0]` を比較して更新の有無を判定：
 
@@ -163,6 +163,7 @@ var availableVersion = package.AvailableVersions.Count > 0
     : installedVersion;
 
 bool isUpdateAvailable = installedVersion != availableVersion;
+```
 
 ## ビルドとテスト
 
@@ -330,7 +331,7 @@ GistGetプロジェクトでは、**t-wadaスタイルのTDD**を厳格に遵守
 
 ### コミットメッセージ
 
-Conventional Commitsに従ってください:
+Conventional Commitsにしたがってください:
 
 ```
 <type>: <subject>
@@ -345,7 +346,7 @@ Conventional Commitsに従ってください:
 - `feat`: 新機能
 - `fix`: バグ修正
 - `docs`: ドキュメントのみの変更
-- `style`: コードの意味に影響しない変更 (フォーマットなど)
+- `style`: コードの意味に影響しない変更（フォーマットなど）
 - `refactor`: バグ修正や機能追加ではないコード変更
 - `test`: テストの追加や修正
 - `chore`: ビルドプロセスやツールの変更
@@ -475,7 +476,7 @@ public class PackageService
 }
 ```
 
-### インターフェース設計
+### インターフェイス設計
 
 サービスと実装を分離:
 
@@ -727,7 +728,7 @@ public class GistServiceIntegrationTests : IClassFixture<GistIntegrationTestFixt
    ```
    auth login
    ```
-3. F5 でデバッグ開始
+3. F5でデバッグ開始
 
 ### Visual Studio Code でのデバッグ
 
@@ -777,10 +778,10 @@ Console.WriteLine($"Installing package: {package.Id}");
 
 #### エラー: "Could not find the Windows SDK in the registry" または "Could not read the Windows SDK's Platform.xml"
 
-**原因**: Windows SDK の UAP Platform コンポーネントがインストールされていない
+**原因**: Windows SDKのUAP Platformコンポーネントがインストールされていない
 
 **解決策**:
-1. Visual Studio Installer を起動
+1. Visual Studio Installerを起動
 2. 「個別のコンポーネント」で **Windows 11 SDK (10.0.26100.0)** をインストール
 3. 以下のパスにファイルが存在することを確認：
    ```powershell
@@ -789,7 +790,7 @@ Console.WriteLine($"Installing package: {package.Id}");
 
 #### エラー: "The type or namespace name 'Windows' could not be found"
 
-**原因**: Windows SDK が正しくインストールされていない
+**原因**: Windows SDKが正しくインストールされていない
 
 **解決策**:
 ```powershell
@@ -798,7 +799,7 @@ Console.WriteLine($"Installing package: {package.Id}");
 
 #### エラー: "Could not load file or assembly 'Microsoft.WindowsPackageManager.ComInterop'"
 
-**原因**: WinGet COM API が利用できない
+**原因**: WinGet COM APIが利用できない
 
 **解決策**:
 ```powershell
@@ -822,13 +823,13 @@ dotnet test src/GistGet.Test/GistGet.Test.csproj
 
 #### エラー: "Access to the path is denied"
 
-**原因**: Windows Credential Manager へのアクセス権限がない
+**原因**: Windows Credential Managerへのアクセス権限がない
 
 **解決策**: 管理者権限で実行するか、ユーザーアカウントの権限を確認
 
 #### エラー: "winget.exe not found"
 
-**原因**: winget が PATH に含まれていない
+**原因**: wingetがPATHに含まれていない
 
 **解決策**:
 ```powershell
