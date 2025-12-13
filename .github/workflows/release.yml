@@ -16,8 +16,14 @@ env:
   PROJECT_PATH: 'src/GistGet/GistGet.csproj'
 
 jobs:
+  ci:
+    name: CI validation
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
   build:
     name: Build (${{ matrix.rid }})
+    needs: ci
     runs-on: windows-latest
     strategy:
       matrix:
