@@ -8,7 +8,7 @@ GistGet は、Windows Package Manager (winget) のパッケージ管理状態を
 ## 設計原則
 
 1. **winget の透過的なラッパー**: winget のオプションを極力そのままパススルーする
-2. **Gist を単一情報源 (Single Source of Truth)**: `packages.yaml` がすべてのデバイスで共有される正規の状態
+2. **Gist を単一情報源 (Single Source of Truth)**: `gistget.yaml` がすべてのデバイスで共有される正規の状態
 3. **明示的な ID 指定**: 曖昧な `--query` や `--name` は禁止し、`--id` による一意な指定を必須とする
 4. **シンプルなバージョン管理**: pinする場合のみバージョンを管理し、それ以外は常に最新版を使用
 
@@ -18,7 +18,7 @@ GistGet は、Windows Package Manager (winget) のパッケージ管理状態を
 
 ### 概要
 
-`packages.yaml` は、パッケージ ID をキーとし、インストールオプションと同期フラグを値とするマップです。
+`gistget.yaml` は、パッケージ ID をキーとし、インストールオプションと同期フラグを値とするマップです。
 
 ```yaml
 <PackageId>:
@@ -126,7 +126,7 @@ DeepL.DeepL:
 | `auth login` | ❌ | ❌ | GitHub Device Flow でログイン。 |
 | `auth logout` | ❌ | ❌ | GitHub からログアウト。 |
 | `auth status` | ❌ | ❌ | 認証状態を表示。 |
-| `sync` | ❌ | ✅ | Gist の `packages.yaml` とローカル状態を同期。差分を検出し、インストール/アンインストール/pin設定を実行。 |
+| `sync` | ❌ | ✅ | Gist の `gistget.yaml` とローカル状態を同期。差分を検出し、インストール/アンインストール/pin設定を実行。 |
 | `install` | ❌ | ✅ | パッケージをインストールし、Gist に保存。`--id` 必須。インストール済みの場合はアップグレード。 |
 | `uninstall` | ❌ | ✅ | パッケージをアンインストールし、Gist を更新（`uninstall: true` を設定）。`--id` 必須。 |
 | `upgrade` | 条件付き | 条件付き | ID指定時: upgrade後にGist更新。ID未指定時: wingetにパススルー。 |
@@ -154,7 +154,7 @@ DeepL.DeepL:
 
 #### sync
 
-Gist の `packages.yaml` とローカルのパッケージ状態を同期します。
+Gist の `gistget.yaml` とローカルのパッケージ状態を同期します。
 
 ```
 gistget sync [--url <yaml-url>]
@@ -166,7 +166,7 @@ gistget sync [--url <yaml-url>]
 
 **処理フロー:**
 
-1. Gist から `packages.yaml` を取得
+1. Gist から `gistget.yaml` を取得
 2. ローカルのインストール済みパッケージを取得（`winget list`）
 3. 差分を計算:
    - Gist にあり、ローカルに未インストール → インストール対象
@@ -176,7 +176,7 @@ gistget sync [--url <yaml-url>]
 6. pin の同期:
    - YAML に `pin` あり → `winget pin add --version <pin> [--blocking]`
    - YAML に `pin` なし → `winget pin remove`（存在すれば）
-7. `--url` 省略時のみ、更新した `packages.yaml` を Gist に保存
+7. `--url` 省略時のみ、更新した `gistget.yaml` を Gist に保存
 
 > [!NOTE]
 > sync は **Gist → ローカルの片方向同期**です。ローカルにのみ存在するパッケージは Gist に書き戻されません。
@@ -218,7 +218,7 @@ sync はバージョンの**アップグレード/ダウングレードを行い
 
 #### install
 
-パッケージをインストールし、`packages.yaml` を更新して Gist に保存します。
+パッケージをインストールし、`gistget.yaml` を更新して Gist に保存します。
 
 ```
 gistget install --id <package-id> [--version <version>] [options]
@@ -248,13 +248,13 @@ gistget install --id <package-id> [--version <version>] [options]
 
 **処理フロー:**
 
-1. Gist から `packages.yaml` を取得
+1. Gist から `gistget.yaml` を取得
 2. `winget install --id <id> [--version <version>] [options]` を実行
 3. 失敗時はエラー終了
 4. 成功時:
    - Gist に既存の `pin` がある場合は `winget pin add --id <id> --version <pin> [--blocking]` でローカルに同期
-   - `packages.yaml` にエントリを追加/更新（インストールオプションを保存、`pin` が存在する場合のみ `version` も保存）
-5. Gist に `packages.yaml` を保存
+   - `gistget.yaml` にエントリを追加/更新（インストールオプションを保存、`pin` が存在する場合のみ `version` も保存）
+5. Gist に `gistget.yaml` を保存
 
 **注意:**
 - `--id` は必須。`--query` や `--name` による曖昧な指定はエラー。
@@ -265,7 +265,7 @@ gistget install --id <package-id> [--version <version>] [options]
 
 #### uninstall
 
-パッケージをアンインストールし、`packages.yaml` を更新して Gist に保存します。
+パッケージをアンインストールし、`gistget.yaml` を更新して Gist に保存します。
 
 ```
 gistget uninstall --id <package-id>
@@ -277,13 +277,13 @@ gistget uninstall --id <package-id>
 
 **処理フロー:**
 
-1. Gist から `packages.yaml` を取得
+1. Gist から `gistget.yaml` を取得
 2. `winget uninstall --id <id>` を実行
 3. 失敗時はエラー終了
 4. 成功時:
-   - `packages.yaml` の該当エントリに `uninstall: true` を設定
+   - `gistget.yaml` の該当エントリに `uninstall: true` を設定
    - `winget pin remove <id>` を実行（pin が存在すれば）
-5. Gist に `packages.yaml` を保存
+5. Gist に `gistget.yaml` を保存
 
 **注意:**
 - アンインストールしてもエントリは削除されず、`uninstall: true` が設定される。
@@ -295,7 +295,7 @@ gistget uninstall --id <package-id>
 
 #### upgrade
 
-パッケージをアップグレードし、`packages.yaml` を更新して Gist に保存します。
+パッケージをアップグレードし、`gistget.yaml` を更新して Gist に保存します。
 
 ```
 gistget upgrade [<package-id>] [--id <package-id>] [options]
@@ -338,12 +338,12 @@ gistget upgrade [<package-id>] [--id <package-id>] [options]
 1. `winget upgrade --id <id> [options]` を実行
 2. 失敗時はエラー終了
 3. 成功時:
-   - Gist から `packages.yaml` を取得
+   - Gist から `gistget.yaml` を取得
    - エントリがなければ追加
    - ローカルに pin がある場合:
      - `winget pin add --id <id> --version <新バージョン> --force` で pin を更新
      - Gist の `pin` を新バージョンに更新
-4. Gist に `packages.yaml` を保存
+4. Gist に `gistget.yaml` を保存
 
 **注意:**
 - pin がある状態で明示的に upgrade すると、pin のバージョンも新しいバージョンに自動更新される（winget の動作）。
@@ -354,7 +354,7 @@ gistget upgrade [<package-id>] [--id <package-id>] [options]
 
 #### pin add
 
-パッケージをピン留めし、`packages.yaml` を更新して Gist に保存します。
+パッケージをピン留めし、`gistget.yaml` を更新して Gist に保存します。
 
 ```
 gistget pin add <package-id> --version <version>
@@ -367,23 +367,23 @@ gistget pin add <package-id> --version <version>
 
 **備考:**
 - 現状の CLI では `pinType`（blocking / gating）の指定オプションは提供しない。
-- 既に `packages.yaml` に `pinType` がある場合はその値を維持し、winget 実行時も該当フラグ（`--blocking` / `--gating`）を付与する。
+- 既に `gistget.yaml` に `pinType` がある場合はその値を維持し、winget 実行時も該当フラグ（`--blocking` / `--gating`）を付与する。
 - `pinType` 未指定の場合は省略（= pinning）として扱う。
 
 **処理フロー:**
 
-1. Gist から `packages.yaml` を取得
+1. Gist から `gistget.yaml` を取得
 2. `winget pin add --id <id> --version <version> --force` を実行（`pinType` に応じて `--blocking` / `--gating` を付与）
 3. 失敗時はエラー終了
 4. 成功時:
-   - `packages.yaml` の `pin`（および `version`）を更新し、`pinType` は既存値を維持
-5. Gist に `packages.yaml` を保存
+   - `gistget.yaml` の `pin`（および `version`）を更新し、`pinType` は既存値を維持
+5. Gist に `gistget.yaml` を保存
 
 ---
 
 #### pin remove
 
-ピン留めを解除し、`packages.yaml` を更新して Gist に保存します。
+ピン留めを解除し、`gistget.yaml` を更新して Gist に保存します。
 
 ```
 gistget pin remove <package-id>
@@ -395,12 +395,12 @@ gistget pin remove <package-id>
 
 **処理フロー:**
 
-1. Gist から `packages.yaml` を取得
+1. Gist から `gistget.yaml` を取得
 2. `winget pin remove --id <id>` を実行
 3. 失敗時はエラー終了
 4. 成功時:
-   - `packages.yaml` から `pin`、`pinType`、`version` を削除
-5. Gist に `packages.yaml` を保存
+   - `gistget.yaml` から `pin`、`pinType`、`version` を削除
+5. Gist に `gistget.yaml` を保存
 
 **注意:**
 - エントリ自体は削除されず、pin 関連フィールドのみが削除される。
@@ -444,7 +444,7 @@ Git.Git: {}
 
 ```powershell
 # 1. 現在のパッケージ一覧をエクスポート
-gistget export --output packages.yaml
+gistget export --output gistget.yaml
 
 # 2. 必要に応じて YAML を編集（pin やオプションを追加）
 # 例: VSCode にサイレントインストールを設定
@@ -452,7 +452,7 @@ gistget export --output packages.yaml
 #   silent: true
 
 # 3. Gist にインポート
-gistget import packages.yaml
+gistget import gistget.yaml
 ```
 
 ---
@@ -473,7 +473,7 @@ gistget import <file>
 
 1. 認証状態を確認（未認証の場合はログインを促す）
 2. 指定された YAML ファイルを読み込み
-3. パース結果を Gist の `packages.yaml` として**完全に上書き保存**
+3. パース結果を Gist の `gistget.yaml` として**完全に上書き保存**
 
 **注意:**
 - **既存の Gist 内容はマージされず、完全に上書きされる。**
@@ -484,12 +484,12 @@ gistget import <file>
 
 ```powershell
 # 方法1: export + 編集 + import
-gistget export --output packages.yaml
-# packages.yaml を編集
-gistget import packages.yaml
+gistget export --output gistget.yaml
+# gistget.yaml を編集
+gistget import gistget.yaml
 
 # 方法2: 既存の YAML ファイルをインポート
-gistget import my-packages.yaml
+gistget import my-gistget.yaml
 ```
 
 ---
@@ -595,3 +595,4 @@ winget pin reset --force
 - [winget upgrade コマンド (Microsoft Learn)](https://learn.microsoft.com/ja-jp/windows/package-manager/winget/upgrade)
 - [winget install コマンド (Microsoft Learn)](https://learn.microsoft.com/ja-jp/windows/package-manager/winget/install)
 - [GistGet PIN 挙動検証](./PIN.ja.md)
+

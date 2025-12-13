@@ -45,18 +45,14 @@ public class WinGetArgumentBuilder : IWinGetArgumentBuilder
 
         if (!string.IsNullOrEmpty(options.Version)) { args.Add("--version"); args.Add(options.Version); }
 
-        // Upgrade shares most options with Install
         args.AddRange(BuildCommonInstallOptions(
             options.Scope, options.Architecture, options.Location,
             options.Interactive, options.Silent, options.Log,
             options.Override, options.Force, options.SkipDependencies,
-            null, // Header not exposed in UpgradeOptions in original plan but seemingly ignored or handled differently? Let's check UpgradeOptions definition.
+            options.Header,
             options.InstallerType, options.Custom,
             options.Locale, options.AcceptPackageAgreements,
             options.AcceptSourceAgreements, options.AllowHashMismatch));
-            
-        // Wait, UpgradeOptions does not have Header property in the provided content. 
-        // Passing null for Header.
 
         return args.ToArray();
     }
@@ -125,4 +121,3 @@ public class WinGetArgumentBuilder : IWinGetArgumentBuilder
         return args;
     }
 }
-

@@ -32,11 +32,13 @@ public class CommandBuilder(IGistGetService gistGetService)
     {
         var command = new Command("sync", "Synchronize packages with Gist");
         var urlOption = new Option<string?>("--url", "Gist URL to sync from (optional)");
+        var fileOption = new Option<string?>("--file", "Local YAML file path to sync from");
         command.Add(urlOption);
+        command.Add(fileOption);
 
-        command.SetHandler(async url =>
+        command.SetHandler(async (url, file) =>
         {
-            var result = await gistGetService.SyncAsync(url);
+            var result = await gistGetService.SyncAsync(url, file);
 
             // 結果を表示
             if (result.Installed.Count > 0)
@@ -105,7 +107,7 @@ public class CommandBuilder(IGistGetService gistGetService)
             {
                 AnsiConsole.MarkupLine("[green]Sync completed successfully.[/]");
             }
-        }, urlOption);
+        }, urlOption, fileOption);
 
         return command;
     }
@@ -289,6 +291,7 @@ public class CommandBuilder(IGistGetService gistGetService)
         var scopeOption = new Option<string>("--scope", "Upgrade scope (user|machine)");
         var archOption = new Option<string>("--architecture", "Architecture (x86|x64|arm|arm64)");
         var locationOption = new Option<string>("--location", "Install location");
+        var headerOption = new Option<string>("--header", "Custom HTTP header");
         var interactiveOption = new Option<bool>("--interactive", "Request interactive upgrade");
         var silentOption = new Option<bool>("--silent", "Request silent upgrade");
         var logOption = new Option<string>("--log", "Log file path");
@@ -308,6 +311,7 @@ public class CommandBuilder(IGistGetService gistGetService)
         command.Add(scopeOption);
         command.Add(archOption);
         command.Add(locationOption);
+        command.Add(headerOption);
         command.Add(interactiveOption);
         command.Add(silentOption);
         command.Add(logOption);
@@ -339,6 +343,7 @@ public class CommandBuilder(IGistGetService gistGetService)
                     Scope = parseResult.GetValueForOption(scopeOption),
                     Architecture = parseResult.GetValueForOption(archOption),
                     Location = parseResult.GetValueForOption(locationOption),
+                    Header = parseResult.GetValueForOption(headerOption),
                     Interactive = parseResult.GetValueForOption(interactiveOption),
                     Silent = parseResult.GetValueForOption(silentOption),
                     Log = parseResult.GetValueForOption(logOption),

@@ -21,6 +21,9 @@ public record UpgradeOptions
     /// <summary>インストール先パス</summary>
     public string? Location { get; init; }
 
+    /// <summary>カスタム HTTP ヘッダー</summary>
+    public string? Header { get; init; }
+
     /// <summary>ロケール (BCP47形式)</summary>
     public string? Locale { get; init; }
 

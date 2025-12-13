@@ -449,14 +449,25 @@ public class GistGetService(
     /// 差分を検出し、インストール/アンインストール/pin設定を実行します。
     /// </summary>
     /// <param name="url">同期元の URL（省略時は認証ユーザーの Gist）</param>
+    /// <param name="filePath">同期元のローカル YAML ファイルパス（URL より優先）</param>
     /// <returns>同期結果（インストール/アンインストール/失敗したパッケージ一覧）</returns>
-    public async Task<SyncResult> SyncAsync(string? url = null)
+    public async Task<SyncResult> SyncAsync(string? url = null, string? filePath = null)
     {
         var result = new SyncResult();
         
         IReadOnlyList<GistGetPackage> gistPackages;
 
-        if (!string.IsNullOrEmpty(url))
+        if (!string.IsNullOrEmpty(filePath))
+        {
+            if (!File.Exists(filePath))
+            {
+                throw new FileNotFoundException($"File not found: {filePath}", filePath);
+            }
+
+            var yaml = await File.ReadAllTextAsync(filePath);
+            gistPackages = GistGetPackageSerializer.Deserialize(yaml);
+        }
+        else if (!string.IsNullOrEmpty(url))
         {
             // URL 指定時: HTTP でダウンロード（認証不要）
             gistPackages = await gitHubService.GetPackagesFromUrlAsync(url);
@@ -663,4 +674,3 @@ public class GistGetService(
         consoleService.WriteInfo($"Imported {packages.Count} packages to Gist");
     }
 }
-

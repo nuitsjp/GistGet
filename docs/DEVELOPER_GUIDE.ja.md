@@ -18,9 +18,9 @@
 ### 必要な環境
 
 - **OS**: Windows 10/11（Windows 10.0.26100.0以降）
-- **.NET SDK**: .NET 8.0以降
+- **.NET SDK**: .NET 10 (Preview) 以降
 - **Windows SDK**: 10.0.26100.0以降（UAP Platformを含む）
-- **IDE**: Visual Studio 2022またはVisual Studio Code（推奨）
+- **IDE**: Visual Studio 2022 または Visual Studio Code
 - **Windows Package Manager**: winget（Windows App Installer経由）
 - **PowerShell**: 5.1以降（スクリプト実行用）
 
@@ -73,48 +73,44 @@ GistGetは、レイヤー化アーキテクチャを採用しています。詳�
 
 ```
 GistGet/
+├── Directory.Build.props           # 共通ビルド設定 (.NET 10, LangVersion 等)
+├── Directory.Packages.props        # 中央パッケージ管理
 ├── src/
 │   ├── GistGet/                    # メインプロジェクト
-│   │   ├── App/                    # アプリケーションエントリーポイント
-│   │   │   └── Program.cs          # エントリーポイント
-│   │   ├── Com/                    # WinGet COM API 連携
-│   │   │   └── WinGetService.cs    # WinGet サービス実装
-│   │   ├── IWinGetService.cs       # WinGet サービスインターフェース
-│   │   ├── WinGetPackage.cs        # パッケージモデル
-│   │   ├── PackageId.cs            # パッケージID値オブジェクト
-│   │   └── Version.cs              # バージョン値オブジェクト
+│   │   ├── Program.cs              # エントリーポイント
+│   │   ├── Constants.cs            # 既定設定（gistget.yaml 等）
+│   │   ├── Presentation/           # CLI 定義 (System.CommandLine)
+│   │   ├── Infrastructure/         # WinGet 実行・GitHub・Credential
+│   │   └── *.cs                    # モデル/オプション/サービス
 │   └── GistGet.Test/               # テストプロジェクト
-│       └── Com/                    # COM API テスト
-│           └── WinGetServiceTests.cs
+│       └── GistGet/                # ユニット/統合テスト
 ├── scripts/                        # 開発用スクリプト
 │   ├── Run-Tests.ps1               # テスト実行スクリプト
 │   ├── Run-AuthLogin.ps1           # 認証テストスクリプト
 │   └── Collect-Metrics.ps1         # メトリクス収集スクリプト
 ├── docs/                           # ドキュメント
-│   ├── DESIGN.ja.md                # システム設計書
-│   ├── DEVELOPER_GUIDE.ja.md       # 開発者ガイド（本ドキュメント）
-│   ├── SPEC.ja.md                  # 仕様書
-│   └── YAML_SPEC.ja.md             # YAML仕様書
+│   ├── DESIGN.ja.md
+│   ├── DEVELOPER_GUIDE.ja.md       # 本ドキュメント
+│   └── SPEC.ja.md
 └── external/                       # 外部参照
     └── winget-cli/                 # WinGet CLI リポジトリ（サンプル参照用）
 ```
 
 ### 主要なレイヤー
 
-#### Presentation層 (`Presentation/`)
-- CLIコマンドの定義とパース
-- `System.CommandLine`を使用したコマンドライン処理
-- ユーザー入力の検証とエラーハンドリング
+#### Presentation 層 (`Presentation/`)
+- CLI コマンド定義とパース (`System.CommandLine`)
+- `sync`/`install`/`upgrade`/`pin` などのオプション束ねとサービス呼び出し
 
-#### Application層 (`Application/Services/`)
-- ビジネスロジックの実装
-- `AuthService`: GitHub認証 (Device Flow)
-- `GistService`: Gist操作（取得、更新）
-- `PackageService`: パッケージ同期のオーケストレーション
+#### Core サービス
+- `GistGetService`: 認証、Gist 取得/保存、WinGet 実行をまとめる中核クラス
+- オプションレコード (`InstallOptions` / `UpgradeOptions` / `UninstallOptions`) とモデル (`GistGetPackage` 等)
 
-#### COM 層 (`Com/`)
-- WinGet COM APIとの統合
-- `WinGetService`: WinGet COM APIを使用したパッケージ検索・情報取得
+#### Infrastructure 層 (`Infrastructure/`)
+- `GitHubService`: Device Flow 認証・Gist 取得/保存
+- `WinGetService`: COM API でローカルパッケージ取得
+- `WinGetArgumentBuilder` / `WinGetPassthroughRunner`: winget 引数生成と実行
+- `CredentialService`: Windows Credential Manager への保存/取得
 
 ### WinGet COM API について
 
@@ -235,7 +231,7 @@ dotnet run --project src/GistGet/GistGet.csproj -- --help
 または、ビルド後の実行ファイルを直接実行:
 
 ```powershell
-.\src\GistGet\bin\Debug\net8.0-windows10.0.26100.0\GistGet.exe <command>
+.\src\GistGet\bin\Debug\net10.0-windows10.0.26100.0\GistGet.exe <command>
 ```
 
 ### 開発用スクリプト
@@ -367,8 +363,8 @@ Closes #123
 
 ### C# スタイルガイド
 
-- **言語バージョン**: C# 12
-- **ターゲットフレームワーク**: `net8.0-windows10.0.26100.0`
+- **言語バージョン**: C# 12 (LangVersion=preview)
+- **ターゲットフレームワーク**: `net10.0-windows10.0.26100.0`
 - **インデント**: 4スペース
 - **エンコーディング**: UTF-8
 - **Nullable**: 有効 (`<Nullable>enable</Nullable>`)
@@ -743,7 +739,7 @@ public class GistServiceIntegrationTests : IClassFixture<GistIntegrationTestFixt
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/src/GistGet/bin/Debug/net8.0-windows10.0.26100.0/GistGet.exe",
+            "program": "${workspaceFolder}/src/GistGet/bin/Debug/net10.0-windows10.0.26100.0/GistGet.exe",
             "args": ["auth", "login"],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
@@ -754,7 +750,7 @@ public class GistServiceIntegrationTests : IClassFixture<GistIntegrationTestFixt
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/src/GistGet/bin/Debug/net8.0-windows10.0.26100.0/GistGet.exe",
+            "program": "${workspaceFolder}/src/GistGet/bin/Debug/net10.0-windows10.0.26100.0/GistGet.exe",
             "args": ["sync"],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",

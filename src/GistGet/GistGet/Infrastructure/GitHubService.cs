@@ -59,7 +59,6 @@ public class GitHubService(
     {
         var client = CreateClient(token);
         
-        // This call will verify the token and populate LastApiInfo with headers (including scopes)
         var user = await client.User.Current();
         
         var apiInfo = client.GetLastApiInfo();
@@ -94,20 +93,18 @@ public class GitHubService(
         var client = CreateClient(resolvedToken);
         var (targetFileName, targetDescription) = ResolveGistMetadata(gistFileName, gistDescription);
 
-        var gists = await client.Gist.GetAll();
-        var matchingGists = gists
-            .Where(g => g.Files.ContainsKey(targetFileName) || g.Description == targetDescription)
-            .ToList();
+        var targetGist = await FindGistByFileNameAsync(client, targetFileName);
 
-        if (matchingGists.Count > 1)
-        {
-            throw new InvalidOperationException(
-                $"Multiple Gists match the criteria ({matchingGists.Count} found). Please specify the target Gist URL explicitly via the `--url` argument.");
-        }
-
-        var targetGist = matchingGists.SingleOrDefault();
+        // 見つからなければ空の Gist を新規作成
         if (targetGist == null)
         {
+            var newGist = new NewGist
+            {
+                Description = targetDescription,
+                Public = false,
+                Files = { { targetFileName, "{}\n" } }
+            };
+            targetGist = await client.Gist.Create(newGist);
             return Array.Empty<GistGetPackage>();
         }
 
@@ -145,18 +142,7 @@ public class GitHubService(
             return;
         }
 
-        var gists = await client.Gist.GetAll();
-        var matchingGists = gists
-            .Where(g => g.Files.ContainsKey(targetFileName) || g.Description == targetDescription)
-            .ToList();
-
-        if (matchingGists.Count > 1)
-        {
-            throw new InvalidOperationException(
-                $"Multiple Gists match the criteria ({matchingGists.Count} found). Please specify the target Gist URL explicitly via the `gistUrl` argument.");
-        }
-
-        var targetGist = matchingGists.SingleOrDefault();
+        var targetGist = await FindGistByFileNameAsync(client, targetFileName);
 
         if (targetGist != null)
         {
@@ -185,6 +171,34 @@ public class GitHubService(
             client.Credentials = new Credentials(token);
         }
         return client;
+    }
+
+    private static async Task<Gist?> FindGistByFileNameAsync(GitHubClient client, string targetFileName)
+    {
+        const int pageSize = 100;
+        var page = 1;
+        while (true)
+        {
+            var pageResult = await client.Gist.GetAll(new ApiOptions
+            {
+                PageCount = 1,
+                PageSize = pageSize,
+                StartPage = page
+            });
+
+            var match = pageResult.FirstOrDefault(g => g.Files.ContainsKey(targetFileName));
+            if (match != null)
+            {
+                return match;
+            }
+
+            if (pageResult.Count < pageSize)
+            {
+                return null;
+            }
+
+            page++;
+        }
     }
 
     private string? ResolveToken(string token)
