@@ -452,6 +452,97 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             _passthroughRunnerMock.VerifyAll();
         }
+
+        [Fact]
+        public async Task PassesCustomOption_ToWinget()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Test.Package";
+            var customArgs = "/VERYSILENT /NORESTART";
+            var installOptions = new InstallOptions
+            {
+                Id = packageId,
+                Custom = customArgs
+            };
+
+            // Credential setup
+            var credential = new Credential("user", "token");
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new List<GistGetPackage>());
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "install" &&
+                    args.Contains("--id") && args.Contains(packageId) &&
+                    args.Contains("--custom") && args.Contains(customArgs))))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.InstallAndSaveAsync(installOptions);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _passthroughRunnerMock.VerifyAll();
+        }
+
+        [Fact]
+        public async Task WhenInstallFails_ReturnsNonZeroExitCode()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Fail.Package";
+            var expectedExitCode = 1;
+
+            var credential = new Credential("user", "token");
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new List<GistGetPackage>());
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "install" &&
+                    args.Contains("--id") && args.Contains(packageId))))
+                .ReturnsAsync(expectedExitCode);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await _target.InstallAndSaveAsync(new InstallOptions { Id = packageId });
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.ShouldBe(expectedExitCode);
+            _authServiceMock.Verify(x => x.SavePackagesAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<IReadOnlyList<GistGetPackage>>()), Times.Never);
+        }
     }
 
     public class UpgradeAndSaveAsync : GistGetServiceTests
@@ -729,6 +820,48 @@ public class GistGetServiceTests
             _passthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args =>
                 args[0] == "upgrade" && args.Contains(packageId))), Times.Once);
         }
+
+        [Fact]
+        public async Task WhenUpgradeFails_ReturnsNonZeroExitCode()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Fail.Package";
+            var expectedExitCode = 1;
+
+            var credential = new Credential("user", "token");
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "upgrade" &&
+                    args.Contains("--id") && args.Contains(packageId))))
+                .ReturnsAsync(expectedExitCode);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await _target.UpgradeAndSaveAsync(new UpgradeOptions { Id = packageId });
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.ShouldBe(expectedExitCode);
+            _authServiceMock.Verify(x => x.GetPackagesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _authServiceMock.Verify(x => x.SavePackagesAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<IReadOnlyList<GistGetPackage>>()), Times.Never);
+        }
     }
 
     public class UninstallAndSaveAsync : GistGetServiceTests
@@ -906,6 +1039,54 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------------
+            _passthroughRunnerMock.Verify(x => x.RunAsync(
+                It.Is<string[]>(args => args[0] == "pin" && args.Contains("remove"))
+            ), Times.Never);
+            _authServiceMock.Verify(x => x.SavePackagesAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<IReadOnlyList<GistGetPackage>>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task WhenUninstallFails_ReturnsNonZeroExitCode()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Fail.Package";
+            var expectedExitCode = 1;
+
+            var credential = new Credential("user", "token");
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new List<GistGetPackage>());
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "uninstall" &&
+                    args.Contains("--id") && args.Contains(packageId))))
+                .ReturnsAsync(expectedExitCode);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await _target.UninstallAndSaveAsync(new UninstallOptions { Id = packageId });
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.ShouldBe(expectedExitCode);
             _passthroughRunnerMock.Verify(x => x.RunAsync(
                 It.Is<string[]>(args => args[0] == "pin" && args.Contains("remove"))
             ), Times.Never);
@@ -1898,6 +2079,84 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             _authServiceMock.Verify(x => x.LoginAsync(), Times.Once);
             result.Success.ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task WithExternalUrl_FetchesFromUrl_AndInstallsPackages()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var url = "https://example.com/raw/packages.yaml";
+            var packageId = "External.Package";
+            var gistPackages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = packageId, Silent = true }
+            };
+
+            // URL からパッケージ取得をモック
+            _authServiceMock
+                .Setup(x => x.GetPackagesFromUrlAsync(url))
+                .ReturnsAsync(gistPackages);
+
+            // ローカルにはインストールされていない
+            _winGetServiceMock
+                .Setup(x => x.GetAllInstalledPackages())
+                .Returns(new List<WinGetPackage>());
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "install" &&
+                    args.Contains("--id") && args.Contains(packageId) &&
+                    args.Contains("--silent"))))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await _target.SyncAsync(url);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.Installed.Count.ShouldBe(1);
+            result.Installed[0].Id.ShouldBe(packageId);
+            result.Success.ShouldBeTrue();
+
+            // URL 指定時は認証が不要であることを確認
+            _credentialServiceMock.Verify(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny), Times.Never);
+            _authServiceMock.Verify(x => x.LoginAsync(), Times.Never);
+            _authServiceMock.Verify(x => x.GetPackagesFromUrlAsync(url), Times.Once);
+        }
+
+        [Fact]
+        public async Task WithExternalUrl_DoesNotRequireAuthentication()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var url = "https://raw.githubusercontent.com/user/repo/packages.yaml";
+
+            _authServiceMock
+                .Setup(x => x.GetPackagesFromUrlAsync(url))
+                .ReturnsAsync(new List<GistGetPackage>());
+
+            _winGetServiceMock
+                .Setup(x => x.GetAllInstalledPackages())
+                .Returns(new List<WinGetPackage>());
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await _target.SyncAsync(url);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.Success.ShouldBeTrue();
+            // 認証関連のメソッドが呼ばれないことを確認
+            _credentialServiceMock.Verify(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny), Times.Never);
+            _authServiceMock.Verify(x => x.LoginAsync(), Times.Never);
         }
     }
 
