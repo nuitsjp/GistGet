@@ -32,11 +32,14 @@ public class CommandBuilder(IGistGetService gistGetService)
     {
         var command = new Command("sync", "Synchronize packages with Gist");
         var urlOption = new Option<string?>("--url", "Gist URL to sync from (optional)");
+        var fileOption = new Option<string?>("--file", "Local YAML file path to sync from (optional)");
+        fileOption.AddAlias("-f");
         command.Add(urlOption);
+        command.Add(fileOption);
 
-        command.SetHandler(async url =>
+        command.SetHandler(async (url, filePath) =>
         {
-            var result = await gistGetService.SyncAsync(url);
+            var result = await gistGetService.SyncAsync(url, filePath);
 
             // 結果を表示
             if (result.Installed.Count > 0)
@@ -105,7 +108,7 @@ public class CommandBuilder(IGistGetService gistGetService)
             {
                 AnsiConsole.MarkupLine("[green]Sync completed successfully.[/]");
             }
-        }, urlOption);
+        }, urlOption, fileOption);
 
         return command;
     }

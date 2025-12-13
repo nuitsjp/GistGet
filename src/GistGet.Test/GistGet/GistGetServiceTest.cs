@@ -1825,6 +1825,54 @@ public class GistGetServiceTests
         }
 
         [Fact]
+        public async Task WhenInstallingPackage_WritesProgressLog()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "New.Package";
+            var credential = new Credential("user", "token");
+            var gistPackages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = packageId }
+            };
+
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(gistPackages);
+
+            _winGetServiceMock
+                .Setup(x => x.GetAllInstalledPackages())
+                .Returns(new List<WinGetPackage>());
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "install" &&
+                    args.Contains("--id") && args.Contains(packageId))))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.SyncAsync();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s =>
+                s.Contains("install", StringComparison.OrdinalIgnoreCase) &&
+                s.Contains(packageId))), Times.AtLeastOnce);
+        }
+
+        [Fact]
         public async Task WhenGistHasUninstallTrue_AndInstalled_UninstallsPackage()
         {
             // -------------------------------------------------------------------
@@ -1882,6 +1930,63 @@ public class GistGetServiceTests
         }
 
         [Fact]
+        public async Task WhenUninstallingPackage_WritesProgressLog()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Old.Package";
+            var credential = new Credential("user", "token");
+            var gistPackages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = packageId, Uninstall = true }
+            };
+
+            var localPackages = new List<WinGetPackage>
+            {
+                new WinGetPackage("Old Package", new PackageId(packageId), new Version("1.0.0"), null)
+            };
+
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(gistPackages);
+
+            _winGetServiceMock
+                .Setup(x => x.GetAllInstalledPackages())
+                .Returns(localPackages);
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "uninstall" && args.Contains("--id") && args.Contains(packageId))))
+                .ReturnsAsync(0);
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "pin" && args[1] == "remove")))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.SyncAsync();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s =>
+                s.Contains("uninstall", StringComparison.OrdinalIgnoreCase) &&
+                s.Contains(packageId))), Times.AtLeastOnce);
+        }
+
+        [Fact]
         public async Task WhenGistHasPin_AndLocalHasNoPin_AddsPinLocally()
         {
             // -------------------------------------------------------------------
@@ -1934,6 +2039,61 @@ public class GistGetServiceTests
             result.PinUpdated.Count.ShouldBe(1);
             result.PinUpdated[0].Id.ShouldBe(packageId);
             result.Success.ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task WhenSyncingPin_WritesProgressLog()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Existing.Package";
+            var credential = new Credential("user", "token");
+            var gistPackages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = packageId, Pin = "1.5.0", PinType = "blocking" }
+            };
+
+            var localPackages = new List<WinGetPackage>
+            {
+                new WinGetPackage("Existing Package", new PackageId(packageId), new Version("1.5.0"), null)
+            };
+
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(gistPackages);
+
+            _winGetServiceMock
+                .Setup(x => x.GetAllInstalledPackages())
+                .Returns(localPackages);
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "pin" && args[1] == "add" &&
+                    args.Contains("--id") && args.Contains(packageId) &&
+                    args.Contains("--version") && args.Contains("1.5.0") &&
+                    args.Contains("--blocking") && args.Contains("--force"))))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.SyncAsync();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s =>
+                s.Contains("pin", StringComparison.OrdinalIgnoreCase) &&
+                s.Contains(packageId))), Times.AtLeastOnce);
         }
 
         [Fact]
@@ -2088,6 +2248,76 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             _authServiceMock.Verify(x => x.LoginAsync(), Times.Once);
             result.Success.ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task WithLocalFile_LoadsPackagesWithoutRemoteAccess()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Local.Package";
+            var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.yaml");
+            try
+            {
+                var yaml = GistGetPackageSerializer.Serialize(new List<GistGetPackage>
+                {
+                    new GistGetPackage { Id = packageId, Silent = true }
+                });
+                await File.WriteAllTextAsync(tempFile, yaml);
+
+                _winGetServiceMock
+                    .Setup(x => x.GetAllInstalledPackages())
+                    .Returns(new List<WinGetPackage>());
+
+                _passthroughRunnerMock
+                    .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                        args[0] == "install" &&
+                        args.Contains("--id") && args.Contains(packageId) &&
+                        args.Contains("--silent"))))
+                    .ReturnsAsync(0);
+
+                // -------------------------------------------------------------------
+                // Act
+                // -------------------------------------------------------------------
+                var result = await _target.SyncAsync(filePath: tempFile);
+
+                // -------------------------------------------------------------------
+                // Assert
+                // -------------------------------------------------------------------
+                result.Success.ShouldBeTrue();
+                result.Installed.Count.ShouldBe(1);
+                result.Installed[0].Id.ShouldBe(packageId);
+
+                _authServiceMock.Verify(x => x.GetPackagesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+                _authServiceMock.Verify(x => x.GetPackagesFromUrlAsync(It.IsAny<string>()), Times.Never);
+                _credentialServiceMock.Verify(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny), Times.Never);
+            }
+            finally
+            {
+                if (File.Exists(tempFile))
+                {
+                    File.Delete(tempFile);
+                }
+            }
+        }
+
+        [Fact]
+        public async Task WithLocalFileMissing_ThrowsFileNotFound()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var missingPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.yaml");
+
+            // -------------------------------------------------------------------
+            // Act & Assert
+            // -------------------------------------------------------------------
+            await Should.ThrowAsync<FileNotFoundException>(() => _target.SyncAsync(filePath: missingPath));
+
+            _authServiceMock.Verify(x => x.GetPackagesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _authServiceMock.Verify(x => x.GetPackagesFromUrlAsync(It.IsAny<string>()), Times.Never);
+            _credentialServiceMock.Verify(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny), Times.Never);
         }
 
         [Fact]
@@ -2477,4 +2707,3 @@ Test.PackageB:
         }
     }
 }
-

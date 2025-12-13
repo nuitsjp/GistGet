@@ -69,8 +69,9 @@ public interface IGistGetService
     /// 差分を検出し、インストール/アンインストール/pin設定を実行します。
     /// </summary>
     /// <param name="url">同期元の YAML URL（省略時は認証ユーザーの Gist）</param>
+    /// <param name="filePath">同期元のローカル YAML ファイルパス（指定時はこれを優先）</param>
     /// <returns>同期結果（インストール/アンインストール/失敗したパッケージ一覧）</returns>
-    Task<SyncResult> SyncAsync(string? url = null);
+    Task<SyncResult> SyncAsync(string? url = null, string? filePath = null);
 
     /// <summary>
     /// 指定されたコマンドをWinGetにそのままパススルーで実行します。
@@ -94,4 +95,3 @@ public interface IGistGetService
     /// <param name="filePath">読み込むYAMLファイルのパス</param>
     Task ImportAsync(string filePath);
 }
-
