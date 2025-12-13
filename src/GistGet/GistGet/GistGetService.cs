@@ -147,6 +147,8 @@ public class GistGetService(
         if (package.Force) installArgs.Add("--force");
         if (package.AcceptPackageAgreements) installArgs.Add("--accept-package-agreements");
         if (package.AcceptSourceAgreements) installArgs.Add("--accept-source-agreements");
+        if (package.AllowHashMismatch) installArgs.Add("--ignore-security-hash");
+        if (package.SkipDependencies) installArgs.Add("--skip-dependencies");
         if (package.Scope != null) { installArgs.Add("--scope"); installArgs.Add(package.Scope); }
         if (package.Architecture != null) { installArgs.Add("--architecture"); installArgs.Add(package.Architecture); }
         if (package.Location != null) { installArgs.Add("--location"); installArgs.Add(package.Location); }
@@ -154,6 +156,8 @@ public class GistGetService(
         if (package.Header != null) { installArgs.Add("--header"); installArgs.Add(package.Header); }
         if (package.Custom != null) installArgs.Add(package.Custom);
         if (package.Override != null) { installArgs.Add("--override"); installArgs.Add(package.Override); }
+        if (package.InstallerType != null) { installArgs.Add("--installer-type"); installArgs.Add(package.InstallerType); }
+        if (package.Locale != null) { installArgs.Add("--locale"); installArgs.Add(package.Locale); }
 
 
         // ステップ5: WinGet installを実行
@@ -181,10 +185,11 @@ public class GistGetService(
         var newPackagesList = existingPackages.Where(p => !string.Equals(p.Id, package.Id, StringComparison.OrdinalIgnoreCase)).ToList();
         
         // CLI引数とGist状態をマージした新しいパッケージエントリを作成
+        var versionToSave = pinVersionToSet;
         var packageToSave = new GistGetPackage
         {
             Id = package.Id,
-            Version = installVersion,
+            Version = versionToSave,
             Pin = pinVersionToSet,
             PinType = pinTypeToSet,
             
@@ -206,12 +211,6 @@ public class GistGetService(
             // インストール直後なのでuninstallはfalse
             Uninstall = false 
         };
-        
-        // バージョンが未設定の場合、インストールしたバージョンを設定
-        if (string.IsNullOrEmpty(packageToSave.Version) && !string.IsNullOrEmpty(installVersion))
-        {
-             packageToSave.Version = installVersion;
-        }
 
         newPackagesList.Add(packageToSave);
         

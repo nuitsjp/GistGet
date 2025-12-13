@@ -343,8 +343,111 @@ public class GistGetServiceTests
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.Is<IReadOnlyList<GistGetPackage>>(list =>
-                    list.Any(p => p.Id == packageId && p.Pin == explicitVersion)
+                    list.Any(p => p.Id == packageId && p.Pin == explicitVersion && p.Version == explicitVersion)
                 )), Times.Once);
+        }
+
+        [Fact]
+        public async Task WithExplicitVersionWithoutPin_DoesNotPersistVersionOrPin()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Test.Package";
+            var explicitVersion = "2.1.0";
+            var installPackage = new GistGetPackage { Id = packageId, Version = explicitVersion };
+
+            // Credential setup
+            var credential = new Credential("user", "token");
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            // Gist setup: no existing entry -> no pin
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new List<GistGetPackage>());
+
+            // Runner setup: only install should be called
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "install" &&
+                    args.Contains("--id") && args.Contains(packageId) &&
+                    args.Contains("--version") && args.Contains(explicitVersion))))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.InstallAndSaveAsync(installPackage);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _passthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args => args[0] == "pin")), Times.Never);
+            _authServiceMock.Verify(x => x.SavePackagesAsync(
+                credential.Token,
+                "",
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.Is<IReadOnlyList<GistGetPackage>>(list =>
+                    list.Any(p => p.Id == packageId && p.Pin == null && p.Version == null)
+                )), Times.Once);
+        }
+
+        [Fact]
+        public async Task PassesWingetOptions_ToInstall()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Test.Package";
+            var installPackage = new GistGetPackage
+            {
+                Id = packageId,
+                AllowHashMismatch = true,
+                SkipDependencies = true,
+                InstallerType = "msi",
+                Locale = "ja-JP"
+            };
+
+            // Credential setup
+            var credential = new Credential("user", "token");
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new List<GistGetPackage>());
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "install" &&
+                    args.Contains("--id") && args.Contains(packageId) &&
+                    args.Contains("--ignore-security-hash") &&
+                    args.Contains("--skip-dependencies") &&
+                    args.Contains("--installer-type") && args.Contains("msi") &&
+                    args.Contains("--locale") && args.Contains("ja-JP"))))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.InstallAndSaveAsync(installPackage);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _passthroughRunnerMock.VerifyAll();
         }
     }
 }

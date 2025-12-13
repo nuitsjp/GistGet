@@ -249,13 +249,14 @@ gistget install --id <package-id> [--version <version>] [options]
 2. `winget install --id <id> [--version <version>] [options]` を実行
 3. 失敗時はエラー終了
 4. 成功時:
-   - `packages.yaml` にエントリを追加/更新（オプション情報を保存）
+   - Gist に既存の `pin` がある場合は `winget pin add --id <id> --version <pin> [--blocking]` でローカルに同期
+   - `packages.yaml` にエントリを追加/更新（インストールオプションを保存、`pin` が存在する場合のみ `version` も保存）
 5. Gist に `packages.yaml` を保存
 
 **注意:**
 - `--id` は必須。`--query` や `--name` による曖昧な指定はエラー。
-- install コマンドは pin を設定しない。pin が必要な場合は別途 `gistget pin add` を実行する。
-- バージョン指定でインストールしても pin は追加されない（winget の仕様）。
+- Gist に pin が存在する場合は install 時にローカルへ pin を同期する。pin が不要な場合は `gistget pin remove` を使用する。
+- バージョンを指定しても pin を指定しない限り YAML には `version` を保存しない。
 
 ---
 
