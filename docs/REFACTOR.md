@@ -5,7 +5,7 @@ main → refactor で入った変更を棚卸し。チェック済みは反映�
 ## 実施済み
 - [x] ビルド/パッケージ管理: `Directory.Build.props` を追加して Nullable/ImplicitUsings/LangVersion=preview/Platforms を共通化し、ターゲットを net10.0-windows10.0.26100.0 に更新。`Directory.Packages.props` で中央パッケージ管理を導入し、各 csproj から個別バージョン指定を削減（テスト csproj から CsWinRT/ComInterop 参照も削除）。
 - [x] ソリューション/CI: ルートの `GistGet.slnx`/`GistGet_old.slnx` と `.DotSettings` を削除して `src/GistGet.slnx` に集約。CI は main ブランチのみをトリガーし、SOLUTION_FILE を `src/GistGet.slnx` に変更。
-- [ ] CLI upgrade: `UpgradeOptions` と `winget upgrade` 引数生成で `--header` をサポートし、CLI にも同オプションを追加。
+- [x] CLI upgrade: `UpgradeOptions` と `winget upgrade` 引数生成で `--header` をサポートし、CLI にも同オプションを追加。
 - [ ] Gist/GitHub: 既定 Gist ファイルを `gistget.yaml` に変更し、GitHubService はファイル名一致でページング検索し、未存在ならプライベート Gist を新規作成して空 YAML を置く挙動に変更（description マッチや複数検出エラーを廃止）。
 - [ ] WinGet 引数: `BuildUpgradeArgs` でも `Header` を共通オプションとして渡すよう統一。
 - [ ] CLI sync: `SyncAsync` が `--file` でローカル YAML を優先読込（存在チェック付き）し、同期処理にインストール/アンインストール/pin の進捗ログを追加。
