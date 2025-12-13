@@ -4,6 +4,32 @@
 /// GitHub APIとの通信を担当するサービスインターフェース。
 /// Device Flow認証とGist操作を提供します。
 /// </summary>
+/// <remarks>
+/// <para><b>Gist特定ルール:</b></para>
+/// <list type="bullet">
+///   <item>
+///     <term>gistUrl指定時</term>
+///     <description>URLからGist IDを抽出し、そのGistを直接取得します。</description>
+///   </item>
+///   <item>
+///     <term>gistUrl未指定時</term>
+///     <description>
+///       認証ユーザーの全Gistを検索し、以下のいずれかの条件に一致するGistを特定します:
+///       <list type="number">
+///         <item>指定されたファイル名（gistFileName）を含むGist</item>
+///         <item>指定された説明（gistDescription）と一致するGist</item>
+///       </list>
+///     </description>
+///   </item>
+///   <item>
+///     <term>複数Gist一致時</term>
+///     <description>
+///       条件に一致するGistが複数存在する場合、<see cref="InvalidOperationException"/>をスローし、
+///       明示的なgistURL指定を要求します。
+///     </description>
+///   </item>
+/// </list>
+/// </remarks>
 public interface IGitHubService
 {
     /// <summary>

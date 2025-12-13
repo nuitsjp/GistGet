@@ -1,3 +1,4 @@
+using System;
 using Moq;
 using Xunit;
 using Shouldly;
@@ -13,6 +14,7 @@ public class GistGetServiceTests
     protected readonly Mock<IConsoleService> _consoleServiceMock;
     protected readonly Mock<ICredentialService> _credentialServiceMock;
     protected readonly Mock<IWinGetPassthroughRunner> _passthroughRunnerMock;
+    protected readonly Mock<IWinGetService> _winGetServiceMock;
     protected readonly GistGetService _target;
 
     protected delegate bool TryGetCredentialDelegate(out Credential? credential);
@@ -23,7 +25,8 @@ public class GistGetServiceTests
         _consoleServiceMock = new Mock<IConsoleService>();
         _credentialServiceMock = new Mock<ICredentialService>();
         _passthroughRunnerMock = new Mock<IWinGetPassthroughRunner>();
-        _target = new GistGetService(_authServiceMock.Object, _consoleServiceMock.Object, _credentialServiceMock.Object, _passthroughRunnerMock.Object);
+        _winGetServiceMock = new Mock<IWinGetService>();
+        _target = new GistGetService(_authServiceMock.Object, _consoleServiceMock.Object, _credentialServiceMock.Object, _passthroughRunnerMock.Object, _winGetServiceMock.Object);
     }
 
     public class AuthLoginAsync : GistGetServiceTests
@@ -448,6 +451,236 @@ public class GistGetServiceTests
             // Assert
             // -------------------------------------------------------------------
             _passthroughRunnerMock.VerifyAll();
+        }
+    }
+
+    public class UpgradeAndSaveAsync : GistGetServiceTests
+    {
+        [Fact]
+        public async Task WhenPinnedAndNoVersion_UpdatesPinWithUsableVersion()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Test.Package";
+            var credential = new Credential("user", "token");
+            var existingPackages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = packageId, Pin = "1.0.0", PinType = "blocking", Silent = true }
+            };
+
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            _winGetServiceMock
+                .Setup(x => x.FindById(It.Is<PackageId>(p => p.AsPrimitive() == packageId)))
+                .Returns(new WinGetPackage("Test Package", new PackageId(packageId), new Version("1.0.0"), new Version("2.0.0")));
+
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(existingPackages);
+
+            var sequence = new MockSequence();
+
+            _passthroughRunnerMock
+                .InSequence(sequence)
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "upgrade" &&
+                    args.Contains("--id") && args.Contains(packageId))))
+                .ReturnsAsync(0);
+
+            _passthroughRunnerMock
+                .InSequence(sequence)
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "pin" && args[1] == "add" &&
+                    args.Contains("--id") && args.Contains(packageId) &&
+                    args.Contains("--version") && args.Contains("2.0.0") &&
+                    args.Contains("--blocking") &&
+                    args.Contains("--force"))))
+                .ReturnsAsync(0);
+
+            _authServiceMock
+                .Setup(x => x.SavePackagesAsync(
+                    credential.Token,
+                    "",
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.Is<IReadOnlyList<GistGetPackage>>(list =>
+                        list.Any(p => p.Id == packageId && p.Pin == "2.0.0" && p.PinType == "blocking" && p.Version == "2.0.0" && p.Silent)
+                    )))
+                .Returns(Task.CompletedTask);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.UpgradeAndSaveAsync(packageId);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _winGetServiceMock.Verify(x => x.FindById(It.Is<PackageId>(p => p.AsPrimitive() == packageId)), Times.Once);
+            _passthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args => args[0] == "upgrade" && args.Contains(packageId))), Times.Once);
+            _passthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args => args[0] == "pin" && args[1] == "add")), Times.Once);
+            _authServiceMock.Verify(x => x.SavePackagesAsync(
+                credential.Token,
+                "",
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<IReadOnlyList<GistGetPackage>>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task WhenExistingEntryHasNoPin_DoesNotUpdateGist()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Test.Package";
+            var credential = new Credential("user", "token");
+            var existingPackages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = packageId, Silent = true, Uninstall = false }
+            };
+
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(existingPackages);
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "upgrade" &&
+                    args.Contains("--id") && args.Contains(packageId))))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.UpgradeAndSaveAsync(packageId);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _passthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args => args[0] == "pin")), Times.Never);
+            _authServiceMock.Verify(x => x.SavePackagesAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<IReadOnlyList<GistGetPackage>>()), Times.Never);
+            _winGetServiceMock.Verify(x => x.FindById(It.IsAny<PackageId>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task WhenNoExistingEntry_AddsNewEntryAfterUpgrade()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "New.Package";
+            var version = "5.1.0";
+            var credential = new Credential("user", "token");
+
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new List<GistGetPackage>());
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "upgrade" &&
+                    args.Contains("--id") && args.Contains(packageId) &&
+                    args.Contains("--version") && args.Contains(version))))
+                .ReturnsAsync(0);
+
+            _authServiceMock
+                .Setup(x => x.SavePackagesAsync(
+                    credential.Token,
+                    "",
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.Is<IReadOnlyList<GistGetPackage>>(list =>
+                        list.Count == 1 &&
+                        list.Any(p => p.Id == packageId && p.Pin == null && p.Version == null && !p.Uninstall)
+                    )))
+                .Returns(Task.CompletedTask);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.UpgradeAndSaveAsync(packageId, version);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _passthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args => args[0] == "pin")), Times.Never);
+            _winGetServiceMock.Verify(x => x.FindById(It.IsAny<PackageId>()), Times.Never);
+            _authServiceMock.Verify(x => x.SavePackagesAsync(
+                credential.Token,
+                "",
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<IReadOnlyList<GistGetPackage>>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task WhenUpgradeFails_DoesNotChangeGist()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Fail.Package";
+            var credential = new Credential("user", "token");
+
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "upgrade" &&
+                    args.Contains("--id") && args.Contains(packageId))))
+                .ReturnsAsync(1);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.UpgradeAndSaveAsync(packageId);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _passthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args => args[0] == "pin")), Times.Never);
+            _authServiceMock.Verify(x => x.GetPackagesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _authServiceMock.Verify(x => x.SavePackagesAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<IReadOnlyList<GistGetPackage>>()), Times.Never);
         }
     }
 

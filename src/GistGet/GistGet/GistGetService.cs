@@ -13,11 +13,13 @@ namespace GistGet;
 /// <param name="consoleService">コンソール出力を担当するサービス</param>
 /// <param name="credentialService">資格情報の永続化を担当するサービス</param>
 /// <param name="passthroughRunner">WinGetコマンドのパススルー実行を担当するサービス</param>
+/// <param name="winGetService">ローカルパッケージ情報の取得を担当するサービス</param>
 public class GistGetService(
     IGitHubService gitHubService,
     IConsoleService consoleService,
     ICredentialService credentialService,
-    IWinGetPassthroughRunner passthroughRunner) 
+    IWinGetPassthroughRunner passthroughRunner,
+    IWinGetService winGetService) 
     : IGistGetService
 {
     /// <summary>
@@ -268,9 +270,89 @@ public class GistGetService(
     /// </summary>
     /// <param name="packageId">アップグレードするパッケージのID</param>
     /// <param name="version">アップグレード先のバージョン（省略可）</param>
-    public Task UpgradeAndSaveAsync(string packageId, string? version = null)
+    public async Task UpgradeAndSaveAsync(string packageId, string? version = null)
     {
-        throw new NotImplementedException();
+        if (!credentialService.TryGetCredential(out var credential))
+        {
+            await AuthLoginAsync();
+            if (!credentialService.TryGetCredential(out credential))
+            {
+                throw new InvalidOperationException("Failed to retrieve credentials after login.");
+            }
+        }
+
+        var upgradeArgs = new List<string> { "upgrade", "--id", packageId };
+        if (!string.IsNullOrEmpty(version))
+        {
+            upgradeArgs.Add("--version");
+            upgradeArgs.Add(version);
+        }
+
+        var exitCode = await passthroughRunner.RunAsync(upgradeArgs.ToArray());
+        if (exitCode != 0)
+        {
+            return;
+        }
+
+        var existingPackages = await gitHubService.GetPackagesAsync(credential.Token, "", "packages.yaml", "GistGet packages");
+        var existingPackage = existingPackages.FirstOrDefault(p => string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase));
+
+        var resolvedVersion = version;
+        var hasPin = !string.IsNullOrEmpty(existingPackage?.Pin);
+        var pinTypeToSet = existingPackage?.PinType;
+        string? pinVersionToSet = null;
+
+        if (hasPin && resolvedVersion == null)
+        {
+            var packageInfo = winGetService.FindById(new PackageId(packageId));
+            resolvedVersion = packageInfo?.UsableVersion?.ToString();
+        }
+
+        if (hasPin)
+        {
+            pinVersionToSet = resolvedVersion ?? existingPackage!.Pin;
+        }
+
+        var shouldUpdateGist = existingPackage == null || existingPackage.Uninstall || hasPin;
+        if (!shouldUpdateGist)
+        {
+            return;
+        }
+
+        if (hasPin && !string.IsNullOrEmpty(pinVersionToSet))
+        {
+            var pinArgs = new List<string> { "pin", "add", "--id", packageId, "--version", pinVersionToSet, "--force" };
+            if (!string.IsNullOrEmpty(pinTypeToSet) && pinTypeToSet.Equals("blocking", StringComparison.OrdinalIgnoreCase))
+            {
+                pinArgs.Add("--blocking");
+            }
+
+            await passthroughRunner.RunAsync(pinArgs.ToArray());
+        }
+
+        var newPackages = existingPackages
+            .Where(p => !string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var packageToSave = existingPackage ?? new GistGetPackage { Id = packageId };
+        packageToSave.Uninstall = false;
+
+        if (hasPin && !string.IsNullOrEmpty(pinVersionToSet))
+        {
+            packageToSave.Pin = pinVersionToSet;
+            packageToSave.PinType = pinTypeToSet;
+            packageToSave.Version = pinVersionToSet;
+        }
+        else
+        {
+            packageToSave.Pin = null;
+            packageToSave.PinType = null;
+            packageToSave.Version = null;
+        }
+
+        newPackages.Add(packageToSave);
+
+        await gitHubService.SavePackagesAsync(credential.Token, "", "packages.yaml", "GistGet packages", newPackages);
     }
 
     /// <summary>
