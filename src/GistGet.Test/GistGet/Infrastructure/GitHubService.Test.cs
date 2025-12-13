@@ -113,6 +113,90 @@ public class GitHubServiceTests
                 await DeleteGistQuietlyAsync(client, gist.Id);
             }
         }
+
+        [Fact]
+        public async Task PreservesAllPackageProperties()
+        {
+            // -------------------------------------------------------------------
+            // Arrange: 全プロパティを設定したパッケージを準備
+            // -------------------------------------------------------------------
+            var fileName = $"gistget-packages-test-{Guid.NewGuid():N}.yaml";
+            var description = $"GistGet Packages Test {Guid.NewGuid():N}";
+            var initialYaml = "initial: {}\n";
+            var result = await CreateIsolatedGistAsync(fileName, description, initialYaml);
+            if (result == null) return;
+            var (client, token, gist) = result.Value;
+            var target = CreateTarget();
+
+            var packages = new List<GistGetPackage>
+            {
+                new()
+                {
+                    Id = "TestPackage.AllProperties",
+                    Version = "2.0.0",
+                    Pin = "1.5.0",
+                    PinType = "blocking",
+                    Custom = "/CUSTOM_ARG",
+                    Uninstall = false,
+                    Scope = "machine",
+                    Architecture = "x64",
+                    Location = @"C:\Install",
+                    Locale = "ja-JP",
+                    AllowHashMismatch = true,
+                    Force = true,
+                    AcceptPackageAgreements = true,
+                    AcceptSourceAgreements = true,
+                    SkipDependencies = true,
+                    Header = "X-Custom-Header",
+                    InstallerType = "msi",
+                    Log = @"C:\Logs\install.log",
+                    Override = "/SILENT",
+                    Interactive = false,
+                    Silent = true
+                }
+            };
+
+            try
+            {
+                // -------------------------------------------------------------------
+                // Act: 保存後に再取得
+                // -------------------------------------------------------------------
+                await target.SavePackagesAsync(token, gist.HtmlUrl, fileName, description, packages);
+                var retrievedPackages = await target.GetPackagesAsync(token, fileName, description);
+
+                // -------------------------------------------------------------------
+                // Assert: 全プロパティが保持されていることを検証
+                // -------------------------------------------------------------------
+                retrievedPackages.Count.ShouldBe(1);
+                var pkg = retrievedPackages[0];
+                
+                pkg.Id.ShouldBe("TestPackage.AllProperties");
+                pkg.Version.ShouldBe("2.0.0");
+                pkg.Pin.ShouldBe("1.5.0");
+                pkg.PinType.ShouldBe("blocking");
+                pkg.Custom.ShouldBe("/CUSTOM_ARG");
+                pkg.Uninstall.ShouldBeFalse();
+                pkg.Scope.ShouldBe("machine");
+                pkg.Architecture.ShouldBe("x64");
+                pkg.Location.ShouldBe(@"C:\Install");
+                pkg.Locale.ShouldBe("ja-JP");
+                pkg.AllowHashMismatch.ShouldBeTrue();
+                pkg.Force.ShouldBeTrue();
+                pkg.AcceptPackageAgreements.ShouldBeTrue();
+                pkg.AcceptSourceAgreements.ShouldBeTrue();
+                pkg.SkipDependencies.ShouldBeTrue();
+                pkg.Header.ShouldBe("X-Custom-Header");
+                pkg.InstallerType.ShouldBe("msi");
+                pkg.Log.ShouldBe(@"C:\Logs\install.log");
+                pkg.Override.ShouldBe("/SILENT");
+                pkg.Interactive.ShouldBeFalse();
+                pkg.Silent.ShouldBeTrue();
+            }
+            finally
+            {
+                await DeleteGistQuietlyAsync(client, gist.Id);
+            }
+        }
     }
 
     public class GetPackagesFromUrlAsync : GitHubServiceTests

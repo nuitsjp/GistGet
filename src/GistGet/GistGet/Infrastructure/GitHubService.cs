@@ -252,6 +252,8 @@ public class GitHubService(
             var copy = new GistGetPackage
             {
                 Version = package.Version,
+                Pin = package.Pin,
+                PinType = package.PinType,
                 Custom = package.Custom,
                 Uninstall = package.Uninstall,
                 Scope = package.Scope,
@@ -260,6 +262,8 @@ public class GitHubService(
                 Locale = package.Locale,
                 AllowHashMismatch = package.AllowHashMismatch,
                 Force = package.Force,
+                AcceptPackageAgreements = package.AcceptPackageAgreements,
+                AcceptSourceAgreements = package.AcceptSourceAgreements,
                 SkipDependencies = package.SkipDependencies,
                 Header = package.Header,
                 InstallerType = package.InstallerType,

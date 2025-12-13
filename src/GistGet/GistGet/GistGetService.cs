@@ -156,7 +156,7 @@ public class GistGetService(
         if (options.Location != null) { installArgs.Add("--location"); installArgs.Add(options.Location); }
         if (options.Log != null) { installArgs.Add("--log"); installArgs.Add(options.Log); }
         if (options.Header != null) { installArgs.Add("--header"); installArgs.Add(options.Header); }
-        if (options.Custom != null) installArgs.Add(options.Custom);
+        if (options.Custom != null) { installArgs.Add("--custom"); installArgs.Add(options.Custom); }
         if (options.Override != null) { installArgs.Add("--override"); installArgs.Add(options.Override); }
         if (options.InstallerType != null) { installArgs.Add("--installer-type"); installArgs.Add(options.InstallerType); }
         if (options.Locale != null) { installArgs.Add("--locale"); installArgs.Add(options.Locale); }
