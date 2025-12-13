@@ -39,7 +39,7 @@ Write-Host ""
 
 # Build the solution first
 Write-Host "Building solution..." -ForegroundColor Green
-dotnet build "$repoRoot\GistGet.slnx" -c $Configuration
+dotnet build "$repoRoot\src\GistGet.slnx" -c $Configuration
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Build failed!" -ForegroundColor Red
     exit $LASTEXITCODE

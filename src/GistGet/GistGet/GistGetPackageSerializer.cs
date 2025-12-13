@@ -5,7 +5,7 @@ namespace GistGet;
 
 /// <summary>
 /// GistGetPackage の YAML シリアライズ/デシリアライズを担当する静的クラス。
-/// packages.yaml 形式への変換と読み込みを提供します。
+/// GistGet.yaml 形式への変換と読み込みを提供します。
 /// </summary>
 public static class GistGetPackageSerializer
 {

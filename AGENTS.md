@@ -17,7 +17,7 @@
 - `docs`: design/spec references (`docs/SPEC.ja.md`, `DESIGN.ja.md`, `YAML_SPEC.ja.md`) to keep behavior aligned with the contract.
 
 ## Build, Test, and Development Commands
-- Restore/build: `dotnet build GistGet.sln -c Debug` (or `Release`) to compile all projects.
+- Restore/build: `dotnet build src/GistGet.slnx -c Debug` (or `Release`) to compile all projects.
 - Run CLI: `dotnet run --project src/GistGet/GistGet.csproj -- <command>` (e.g., `-- auth login`, `sync`, `install <id>`).
 - Tests + coverage: `dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug --collect:"XPlat Code Coverage" --results-directory TestResults`.
 - Convenience: `.\scripts\Run-Tests.ps1 [-Configuration Release] [-CollectCoverage $false]` handles build, tests, and coverage in one call.

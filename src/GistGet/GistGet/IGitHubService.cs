@@ -40,7 +40,7 @@ public interface IGitHubService
     Task<Credential> LoginAsync();
 
     /// <summary>
-    /// 指定された URL から packages.yaml を取得します。
+    /// 指定された URL から GistGet.yaml を取得します。
     /// Gist の Raw URL やその他の HTTP/HTTPS URL を指定可能です。
     /// </summary>
     /// <param name="url">YAML ファイルの URL</param>
@@ -51,7 +51,7 @@ public interface IGitHubService
     /// 認証ユーザーの Gist からパッケージ一覧を取得します。
     /// </summary>
     /// <param name="token">GitHub アクセストークン</param>
-    /// <param name="gistFileName">Gist内のファイル名（通常は "packages.yaml"）</param>
+    /// <param name="gistFileName">Gist内のファイル名（通常は "GistGet.yaml"）</param>
     /// <param name="gistDescription">Gistの説明（検索・作成時に使用）</param>
     /// <returns>パッケージ一覧</returns>
     Task<IReadOnlyList<GistGetPackage>> GetPackagesAsync(string token, string gistFileName, string gistDescription);
@@ -62,7 +62,7 @@ public interface IGitHubService
     /// </summary>
     /// <param name="token">GitHub アクセストークン</param>
     /// <param name="gistUrl">Gist URL（空文字列の場合は認証ユーザーのGistを検索または作成）</param>
-    /// <param name="gistFileName">Gist内のファイル名（通常は "packages.yaml"）</param>
+    /// <param name="gistFileName">Gist内のファイル名（通常は "GistGet.yaml"）</param>
     /// <param name="gistDescription">Gistの説明</param>
     /// <param name="packages">保存するパッケージ一覧</param>
     Task SavePackagesAsync(string token, string gistUrl, string gistFileName, string gistDescription, IReadOnlyList<GistGetPackage> packages);
