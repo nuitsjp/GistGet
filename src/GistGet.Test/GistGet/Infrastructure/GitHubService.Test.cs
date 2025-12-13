@@ -199,6 +199,150 @@ public class GitHubServiceTests
         }
     }
 
+    public class GetPackagesAsync : GitHubServiceTests
+    {
+        [Fact]
+        public async Task MissingGist_CreatesPrivateGistWithEmptyYaml()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var fileName = $"gistget-packages-test-{Guid.NewGuid():N}.yaml";
+            var description = $"GistGet Packages Test {Guid.NewGuid():N}";
+            if (!CredentialService.TryGetCredential(out var credential) || string.IsNullOrEmpty(credential.Token))
+            {
+                return;
+            }
+
+            var token = credential.Token;
+            var client = new GitHubClient(new ProductHeaderValue("GistGet.Tests"))
+            {
+                Credentials = new Credentials(token)
+            };
+            var target = CreateTarget();
+
+            Gist? created = null;
+
+            try
+            {
+                // -------------------------------------------------------------------
+                // Act
+                // -------------------------------------------------------------------
+                var result = await target.GetPackagesAsync(token, fileName, description);
+
+                // -------------------------------------------------------------------
+                // Assert
+                // -------------------------------------------------------------------
+                result.ShouldBeEmpty();
+
+                created = await FindGistByFileNameAsync(client, fileName);
+                created.ShouldNotBeNull();
+
+                var gist = await client.Gist.Get(created.Id);
+                gist.Files.ContainsKey(fileName).ShouldBeTrue();
+                gist.Files[fileName].Content.ShouldBe(string.Empty);
+                gist.Public.ShouldBeFalse();
+            }
+            finally
+            {
+                if (created != null)
+                {
+                    await DeleteGistQuietlyAsync(client, created.Id);
+                }
+            }
+        }
+
+        [Fact]
+        public async Task DuplicateDescription_DoesNotThrowAndUpdatesMatchingFile()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var fileName = $"gistget-packages-test-{Guid.NewGuid():N}.yaml";
+            var otherFileName = $"gistget-packages-test-{Guid.NewGuid():N}.yaml";
+            var description = $"GistGet Packages Test {Guid.NewGuid():N}";
+            if (!CredentialService.TryGetCredential(out var credential) || string.IsNullOrEmpty(credential.Token))
+            {
+                return;
+            }
+
+            var token = credential.Token;
+            var client = new GitHubClient(new ProductHeaderValue("GistGet.Tests"))
+            {
+                Credentials = new Credentials(token)
+            };
+            var target = CreateTarget();
+
+            var targetGist = await client.Gist.Create(new NewGist
+            {
+                Description = description,
+                Public = false,
+                Files = { { fileName, "initial: {}\n" } }
+            });
+            var duplicateDescriptionGist = await client.Gist.Create(new NewGist
+            {
+                Description = description,
+                Public = false,
+                Files = { { otherFileName, "other: {}\n" } }
+            });
+
+            var packages = new List<GistGetPackage>
+            {
+                new() { Id = "Test.Package", Version = "1.0.0" }
+            };
+
+            try
+            {
+                // -------------------------------------------------------------------
+                // Act
+                // -------------------------------------------------------------------
+                await target.SavePackagesAsync(token, string.Empty, fileName, description, packages);
+
+                // -------------------------------------------------------------------
+                // Assert
+                // -------------------------------------------------------------------
+                var updated = await client.Gist.Get(targetGist.Id);
+                updated.Files.ContainsKey(fileName).ShouldBeTrue();
+                updated.Files[fileName].Content.ShouldContain("Test.Package");
+            }
+            finally
+            {
+                await DeleteGistQuietlyAsync(client, targetGist.Id);
+                await DeleteGistQuietlyAsync(client, duplicateDescriptionGist.Id);
+            }
+        }
+
+        private static async Task<Gist?> FindGistByFileNameAsync(GitHubClient client, string fileName)
+        {
+            var page = 1;
+            const int perPage = 100;
+
+            while (true)
+            {
+                var options = new ApiOptions
+                {
+                    PageCount = 1,
+                    PageSize = perPage,
+                    StartPage = page
+                };
+
+                var gists = await client.Gist.GetAll(options);
+                var match = gists.FirstOrDefault(g => g.Files.ContainsKey(fileName));
+                if (match != null)
+                {
+                    return match;
+                }
+
+                if (gists.Count < perPage)
+                {
+                    return null;
+                }
+
+                page++;
+            }
+        }
+    }
+
     public class GetPackagesFromUrlAsync : GitHubServiceTests
     {
         [Fact]
