@@ -1,69 +1,196 @@
-﻿# TODO（仕様準拠・整合性）
+# TODO（仕様準拠・整合性）
 
-このファイルは、`docs/SPEC.ja.md` と現状実装の差分（仕様不一致/実装漏れ/設計ガイドライン逸脱）を一旦すべて列挙するためのバックログです。
+このファイルは、`docs/SPEC.ja.md` と現状実装の差分（仕様不一致/実装漏れ/設計ガイドライン逸脱）を列挙するバックログです。
 
-## 最優先（ユーザー影響が大きい）
+**最終更新**: 2025年12月13日（実装レビューに基づく）
 
-- [ ] `sync` が未実装（コマンドはあるがハンドラ未設定）: `src/GistGet/GistGet/Presentation/CommandBuilder.cs`
-- [ ] `export` / `import` が未実装（コマンドはあるがハンドラ未設定）: `src/GistGet/GistGet/Presentation/CommandBuilder.cs`
-- [ ] `IGistGetService` に `sync/export/import` が存在しない: `src/GistGet/GistGet/IGistGetService.cs`
-- [ ] YAML 保存時に `pin` / `pinType` / `acceptPackageAgreements` / `acceptSourceAgreements` が脱落する（スキーマ不一致）: `src/GistGet/GistGet/Infrastructure/GitHubService.cs`
-- [ ] `install` の `custom` が winget に正しく渡らない（`--custom` が付かず値だけ渡っている）: `src/GistGet/GistGet/GistGetService.cs`
-- [ ] winget 実行失敗時に「エラー終了」にならない経路がある（exit code をプロセス終了コードへ反映しない/戻り値がない）: `src/GistGet/GistGet/GistGetService.cs`
-- [ ] パススルー引数のクォート/エスケープが壊れやすい（`string.Join(" ", args)`）: `src/GistGet/GistGet/Infrastructure/WinGetPassthroughRunner.cs`
+---
 
-## 仕様（SPEC）との差分：コマンド
+## 🔴 最優先（未実装コマンド）
 
-### sync
+### sync コマンド
 
-- [ ] `gistget sync [--url <gist-url>]` の処理フローが未実装: `docs/SPEC.ja.md` / `src/GistGet/GistGet/Presentation/CommandBuilder.cs`
-- [ ] `--url` 指定時の「読み取り専用モード（Gistへ保存しない）」が未実装: `docs/SPEC.ja.md`
-- [ ] 差分計算（同期マトリクス）/ uninstall・install・pin 同期（pin add/remove）が未実装: `docs/SPEC.ja.md`
-- [ ] 冪等性・エラーハンドリング（複数パッケージ継続処理、最後にまとめて報告）が未実装: `docs/SPEC.ja.md`
+- [ ] **`sync` コマンドが未実装**: `CommandBuilder.cs` でコマンド定義はあるが `SetHandler` がない
+  - 関連ファイル: `src/GistGet/GistGet/Presentation/CommandBuilder.cs`
+- [ ] `IGistGetService` に `SyncAsync()` メソッドが存在しない
+  - 関連ファイル: `src/GistGet/GistGet/IGistGetService.cs`
+- [ ] `IWinGetService` に `GetAllInstalledPackages()` が存在しない（sync に必要）
+  - 関連ファイル: `src/GistGet/GistGet/IWinGetService.cs`
+- [ ] `SyncResult.cs` が定義されているが未使用
+  - 関連ファイル: `src/GistGet/GistGet/SyncResult.cs`
 
-### export / import
+**sync の仕様要件（未実装）:**
+- [ ] `--url` 指定時の読み取り専用モード（Gist へ保存しない）
+- [ ] 差分計算（同期マトリクス）に従った処理
+- [ ] uninstall → install → pin 同期の順序
+- [ ] 冪等性・エラーハンドリング（複数パッケージ継続処理、最後にまとめて報告）
 
-- [ ] `export`（ローカルのインストール済みパッケージを YAML 出力）が未実装: `docs/SPEC.ja.md`
-- [ ] `import`（YAML ファイルを Gist にインポート）が未実装: `docs/SPEC.ja.md`
+### export / import コマンド
 
-### install
+- [ ] **`export` コマンドが未実装**: コマンド定義のみ、ハンドラなし
+  - 関連ファイル: `src/GistGet/GistGet/Presentation/CommandBuilder.cs`
+- [ ] **`import` コマンドが未実装**: コマンド定義のみ、ハンドラなし
+  - 関連ファイル: `src/GistGet/GistGet/Presentation/CommandBuilder.cs`
+- [ ] `IGistGetService` に `ExportAsync()` / `ImportAsync()` メソッドが存在しない
+  - 関連ファイル: `src/GistGet/GistGet/IGistGetService.cs`
 
-- [ ] CLI が受けるオプションが SPEC/YAML スキーマの一部をカバーしていない（例: `--locale`, `--accept-*`, `--ignore-security-hash` など）: `src/GistGet/GistGet/Presentation/CommandBuilder.cs`
-- [ ] `InstallOptions` にはあるのに CLI が受けていないフィールドがある（`AcceptPackageAgreements` / `AcceptSourceAgreements` / `AllowHashMismatch` / `Locale` など）: `src/GistGet/GistGet/InstallOptions.cs`
-- [ ] `packages.yaml` への永続化が「インストールオプション保存」の要件を満たしていない（保存しない/保存しても YAML 生成で落ちる）: `docs/SPEC.ja.md` / `src/GistGet/GistGet/Infrastructure/GitHubService.cs` / `src/GistGet/GistGet/GistGetService.cs`
-- [ ] `custom` の winget パススルーが誤り（`--custom <value>` ではなく `<value>` のみ）: `src/GistGet/GistGet/GistGetService.cs`
-- [ ] `acceptPackageAgreements` / `acceptSourceAgreements` を winget に渡す＆YAML に保存する実装が不足: `docs/SPEC.ja.md` / `src/GistGet/GistGet/GistGetService.cs`
+---
 
-### uninstall
+## 🔴 重大なバグ（データ損失）
 
-- [ ] 「pin が存在すれば pin remove」を Gist 側の `pin` 有無でしか判断していない（ローカル pin の残存を取りこぼす可能性）: `docs/SPEC.ja.md` / `src/GistGet/GistGet/GistGetService.cs`
-- [ ] winget 失敗時にエラー終了しない（Gist を更新しないだけで成功終了する可能性）: `docs/SPEC.ja.md` / `src/GistGet/GistGet/GistGetService.cs`
+### YAML シリアライズ時のフィールド脱落
 
-### upgrade
+- [ ] `SerializePackages()` で `pin` / `pinType` が保存されない
+  - 原因: コピーオブジェクト作成時に `Pin` / `PinType` が含まれていない
+  - 関連ファイル: `src/GistGet/GistGet/Infrastructure/GitHubService.cs` (L179-200)
 
-- [ ] upgrade 成功後の pin 追従（pin add --force + YAML 更新）が仕様どおりに動かない可能性（新バージョンの決定に “更新可能版” を使っており、upgrade 後のインストール済み版を確実に取得していない）: `docs/SPEC.ja.md` / `src/GistGet/GistGet/GistGetService.cs` / `src/GistGet/GistGet/Infrastructure/WinGetService.cs`
-- [ ] ID 未指定時の passthrough は実装意図はあるが、引数再構成が不安定（`ParseResult.Tokens` 依存）: `src/GistGet/GistGet/Presentation/CommandBuilder.cs`
+```csharp
+// 現状のコード（問題箇所）
+var copy = new GistGetPackage
+{
+    Version = package.Version,
+    Custom = package.Custom,
+    // ...
+    // Pin, PinType が欠落している！
+};
+```
 
-### pin add / pin remove
+### install の custom オプションが誤っている
 
-- [ ] pin add/remove 自体は実装されているが、YAML 生成で `pin`/`pinType`/`version` が落ちるため Gist と同期できない: `src/GistGet/GistGet/Infrastructure/GitHubService.cs`
+- [ ] `--custom` フラグなしで値だけ渡している
+  - 現状: `installArgs.Add(options.Custom)` → winget が認識しない
+  - 正しくは: `installArgs.Add("--custom"); installArgs.Add(options.Custom);`
+  - 関連ファイル: `src/GistGet/GistGet/GistGetService.cs` (L159)
 
-## 仕様（SPEC）との差分：YAML スキーマ
+---
 
-- [ ] `packages.yaml` は「パッケージIDをキーとするマップ」だが、保存時のフィールド網羅が不足（特に `pin` / `pinType` / `accept*`）: `docs/SPEC.ja.md` / `src/GistGet/GistGet/Infrastructure/GitHubService.cs`
-- [ ] 仕様で列挙されているフィールドのうち、モデルはあるが CLI/保存が未対応のものがある: `docs/SPEC.ja.md` / `src/GistGet/GistGet/GistGetPackage.cs` / `src/GistGet/GistGet/Presentation/CommandBuilder.cs`
+## 🟡 CLI オプション不足
 
-## 仕様（SPEC）自体の不整合（文書修正候補）
+### install コマンド
 
-- [ ] `sync` 節で `gistget upgrade --id <id> --pin <version>` と記載があるが、`upgrade` 節は `--version` を定義している（`--pin` は未定義）: `docs/SPEC.ja.md`
+`InstallOptions` にプロパティはあるが、CLI で受け付けていないオプション:
 
-## csproj / 依存関係 / リリース整合性
+| オプション | InstallOptions | CLI 定義 | winget 渡し |
+|------------|:--------------:|:--------:|:-----------:|
+| `--accept-package-agreements` | ✅ | ❌ | ✅ |
+| `--accept-source-agreements` | ✅ | ❌ | ✅ |
+| `--locale` | ✅ | ❌ | ✅ |
+| `--ignore-security-hash` | ✅ (`AllowHashMismatch`) | ❌ | ✅ |
 
-- [ ] リポジトリガイドライン（`net10.0-windows...`）と `TargetFramework` が不一致（現状 `net8.0-windows...`）: `src/GistGet/GistGet.csproj`
-- [ ] `Microsoft.Identity.Client` が未使用に見える（依存整理 or 実装へ反映）: `src/GistGet/GistGet.csproj`
-- [ ] `RootNamespace` が空（意図確認）: `src/GistGet/GistGet.csproj`
-- [ ] Gist ファイル名/説明のデフォルト値が実装内で揺れている可能性（`packages.yaml` / `gistget-packages.yaml` 等、意図確認）: `src/GistGet/GistGet/Infrastructure/GitHubService.cs` / `src/GistGet/GistGet/GistGetService.cs`
+- 関連ファイル: `src/GistGet/GistGet/Presentation/CommandBuilder.cs` (L76-96)
 
-## テスト（TDD前提の不足）
+---
 
-- [ ] 仕様の「同期マトリクス」「エラーハンドリング」「pin 追従」などの振る舞いがテストで固定されていない（追加が必要）: `docs/SPEC.ja.md`
+## 🟡 YAML スキーマの不整合
+
+### GistGetPackage に仕様外のプロパティが存在
+
+仕様書に定義されていないプロパティ（削除候補）:
+
+- [ ] `Mode` プロパティ
+- [ ] `Confirm` プロパティ
+- [ ] `WhatIf` プロパティ
+
+- 関連ファイル: `src/GistGet/GistGet/GistGetPackage.cs`
+
+### acceptPackageAgreements / acceptSourceAgreements の保存
+
+- [ ] `GistGetPackage` にプロパティはあるが、`SerializePackages()` でコピーされていない
+  - 関連ファイル: `src/GistGet/GistGet/Infrastructure/GitHubService.cs`
+
+---
+
+## 🟡 エラーハンドリング不足
+
+### winget 失敗時のプロセス終了コード
+
+- [ ] `InstallAndSaveAsync` / `UninstallAndSaveAsync` / `UpgradeAndSaveAsync` が winget 失敗時に `return` するだけで、呼び出し元に失敗を伝達しない
+  - 現状: Gist を更新しないが、CLI としては正常終了
+  - 期待: 非ゼロ終了コードを返す
+  - 関連ファイル: `src/GistGet/GistGet/GistGetService.cs`
+
+### パススルー引数のクォート/エスケープ
+
+- [ ] `string.Join(" ", args)` でスペースを含む引数が壊れる可能性
+  - 関連ファイル: `src/GistGet/GistGet/Infrastructure/WinGetPassthroughRunner.cs` (L12)
+
+---
+
+## 🟡 upgrade コマンドの問題
+
+### pin 追従時のバージョン取得
+
+- [ ] upgrade 成功後の pin 追従で「更新可能バージョン（UsableVersion）」を使用しているが、upgrade 後のインストール済みバージョンを取得すべき
+  - 関連ファイル: `src/GistGet/GistGet/GistGetService.cs` (L256-258)
+  - 関連ファイル: `src/GistGet/GistGet/Infrastructure/WinGetService.cs`
+
+### ID 未指定時のパススルー引数再構成
+
+- [ ] `ParseResult.Tokens` 依存で引数再構成が不安定
+  - 関連ファイル: `src/GistGet/GistGet/Presentation/CommandBuilder.cs` (L161-187)
+
+---
+
+## 🟡 uninstall コマンドの問題
+
+### ローカル pin の残存
+
+- [ ] Gist 側の `pin` 有無でしか `pin remove` を判断していない
+  - ローカルに pin があるが Gist にエントリがない場合、pin が残る
+  - 関連ファイル: `src/GistGet/GistGet/GistGetService.cs` (L209-212)
+
+---
+
+## 🟢 正しく実装されている機能
+
+| 機能 | 状態 | 備考 |
+|------|:----:|------|
+| `auth login` | ✅ | Device Flow 認証 |
+| `auth logout` | ✅ | 資格情報削除 |
+| `auth status` | ✅ | トークン状態表示 |
+| `install` | ⚠️ | 動作するが CLI オプション不足・custom バグあり |
+| `uninstall` | ⚠️ | 動作するがローカル pin 残存問題あり |
+| `upgrade` (ID 指定時) | ⚠️ | 動作するがバージョン取得問題あり |
+| `upgrade` (ID 未指定) | ✅ | パススルー |
+| `pin add` | ⚠️ | 動作するが YAML 保存で pin 脱落 |
+| `pin remove` | ⚠️ | 動作するが YAML 保存で問題あり |
+| `pin list` / `pin reset` | ✅ | パススルー |
+| winget パススルー (11 コマンド) | ✅ | list, search, show 等 |
+
+---
+
+## 📋 csproj / 依存関係
+
+- [ ] `TargetFramework` が `net8.0-windows10.0.26100.0`（AGENTS.md は `net10.0` と記載 → 要確認）
+  - 関連ファイル: `src/GistGet/GistGet.csproj`
+- [ ] `Microsoft.Identity.Client` が未使用に見える（Octokit で認証しているため不要？）
+  - 関連ファイル: `src/GistGet/GistGet.csproj`
+- [ ] `RootNamespace` が空（意図的か確認）
+  - 関連ファイル: `src/GistGet/GistGet.csproj`
+
+---
+
+## 📋 Gist ファイル名の揺れ
+
+- [ ] `GitHubService` のデフォルトファイル名が `gistget-packages.yaml`
+- [ ] `GistGetService` の呼び出しは `packages.yaml` を渡している
+- [ ] 仕様書は `packages.yaml` と記載
+- 動作に問題はないが、デフォルト値の統一が必要
+  - 関連ファイル: `src/GistGet/GistGet/Infrastructure/GitHubService.cs` (L9)
+
+---
+
+## 📋 仕様書（SPEC）自体の不整合
+
+- [ ] `sync` 節で `gistget upgrade --id <id> --pin <version>` と記載があるが、`upgrade` 節は `--version` を定義している（`--pin` オプションは未定義）
+  - 関連ファイル: `docs/SPEC.ja.md`
+
+---
+
+## 📋 テスト追加が必要な項目
+
+- [ ] sync の同期マトリクス（実装後）
+- [ ] export / import の動作（実装後）
+- [ ] YAML シリアライズで全フィールドが保存されること
+- [ ] winget 失敗時のエラー伝播
+- [ ] custom オプションの正しいパススルー
