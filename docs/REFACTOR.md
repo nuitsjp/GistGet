@@ -7,7 +7,7 @@ main → refactor で入った変更を棚卸し。チェック済みは反映�
 - [x] ソリューション/CI: ルートの `GistGet.slnx`/`GistGet_old.slnx` と `.DotSettings` を削除して `src/GistGet.slnx` に集約。CI は main ブランチのみをトリガーし、SOLUTION_FILE を `src/GistGet.slnx` に変更。
 - [x] CLI upgrade: `UpgradeOptions` と `winget upgrade` 引数生成で `--header` をサポートし、CLI にも同オプションを追加。
 - [ ] Gist/GitHub: 既定 Gist ファイルを `gistget.yaml` に変更し、GitHubService はファイル名一致でページング検索し、未存在ならプライベート Gist を新規作成して空 YAML を置く挙動に変更（description マッチや複数検出エラーを廃止）。
-- [ ] WinGet 引数: `BuildUpgradeArgs` でも `Header` を共通オプションとして渡すよう統一。
+- [x] WinGet 引数: `BuildUpgradeArgs` でも `Header` を共通オプションとして渡すよう統一。
 - [ ] CLI sync: `SyncAsync` が `--file` でローカル YAML を優先読込（存在チェック付き）し、同期処理にインストール/アンインストール/pin の進捗ログを追加。
 - [ ] テスト: Sync の進捗ログ（インストール/アンインストール/pin）検証を追加し、CredentialService 既定ターゲットの保存/取得テストを追加。WinGetServiceTests に Integration trait を付与。テスト csproj も net10/中央パッケージ管理に追従。
 - [ ] ドキュメント: README/SPEC/DEVELOPER/DESIGN を `gistget.yaml` 前提、net10 依存、`sync --file` 例などへ更新（文章・構成を簡潔化）。
