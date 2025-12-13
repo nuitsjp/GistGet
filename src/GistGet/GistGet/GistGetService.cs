@@ -500,13 +500,22 @@ public class GistGetService(
             {
                 try
                 {
+                    consoleService.WriteInfo($"[sync] Uninstalling {gistPkg.Id}...");
                     var uninstallArgs = new[] { "uninstall", "--id", gistPkg.Id };
                     var exitCode = await passthroughRunner.RunAsync(uninstallArgs);
                     if (exitCode == 0)
                     {
                         result.Uninstalled.Add(gistPkg);
+                        consoleService.WriteInfo($"[sync] Uninstalled {gistPkg.Id}");
+
+                        var pinRemoveArgs = new[] { "pin", "remove", "--id", gistPkg.Id };
+                        consoleService.WriteInfo($"[sync] Removing pin for {gistPkg.Id}...");
+                        var pinRemoveExitCode = await passthroughRunner.RunAsync(pinRemoveArgs);
+                        if (pinRemoveExitCode == 0)
+                        {
+                            consoleService.WriteInfo($"[sync] Removed pin for {gistPkg.Id}");
+                        }
                         // pinも削除
-                        await passthroughRunner.RunAsync(new[] { "pin", "remove", "--id", gistPkg.Id });
                     }
                     else
                     {
@@ -529,18 +538,25 @@ public class GistGetService(
             {
                 try
                 {
+                    consoleService.WriteInfo($"[sync] Installing {gistPkg.Id}...");
                     var installArgs = argumentBuilder.BuildInstallArgs(gistPkg);
 
                     var exitCode = await passthroughRunner.RunAsync(installArgs.ToArray());
                     if (exitCode == 0)
                     {
                         result.Installed.Add(gistPkg);
+                        consoleService.WriteInfo($"[sync] Installed {gistPkg.Id}");
                         
                         // Pinがある場合はpin addを実行
                         if (!string.IsNullOrEmpty(gistPkg.Pin))
                         {
                             var pinArgs = argumentBuilder.BuildPinAddArgs(gistPkg.Id, gistPkg.Pin, gistPkg.PinType);
-                            await passthroughRunner.RunAsync(pinArgs);
+                            consoleService.WriteInfo($"[sync] Applying pin for {gistPkg.Id} ({gistPkg.Pin})...");
+                            var pinExitCode = await passthroughRunner.RunAsync(pinArgs);
+                            if (pinExitCode == 0)
+                            {
+                                consoleService.WriteInfo($"[sync] Applied pin for {gistPkg.Id}");
+                            }
                         }
                     }
                     else
@@ -568,10 +584,12 @@ public class GistGetService(
                     {
                         // GistにPinがある場合はローカルにPin追加/更新
                         var pinArgs = argumentBuilder.BuildPinAddArgs(gistPkg.Id, gistPkg.Pin, gistPkg.PinType, true);
+                        consoleService.WriteInfo($"[sync] Updating pin for {gistPkg.Id} to {gistPkg.Pin}...");
                         var exitCode = await passthroughRunner.RunAsync(pinArgs);
                         if (exitCode == 0)
                         {
                             result.PinUpdated.Add(gistPkg);
+                            consoleService.WriteInfo($"[sync] Updated pin for {gistPkg.Id}");
                         }
                     }
                     else
@@ -579,10 +597,12 @@ public class GistGetService(
                         // GistにPinがない場合はローカルのPinを削除（存在する場合）
                         // pin removeはエラーを無視（元々pinがない場合もあるため）
                         var pinRemoveArgs = new[] { "pin", "remove", "--id", gistPkg.Id };
+                        consoleService.WriteInfo($"[sync] Removing pin for {gistPkg.Id}...");
                         var exitCode = await passthroughRunner.RunAsync(pinRemoveArgs);
                         if (exitCode == 0)
                         {
                             result.PinRemoved.Add(gistPkg);
+                            consoleService.WriteInfo($"[sync] Removed pin for {gistPkg.Id}");
                         }
                     }
                 }

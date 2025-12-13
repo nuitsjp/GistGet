@@ -1825,6 +1825,74 @@ public class GistGetServiceTests
         }
 
         [Fact]
+        public async Task InstallingPackage_WritesPerPackageProgressMessages()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "New.Package";
+            var credential = new Credential("user", "token");
+            var gistPackages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = packageId, Pin = "1.0.0", PinType = "blocking" }
+            };
+
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(gistPackages);
+
+            _winGetServiceMock
+                .Setup(x => x.GetAllInstalledPackages())
+                .Returns(new List<WinGetPackage>());
+
+            var sequence = new MockSequence();
+            _consoleServiceMock.InSequence(sequence)
+                .Setup(x => x.WriteInfo(It.Is<string>(s => s.Contains("Installing") && s.Contains(packageId))));
+            _consoleServiceMock.InSequence(sequence)
+                .Setup(x => x.WriteInfo(It.Is<string>(s => s.Contains("Installed") && s.Contains(packageId))));
+            _consoleServiceMock.InSequence(sequence)
+                .Setup(x => x.WriteInfo(It.Is<string>(s => s.Contains("Applying pin") && s.Contains(packageId) && s.Contains("1.0.0"))));
+            _consoleServiceMock.InSequence(sequence)
+                .Setup(x => x.WriteInfo(It.Is<string>(s => s.Contains("Applied pin") && s.Contains(packageId))));
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "install" &&
+                    args.Contains("--id") && args.Contains(packageId) &&
+                    args.Contains("--version") && args.Contains("1.0.0"))))
+                .ReturnsAsync(0);
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "pin" && args[1] == "add" &&
+                    args.Contains("--id") && args.Contains(packageId) &&
+                    args.Contains("--version") && args.Contains("1.0.0") &&
+                    args.Contains("--blocking"))))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.SyncAsync();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("Installing") && s.Contains(packageId))), Times.Once);
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("Installed") && s.Contains(packageId))), Times.Once);
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("Applying pin") && s.Contains(packageId) && s.Contains("1.0.0"))), Times.Once);
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("Applied pin") && s.Contains(packageId))), Times.Once);
+        }
+
+        [Fact]
         public async Task WhenGistHasUninstallTrue_AndInstalled_UninstallsPackage()
         {
             // -------------------------------------------------------------------
@@ -1879,6 +1947,75 @@ public class GistGetServiceTests
             result.Uninstalled.Count.ShouldBe(1);
             result.Uninstalled[0].Id.ShouldBe(packageId);
             result.Success.ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task UninstallingPackage_WritesPerPackageProgressMessages()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Old.Package";
+            var credential = new Credential("user", "token");
+            var gistPackages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = packageId, Uninstall = true }
+            };
+
+            var localPackages = new List<WinGetPackage>
+            {
+                new WinGetPackage("Old Package", new PackageId(packageId), new Version("1.0.0"), null)
+            };
+
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(gistPackages);
+
+            _winGetServiceMock
+                .Setup(x => x.GetAllInstalledPackages())
+                .Returns(localPackages);
+
+            var sequence = new MockSequence();
+            _consoleServiceMock.InSequence(sequence)
+                .Setup(x => x.WriteInfo(It.Is<string>(s => s.Contains("Uninstalling") && s.Contains(packageId))));
+            _consoleServiceMock.InSequence(sequence)
+                .Setup(x => x.WriteInfo(It.Is<string>(s => s.Contains("Uninstalled") && s.Contains(packageId))));
+            _consoleServiceMock.InSequence(sequence)
+                .Setup(x => x.WriteInfo(It.Is<string>(s => s.Contains("Removing pin") && s.Contains(packageId))));
+            _consoleServiceMock.InSequence(sequence)
+                .Setup(x => x.WriteInfo(It.Is<string>(s => s.Contains("Removed pin") && s.Contains(packageId))));
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "uninstall" && args.Contains("--id") && args.Contains(packageId))))
+                .ReturnsAsync(0);
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "pin" && args[1] == "remove" &&
+                    args.Contains("--id") && args.Contains(packageId))))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.SyncAsync();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("Uninstalling") && s.Contains(packageId))), Times.Once);
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("Uninstalled") && s.Contains(packageId))), Times.Once);
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("Removing pin") && s.Contains(packageId))), Times.Once);
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("Removed pin") && s.Contains(packageId))), Times.Once);
         }
 
         [Fact]
@@ -1985,6 +2122,82 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             result.PinRemoved.Count.ShouldBe(1);
             result.PinRemoved[0].Id.ShouldBe(packageId);
+            result.Success.ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task SyncingPins_WritesPerPackageProgressMessages()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var pinnedPackageId = "Pinned.Package";
+            var unpinnedPackageId = "Unpinned.Package";
+            var credential = new Credential("user", "token");
+            var gistPackages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = pinnedPackageId, Pin = "2.0.0", PinType = "gating" },
+                new GistGetPackage { Id = unpinnedPackageId }
+            };
+
+            var localPackages = new List<WinGetPackage>
+            {
+                new WinGetPackage("Pinned Package", new PackageId(pinnedPackageId), new Version("1.0.0"), null),
+                new WinGetPackage("Unpinned Package", new PackageId(unpinnedPackageId), new Version("1.0.0"), null)
+            };
+
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(gistPackages);
+
+            _winGetServiceMock
+                .Setup(x => x.GetAllInstalledPackages())
+                .Returns(localPackages);
+
+            var sequence = new MockSequence();
+            _consoleServiceMock.InSequence(sequence)
+                .Setup(x => x.WriteInfo(It.Is<string>(s => s.Contains("Updating pin") && s.Contains(pinnedPackageId) && s.Contains("2.0.0"))));
+            _consoleServiceMock.InSequence(sequence)
+                .Setup(x => x.WriteInfo(It.Is<string>(s => s.Contains("Updated pin") && s.Contains(pinnedPackageId))));
+            _consoleServiceMock.InSequence(sequence)
+                .Setup(x => x.WriteInfo(It.Is<string>(s => s.Contains("Removing pin") && s.Contains(unpinnedPackageId))));
+            _consoleServiceMock.InSequence(sequence)
+                .Setup(x => x.WriteInfo(It.Is<string>(s => s.Contains("Removed pin") && s.Contains(unpinnedPackageId))));
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "pin" && args[1] == "add" &&
+                    args.Contains("--id") && args.Contains(pinnedPackageId) &&
+                    args.Contains("--version") && args.Contains("2.0.0") &&
+                    args.Contains("--gating") && args.Contains("--force"))))
+                .ReturnsAsync(0);
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "pin" && args[1] == "remove" &&
+                    args.Contains("--id") && args.Contains(unpinnedPackageId))))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await _target.SyncAsync();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("Updating pin") && s.Contains(pinnedPackageId) && s.Contains("2.0.0"))), Times.Once);
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("Updated pin") && s.Contains(pinnedPackageId))), Times.Once);
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("Removing pin") && s.Contains(unpinnedPackageId))), Times.Once);
+            _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("Removed pin") && s.Contains(unpinnedPackageId))), Times.Once);
             result.Success.ShouldBeTrue();
         }
 
@@ -2477,4 +2690,3 @@ Test.PackageB:
         }
     }
 }
-
