@@ -21,6 +21,40 @@ public class CredentialServiceTests : IDisposable
     }
 
     [Collection("CredentialTests")]
+    public class DefaultConstructor : CredentialServiceTests
+    {
+        [Fact]
+        public void DefaultTargetName_IsUsedByParameterlessConstructor()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var credential = new Credential("user", "token");
+            var defaultService = new CredentialService();
+            var explicitService = new CredentialService(CredentialService.DefaultTargetName);
+            explicitService.DeleteCredential();
+            defaultService.DeleteCredential();
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var saveResult = defaultService.SaveCredential(credential);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            saveResult.ShouldBeTrue();
+            explicitService.TryGetCredential(out var retrieved).ShouldBeTrue();
+            retrieved.ShouldNotBeNull();
+            retrieved.Username.ShouldBe(credential.Username);
+            retrieved.Token.ShouldBe(credential.Token);
+
+            defaultService.DeleteCredential();
+            explicitService.DeleteCredential();
+        }
+    }
+
+    [Collection("CredentialTests")]
     public class SaveCredential : CredentialServiceTests
     {
         [Fact]
