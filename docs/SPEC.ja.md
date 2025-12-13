@@ -354,23 +354,26 @@ gistget upgrade [<package-id>] [--id <package-id>] [options]
 パッケージをピン留めし、`packages.yaml` を更新して Gist に保存します。
 
 ```
-gistget pin add <package-id> --version <version> [--blocking] [--gating]
+gistget pin add <package-id> --version <version>
 ```
 
 | オプション | 必須 | 説明 |
 |-----------|:----:|------|
 | `<package-id>` | ✅ | パッケージ ID |
 | `--version` | ✅ | ピン留めするバージョン（ワイルドカード `*` 使用可） |
-| `--blocking` | ❌ | blocking pin を使用 |
-| `--gating` | ❌ | gating pin を使用（`--version` にワイルドカード使用時） |
+
+**備考:**
+- 現状の CLI では `pinType`（blocking / gating）の指定オプションは提供しない。
+- 既に `packages.yaml` に `pinType` がある場合はその値を維持し、winget 実行時も該当フラグ（`--blocking` / `--gating`）を付与する。
+- `pinType` 未指定の場合は省略（= pinning）として扱う。
 
 **処理フロー:**
 
 1. Gist から `packages.yaml` を取得
-2. `winget pin add --id <id> --version <version> [--blocking]` を実行
+2. `winget pin add --id <id> --version <version> --force` を実行（`pinType` に応じて `--blocking` / `--gating` を付与）
 3. 失敗時はエラー終了
 4. 成功時:
-   - `packages.yaml` の `pin` と `pinType` を更新
+   - `packages.yaml` の `pin`（および `version`）を更新し、`pinType` は既存値を維持
 5. Gist に `packages.yaml` を保存
 
 ---

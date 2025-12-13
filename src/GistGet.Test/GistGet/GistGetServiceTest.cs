@@ -980,4 +980,175 @@ public class GistGetServiceTests
                 )), Times.Once);
         }
     }
+
+    public class PinAddAndSaveAsync : GistGetServiceTests
+    {
+        [Fact]
+        public async Task WhenPinSucceeds_SavesPinToGist()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Test.Package";
+            var version = "1.2.3";
+            var credential = new Credential("user", "token");
+
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new List<GistGetPackage>());
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args.Length >= 2 &&
+                    args[0] == "pin" &&
+                    args[1] == "add" &&
+                    args.Contains("--id") && args.Contains(packageId) &&
+                    args.Contains("--version") && args.Contains(version) &&
+                    args.Contains("--force"))))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.PinAddAndSaveAsync(packageId, version);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _authServiceMock.Verify(x => x.SavePackagesAsync(
+                credential.Token,
+                "",
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.Is<IReadOnlyList<GistGetPackage>>(list =>
+                    list.Count == 1 &&
+                    list.Any(p =>
+                        p.Id == packageId &&
+                        p.Uninstall == false &&
+                        p.Pin == version &&
+                        p.Version == version &&
+                        p.PinType == null)
+                )), Times.Once);
+        }
+
+        [Fact]
+        public async Task WhenPinFails_DoesNotSaveToGist()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Test.Package";
+            var version = "1.2.3";
+            var credential = new Credential("user", "token");
+
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new List<GistGetPackage>());
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args.Length >= 2 &&
+                    args[0] == "pin" &&
+                    args[1] == "add" &&
+                    args.Contains("--id") && args.Contains(packageId) &&
+                    args.Contains("--version") && args.Contains(version))))
+                .ReturnsAsync(1);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.PinAddAndSaveAsync(packageId, version);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _authServiceMock.Verify(x => x.SavePackagesAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<IReadOnlyList<GistGetPackage>>()
+            ), Times.Never);
+        }
+
+        [Fact]
+        public async Task WhenExistingPackageHasBlockingPinType_PassesBlockingAndPreservesSettings()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Test.Package";
+            var version = "1.2.3";
+            var credential = new Credential("user", "token");
+
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            var existingPackages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = packageId, Uninstall = true, PinType = "blocking", Silent = true, Scope = "user" }
+            };
+
+            _authServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, "", It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(existingPackages);
+
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args.Length >= 2 &&
+                    args[0] == "pin" &&
+                    args[1] == "add" &&
+                    args.Contains("--id") && args.Contains(packageId) &&
+                    args.Contains("--version") && args.Contains(version) &&
+                    args.Contains("--force") &&
+                    args.Contains("--blocking"))))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await _target.PinAddAndSaveAsync(packageId, version);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            _authServiceMock.Verify(x => x.SavePackagesAsync(
+                credential.Token,
+                "",
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.Is<IReadOnlyList<GistGetPackage>>(list =>
+                    list.Count == 1 &&
+                    list.Any(p =>
+                        p.Id == packageId &&
+                        p.Uninstall == false &&
+                        p.Pin == version &&
+                        p.Version == version &&
+                        p.PinType == "blocking" &&
+                        p.Silent &&
+                        p.Scope == "user")
+                )), Times.Once);
+        }
+    }
 }

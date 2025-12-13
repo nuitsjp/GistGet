@@ -360,9 +360,54 @@ public class GistGetService(
     /// </summary>
     /// <param name="packageId">PinするパッケージのID</param>
     /// <param name="version">Pinするバージョン</param>
-    public Task PinAddAndSaveAsync(string packageId, string version)
+    public async Task PinAddAndSaveAsync(string packageId, string version)
     {
-        throw new NotImplementedException();
+        if (!credentialService.TryGetCredential(out var credential))
+        {
+            await AuthLoginAsync();
+            if (!credentialService.TryGetCredential(out credential))
+            {
+                throw new InvalidOperationException("Failed to retrieve credentials after login.");
+            }
+        }
+
+        var existingPackages = await gitHubService.GetPackagesAsync(credential.Token, "", "packages.yaml", "GistGet packages");
+        var existingPackage = existingPackages.FirstOrDefault(p => string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase));
+
+        var pinTypeToSet = existingPackage?.PinType;
+
+        var pinArgs = new List<string> { "pin", "add", "--id", packageId, "--version", version, "--force" };
+        if (!string.IsNullOrEmpty(pinTypeToSet))
+        {
+            if (pinTypeToSet.Equals("blocking", StringComparison.OrdinalIgnoreCase))
+            {
+                pinArgs.Add("--blocking");
+            }
+            else if (pinTypeToSet.Equals("gating", StringComparison.OrdinalIgnoreCase))
+            {
+                pinArgs.Add("--gating");
+            }
+        }
+
+        var exitCode = await passthroughRunner.RunAsync(pinArgs.ToArray());
+        if (exitCode != 0)
+        {
+            return;
+        }
+
+        var newPackages = existingPackages
+            .Where(p => !string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var packageToSave = existingPackage ?? new GistGetPackage { Id = packageId };
+        packageToSave.Uninstall = false;
+        packageToSave.Pin = version;
+        packageToSave.PinType = pinTypeToSet;
+        packageToSave.Version = version;
+
+        newPackages.Add(packageToSave);
+
+        await gitHubService.SavePackagesAsync(credential.Token, "", "packages.yaml", "GistGet packages", newPackages);
     }
 
     /// <summary>
