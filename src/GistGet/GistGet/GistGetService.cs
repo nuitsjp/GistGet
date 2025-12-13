@@ -176,8 +176,15 @@ public class GistGetService(
             var pinArgs = new List<string> { "pin", "add", "--id", options.Id, "--version", pinVersionToSet };
             if (!string.IsNullOrEmpty(pinTypeToSet))
             {
-                // blocking タイプの場合はフラグを追加
-                if (pinTypeToSet.Equals("blocking", StringComparison.OrdinalIgnoreCase)) pinArgs.Add("--blocking");
+                // pinType に応じたフラグを追加
+                if (pinTypeToSet.Equals("blocking", StringComparison.OrdinalIgnoreCase))
+                {
+                    pinArgs.Add("--blocking");
+                }
+                else if (pinTypeToSet.Equals("gating", StringComparison.OrdinalIgnoreCase))
+                {
+                    pinArgs.Add("--gating");
+                }
             }
             await passthroughRunner.RunAsync(pinArgs.ToArray());
         }
@@ -322,9 +329,16 @@ public class GistGetService(
         if (hasPin && !string.IsNullOrEmpty(pinVersionToSet))
         {
             var pinArgs = new List<string> { "pin", "add", "--id", packageId, "--version", pinVersionToSet, "--force" };
-            if (!string.IsNullOrEmpty(pinTypeToSet) && pinTypeToSet.Equals("blocking", StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrEmpty(pinTypeToSet))
             {
-                pinArgs.Add("--blocking");
+                if (pinTypeToSet.Equals("blocking", StringComparison.OrdinalIgnoreCase))
+                {
+                    pinArgs.Add("--blocking");
+                }
+                else if (pinTypeToSet.Equals("gating", StringComparison.OrdinalIgnoreCase))
+                {
+                    pinArgs.Add("--gating");
+                }
             }
 
             await passthroughRunner.RunAsync(pinArgs.ToArray());
