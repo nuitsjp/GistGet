@@ -14,18 +14,8 @@
 ///   <item>
 ///     <term>gistUrl未指定時</term>
 ///     <description>
-///       認証ユーザーの全Gistを検索し、以下のいずれかの条件に一致するGistを特定します:
-///       <list type="number">
-///         <item>指定されたファイル名（gistFileName）を含むGist</item>
-///         <item>指定された説明（gistDescription）と一致するGist</item>
-///       </list>
-///     </description>
-///   </item>
-///   <item>
-///     <term>複数Gist一致時</term>
-///     <description>
-///       条件に一致するGistが複数存在する場合、<see cref="InvalidOperationException"/>をスローし、
-///       明示的なgistURL指定を要求します。
+///       認証ユーザーのGistをページングし、指定されたファイル名（gistFileName）を含む最初のGistを選択します。
+///       一致するGistが存在しない場合はプライベートGistを新規作成し、空のYAMLファイルを配置します。
 ///     </description>
 ///   </item>
 /// </list>
@@ -51,7 +41,7 @@ public interface IGitHubService
     /// 認証ユーザーの Gist からパッケージ一覧を取得します。
     /// </summary>
     /// <param name="token">GitHub アクセストークン</param>
-    /// <param name="gistFileName">Gist内のファイル名（通常は "packages.yaml"）</param>
+    /// <param name="gistFileName">Gist内のファイル名（通常は "gistget.yaml"）</param>
     /// <param name="gistDescription">Gistの説明（検索・作成時に使用）</param>
     /// <returns>パッケージ一覧</returns>
     Task<IReadOnlyList<GistGetPackage>> GetPackagesAsync(string token, string gistFileName, string gistDescription);
@@ -62,7 +52,7 @@ public interface IGitHubService
     /// </summary>
     /// <param name="token">GitHub アクセストークン</param>
     /// <param name="gistUrl">Gist URL（空文字列の場合は認証ユーザーのGistを検索または作成）</param>
-    /// <param name="gistFileName">Gist内のファイル名（通常は "packages.yaml"）</param>
+    /// <param name="gistFileName">Gist内のファイル名（通常は "gistget.yaml"）</param>
     /// <param name="gistDescription">Gistの説明</param>
     /// <param name="packages">保存するパッケージ一覧</param>
     Task SavePackagesAsync(string token, string gistUrl, string gistFileName, string gistDescription, IReadOnlyList<GistGetPackage> packages);

@@ -93,21 +93,10 @@ public class GitHubService(
 
         var client = CreateClient(resolvedToken);
         var (targetFileName, targetDescription) = ResolveGistMetadata(gistFileName, gistDescription);
-
-        var gists = await client.Gist.GetAll();
-        var matchingGists = gists
-            .Where(g => g.Files.ContainsKey(targetFileName) || g.Description == targetDescription)
-            .ToList();
-
-        if (matchingGists.Count > 1)
-        {
-            throw new InvalidOperationException(
-                $"Multiple Gists match the criteria ({matchingGists.Count} found). Please specify the target Gist URL explicitly via the `--url` argument.");
-        }
-
-        var targetGist = matchingGists.SingleOrDefault();
+        var targetGist = await FindGistByFileNameAsync(client.Gist, targetFileName);
         if (targetGist == null)
         {
+            await CreateEmptyGistAsync(client, targetFileName, targetDescription);
             return Array.Empty<GistGetPackage>();
         }
 
@@ -145,18 +134,7 @@ public class GitHubService(
             return;
         }
 
-        var gists = await client.Gist.GetAll();
-        var matchingGists = gists
-            .Where(g => g.Files.ContainsKey(targetFileName) || g.Description == targetDescription)
-            .ToList();
-
-        if (matchingGists.Count > 1)
-        {
-            throw new InvalidOperationException(
-                $"Multiple Gists match the criteria ({matchingGists.Count} found). Please specify the target Gist URL explicitly via the `gistUrl` argument.");
-        }
-
-        var targetGist = matchingGists.SingleOrDefault();
+        var targetGist = await FindGistByFileNameAsync(client.Gist, targetFileName);
 
         if (targetGist != null)
         {
@@ -175,6 +153,18 @@ public class GitHubService(
             };
             await client.Gist.Create(newGist);
         }
+    }
+
+    private static Task<Gist> CreateEmptyGistAsync(GitHubClient client, string targetFileName, string targetDescription)
+    {
+        var newGist = new NewGist
+        {
+            Description = targetDescription,
+            Public = false,
+            Files = { { targetFileName, string.Empty } }
+        };
+
+        return client.Gist.Create(newGist);
     }
 
     private static GitHubClient CreateClient(string? token)
@@ -223,6 +213,36 @@ public class GitHubService(
             .FirstOrDefault(f => f.Filename.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) ||
                                  f.Filename.EndsWith(".yml", StringComparison.OrdinalIgnoreCase));
         return firstYaml?.Content;
+    }
+
+    private static async Task<Gist?> FindGistByFileNameAsync(IGistsClient gistClient, string targetFileName)
+    {
+        var page = 1;
+        const int pageSize = 100;
+
+        while (true)
+        {
+            var options = new ApiOptions
+            {
+                PageCount = 1,
+                PageSize = pageSize,
+                StartPage = page
+            };
+
+            var gists = await gistClient.GetAll(options);
+            var match = gists.FirstOrDefault(g => g.Files.ContainsKey(targetFileName));
+            if (match != null)
+            {
+                return match;
+            }
+
+            if (gists.Count < pageSize)
+            {
+                return null;
+            }
+
+            page++;
+        }
     }
 
     private static (string FileName, string Description) ResolveGistMetadata(string? gistFileName, string? gistDescription)
