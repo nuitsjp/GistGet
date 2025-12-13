@@ -721,6 +721,7 @@ public class GistGetService(
 
     /// <summary>
     /// ローカルにインストールされているパッケージをYAML形式でエクスポートします。
+    /// COMから取得可能な情報（ID）のみを出力します。
     /// </summary>
     /// <param name="outputPath">出力先ファイルパス（nullの場合は標準出力に出力）</param>
     /// <returns>エクスポートされたYAML文字列</returns>
@@ -729,7 +730,7 @@ public class GistGetService(
         // ローカルのインストール済みパッケージを取得
         var installedPackages = winGetService.GetAllInstalledPackages();
         
-        // GistGetPackage形式に変換
+        // GistGetPackage形式に変換（COMから取得可能な情報のみ）
         var packages = installedPackages.Select(p => new GistGetPackage
         {
             Id = p.Id.AsPrimitive()

@@ -405,6 +405,92 @@ gistget pin remove <package-id>
 
 ---
 
+#### export
+
+ローカルにインストールされているパッケージを YAML 形式でエクスポートします。
+
+```
+gistget export [--output <file-path>]
+```
+
+| オプション | 必須 | 説明 |
+|-----------|:----:|------|
+| `--output`, `-o` | ❌ | 出力先ファイルパス。省略時は標準出力に出力。 |
+
+**処理フロー:**
+
+1. WinGet COM API を使用してローカルのインストール済みパッケージを取得
+2. パッケージ ID のみを含む YAML を生成
+3. `--output` 指定時はファイルに保存、未指定時は標準出力に出力
+
+**出力例:**
+
+```yaml
+Microsoft.VisualStudioCode: {}
+7zip.7zip: {}
+Git.Git: {}
+```
+
+**注意:**
+- 認証は不要。ローカルの情報のみを使用する。
+- エクスポートされるのはパッケージ ID のみ。pin やインストールオプションは含まれない。
+- Gist との同期は行われない。
+- 新しい環境でのベース YAML を作成する際に使用する。
+
+**典型的なワークフロー:**
+
+```powershell
+# 1. 現在のパッケージ一覧をエクスポート
+gistget export --output packages.yaml
+
+# 2. 必要に応じて YAML を編集（pin やオプションを追加）
+# 例: VSCode にサイレントインストールを設定
+# Microsoft.VisualStudioCode:
+#   silent: true
+
+# 3. Gist にインポート
+gistget import packages.yaml
+```
+
+---
+
+#### import
+
+YAML ファイルを Gist にインポートします。既存の Gist 内容は**完全に上書き**されます。
+
+```
+gistget import <file>
+```
+
+| オプション | 必須 | 説明 |
+|-----------|:----:|------|
+| `<file>` | ✅ | インポートする YAML ファイルのパス |
+
+**処理フロー:**
+
+1. 認証状態を確認（未認証の場合はログインを促す）
+2. 指定された YAML ファイルを読み込み
+3. パース結果を Gist の `packages.yaml` として**完全に上書き保存**
+
+**注意:**
+- **既存の Gist 内容はマージされず、完全に上書きされる。**
+- インポート前に既存の Gist をバックアップすることを推奨。
+- YAML のフォーマットエラーがある場合は処理を中断する。
+
+**典型的なワークフロー:**
+
+```powershell
+# 方法1: export + 編集 + import
+gistget export --output packages.yaml
+# packages.yaml を編集
+gistget import packages.yaml
+
+# 方法2: 既存の YAML ファイルをインポート
+gistget import my-packages.yaml
+```
+
+---
+
 ## 重要な動作仕様
 
 ### pin に関する注意事項

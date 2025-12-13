@@ -1886,5 +1886,313 @@ public class GistGetServiceTests
             result.Success.ShouldBeTrue();
         }
     }
+
+    public class ExportAsync : GistGetServiceTests
+    {
+        [Fact]
+        public async Task ExportsInstalledPackageIds()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var installedPackages = new List<WinGetPackage>
+            {
+                new WinGetPackage("Package A", new PackageId("Test.PackageA"), new Version("1.0.0"), null),
+                new WinGetPackage("Package B", new PackageId("Test.PackageB"), new Version("2.0.0"), null)
+            };
+
+            _winGetServiceMock
+                .Setup(x => x.GetAllInstalledPackages())
+                .Returns(installedPackages);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await _target.ExportAsync();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.ShouldContain("Test.PackageA");
+            result.ShouldContain("Test.PackageB");
+        }
+
+        [Fact]
+        public async Task WithOutputPath_WritesToFile()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var tempFile = Path.GetTempFileName();
+            try
+            {
+                var installedPackages = new List<WinGetPackage>
+                {
+                    new WinGetPackage("Package A", new PackageId("Test.PackageA"), new Version("1.0.0"), null)
+                };
+
+                _winGetServiceMock
+                    .Setup(x => x.GetAllInstalledPackages())
+                    .Returns(installedPackages);
+
+                // -------------------------------------------------------------------
+                // Act
+                // -------------------------------------------------------------------
+                await _target.ExportAsync(tempFile);
+
+                // -------------------------------------------------------------------
+                // Assert
+                // -------------------------------------------------------------------
+                var content = await File.ReadAllTextAsync(tempFile);
+                content.ShouldContain("Test.PackageA");
+                _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("Exported") && s.Contains(tempFile))), Times.Once);
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public async Task DoesNotRequireAuthentication()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var installedPackages = new List<WinGetPackage>
+            {
+                new WinGetPackage("Package A", new PackageId("Test.PackageA"), new Version("1.0.0"), null)
+            };
+
+            _winGetServiceMock
+                .Setup(x => x.GetAllInstalledPackages())
+                .Returns(installedPackages);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await _target.ExportAsync();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.ShouldContain("Test.PackageA");
+            // No authentication calls should be made
+            _credentialServiceMock.Verify(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny), Times.Never);
+            _authServiceMock.Verify(x => x.GetPackagesAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+    }
+
+    public class ImportAsync : GistGetServiceTests
+    {
+        [Fact]
+        public async Task WhenAuthenticated_SavesPackagesToGist()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var credential = new Credential("user", "token");
+            var tempFile = Path.GetTempFileName();
+            try
+            {
+                var yamlContent = @"Test.PackageA:
+  pin: ""1.0.0""
+  silent: true
+Test.PackageB:
+  scope: user
+";
+                await File.WriteAllTextAsync(tempFile, yamlContent);
+
+                _credentialServiceMock
+                    .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                    .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                    {
+                        c = credential;
+                        return true;
+                    }));
+
+                _authServiceMock
+                    .Setup(x => x.SavePackagesAsync(
+                        credential.Token,
+                        "",
+                        It.IsAny<string>(),
+                        It.IsAny<string>(),
+                        It.Is<IReadOnlyList<GistGetPackage>>(list =>
+                            list.Count == 2 &&
+                            list.Any(p => p.Id == "Test.PackageA" && p.Pin == "1.0.0" && p.Silent) &&
+                            list.Any(p => p.Id == "Test.PackageB" && p.Scope == "user"))))
+                    .Returns(Task.CompletedTask);
+
+                // -------------------------------------------------------------------
+                // Act
+                // -------------------------------------------------------------------
+                await _target.ImportAsync(tempFile);
+
+                // -------------------------------------------------------------------
+                // Assert
+                // -------------------------------------------------------------------
+                _authServiceMock.Verify(x => x.SavePackagesAsync(
+                    credential.Token,
+                    "",
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<IReadOnlyList<GistGetPackage>>()), Times.Once);
+
+                _consoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("Imported") && s.Contains("2"))), Times.Once);
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public async Task WhenNotAuthenticated_PerformsLogin_ThenSaves()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var savedCredential = new Credential("user", "token");
+            Credential? currentCredential = null;
+            var tempFile = Path.GetTempFileName();
+            try
+            {
+                var yamlContent = @"Test.PackageA: {}
+";
+                await File.WriteAllTextAsync(tempFile, yamlContent);
+
+                _credentialServiceMock
+                    .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                    .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                    {
+                        c = currentCredential;
+                        return c != null;
+                    }));
+
+                _authServiceMock.Setup(x => x.LoginAsync())
+                    .ReturnsAsync(savedCredential);
+
+                _credentialServiceMock.Setup(x => x.SaveCredential(It.IsAny<Credential>()))
+                    .Callback<Credential>((c) => currentCredential = c);
+
+                _authServiceMock
+                    .Setup(x => x.SavePackagesAsync(
+                        It.IsAny<string>(),
+                        "",
+                        It.IsAny<string>(),
+                        It.IsAny<string>(),
+                        It.IsAny<IReadOnlyList<GistGetPackage>>()))
+                    .Returns(Task.CompletedTask);
+
+                // -------------------------------------------------------------------
+                // Act
+                // -------------------------------------------------------------------
+                await _target.ImportAsync(tempFile);
+
+                // -------------------------------------------------------------------
+                // Assert
+                // -------------------------------------------------------------------
+                _authServiceMock.Verify(x => x.LoginAsync(), Times.Once);
+                _authServiceMock.Verify(x => x.SavePackagesAsync(
+                    It.IsAny<string>(),
+                    "",
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<IReadOnlyList<GistGetPackage>>()), Times.Once);
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public async Task WhenFileNotFound_ThrowsFileNotFoundException()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var credential = new Credential("user", "token");
+            var nonExistentFile = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".yaml");
+
+            _credentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            // -------------------------------------------------------------------
+            // Act & Assert
+            // -------------------------------------------------------------------
+            await Should.ThrowAsync<FileNotFoundException>(async () =>
+            {
+                await _target.ImportAsync(nonExistentFile);
+            });
+        }
+
+        [Fact]
+        public async Task OverwritesExistingGistContent()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var credential = new Credential("user", "token");
+            var tempFile = Path.GetTempFileName();
+            try
+            {
+                // Import only one package (simulating complete replacement)
+                var yamlContent = @"New.Package:
+  pin: ""3.0.0""
+";
+                await File.WriteAllTextAsync(tempFile, yamlContent);
+
+                _credentialServiceMock
+                    .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                    .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                    {
+                        c = credential;
+                        return true;
+                    }));
+
+                _authServiceMock
+                    .Setup(x => x.SavePackagesAsync(
+                        credential.Token,
+                        "",
+                        It.IsAny<string>(),
+                        It.IsAny<string>(),
+                        It.Is<IReadOnlyList<GistGetPackage>>(list =>
+                            list.Count == 1 &&
+                            list.Any(p => p.Id == "New.Package" && p.Pin == "3.0.0"))))
+                    .Returns(Task.CompletedTask);
+
+                // -------------------------------------------------------------------
+                // Act
+                // -------------------------------------------------------------------
+                await _target.ImportAsync(tempFile);
+
+                // -------------------------------------------------------------------
+                // Assert
+                // -------------------------------------------------------------------
+                // Verify that SavePackagesAsync was called with only the imported content
+                // (no merge with existing Gist content)
+                _authServiceMock.Verify(x => x.GetPackagesAsync(
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+
+                _authServiceMock.Verify(x => x.SavePackagesAsync(
+                    credential.Token,
+                    "",
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.Is<IReadOnlyList<GistGetPackage>>(list => list.Count == 1)), Times.Once);
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+    }
 }
 
