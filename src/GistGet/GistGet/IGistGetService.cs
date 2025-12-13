@@ -29,21 +29,24 @@ public interface IGistGetService
     /// 既存のPinがある場合はそのバージョンでインストールし、Pinを設定します。
     /// </summary>
     /// <param name="options">インストールオプション（ID、バージョン、各種フラグ）</param>
-    Task InstallAndSaveAsync(InstallOptions options);
+    /// <returns>wingetプロセスの終了コード（成功時は0）</returns>
+    Task<int> InstallAndSaveAsync(InstallOptions options);
 
     /// <summary>
     /// パッケージをアンインストールし、Gistの<c>packages.yaml</c>を更新します。
     /// エントリに<c>uninstall: true</c>が設定され、他デバイスでのsync時にアンインストールされます。
     /// </summary>
     /// <param name="options">アンインストールオプション（ID、スコープ、各種フラグ）</param>
-    Task UninstallAndSaveAsync(UninstallOptions options);
+    /// <returns>wingetプロセスの終了コード（成功時は0）</returns>
+    Task<int> UninstallAndSaveAsync(UninstallOptions options);
 
     /// <summary>
     /// パッケージをアップグレードし、Gistの<c>packages.yaml</c>を更新します。
     /// Pinがある場合は新しいバージョンに更新されます。
     /// </summary>
     /// <param name="options">アップグレードオプション（ID、バージョン、各種フラグ）</param>
-    Task UpgradeAndSaveAsync(UpgradeOptions options);
+    /// <returns>wingetプロセスの終了コード（成功時は0）</returns>
+    Task<int> UpgradeAndSaveAsync(UpgradeOptions options);
 
     /// <summary>
     /// パッケージをピン留めし、Gistの<c>packages.yaml</c>に保存します。

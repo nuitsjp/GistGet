@@ -91,7 +91,7 @@ public class GistGetService(
     /// 認証確認、Gist取得、バージョン解決、インストール実行、Pin設定、Gist更新を行います。
     /// </summary>
     /// <param name="options">インストールオプション</param>
-    public async Task InstallAndSaveAsync(InstallOptions options)
+    public async Task<int> InstallAndSaveAsync(InstallOptions options)
     {
         // ステップ1: 認証状態を確認し、未認証の場合はログインを促す
         if (!credentialService.TryGetCredential(out var credential))
@@ -166,8 +166,8 @@ public class GistGetService(
         var exitCode = await passthroughRunner.RunAsync(installArgs.ToArray());
         if (exitCode != 0)
         {
-            // インストール失敗時はGistを更新せずに終了
-            return;
+            // インストール失敗時はGistを更新せずに終了コードを返す
+            return exitCode;
         }
 
         // ステップ6: 必要に応じてWinGet pin addを実行
@@ -227,13 +227,14 @@ public class GistGetService(
         newPackagesList.Add(packageToSave);
         
         await gitHubService.SavePackagesAsync(credential.Token, "", "packages.yaml", "GistGet packages", newPackagesList);
+        return 0;
     }
 
     /// <summary>
     /// パッケージをアンインストールし、Gistを更新します。
     /// </summary>
     /// <param name="options">アンインストールオプション</param>
-    public async Task UninstallAndSaveAsync(UninstallOptions options)
+    public async Task<int> UninstallAndSaveAsync(UninstallOptions options)
     {
         if (!credentialService.TryGetCredential(out var credential))
         {
@@ -258,13 +259,12 @@ public class GistGetService(
         var exitCode = await passthroughRunner.RunAsync(uninstallArgs.ToArray());
         if (exitCode != 0)
         {
-            return;
+            return exitCode;
         }
 
-        if (!string.IsNullOrEmpty(targetPackage?.Pin))
-        {
-            await passthroughRunner.RunAsync(new[] { "pin", "remove", "--id", options.Id });
-        }
+        // ローカルのpinを常に削除（Gist側のpin有無に関係なく）
+        // エラーは無視（元々pinがない場合もあるため）
+        await passthroughRunner.RunAsync(new[] { "pin", "remove", "--id", options.Id });
 
         var newPackages = existingPackages
             .Where(p => !string.Equals(p.Id, options.Id, StringComparison.OrdinalIgnoreCase))
@@ -279,13 +279,14 @@ public class GistGetService(
         newPackages.Add(packageToSave);
 
         await gitHubService.SavePackagesAsync(credential.Token, "", "packages.yaml", "GistGet packages", newPackages);
+        return 0;
     }
 
     /// <summary>
     /// パッケージをアップグレードし、Gistを更新します。
     /// </summary>
     /// <param name="options">アップグレードオプション</param>
-    public async Task UpgradeAndSaveAsync(UpgradeOptions options)
+    public async Task<int> UpgradeAndSaveAsync(UpgradeOptions options)
     {
         if (!credentialService.TryGetCredential(out var credential))
         {
@@ -323,7 +324,7 @@ public class GistGetService(
         var exitCode = await passthroughRunner.RunAsync(upgradeArgs.ToArray());
         if (exitCode != 0)
         {
-            return;
+            return exitCode;
         }
 
         var existingPackages = await gitHubService.GetPackagesAsync(credential.Token, "packages.yaml", "GistGet packages");
@@ -337,7 +338,7 @@ public class GistGetService(
         if (hasPin && resolvedVersion == null)
         {
             var packageInfo = winGetService.FindById(new PackageId(options.Id));
-            resolvedVersion = packageInfo?.UsableVersion?.ToString();
+            resolvedVersion = packageInfo?.Version.ToString();
         }
 
         if (hasPin)
@@ -348,7 +349,7 @@ public class GistGetService(
         var shouldUpdateGist = existingPackage == null || existingPackage.Uninstall || hasPin;
         if (!shouldUpdateGist)
         {
-            return;
+            return 0;
         }
 
         if (hasPin && !string.IsNullOrEmpty(pinVersionToSet))
@@ -406,6 +407,7 @@ public class GistGetService(
         newPackages.Add(packageToSave);
 
         await gitHubService.SavePackagesAsync(credential.Token, "", "packages.yaml", "GistGet packages", newPackages);
+        return 0;
     }
 
     /// <summary>

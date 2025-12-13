@@ -9,12 +9,17 @@ public class WinGetPassthroughRunner : IWinGetPassthroughRunner
         var startInfo = new ProcessStartInfo
         {
             FileName = ResolveWinGetPath(),
-            Arguments = string.Join(" ", args),
             UseShellExecute = false,
             CreateNoWindow = false,
             RedirectStandardOutput = false,
             RedirectStandardError = false
         };
+
+        // ArgumentListを使用してスペースを含む引数を正しくエスケープ
+        foreach (var arg in args)
+        {
+            startInfo.ArgumentList.Add(arg);
+        }
 
         using var process = new Process { StartInfo = startInfo };
         process.Start();

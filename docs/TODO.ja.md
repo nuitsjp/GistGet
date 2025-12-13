@@ -164,29 +164,29 @@ GistGet は Gist 上の YAML でパッケージを **ID で一意に管理** す
 
 ### 4-1. エラーハンドリング改善
 
-- [ ] `InstallAndSaveAsync` / `UninstallAndSaveAsync` / `UpgradeAndSaveAsync` が winget 失敗時に非ゼロ終了コードを返す
+- [x] `InstallAndSaveAsync` / `UninstallAndSaveAsync` / `UpgradeAndSaveAsync` が winget 失敗時に非ゼロ終了コードを返す
   - 現状: Gist を更新しないが、CLI としては正常終了
   - 期待: 非ゼロ終了コードを返す
   - 関連ファイル: `src/GistGet/GistGet/GistGetService.cs`
 
 ### 4-2. upgrade の pin 追従バージョン取得
 
-- [ ] upgrade 成功後の pin 追従で「更新可能バージョン（UsableVersion）」ではなく、upgrade 後のインストール済みバージョンを取得
+- [x] upgrade 成功後の pin 追従で「更新可能バージョン（UsableVersion）」ではなく、upgrade 後のインストール済みバージョンを取得
   - 関連ファイル: `src/GistGet/GistGet/GistGetService.cs`, `Infrastructure/WinGetService.cs`
 
 ### 4-3. uninstall のローカル pin 残存問題
 
-- [ ] Gist 側の `pin` 有無だけでなく、ローカルの pin も確認して削除
+- [x] Gist 側の `pin` 有無だけでなく、ローカルの pin も確認して削除
   - 関連ファイル: `src/GistGet/GistGet/GistGetService.cs`
 
 ### 4-4. upgrade ID 未指定時のパススルー引数
 
-- [ ] `ParseResult.Tokens` 依存で引数再構成が不安定な問題を修正
+- [x] `ParseResult.Tokens` 依存で引数再構成が不安定な問題を修正
   - 関連ファイル: `src/GistGet/GistGet/Presentation/CommandBuilder.cs`
 
 ### 4-5. パススルー引数のクォート/エスケープ
 
-- [ ] `string.Join(" ", args)` でスペースを含む引数が壊れる問題を修正
+- [x] `string.Join(" ", args)` でスペースを含む引数が壊れる問題を修正
   - 関連ファイル: `src/GistGet/GistGet/Infrastructure/WinGetPassthroughRunner.cs`
 
 ---

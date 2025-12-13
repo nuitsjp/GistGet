@@ -945,6 +945,13 @@ public class GistGetServiceTests
                     args.Contains("--id") && args.Contains(packageId))))
                 .ReturnsAsync(0);
 
+            // pin remove は常に呼ばれる（エラーは無視）
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "pin" && args[1] == "remove" &&
+                    args.Contains("--id") && args.Contains(packageId))))
+                .ReturnsAsync(0);
+
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
@@ -953,10 +960,10 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------------
-            // Pin がないため pin remove は呼ばれない
+            // ローカルのpinを確実に削除するため、常に pin remove が呼ばれる
             _passthroughRunnerMock.Verify(x => x.RunAsync(
                 It.Is<string[]>(args => args[0] == "pin" && args.Contains("remove"))
-            ), Times.Never);
+            ), Times.Once);
 
             // 新規エントリが作成され、uninstall: true で保存される
             _authServiceMock.Verify(x => x.SavePackagesAsync(
@@ -971,7 +978,7 @@ public class GistGetServiceTests
         }
 
         [Fact]
-        public async Task WhenNoPinExists_SkipsPinRemove()
+        public async Task WhenNoPinInGist_StillCallsPinRemove()
         {
             // -------------------------------------------------------------------
             // Arrange
@@ -1003,6 +1010,13 @@ public class GistGetServiceTests
                     args.Contains("--id") && args.Contains(packageId))))
                 .ReturnsAsync(0);
 
+            // pin remove は常に呼ばれる（ローカルにpinがある可能性があるため）
+            _passthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "pin" && args[1] == "remove" &&
+                    args.Contains("--id") && args.Contains(packageId))))
+                .ReturnsAsync(0);
+
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
@@ -1011,10 +1025,10 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------------
-            // Pin がないため pin remove は呼ばれない
+            // Gist側にPinがなくても、ローカルのpinを確実に削除するため pin remove が呼ばれる
             _passthroughRunnerMock.Verify(x => x.RunAsync(
                 It.Is<string[]>(args => args[0] == "pin" && args.Contains("remove"))
-            ), Times.Never);
+            ), Times.Once);
 
             // 既存のプロパティが保持され、uninstall: true で保存される
             _authServiceMock.Verify(x => x.SavePackagesAsync(

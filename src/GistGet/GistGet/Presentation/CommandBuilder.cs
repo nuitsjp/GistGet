@@ -233,7 +233,7 @@ public class CommandBuilder(IGistGetService gistGetService)
                 AllowHashMismatch = parseResult.GetValueForOption(ignoreSecurityHashOption)
             };
 
-            await gistGetService.InstallAndSaveAsync(options);
+            context.ExitCode = await gistGetService.InstallAndSaveAsync(options);
         });
 
         return command;
@@ -274,7 +274,7 @@ public class CommandBuilder(IGistGetService gistGetService)
                 Force = parseResult.GetValueForOption(forceOption)
             };
 
-            await gistGetService.UninstallAndSaveAsync(options);
+            context.ExitCode = await gistGetService.UninstallAndSaveAsync(options);
         });
 
         return command;
@@ -353,43 +353,13 @@ public class CommandBuilder(IGistGetService gistGetService)
                     AllowHashMismatch = parseResult.GetValueForOption(ignoreSecurityHashOption)
                 };
 
-                await gistGetService.UpgradeAndSaveAsync(options);
+                context.ExitCode = await gistGetService.UpgradeAndSaveAsync(options);
             }
             else
             {
-                // If ID is missing, pass through everything to winget
-                // Reconstruct arguments from tokens
-                var tokens = parseResult.Tokens.Select(t => t.Value).ToList();
-                var argsToPass = new List<string>();
-                bool foundUpgrade = false;
-
-                foreach (var token in tokens)
-                {
-                    if (!foundUpgrade && token.Equals("upgrade", StringComparison.OrdinalIgnoreCase))
-                    {
-                        foundUpgrade = true;
-                        continue;
-                    }
-                    
-                    // If we haven't found "upgrade" yet, it might be the root command or something else we want to skip.
-                    // But if we are in this handler, "upgrade" must be present.
-                    // Once we found "upgrade", everything else is an argument.
-                    if (foundUpgrade)
-                    {
-                        argsToPass.Add(token);
-                    }
-                }
-
-                // Fallback: if "upgrade" wasn't found in tokens (unlikely), pass all tokens? 
-                // Or maybe tokens didn't include "upgrade" if it was invoked via alias? 
-                // For now assuming "upgrade" is present.
-                if (!foundUpgrade && tokens.Count > 0)
-                {
-                     // If tokens are just arguments (e.g. implied command?), pass them all.
-                     argsToPass.AddRange(tokens);
-                }
-
-                await gistGetService.RunPassthroughAsync("upgrade", argsToPass.ToArray());
+                // ID未指定時はパススルー。UnmatchedTokensを使用して安定した引数取得
+                var argsToPass = parseResult.UnmatchedTokens.ToArray();
+                context.ExitCode = await gistGetService.RunPassthroughAsync("upgrade", argsToPass);
             }
         });
 
