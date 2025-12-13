@@ -32,6 +32,8 @@ GistGet は Gist 上の YAML でパッケージを **ID で一意に管理** す
 ### 1-1. YAML シリアライズ時のフィールド脱落
 ### 1-2. install の custom オプションが誤っている
 ### 1-3. SerializePackages の全属性テスト
+- [ ] `acceptPackageAgreements` / `acceptSourceAgreements` が保存されない（パッケージ生成時に反映漏れ）
+  - 関連ファイル: `src/GistGet/GistGet/GistGetService.cs`
 ---
 
 ## 🟠 Phase 2: CLI オプション整備
@@ -47,7 +49,7 @@ GistGet は Gist 上の YAML でパッケージを **ID で一意に管理** す
 | `--locale` | ✅ | Gist 保存対象 |
 | `--ignore-security-hash` | ✅ | Gist 保存対象 (`AllowHashMismatch`) |
 
-- [ ] 上記4オプションを `CommandBuilder.BuildInstallCommand()` に追加
+- [x] 上記4オプションを `CommandBuilder.BuildInstallCommand()` に追加
 - 関連ファイル: `src/GistGet/GistGet/Presentation/CommandBuilder.cs`
 
 ### 2-2. install コマンドの追加オプション検討
@@ -78,9 +80,9 @@ GistGet は Gist 上の YAML でパッケージを **ID で一意に管理** す
 | `-o,--log` | ログファイルパス | ⚠️ 要検討 |
 | `--accept-source-agreements` | ソース契約同意 | ⚠️ 要検討 |
 
-- [ ] `UninstallOptions` record を作成
-- [ ] `CommandBuilder.BuildUninstallCommand()` を拡張
-- [ ] `GistGetService.UninstallAndSaveAsync()` を拡張
+- [x] `UninstallOptions` record を作成
+- [x] `CommandBuilder.BuildUninstallCommand()` を拡張
+- [x] `GistGetService.UninstallAndSaveAsync()` を拡張
 - 関連ファイル: `src/GistGet/GistGet/Presentation/CommandBuilder.cs`
 
 ### 2-4. upgrade コマンドのオプション追加
@@ -109,9 +111,9 @@ GistGet は Gist 上の YAML でパッケージを **ID で一意に管理** す
 | `-u,--include-unknown` | バージョン不明も含める | ❌ | パススルー時のみ |
 | `--include-pinned` | ピン済みも含める | ❌ | パススルー時のみ |
 
-- [ ] `UpgradeOptions` record を作成
-- [ ] `CommandBuilder.BuildUpgradeCommand()` を拡張
-- [ ] `GistGetService.UpgradeAndSaveAsync()` を拡張（Gist保存対象オプションの反映）
+- [x] `UpgradeOptions` record を作成
+- [x] `CommandBuilder.BuildUpgradeCommand()` を拡張
+- [x] `GistGetService.UpgradeAndSaveAsync()` を拡張（Gist保存対象オプションの反映）
 - 関連ファイル: `src/GistGet/GistGet/Presentation/CommandBuilder.cs`
 
 ### 2-5. pin add コマンドのオプション追加
@@ -123,7 +125,9 @@ GistGet は Gist 上の YAML でパッケージを **ID で一意に管理** す
 | `--installed` | インストール済みバージョンに固定 | ⚠️ 要検討 |
 | `--force` | 強制上書き | ✅ 追加（内部では使用済み） |
 
-- [ ] `CommandBuilder.BuildPinCommand()` の `add` サブコマンドを拡張
+- [x] `CommandBuilder.BuildPinCommand()` の `add` サブコマンドを拡張
+- [ ] `pin add --force` が force 引数に関係なく常に付与され、CLI オプションが無効化されている
+  - 関連ファイル: `src/GistGet/GistGet/GistGetService.cs`
 - 関連ファイル: `src/GistGet/GistGet/Presentation/CommandBuilder.cs`
 
 ---
@@ -132,26 +136,26 @@ GistGet は Gist 上の YAML でパッケージを **ID で一意に管理** す
 
 ### 3-1. export コマンド実装
 
-- [ ] `IGistGetService.ExportAsync()` メソッド追加
-- [ ] `GistGetService.ExportAsync()` 実装
-- [ ] `CommandBuilder.BuildExportCommand()` にハンドラ追加
+- [x] `IGistGetService.ExportAsync()` メソッド追加
+- [x] `GistGetService.ExportAsync()` 実装
+- [x] `CommandBuilder.BuildExportCommand()` にハンドラ追加
 - 関連ファイル: `src/GistGet/GistGet/IGistGetService.cs`, `GistGetService.cs`, `CommandBuilder.cs`
 
 ### 3-2. import コマンド実装
 
-- [ ] `IGistGetService.ImportAsync()` メソッド追加
-- [ ] `GistGetService.ImportAsync()` 実装
-- [ ] `CommandBuilder.BuildImportCommand()` にハンドラ追加
+- [x] `IGistGetService.ImportAsync()` メソッド追加
+- [x] `GistGetService.ImportAsync()` 実装
+- [x] `CommandBuilder.BuildImportCommand()` にハンドラ追加
 - 関連ファイル: 同上
 
 ### 3-3. パススルーコマンド追加
 
 | winget コマンド | 対応 |
 |----------------|:----:|
-| `dscv3` | ⚠️ 要検討（DSC v3 リソース） |
-| `mcp` | ⚠️ 要検討（MCP 情報） |
+| `dscv3` | ☑️ 実装済（DSC v3 リソース） |
+| `mcp` | ☑️ 実装済（MCP 情報） |
 
-- [ ] 必要に応じて `BuildWingetPassthroughCommands()` に追加
+- [x] 必要に応じて `BuildWingetPassthroughCommands()` に追加
 - 関連ファイル: `src/GistGet/GistGet/Presentation/CommandBuilder.cs`
 
 ---
@@ -211,6 +215,7 @@ GistGet は Gist 上の YAML でパッケージを **ID で一意に管理** す
 ### 5-4. 仕様書（SPEC）の不整合修正
 
 - [ ] `sync` 節の `--pin` オプション記載を `--version` に修正
+- [ ] `sync` は Gist → ローカルの片方向同期であり、書き戻しを行わないことを明記
 - 関連ファイル: `docs/SPEC.ja.md`
 
 ---

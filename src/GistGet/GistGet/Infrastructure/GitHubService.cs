@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using GistGet.Presentation;
 using Octokit;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
+
 
 namespace GistGet.Infrastructure;
 
@@ -85,8 +84,7 @@ public class GitHubService(
             return Array.Empty<GistGetPackage>();
         }
 
-        var packages = DeserializePackages(yaml);
-        return packages.OrderBy(p => p.Id, StringComparer.OrdinalIgnoreCase).ToList();
+        return GistGetPackageSerializer.Deserialize(yaml);
     }
 
     public async Task<IReadOnlyList<GistGetPackage>> GetPackagesAsync(string token, string gistFileName, string gistDescription)
@@ -125,8 +123,7 @@ public class GitHubService(
             return Array.Empty<GistGetPackage>();
         }
 
-        var packages = DeserializePackages(content);
-        return packages.OrderBy(p => p.Id, StringComparer.OrdinalIgnoreCase).ToList();
+        return GistGetPackageSerializer.Deserialize(content);
     }
 
     public async Task SavePackagesAsync(string token, string gistUrl, string gistFileName, string gistDescription,
@@ -140,7 +137,7 @@ public class GitHubService(
 
         var client = CreateClient(resolvedToken);
         var (targetFileName, targetDescription) = ResolveGistMetadata(gistFileName, gistDescription);
-        var yaml = SerializePackages(packages);
+        var yaml = GistGetPackageSerializer.Serialize(packages);
 
         if (!string.IsNullOrWhiteSpace(gistUrl))
         {
@@ -237,74 +234,5 @@ public class GitHubService(
         var fileName = string.IsNullOrWhiteSpace(gistFileName) ? DefaultGistFileName : gistFileName;
         var description = string.IsNullOrWhiteSpace(gistDescription) ? DefaultGistDescription : gistDescription;
         return (fileName, description);
-    }
-
-    private static string SerializePackages(IReadOnlyList<GistGetPackage> packages)
-    {
-        var dict = new Dictionary<string, GistGetPackage>(StringComparer.OrdinalIgnoreCase);
-        foreach (var package in packages)
-        {
-            if (string.IsNullOrWhiteSpace(package.Id))
-            {
-                throw new ArgumentException("Package Id is required.", nameof(packages));
-            }
-
-            var copy = new GistGetPackage
-            {
-                Version = package.Version,
-                Pin = package.Pin,
-                PinType = package.PinType,
-                Custom = package.Custom,
-                Uninstall = package.Uninstall,
-                Scope = package.Scope,
-                Architecture = package.Architecture,
-                Location = package.Location,
-                Locale = package.Locale,
-                AllowHashMismatch = package.AllowHashMismatch,
-                Force = package.Force,
-                AcceptPackageAgreements = package.AcceptPackageAgreements,
-                AcceptSourceAgreements = package.AcceptSourceAgreements,
-                SkipDependencies = package.SkipDependencies,
-                Header = package.Header,
-                InstallerType = package.InstallerType,
-                Log = package.Log,
-                Mode = package.Mode,
-                Override = package.Override,
-                Confirm = package.Confirm,
-                WhatIf = package.WhatIf,
-                Interactive = package.Interactive,
-                Silent = package.Silent
-            };
-
-            dict[package.Id] = copy;
-        }
-
-        var serializer = new SerializerBuilder()
-            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-            .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitDefaults | DefaultValuesHandling.OmitNull)
-            .Build();
-
-        return serializer.Serialize(dict);
-    }
-
-    private static IReadOnlyList<GistGetPackage> DeserializePackages(string yaml)
-    {
-        var deserializer = new DeserializerBuilder()
-            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-            .IgnoreUnmatchedProperties()
-            .Build();
-
-        var dict = deserializer.Deserialize<Dictionary<string, GistGetPackage>>(yaml)
-                   ?? new Dictionary<string, GistGetPackage>();
-
-        var list = new List<GistGetPackage>();
-        foreach (var (id, package) in dict)
-        {
-            var item = package ?? new GistGetPackage();
-            item.Id = id;
-            list.Add(item);
-        }
-
-        return list;
     }
 }

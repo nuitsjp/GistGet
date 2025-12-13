@@ -77,5 +77,18 @@ public interface IGistGetService
     /// <param name="args">コマンドに渡す引数</param>
     /// <returns>WinGetプロセスの終了コード</returns>
     Task<int> RunPassthroughAsync(string command, string[] args);
+
+    /// <summary>
+    /// ローカルにインストールされているパッケージをYAML形式でエクスポートします。
+    /// </summary>
+    /// <param name="outputPath">出力先ファイルパス（nullの場合は標準出力に出力）</param>
+    /// <returns>エクスポートされたYAML文字列</returns>
+    Task<string> ExportAsync(string? outputPath = null);
+
+    /// <summary>
+    /// YAMLファイルからパッケージ情報を読み込み、Gistに保存します。
+    /// </summary>
+    /// <param name="filePath">読み込むYAMLファイルのパス</param>
+    Task ImportAsync(string filePath);
 }
 

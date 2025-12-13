@@ -713,5 +713,69 @@ public class GistGetService(
         fullArgs.AddRange(args);
         return passthroughRunner.RunAsync(fullArgs.ToArray());
     }
+
+    /// <summary>
+    /// ローカルにインストールされているパッケージをYAML形式でエクスポートします。
+    /// </summary>
+    /// <param name="outputPath">出力先ファイルパス（nullの場合は標準出力に出力）</param>
+    /// <returns>エクスポートされたYAML文字列</returns>
+    public async Task<string> ExportAsync(string? outputPath = null)
+    {
+        // ローカルのインストール済みパッケージを取得
+        var installedPackages = winGetService.GetAllInstalledPackages();
+        
+        // GistGetPackage形式に変換
+        var packages = installedPackages.Select(p => new GistGetPackage
+        {
+            Id = p.Id.AsPrimitive()
+        }).ToList();
+
+        // YAMLにシリアライズ
+        var yaml = GistGetPackageSerializer.Serialize(packages);
+
+        if (!string.IsNullOrEmpty(outputPath))
+        {
+            // ファイルに出力
+            await File.WriteAllTextAsync(outputPath, yaml);
+            consoleService.WriteInfo($"Exported {packages.Count} packages to {outputPath}");
+        }
+        else
+        {
+            // 標準出力に出力
+            Console.WriteLine(yaml);
+        }
+
+        return yaml;
+    }
+
+    /// <summary>
+    /// YAMLファイルからパッケージ情報を読み込み、Gistに保存します。
+    /// </summary>
+    /// <param name="filePath">読み込むYAMLファイルのパス</param>
+    public async Task ImportAsync(string filePath)
+    {
+        // 認証確認
+        if (!credentialService.TryGetCredential(out var credential))
+        {
+            await AuthLoginAsync();
+            if (!credentialService.TryGetCredential(out credential))
+            {
+                throw new InvalidOperationException("Failed to retrieve credentials after login.");
+            }
+        }
+
+        // ファイルを読み込み
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException($"File not found: {filePath}");
+        }
+
+        var yaml = await File.ReadAllTextAsync(filePath);
+        var packages = GistGetPackageSerializer.Deserialize(yaml);
+
+        // Gistに保存
+        await gitHubService.SavePackagesAsync(credential.Token, "", "packages.yaml", "GistGet packages", packages);
+        consoleService.WriteInfo($"Imported {packages.Count} packages to Gist");
+    }
 }
 

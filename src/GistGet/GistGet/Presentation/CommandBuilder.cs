@@ -114,8 +114,14 @@ public class CommandBuilder(IGistGetService gistGetService)
     private Command BuildExportCommand()
     {
         var command = new Command("export", "Export current package state to YAML");
-        var outputOption = new Option<string>("--output", "Output file path");
+        var outputOption = new Option<string?>("--output", "Output file path");
+        outputOption.AddAlias("-o");
         command.Add(outputOption);
+
+        command.SetHandler(async output =>
+        {
+            await gistGetService.ExportAsync(output);
+        }, outputOption);
 
         return command;
     }
@@ -125,6 +131,11 @@ public class CommandBuilder(IGistGetService gistGetService)
         var command = new Command("import", "Import YAML file to Gist");
         var fileArgument = new Argument<string>("file") { Description = "YAML file to import" };
         command.Add(fileArgument);
+
+        command.SetHandler(async file =>
+        {
+            await gistGetService.ImportAsync(file);
+        }, fileArgument);
 
         return command;
     }
@@ -457,7 +468,7 @@ public class CommandBuilder(IGistGetService gistGetService)
         var commands = new List<Command>();
         var wingetCommands = new[] {
             "list", "search", "show", "source", "settings", "features",
-            "hash", "validate", "configure", "download", "repair"
+            "hash", "validate", "configure", "download", "repair", "dscv3", "mcp"
         };
 
         foreach (var cmd in wingetCommands)
