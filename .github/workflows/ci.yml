@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  workflow_call:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  SOLUTION_FILE: 'GistGet.slnx'
+  TEST_PROJECT: 'src/GistGet.Test/GistGet.Test.csproj'
+  BUILD_PLATFORM: 'x64'
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Ensure test packages are installed
+        run: |
+          if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+            Write-Error "winget is not available on this runner."
+            exit 1
+          }
+
+          $requiredPackages = @(
+            'jqlang.jq',
+            'Microsoft.VisualStudioCode'
+          )
+
+          foreach ($id in $requiredPackages) {
+            $installed = winget list --id $id --exact --accept-source-agreements --accept-package-agreements 2>$null | Select-String $id
+            if ($installed) {
+              Write-Host "$id is already installed."
+              continue
+            }
+
+            winget install --id $id --exact --scope user --silent --disable-interactivity --accept-source-agreements --accept-package-agreements
+          }
+
+      - name: Restore
+        run: dotnet restore ${{ env.SOLUTION_FILE }}
+
+      - name: Build
+        run: dotnet build ${{ env.SOLUTION_FILE }} -c Debug -p:Platform=${{ env.BUILD_PLATFORM }} --no-restore
+
+      - name: Test
+        run: dotnet test ${{ env.TEST_PROJECT }} -c Debug -p:Platform=${{ env.BUILD_PLATFORM }} --no-build --collect:"XPlat Code Coverage" --results-directory TestResults
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: TestResults

@@ -1,39 +1,42 @@
 # Repository Guidelines
 
-ユーザーとの対話は日本語を用いる事。
+## Primary Directive
+
+- Think in English, interact with the user in Japanese.
+- Plans and artifacts must be written in Japanese.
+- Can execute GitHub CLI/Azure CLI. Will execute and verify them personally
+  whenever possible.
+- When modifying the implementation, strictly adhere to the t-wada style of
+  Test-Driven Development (TDD). RED-GREEN-REFACTOR cycle must be followed
+  without exception.
 
 ## Project Structure & Module Organization
-- `src/NuitsJp.GistGet`: .NET 8 console app (WinGet-compatible CLI). Key areas: `ArgumentParser/` (System.CommandLine), `Commands/` (handlers), `WinGetClient/` (COM API + CLI fallback).
-- `src/NuitsJp.GistGet.Test`: xUnit test project organized by feature (ArgumentParser, Commands, WinGetClient).
-- `docs/`: design notes and WinGet specs; reference during implementation.
-- `powershell/`: reference implementation for sync workflow; do not edit unless working on PS.
-- `.github/`: CI and repo automation (if present).
+- `src/GistGet`: CLI entry point (`Program.cs`) plus layered folders: `Application/Services` for auth, Gist sync, and package orchestration; `Infrastructure/{OS,Security,WinGet}` for process execution, credential storage, and WinGet access; `Presentation/CliCommandBuilder` for System.CommandLine setup; `Models` and `Utils` for shared types (e.g., `GistGetPackage`, `YamlHelper`).
+- `src/GistGet.Tests`: xUnit test suites organized by feature (`Presentation/`, `Services/`, `Utils/`); coverage output lands in `TestResults/`.
+- `scripts`: helper PowerShell tools such as `Run-Tests.ps1` (build + test + coverage) and `Run-AuthLogin.ps1` for GitHub device-flow login.
+- `docs`: design/spec references (`docs/SPEC.ja.md`, `DESIGN.ja.md`, `YAML_SPEC.ja.md`) to keep behavior aligned with the contract.
 
 ## Build, Test, and Development Commands
-- Build: `dotnet build GistGet.slnx -c Debug`
-- Run locally: `dotnet run --project src/NuitsJp.GistGet -- install --id "Google.Chrome"`
-- Tests: `dotnet test src/NuitsJp.GistGet.Test -c Debug --collect:"XPlat Code Coverage"`
-- Publish (AOT, Windows x64): `dotnet publish src/NuitsJp.GistGet -c Release -r win-x64`
-Notes: Target framework is `net8.0-windows10.0.26100`; build and runtime require Windows with WinGet installed for real CLI calls.
+- Restore/build: `dotnet build GistGet.sln -c Debug` (or `Release`) to compile all projects.
+- Run CLI: `dotnet run --project src/GistGet/GistGet.csproj -- <command>` (e.g., `-- auth login`, `sync`, `install <id>`).
+- Tests + coverage: `dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug --collect:"XPlat Code Coverage" --results-directory TestResults`.
+- Convenience: `.\scripts\Run-Tests.ps1 [-Configuration Release] [-CollectCoverage $false]` handles build, tests, and coverage in one call.
 
 ## Coding Style & Naming Conventions
-- C#: 4-space indentation, `nullable` and `implicit usings` enabled.
-- Types/methods: PascalCase; locals/fields/params: camelCase; files match type names.
-- Prefer records for immutable models (see `WinGetClient/Models`). Add XML doc summaries for public APIs.
-- Use `IProcessRunner` for external process calls; no direct `Process.Start` in features.
-- Formatting: run `dotnet format` before pushing.
+- C# 12 on `net10.0-windows10.0.26100.0`; 4-space indentation, UTF-8 with CRLF line endings, `nullable` enabled. Prefer `var` for locals, `readonly` fields, and `async` suffixes on asynchronous methods.
+- Naming: PascalCase for public types/methods; camelCase parameters; `_camelCase` private readonly fields. Keep service/infra abstractions in corresponding `I*` interfaces.
+- Structure logic through constructors and dependency injection (no static singletons); favor small, composable methods and guard clauses for argument validation.
 
 ## Testing Guidelines
-- Frameworks: xUnit + Shouldly + Moq; coverage via `coverlet.collector`.
-- Structure: mirror `src/` folders (e.g., `WinGetClient/*Tests.cs`).
-- Naming: `MethodOrScenario_Should_ExpectedBehavior` (see `WinGetComClientInstallTests.cs`).
-- Run fast, isolated tests; mock process calls via `IProcessRunner`.
+- Frameworks: xUnit + Moq + Shouldly. Use `[Fact]` for single cases and `[Theory]` with inline data for variants.
+- Coverage: keep collecting via `--collect:"XPlat Code Coverage"`; review `TestResults/coverage.cobertura.xml` before merging. Add unit tests for new branches and edge cases (GitHub auth failures, WinGet errors, YAML parsing).
+- Detailed coding guidelines: see [`.github/instructions/cs.test.instructions.md`](.github/instructions/cs.test.instructions.md) for file/class structure, naming conventions, AAA pattern, and sample code.
 
 ## Commit & Pull Request Guidelines
-- Commits: small, focused; imperative mood (e.g., "Add install options parsing"). Group refactors/docs separately.
-- PRs: include purpose, context/linked issues, testing steps (`dotnet build`, `dotnet test`), and sample CLI output if applicable.
-- Requirements: all tests pass, no formatting diffs, update docs in `docs/` when behavior or flags change.
+- Follow Conventional Commits seen in history (`feat:`, `fix:`, `chore:`, `docs:`). Write present-tense, imperative subjects and keep scopes small.
+- Include: what changed, why, and how to validate (commands run, notable CLI output). Link issues when applicable.
+- PRs should: summarize user-visible impact, attach screenshots or sample CLI invocations when behavior changes, and confirm tests/coverage were executed (`Run-Tests.ps1` or `dotnet test` command).
 
 ## Security & Configuration Tips
-- Never commit secrets. Gist access uses OAuth Device Flow; tokens must be stored securely (e.g., DPAPI) and excluded from VCS.
-- The app prefers COM API but falls back to WinGet CLI; ensure `winget` is available in PATH for local runs.
+- Authentication uses GitHub device flow; never commit personal access tokens. `CredentialService` stores secrets in Windows Credential Manager—avoid alternative secret storage without discussion.
+- Keep WinGet interactions deterministic: prefer explicit package IDs and versions in YAML; document any fallback logic. Update manifests and docs together when command semantics change.

@@ -1,5 +1,8 @@
 # Build and test reports
 .reports/
+metrics-report.txt
+
+docs/winget/*
 
 # Legacy report locations (移行期間中)
 .serena/

@@ -4,10 +4,10 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="src/GistGet.Test/GistGet.Test.csproj">
+  <Project Path="GistGet.Test/GistGet.Test.csproj">
     <Platform Project="x64" />
   </Project>
-  <Project Path="src/GistGet/GistGet.csproj">
+  <Project Path="GistGet/GistGet.csproj">
     <Platform Project="x64" />
   </Project>
 </Solution>
