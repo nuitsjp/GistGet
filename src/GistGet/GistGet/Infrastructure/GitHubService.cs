@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using GistGet.Presentation;
 using Octokit;
 
@@ -9,15 +10,19 @@ namespace GistGet.Infrastructure;
 
 public class GitHubService(
     ICredentialService credentialService,
-    IConsoleService consoleService) : IGitHubService
+    IConsoleService consoleService,
+    IGitHubClientFactory gitHubClientFactory,
+    HttpClient? httpClient = null) : IGitHubService
 {
+    private readonly IGitHubClientFactory _gitHubClientFactory = gitHubClientFactory;
+    private readonly HttpClient _httpClient = httpClient ?? new HttpClient();
 
     public async Task<Credential> LoginAsync()
     {
-        var client = new GitHubClient(new ProductHeaderValue(Constants.ProductHeader));
+        var client = _gitHubClientFactory.Create(null);
         var request = CreateDeviceFlowRequest();
 
-        var deviceFlowResponse = await client.Oauth.InitiateDeviceFlow(request);
+        var deviceFlowResponse = await client.InitiateDeviceFlowAsync(request);
 
         // Copy user code to clipboard
         try
@@ -34,16 +39,12 @@ public class GitHubService(
         consoleService.ReadLine();
 
         // Open browser after user presses Enter
-        try
-        {
-            Process.Start(new ProcessStartInfo(deviceFlowResponse.VerificationUri) { UseShellExecute = true });
-        }
-        catch { /* Ignore if browser cannot be opened */ }
+        OpenBrowser(deviceFlowResponse.VerificationUri);
 
-        var token = await client.Oauth.CreateAccessTokenForDeviceFlow(Constants.ClientId, deviceFlowResponse);
+        var token = await client.CreateAccessTokenForDeviceFlowAsync(Constants.ClientId, deviceFlowResponse);
 
-        client.Credentials = new Credentials(token.AccessToken);
-        var user = await client.User.Current();
+        var authenticatedClient = _gitHubClientFactory.Create(token.AccessToken);
+        var user = await authenticatedClient.GetCurrentUserAsync();
 
         return new Credential(user.Login, token.AccessToken);
     }
@@ -55,12 +56,25 @@ public class GitHubService(
         return request;
     }
 
+    protected virtual bool OpenBrowser(string verificationUri)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(verificationUri) { UseShellExecute = true });
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public async Task<TokenStatus> GetTokenStatusAsync(string token)
     {
-        var client = CreateClient(token);
+        var client = _gitHubClientFactory.Create(token);
         
         // This call will verify the token and populate LastApiInfo with headers (including scopes)
-        var user = await client.User.Current();
+        var user = await client.GetCurrentUserAsync();
         
         var apiInfo = client.GetLastApiInfo();
         var scopes = apiInfo?.OauthScopes ?? new List<string>();
@@ -70,8 +84,12 @@ public class GitHubService(
 
     public async Task<IReadOnlyList<GistGetPackage>> GetPackagesFromUrlAsync(string url)
     {
-        using var httpClient = new HttpClient();
-        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(Constants.ProductHeader);
+        var httpClient = CreateHttpClient();
+        var hasHeader = httpClient.DefaultRequestHeaders.UserAgent.Any(h => h.Product?.Name == Constants.ProductHeader);
+        if (!hasHeader)
+        {
+            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(Constants.ProductHeader);
+        }
         
         var yaml = await httpClient.GetStringAsync(url);
         
@@ -91,10 +109,10 @@ public class GitHubService(
             throw new InvalidOperationException("Authentication required to fetch default Gist.");
         }
 
-        var client = CreateClient(resolvedToken);
+        var client = _gitHubClientFactory.Create(resolvedToken);
         var (targetFileName, targetDescription) = ResolveGistMetadata(gistFileName, gistDescription);
 
-        var gists = await client.Gist.GetAll();
+        var gists = await client.GetAllGistsAsync();
         var matchingGists = gists
             .Where(g => g.Files.ContainsKey(targetFileName) || g.Description == targetDescription)
             .ToList();
@@ -111,7 +129,7 @@ public class GitHubService(
             return Array.Empty<GistGetPackage>();
         }
 
-        var gist = await client.Gist.Get(targetGist.Id);
+        var gist = await client.GetGistAsync(targetGist.Id);
         var content = ExtractYamlContent(gist, targetFileName);
 
         if (string.IsNullOrWhiteSpace(content))
@@ -131,21 +149,21 @@ public class GitHubService(
             throw new InvalidOperationException("Authentication required to save packages.");
         }
 
-        var client = CreateClient(resolvedToken);
+        var client = _gitHubClientFactory.Create(resolvedToken);
         var (targetFileName, targetDescription) = ResolveGistMetadata(gistFileName, gistDescription);
         var yaml = GistGetPackageSerializer.Serialize(packages);
 
         if (!string.IsNullOrWhiteSpace(gistUrl))
         {
             var gistId = ParseGistId(gistUrl);
-            await client.Gist.Edit(gistId, new GistUpdate
+            await client.EditGistAsync(gistId, new GistUpdate
             {
                 Files = { { targetFileName, new GistFileUpdate { Content = yaml } } }
             });
             return;
         }
 
-        var gists = await client.Gist.GetAll();
+        var gists = await client.GetAllGistsAsync();
         var matchingGists = gists
             .Where(g => g.Files.ContainsKey(targetFileName) || g.Description == targetDescription)
             .ToList();
@@ -160,7 +178,7 @@ public class GitHubService(
 
         if (targetGist != null)
         {
-            await client.Gist.Edit(targetGist.Id, new GistUpdate
+            await client.EditGistAsync(targetGist.Id, new GistUpdate
             {
                 Files = { { targetFileName, new GistFileUpdate { Content = yaml } } }
             });
@@ -173,18 +191,13 @@ public class GitHubService(
                 Public = false,
                 Files = { { targetFileName, yaml } }
             };
-            await client.Gist.Create(newGist);
+            await client.CreateGistAsync(newGist);
         }
     }
 
-    private static GitHubClient CreateClient(string? token)
+    protected virtual HttpClient CreateHttpClient()
     {
-        var client = new GitHubClient(new ProductHeaderValue(Constants.ProductHeader));
-        if (!string.IsNullOrWhiteSpace(token))
-        {
-            client.Credentials = new Credentials(token);
-        }
-        return client;
+        return _httpClient;
     }
 
     private string? ResolveToken(string token)
