@@ -1,18 +1,26 @@
-﻿using Microsoft.Management.Deployment;
+﻿// WinGet COM-based package discovery implementation.
+
+using Microsoft.Management.Deployment;
 
 namespace GistGet.Infrastructure;
 
+/// <summary>
+/// Provides access to installed package data via WinGet COM APIs.
+/// </summary>
 public class WinGetService : IWinGetService
 {
+    /// <summary>
+    /// Finds an installed package by ID.
+    /// </summary>
+    /// <param name="id">Package ID.</param>
+    /// <returns>The installed package, or <see langword="null"/> if not found.</returns>
     public WinGetPackage? FindById(PackageId id)
     {
         var packageManager = new PackageManager();
 
-        // インストール済みパッケージカタログと winget ソースを合成して検索
         var createCompositePackageCatalogOptions = new CreateCompositePackageCatalogOptions();
 
         var catalogs = packageManager.GetPackageCatalogs();
-        // WinGet COM API との互換性問題を回避するため、インデックスベースでアクセス
         for (var i = 0; i < catalogs.Count; i++)
         {
             var catalogRef = catalogs[i];
@@ -33,7 +41,6 @@ public class WinGetService : IWinGetService
 
         var catalog = connectResult.PackageCatalog;
 
-        // ID による完全一致検索
         var findPackagesOptions = new FindPackagesOptions();
         findPackagesOptions.Selectors.Add(new PackageMatchFilter
         {
@@ -51,7 +58,6 @@ public class WinGetService : IWinGetService
 
         var catalogPackage = findResult.Matches[0].CatalogPackage;
 
-        // インストールされていないパッケージは対象外
         if (catalogPackage.InstalledVersion == null)
         {
             return null;
@@ -59,9 +65,6 @@ public class WinGetService : IWinGetService
 
         var installedVersion = catalogPackage.InstalledVersion;
 
-        // 更新可能なバージョンを取得
-        // IsUpdateAvailable が正しく動作しない場合があるため、
-        // AvailableVersions と InstalledVersion を比較して判断
         Version? usableVersion = null;
         if (catalogPackage.AvailableVersions.Count > 0)
         {
@@ -81,15 +84,14 @@ public class WinGetService : IWinGetService
     }
 
     /// <summary>
-    /// ローカルにインストールされている全パッケージを取得します。
+    /// Gets all locally installed packages.
     /// </summary>
-    /// <returns>インストール済みパッケージの一覧</returns>
+    /// <returns>Installed packages.</returns>
     public IReadOnlyList<WinGetPackage> GetAllInstalledPackages()
     {
         var packages = new List<WinGetPackage>();
         var packageManager = new PackageManager();
 
-        // インストール済みパッケージカタログと winget ソースを合成して検索
         var createCompositePackageCatalogOptions = new CreateCompositePackageCatalogOptions();
 
         var catalogs = packageManager.GetPackageCatalogs();
@@ -113,7 +115,6 @@ public class WinGetService : IWinGetService
 
         var catalog = connectResult.PackageCatalog;
 
-        // すべてのパッケージを取得
         var findPackagesOptions = new FindPackagesOptions();
         var findResult = catalog.FindPackages(findPackagesOptions);
 

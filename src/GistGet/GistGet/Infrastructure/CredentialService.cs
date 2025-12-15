@@ -1,3 +1,5 @@
+// Credential persistence using Windows Credential Manager.
+
 using System.Runtime.InteropServices;
 using System.Text;
 using System;
@@ -5,12 +7,18 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace GistGet.Infrastructure;
 
+/// <summary>
+/// Stores and retrieves GitHub credentials using the Windows Credential Manager.
+/// </summary>
 public class CredentialService(string targetName) : ICredentialService
 {
     public CredentialService() : this("gistget:https://github.com/nuitsjp/GistGet")
     {
     }
 
+    /// <summary>
+    /// Persists a credential.
+    /// </summary>
     public bool SaveCredential(Credential credential)
     {
         var credStruct = new CREDENTIAL
@@ -27,8 +35,6 @@ public class CredentialService(string targetName) : ICredentialService
         {
             if (!NativeMethods.CredWrite(ref credStruct, 0))
             {
-                // var error = Marshal.GetLastWin32Error();
-                // Log error?
                 return false;
             }
             return true;
@@ -39,6 +45,9 @@ public class CredentialService(string targetName) : ICredentialService
         }
     }
 
+    /// <summary>
+    /// Attempts to read the stored credential.
+    /// </summary>
     public bool TryGetCredential([NotNullWhen(true)] out Credential credential)
     {
         credential = null!;
@@ -65,12 +74,14 @@ public class CredentialService(string targetName) : ICredentialService
         return false;
     }
 
+    /// <summary>
+    /// Deletes any stored credential.
+    /// </summary>
     public bool DeleteCredential()
     {
         if (!NativeMethods.CredDelete(targetName, CRED_TYPE.GENERIC, 0))
         {
             var error = Marshal.GetLastWin32Error();
-            // 1168 = ERROR_NOT_FOUND
             if (error != 1168)
             {
                 return false;
@@ -95,7 +106,6 @@ public class CredentialService(string targetName) : ICredentialService
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    // ReSharper disable once InconsistentNaming
     private struct CREDENTIAL
     {
         public uint Flags;
@@ -112,22 +122,15 @@ public class CredentialService(string targetName) : ICredentialService
         public string UserName;
     }
 
-    // ReSharper disable once InconsistentNaming
     public enum CRED_TYPE : uint
     {
-        // ReSharper disable once InconsistentNaming
         GENERIC = 1
     }
 
-    // ReSharper disable once InconsistentNaming
     public enum CRED_PERSIST : uint
     {
-        // ReSharper disable UnusedMember.Global
-        // ReSharper disable InconsistentNaming
         SESSION = 1,
         LOCAL_MACHINE = 2,
         ENTERPRISE = 3
-        // ReSharper restore InconsistentNaming
-        // ReSharper restore UnusedMember.Global
     }
 }

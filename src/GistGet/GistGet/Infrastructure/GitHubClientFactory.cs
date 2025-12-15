@@ -1,9 +1,17 @@
+// Factory for creating configured GitHub client wrappers.
+
 using Octokit;
 
 namespace GistGet.Infrastructure;
 
+/// <summary>
+/// Creates GitHub client wrappers configured for optional authentication.
+/// </summary>
 public class GitHubClientFactory : IGitHubClientFactory
 {
+    /// <summary>
+    /// Creates a client wrapper configured with an optional token.
+    /// </summary>
     public IGitHubClientWrapper Create(string? token)
     {
         var client = new GitHubClient(new ProductHeaderValue(Constants.ProductHeader));

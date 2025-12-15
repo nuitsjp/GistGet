@@ -1,16 +1,14 @@
-﻿namespace GistGet;
+﻿// Abstraction for executing WinGet commands as a passthrough.
+
+namespace GistGet;
 
 /// <summary>
-/// WinGetコマンドをパススルーで実行するサービスインターフェース。
-/// winget.exeを直接呼び出し、結果をそのまま返します。
-/// list、search、showなどGist同期が不要なコマンドに使用されます。
+/// Defines a runner that forwards commands to WinGet and returns exit codes.
 /// </summary>
 public interface IWinGetPassthroughRunner
 {
     /// <summary>
-    /// 指定された引数でWinGetを実行します。
+    /// Runs WinGet with the provided command-line arguments.
     /// </summary>
-    /// <param name="args">WinGetに渡すコマンドライン引数</param>
-    /// <returns>WinGetプロセスの終了コード</returns>
     Task<int> RunAsync(string[] args);
 }

@@ -1,21 +1,18 @@
+// YAML serialization utilities for the GistGet package manifest.
+
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
 namespace GistGet;
 
 /// <summary>
-/// GistGetPackage の YAML シリアライズ/デシリアライズを担当する静的クラス。
-/// GistGet.yaml 形式への変換と読み込みを提供します。
+/// Serializes and deserializes GistGet package manifests for storage.
 /// </summary>
 public static class GistGetPackageSerializer
 {
     /// <summary>
-    /// パッケージ一覧を YAML 形式の文字列にシリアライズします。
-    /// パッケージ ID をキーとしたマップ形式で出力されます。
+    /// Serializes packages to YAML.
     /// </summary>
-    /// <param name="packages">シリアライズするパッケージ一覧</param>
-    /// <returns>YAML 形式の文字列</returns>
-    /// <exception cref="ArgumentException">パッケージ ID が未設定の場合</exception>
     public static string Serialize(IReadOnlyList<GistGetPackage> packages)
     {
         var dict = new Dictionary<string, GistGetPackage>(StringComparer.OrdinalIgnoreCase);
@@ -26,7 +23,6 @@ public static class GistGetPackageSerializer
                 throw new ArgumentException("Package Id is required.", nameof(packages));
             }
 
-            // ID 以外のプロパティをコピー（ID は YAML キーとして使用）
             var copy = new GistGetPackage
             {
                 Version = package.Version,
@@ -65,11 +61,8 @@ public static class GistGetPackageSerializer
     }
 
     /// <summary>
-    /// YAML 形式の文字列をパッケージ一覧にデシリアライズします。
-    /// パッケージ ID は YAML のキーから設定されます。
+    /// Deserializes YAML into packages.
     /// </summary>
-    /// <param name="yaml">YAML 形式の文字列</param>
-    /// <returns>パッケージ一覧（ID 順でソート済み）</returns>
     public static IReadOnlyList<GistGetPackage> Deserialize(string yaml)
     {
         var deserializer = new DeserializerBuilder()

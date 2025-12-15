@@ -1,5 +1,10 @@
+// Shared constant values used across GistGet.
+
 namespace GistGet;
 
+/// <summary>
+/// Defines constant values for default names, paths, and settings.
+/// </summary>
 public static class Constants
 {
     public const string ProductHeader = "GistGet";

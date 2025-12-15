@@ -1,13 +1,16 @@
+// GitHub API implementation for authentication and Gist operations.
+
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using GistGet.Presentation;
 using Octokit;
-
 
 namespace GistGet.Infrastructure;
 
+/// <summary>
+/// Implements GitHub authentication and Gist persistence.
+/// </summary>
 public class GitHubService(
     ICredentialService credentialService,
     IConsoleService consoleService,
@@ -17,6 +20,9 @@ public class GitHubService(
     private readonly IGitHubClientFactory _gitHubClientFactory = gitHubClientFactory;
     private readonly HttpClient _httpClient = httpClient ?? new HttpClient();
 
+    /// <summary>
+    /// Performs GitHub device flow login.
+    /// </summary>
     public async Task<Credential> LoginAsync()
     {
         var client = _gitHubClientFactory.Create(null);
@@ -24,21 +30,15 @@ public class GitHubService(
 
         var deviceFlowResponse = await client.InitiateDeviceFlowAsync(request);
 
-        // Copy user code to clipboard
         try
         {
             consoleService.SetClipboard(deviceFlowResponse.UserCode);
         }
-        catch { /* Ignore if clipboard operation fails */ }
+        catch { }
 
-        // Display message in gh CLI style
         consoleService.WriteWarning($"First copy your one-time code: {deviceFlowResponse.UserCode}");
         consoleService.WriteInfo($"Press Enter to open {deviceFlowResponse.VerificationUri} in your browser...");
-
-        // Wait for user to press Enter
         consoleService.ReadLine();
-
-        // Open browser after user presses Enter
         OpenBrowser(deviceFlowResponse.VerificationUri);
 
         var token = await client.CreateAccessTokenForDeviceFlowAsync(Constants.ClientId, deviceFlowResponse);
@@ -69,11 +69,13 @@ public class GitHubService(
         }
     }
 
+    /// <summary>
+    /// Returns token owner and scope information.
+    /// </summary>
     public async Task<TokenStatus> GetTokenStatusAsync(string token)
     {
         var client = _gitHubClientFactory.Create(token);
-        
-        // This call will verify the token and populate LastApiInfo with headers (including scopes)
+
         var user = await client.GetCurrentUserAsync();
         
         var apiInfo = client.GetLastApiInfo();
@@ -82,6 +84,9 @@ public class GitHubService(
         return new TokenStatus(user.Login, scopes.ToList());
     }
 
+    /// <summary>
+    /// Loads packages from a YAML URL.
+    /// </summary>
     public async Task<IReadOnlyList<GistGetPackage>> GetPackagesFromUrlAsync(string url)
     {
         var httpClient = CreateHttpClient();
@@ -101,6 +106,9 @@ public class GitHubService(
         return GistGetPackageSerializer.Deserialize(yaml);
     }
 
+    /// <summary>
+    /// Loads packages from a user-owned Gist.
+    /// </summary>
     public async Task<IReadOnlyList<GistGetPackage>> GetPackagesAsync(string token, string gistFileName, string gistDescription)
     {
         var resolvedToken = ResolveToken(token);
@@ -140,6 +148,9 @@ public class GitHubService(
         return GistGetPackageSerializer.Deserialize(content);
     }
 
+    /// <summary>
+    /// Saves packages to a Gist, creating it when needed.
+    /// </summary>
     public async Task SavePackagesAsync(string token, string gistUrl, string gistFileName, string gistDescription,
         IReadOnlyList<GistGetPackage> packages)
     {

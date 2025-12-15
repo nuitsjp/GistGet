@@ -1,9 +1,17 @@
+// Builds WinGet command-line arguments from options and package entries.
+
 using System.Collections.Generic;
 
 namespace GistGet.Infrastructure;
 
+/// <summary>
+/// Constructs argument arrays for invoking WinGet.
+/// </summary>
 public class WinGetArgumentBuilder : IWinGetArgumentBuilder
 {
+    /// <summary>
+    /// Builds arguments for an install command.
+    /// </summary>
     public string[] BuildInstallArgs(InstallOptions options)
     {
         var args = new List<string> { "install", "--id", options.Id };
@@ -44,8 +52,6 @@ public class WinGetArgumentBuilder : IWinGetArgumentBuilder
         var args = new List<string> { "upgrade", "--id", options.Id };
 
         if (!string.IsNullOrEmpty(options.Version)) { args.Add("--version"); args.Add(options.Version); }
-
-        // Upgrade shares most options with Install
         args.AddRange(BuildCommonInstallOptions(
             options.Scope, options.Architecture, options.Location,
             options.Interactive, options.Silent, options.Log,

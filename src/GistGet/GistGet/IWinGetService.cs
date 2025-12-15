@@ -1,21 +1,19 @@
-﻿namespace GistGet;
+﻿// Abstraction for reading WinGet package information.
+
+namespace GistGet;
 
 /// <summary>
-/// WinGet COM APIを使用したパッケージ情報取得サービスインターフェース。
-/// ローカルにインストールされているパッケージの情報を取得します。
+/// Defines operations for discovering and querying WinGet packages.
 /// </summary>
 public interface IWinGetService
 {
     /// <summary>
-    /// パッケージIDでインストール済みパッケージを検索します。
+    /// Finds an installed package by package ID.
     /// </summary>
-    /// <param name="id">検索するパッケージID</param>
-    /// <returns>該当するパッケージ情報。見つからない場合はnull。</returns>
     WinGetPackage? FindById(PackageId id);
 
     /// <summary>
-    /// ローカルにインストールされている全パッケージを取得します。
+    /// Returns all installed packages.
     /// </summary>
-    /// <returns>インストール済みパッケージの一覧</returns>
     IReadOnlyList<WinGetPackage> GetAllInstalledPackages();
 }

@@ -1,14 +1,14 @@
-﻿namespace GistGet;
+﻿// Abstraction for user interaction and messaging.
+
+namespace GistGet;
 
 /// <summary>
-/// ユーザーインターフェースの抽象化レイヤー。
-/// テスト時にモック可能な出力インターフェースを提供します。
+/// Defines the user interaction surface used by application workflows.
 /// </summary>
 public interface IUserInterface
 {
     /// <summary>
-    /// メッセージを出力して改行します。
+    /// Writes a message followed by a newline.
     /// </summary>
-    /// <param name="message">出力するメッセージ</param>
     void WriteLine(string message);
 }

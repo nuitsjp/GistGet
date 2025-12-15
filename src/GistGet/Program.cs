@@ -1,4 +1,6 @@
-﻿using System.CommandLine;
+﻿// GistGet CLI entry point and dependency injection bootstrap.
+
+using System.CommandLine;
 using GistGet;
 using GistGet.Infrastructure;
 using GistGet.Infrastructure.Diagnostics;
@@ -7,16 +9,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 ServiceCollection services = new();
 
-// GistGet
 services.AddSingleton<IGitHubClientFactory, GitHubClientFactory>();
 services.AddTransient<IGitHubService, GitHubService>();
 services.AddTransient<IGistGetService, GistGetService>();
 
-// Presentation
 services.AddTransient<CommandBuilder>();
 services.AddTransient<IConsoleService, ConsoleService>();
 
-// Infrastructure
 services.AddTransient<ICredentialService, CredentialService>();
 services.AddSingleton<IProcessRunner, ProcessRunner>();
 services.AddTransient<IWinGetPassthroughRunner, WinGetPassthroughRunner>();
@@ -28,3 +27,10 @@ await services
     .GetRequiredService<CommandBuilder>()
     .Build()
     .InvokeAsync(args);
+
+/// <summary>
+/// Entry point type for the top-level program.
+/// </summary>
+internal partial class Program
+{
+}
