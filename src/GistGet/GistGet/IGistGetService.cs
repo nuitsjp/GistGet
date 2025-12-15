@@ -1,97 +1,69 @@
-﻿namespace GistGet;
+﻿// Public contract for GistGet application workflows.
+
+namespace GistGet;
 
 /// <summary>
-/// GistGetの中核サービスインターフェース。
-/// GitHub Gistとの同期、WinGetコマンドの実行、認証管理を統合的に提供します。
-/// すべてのパッケージ操作はGistの<c>GistGet.yaml</c>と同期されます。
+/// Defines the main application operations exposed to the CLI layer.
 /// </summary>
 public interface IGistGetService
 {
     /// <summary>
-    /// GitHubへDevice Flowでログインし、資格情報を保存します。
-    /// ブラウザでの認証が必要です。
+    /// Authenticates via GitHub device flow and stores the credential.
     /// </summary>
     Task AuthLoginAsync();
 
     /// <summary>
-    /// GitHubからログアウトし、保存されている資格情報を削除します。
+    /// Logs out and removes any stored credential.
     /// </summary>
     void AuthLogout();
 
     /// <summary>
-    /// 現在の認証状態を表示します。
-    /// ログイン中の場合はユーザー名、トークン情報、スコープを表示します。
+    /// Displays the current authentication status.
     /// </summary>
     Task AuthStatusAsync();
 
     /// <summary>
-    /// パッケージをインストールし、Gistの<c>GistGet.yaml</c>に保存します。
-    /// 既存のPinがある場合はそのバージョンでインストールし、Pinを設定します。
+    /// Installs a package and persists it to the manifest.
     /// </summary>
-    /// <param name="options">インストールオプション（ID、バージョン、各種フラグ）</param>
-    /// <returns>wingetプロセスの終了コード（成功時は0）</returns>
     Task<int> InstallAndSaveAsync(InstallOptions options);
 
     /// <summary>
-    /// パッケージをアンインストールし、Gistの<c>GistGet.yaml</c>を更新します。
-    /// エントリに<c>uninstall: true</c>が設定され、他デバイスでのsync時にアンインストールされます。
+    /// Uninstalls a package and updates the manifest.
     /// </summary>
-    /// <param name="options">アンインストールオプション（ID、スコープ、各種フラグ）</param>
-    /// <returns>wingetプロセスの終了コード（成功時は0）</returns>
     Task<int> UninstallAndSaveAsync(UninstallOptions options);
 
     /// <summary>
-    /// パッケージをアップグレードし、Gistの<c>GistGet.yaml</c>を更新します。
-    /// Pinがある場合は新しいバージョンに更新されます。
+    /// Upgrades a package and updates the manifest.
     /// </summary>
-    /// <param name="options">アップグレードオプション（ID、バージョン、各種フラグ）</param>
-    /// <returns>wingetプロセスの終了コード（成功時は0）</returns>
     Task<int> UpgradeAndSaveAsync(UpgradeOptions options);
 
     /// <summary>
-    /// パッケージをピン留めし、Gistの<c>GistGet.yaml</c>に保存します。
-    /// Pinにより<c>upgrade --all</c>から除外されます。
+    /// Adds a pin and persists it to the manifest.
     /// </summary>
-    /// <param name="packageId">PinするパッケージのID</param>
-    /// <param name="version">Pinするバージョン（ワイルドカード使用可、例: "1.7.*"）</param>
-    /// <param name="pinType">Pinの種類（blocking, gating）。省略時は既存値を維持、なければ pinning</param>
-    /// <param name="force">既存のPinを上書きする場合はtrue</param>
     Task PinAddAndSaveAsync(string packageId, string version, string? pinType = null, bool force = false);
 
     /// <summary>
-    /// パッケージのピン留めを解除し、Gistの<c>GistGet.yaml</c>から<c>pin</c>を削除します。
+    /// Removes a pin and updates the manifest.
     /// </summary>
-    /// <param name="packageId">Pin解除するパッケージのID</param>
     Task PinRemoveAndSaveAsync(string packageId);
 
     /// <summary>
-    /// GistGet.yamlとローカル状態を同期します。
-    /// 差分を検出し、インストール/アンインストール/pin設定を実行します。
+    /// Synchronizes the manifest with local state.
     /// </summary>
-    /// <param name="url">同期元の YAML URL（省略時は認証ユーザーの Gist）</param>
-    /// <param name="filePath">同期元のローカル YAML ファイルパス（指定時はこれを優先）</param>
-    /// <returns>同期結果（インストール/アンインストール/失敗したパッケージ一覧）</returns>
     Task<SyncResult> SyncAsync(string? url = null, string? filePath = null);
 
     /// <summary>
-    /// 指定されたコマンドをWinGetにそのままパススルーで実行します。
-    /// list、search、showなどGist同期が不要なコマンドに使用されます。
+    /// Runs a WinGet command without syncing.
     /// </summary>
-    /// <param name="command">WinGetコマンド（例: list, search, show）</param>
-    /// <param name="args">コマンドに渡す引数</param>
-    /// <returns>WinGetプロセスの終了コード</returns>
     Task<int> RunPassthroughAsync(string command, string[] args);
 
     /// <summary>
-    /// ローカルにインストールされているパッケージをYAML形式でエクスポートします。
+    /// Exports installed packages to YAML.
     /// </summary>
-    /// <param name="outputPath">出力先ファイルパス（nullの場合は標準出力に出力）</param>
-    /// <returns>エクスポートされたYAML文字列</returns>
     Task<string> ExportAsync(string? outputPath = null);
 
     /// <summary>
-    /// YAMLファイルからパッケージ情報を読み込み、Gistに保存します。
+    /// Imports package definitions from a YAML file.
     /// </summary>
-    /// <param name="filePath">読み込むYAMLファイルのパス</param>
     Task ImportAsync(string filePath);
 }

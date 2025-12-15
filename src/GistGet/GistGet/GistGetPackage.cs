@@ -1,8 +1,13 @@
-﻿using System.Xml.Serialization;
+﻿// Package metadata stored in and synchronized via GitHub Gist.
+
+using System.Xml.Serialization;
 using YamlDotNet.Serialization;
 
 namespace GistGet;
 
+/// <summary>
+/// Represents a package entry persisted to the GistGet manifest.
+/// </summary>
 public class GistGetPackage
 {
     [YamlIgnore]

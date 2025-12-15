@@ -1,7 +1,12 @@
-﻿using System.Diagnostics;
+﻿// Runs WinGet as an external process and returns its exit code.
+
+using System.Diagnostics;
 
 namespace GistGet.Infrastructure.Diagnostics;
 
+/// <summary>
+/// Executes WinGet as a child process.
+/// </summary>
 public class WinGetPassthroughRunner : IWinGetPassthroughRunner
 {
     private readonly IProcessRunner _processRunner;
@@ -11,6 +16,9 @@ public class WinGetPassthroughRunner : IWinGetPassthroughRunner
         _processRunner = processRunner;
     }
 
+    /// <summary>
+    /// Runs WinGet with the given arguments.
+    /// </summary>
     public async Task<int> RunAsync(string[] args)
     {
         var startInfo = new ProcessStartInfo
@@ -22,7 +30,6 @@ public class WinGetPassthroughRunner : IWinGetPassthroughRunner
             RedirectStandardError = false
         };
 
-        // ArgumentListを使用してスペースを含む引数を正しくエスケープ
         foreach (var arg in args)
         {
             startInfo.ArgumentList.Add(arg);
@@ -33,7 +40,6 @@ public class WinGetPassthroughRunner : IWinGetPassthroughRunner
 
     private string ResolveWinGetPath()
     {
-        // 1. PATH 上の winget を探索
         var pathEnv = Environment.GetEnvironmentVariable("PATH");
         if (pathEnv != null)
         {
@@ -48,9 +54,7 @@ public class WinGetPassthroughRunner : IWinGetPassthroughRunner
             }
         }
 
-        // 2. フォールバック: LocalAppData
         var localAppData = Environment.GetEnvironmentVariable("LOCALAPPDATA");
         return Path.Combine(localAppData!, "Microsoft", "WindowsApps", "winget.exe");
     }
-
 }

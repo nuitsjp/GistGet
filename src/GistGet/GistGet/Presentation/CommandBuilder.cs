@@ -1,11 +1,19 @@
+// System.CommandLine command definitions for the GistGet CLI.
+
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using Spectre.Console;
 
 namespace GistGet.Presentation;
 
+/// <summary>
+/// Builds the root command and subcommands for the CLI.
+/// </summary>
 public class CommandBuilder(IGistGetService gistGetService)
 {
+    /// <summary>
+    /// Builds the root command tree.
+    /// </summary>
     public RootCommand Build()
     {
         var rootCommand = new RootCommand("GistGet - Windows Package Manager Cloud Sync Tool");
@@ -40,8 +48,6 @@ public class CommandBuilder(IGistGetService gistGetService)
         command.SetHandler(async (url, filePath) =>
         {
             var result = await gistGetService.SyncAsync(url, filePath);
-
-            // 結果を表示
             if (result.Installed.Count > 0)
             {
                 AnsiConsole.MarkupLine($"[green]Installed {result.Installed.Count} package(s):[/]");
@@ -325,16 +331,12 @@ public class CommandBuilder(IGistGetService gistGetService)
         command.Add(acceptPackageAgreementsOption);
         command.Add(acceptSourceAgreementsOption);
         command.Add(ignoreSecurityHashOption);
-
-        // Allow unmatched tokens to be collected for passthrough
         command.TreatUnmatchedTokensAsErrors = false;
 
         command.SetHandler(async context =>
         {
             var parseResult = context.ParseResult;
             var id = parseResult.GetValueForOption(idOption) ?? parseResult.GetValueForArgument(idArgument);
-
-            // If ID is specified, perform managed upgrade
             if (!string.IsNullOrWhiteSpace(id))
             {
                 var options = new UpgradeOptions
@@ -363,7 +365,6 @@ public class CommandBuilder(IGistGetService gistGetService)
             }
             else
             {
-                // ID未指定時はパススルー。UnmatchedTokensを使用して安定した引数取得
                 var argsToPass = parseResult.UnmatchedTokens.ToArray();
                 context.ExitCode = await gistGetService.RunPassthroughAsync("upgrade", argsToPass);
             }

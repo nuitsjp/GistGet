@@ -1,8 +1,9 @@
+// Result model for a sync operation between Gist and local packages.
+
 namespace GistGet;
 
 /// <summary>
-/// sync操作の結果を表すクラス。
-/// インストール、アンインストール、Pin更新、失敗の各パッケージを追跡します。
+/// Captures the outcome of a sync operation, including changes and errors.
 /// </summary>
 public class SyncResult
 {
