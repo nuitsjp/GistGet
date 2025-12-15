@@ -30,9 +30,9 @@ public class CommandBuilder(IGistGetService gistGetService)
 
     private Command BuildSyncCommand()
     {
-        var command = new Command("sync", "Synchronize packages with Gist");
-        var urlOption = new Option<string?>("--url", "Gist URL to sync from (optional)");
-        var fileOption = new Option<string?>("--file", "Local YAML file path to sync from (optional)");
+        var command = new Command("sync", "Synchronizes packages with Gist");
+        var urlOption = new Option<string?>("--url", "URL to sync from");
+        var fileOption = new Option<string?>("--file", "Local YAML file path to sync from");
         fileOption.AddAlias("-f");
         command.Add(urlOption);
         command.Add(fileOption);
@@ -116,8 +116,8 @@ public class CommandBuilder(IGistGetService gistGetService)
 
     private Command BuildExportCommand()
     {
-        var command = new Command("export", "Export current package state to YAML");
-        var outputOption = new Option<string?>("--output", "Output file path");
+        var command = new Command("export", "Exports installed packages to Gist");
+        var outputOption = new Option<string?>("--output", "File to write the result to");
         outputOption.AddAlias("-o");
         command.Add(outputOption);
 
@@ -131,8 +131,8 @@ public class CommandBuilder(IGistGetService gistGetService)
 
     private Command BuildImportCommand()
     {
-        var command = new Command("import", "Import YAML file to Gist");
-        var fileArgument = new Argument<string>("file") { Description = "YAML file to import" };
+        var command = new Command("import", "Imports packages from a file");
+        var fileArgument = new Argument<string>("file") { Description = "Path to the YAML file to import" };
         command.Add(fileArgument);
 
         command.SetHandler(async file =>
@@ -145,17 +145,17 @@ public class CommandBuilder(IGistGetService gistGetService)
 
     private Command BuildAuthCommand()
     {
-        var command = new Command("auth", "Manage authentication");
+        var command = new Command("auth", "Manage GitHub authentication");
 
-        var login = new Command("login", "Login to GitHub");
+        var login = new Command("login", "Authenticate with GitHub");
         login.SetHandler(async () => await gistGetService.AuthLoginAsync());
         command.Add(login);
 
-        var logout = new Command("logout", "Logout from GitHub");
+        var logout = new Command("logout", "Log out from GitHub");
         logout.SetHandler(gistGetService.AuthLogout);
         command.Add(logout);
 
-        var status = new Command("status", "Check authentication status");
+        var status = new Command("status", "Shows current authentication status");
         status.SetHandler(gistGetService.AuthStatusAsync);
         command.Add(status);
 
@@ -164,26 +164,26 @@ public class CommandBuilder(IGistGetService gistGetService)
 
     private Command BuildInstallCommand()
     {
-        var command = new Command("install", "Install a package and save to Gist");
-        var idOption = new Option<string>("--id", "Package ID (winget compatible)") { IsRequired = true };
+        var command = new Command("install", "Installs the given package and saves to Gist");
+        var idOption = new Option<string>("--id", "Filter results by id") { IsRequired = true };
 
-        var versionOption = new Option<string>("--version", "Package version");
-        var scopeOption = new Option<string>("--scope", "Install scope (user|machine)");
-        var archOption = new Option<string>("--architecture", "Architecture (x86|x64|arm|arm64)");
-        var locationOption = new Option<string>("--location", "Install location");
+        var versionOption = new Option<string>("--version", "Use the specified version");
+        var scopeOption = new Option<string>("--scope", "Select install scope (user or machine)");
+        var archOption = new Option<string>("--architecture", "Select the architecture to install");
+        var locationOption = new Option<string>("--location", "Location to install to");
         var interactiveOption = new Option<bool>("--interactive", "Request interactive installation");
         var silentOption = new Option<bool>("--silent", "Request silent installation");
-        var logOption = new Option<string>("--log", "Log file path");
-        var overrideOption = new Option<string>("--override", "Override arguments");
-        var forceOption = new Option<bool>("--force", "Force command execution");
-        var skipDependenciesOption = new Option<bool>("--skip-dependencies", "Skip dependencies");
-        var headerOption = new Option<string>("--header", "Custom HTTP header");
-        var installerTypeOption = new Option<string>("--installer-type", "Installer type");
-        var customOption = new Option<string>("--custom", "Custom arguments");
-        var localeOption = new Option<string>("--locale", "Locale (BCP47 format)");
-        var acceptPackageAgreementsOption = new Option<bool>("--accept-package-agreements", "Accept package license agreements");
-        var acceptSourceAgreementsOption = new Option<bool>("--accept-source-agreements", "Accept source license agreements");
-        var ignoreSecurityHashOption = new Option<bool>("--ignore-security-hash", "Ignore security hash mismatch");
+        var logOption = new Option<string>("--log", "Log location");
+        var overrideOption = new Option<string>("--override", "Override arguments to be passed on to the installer");
+        var forceOption = new Option<bool>("--force", "Override the installer hash check");
+        var skipDependenciesOption = new Option<bool>("--skip-dependencies", "Skips processing package dependencies");
+        var headerOption = new Option<string>("--header", "Optional Windows-Package-Manager REST source HTTP header");
+        var installerTypeOption = new Option<string>("--installer-type", "Select the installer type");
+        var customOption = new Option<string>("--custom", "Arguments to be passed on to the installer in addition to the defaults");
+        var localeOption = new Option<string>("--locale", "Locale to use (BCP47 format)");
+        var acceptPackageAgreementsOption = new Option<bool>("--accept-package-agreements", "Accept all license agreements required for the package");
+        var acceptSourceAgreementsOption = new Option<bool>("--accept-source-agreements", "Accept all source agreements required for the source");
+        var ignoreSecurityHashOption = new Option<bool>("--ignore-security-hash", "Ignore the installer hash check failure");
 
         command.Add(idOption);
         command.Add(versionOption);
@@ -245,12 +245,12 @@ public class CommandBuilder(IGistGetService gistGetService)
 
     private Command BuildUninstallCommand()
     {
-        var command = new Command("uninstall", "Uninstall a package and update Gist");
-        var idOption = new Option<string>("--id", "Package ID") { IsRequired = true };
-        var scopeOption = new Option<string>("--scope", "Uninstall scope (user|machine)");
+        var command = new Command("uninstall", "Uninstalls the given package and updates Gist");
+        var idOption = new Option<string>("--id", "Filter results by id") { IsRequired = true };
+        var scopeOption = new Option<string>("--scope", "Select install scope (user or machine)");
         var interactiveOption = new Option<bool>("--interactive", "Request interactive uninstall");
         var silentOption = new Option<bool>("--silent", "Request silent uninstall");
-        var forceOption = new Option<bool>("--force", "Force command execution");
+        var forceOption = new Option<bool>("--force", "Direct run the command and continue with non security related issues");
         
         command.Add(idOption);
         command.Add(scopeOption);
@@ -285,26 +285,26 @@ public class CommandBuilder(IGistGetService gistGetService)
 
     private Command BuildUpgradeCommand()
     {
-        var command = new Command("upgrade", "Upgrade a package and save to Gist");
-        var idArgument = new Argument<string?>("package", "Package ID") { Arity = ArgumentArity.ZeroOrOne };
-        var idOption = new Option<string>("--id", "Package ID (winget compatible)");
-        var versionOption = new Option<string>("--version", "Package version");
-        var scopeOption = new Option<string>("--scope", "Upgrade scope (user|machine)");
-        var archOption = new Option<string>("--architecture", "Architecture (x86|x64|arm|arm64)");
-        var locationOption = new Option<string>("--location", "Install location");
+        var command = new Command("upgrade", "Upgrades the given package and saves to Gist");
+        var idArgument = new Argument<string?>("package", "Package to upgrade") { Arity = ArgumentArity.ZeroOrOne };
+        var idOption = new Option<string>("--id", "Filter results by id");
+        var versionOption = new Option<string>("--version", "Use the specified version");
+        var scopeOption = new Option<string>("--scope", "Select install scope (user or machine)");
+        var archOption = new Option<string>("--architecture", "Select the architecture to install");
+        var locationOption = new Option<string>("--location", "Location to install to");
         var interactiveOption = new Option<bool>("--interactive", "Request interactive upgrade");
         var silentOption = new Option<bool>("--silent", "Request silent upgrade");
-        var logOption = new Option<string>("--log", "Log file path");
-        var overrideOption = new Option<string>("--override", "Override arguments");
-        var forceOption = new Option<bool>("--force", "Force command execution");
-        var skipDependenciesOption = new Option<bool>("--skip-dependencies", "Skip dependencies");
-        var headerOption = new Option<string>("--header", "Custom HTTP header");
-        var installerTypeOption = new Option<string>("--installer-type", "Installer type");
-        var customOption = new Option<string>("--custom", "Custom arguments");
-        var localeOption = new Option<string>("--locale", "Locale (BCP47 format)");
-        var acceptPackageAgreementsOption = new Option<bool>("--accept-package-agreements", "Accept package license agreements");
-        var acceptSourceAgreementsOption = new Option<bool>("--accept-source-agreements", "Accept source license agreements");
-        var ignoreSecurityHashOption = new Option<bool>("--ignore-security-hash", "Ignore security hash mismatch");
+        var logOption = new Option<string>("--log", "Log location");
+        var overrideOption = new Option<string>("--override", "Override arguments to be passed on to the installer");
+        var forceOption = new Option<bool>("--force", "Override the installer hash check");
+        var skipDependenciesOption = new Option<bool>("--skip-dependencies", "Skips processing package dependencies");
+        var headerOption = new Option<string>("--header", "Optional Windows-Package-Manager REST source HTTP header");
+        var installerTypeOption = new Option<string>("--installer-type", "Select the installer type");
+        var customOption = new Option<string>("--custom", "Arguments to be passed on to the installer in addition to the defaults");
+        var localeOption = new Option<string>("--locale", "Locale to use (BCP47 format)");
+        var acceptPackageAgreementsOption = new Option<bool>("--accept-package-agreements", "Accept all license agreements required for the package");
+        var acceptSourceAgreementsOption = new Option<bool>("--accept-source-agreements", "Accept all source agreements required for the source");
+        var ignoreSecurityHashOption = new Option<bool>("--ignore-security-hash", "Ignore the installer hash check failure");
 
         command.Add(idArgument);
         command.Add(idOption);
@@ -377,12 +377,12 @@ public class CommandBuilder(IGistGetService gistGetService)
     {
         var command = new Command("pin", "Manage package pins");
 
-        var add = new Command("add", "Pin a package version");
-        var addId = new Argument<string>("package", "Package ID");
-        var addVersion = new Option<string>("--version", "Version to pin") { IsRequired = true };
-        var addBlocking = new Option<bool>("--blocking", "Use blocking pin type");
-        var addGating = new Option<bool>("--gating", "Use gating pin type");
-        var addForce = new Option<bool>("--force", "Force overwrite existing pin");
+        var add = new Command("add", "Adds a package pin and saves to Gist");
+        var addId = new Argument<string>("package", "Package to pin");
+        var addVersion = new Option<string>("--version", "The version to pin") { IsRequired = true };
+        var addBlocking = new Option<bool>("--blocking", "Block the given version from being upgraded");
+        var addGating = new Option<bool>("--gating", "The given version is the maximum allowed version");
+        var addForce = new Option<bool>("--force", "Force running the command even if there is an existing pin");
         add.Add(addId);
         add.Add(addVersion);
         add.Add(addBlocking);
@@ -405,8 +405,8 @@ public class CommandBuilder(IGistGetService gistGetService)
         });
         command.Add(add);
 
-        var remove = new Command("remove", "Remove a package pin");
-        var removeId = new Argument<string>("package", "Package ID");
+        var remove = new Command("remove", "Removes a package pin and updates Gist");
+        var removeId = new Argument<string>("package", "Package to unpin");
         remove.Add(removeId);
         remove.SetHandler(async id =>
         {
@@ -414,7 +414,7 @@ public class CommandBuilder(IGistGetService gistGetService)
         }, removeId);
         command.Add(remove);
 
-        var list = new Command("list", "List pinned packages");
+        var list = new Command("list", "List current pins [Passthrough]");
         var listArgs = new Argument<string[]>("args") { Arity = ArgumentArity.ZeroOrMore };
         list.Add(listArgs);
         list.SetHandler(async args =>
@@ -425,7 +425,7 @@ public class CommandBuilder(IGistGetService gistGetService)
         }, listArgs);
         command.Add(list);
 
-        var reset = new Command("reset", "Reset all pins");
+        var reset = new Command("reset", "Resets pins [Passthrough]");
         var resetArgs = new Argument<string[]>("args") { Arity = ArgumentArity.ZeroOrMore };
         reset.Add(resetArgs);
         reset.SetHandler(async args =>
@@ -442,14 +442,26 @@ public class CommandBuilder(IGistGetService gistGetService)
     private Command[] BuildWingetPassthroughCommands()
     {
         var commands = new List<Command>();
-        var wingetCommands = new[] {
-            "list", "search", "show", "source", "settings", "features",
-            "hash", "validate", "configure", "download", "repair", "dscv3", "mcp"
+        var wingetCommands = new Dictionary<string, string>
+        {
+            ["list"] = "Displays installed packages [Passthrough]",
+            ["search"] = "Finds and shows basic information of packages [Passthrough]",
+            ["show"] = "Shows information about a package [Passthrough]",
+            ["source"] = "Manage sources of packages [Passthrough]",
+            ["settings"] = "Open settings or set administrator settings [Passthrough]",
+            ["features"] = "Shows the status of experimental features [Passthrough]",
+            ["hash"] = "Helper to hash installer files [Passthrough]",
+            ["validate"] = "Validates a manifest file [Passthrough]",
+            ["configure"] = "Configures the system into a desired state [Passthrough]",
+            ["download"] = "Downloads the installer from a given package [Passthrough]",
+            ["repair"] = "Repairs the selected package [Passthrough]",
+            ["dscv3"] = "DSC v3 command based resource [Passthrough]",
+            ["mcp"] = "Model Context Protocol server [Passthrough]"
         };
 
-        foreach (var cmd in wingetCommands)
+        foreach (var (cmd, description) in wingetCommands)
         {
-            var command = new Command(cmd, $"Pass through to winget {cmd}");
+            var command = new Command(cmd, description);
             var argsArgument = new Argument<string[]>("arguments") { Arity = ArgumentArity.ZeroOrMore };
             command.Add(argsArgument);
 
