@@ -1,5 +1,0 @@
-7zip.7zip:
-Microsoft.VisualStudioCode.Insiders:
-  override: /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath
-Zoom.Zoom:
-  uninstall: true
