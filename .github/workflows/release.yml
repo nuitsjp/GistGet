@@ -67,15 +67,6 @@ jobs:
             -p:Version=${{ steps.version.outputs.VERSION }} `
             --self-contained true
 
-          # Provide a lower-case command alias for portable installs (WinGet shims, etc.)
-          $primaryExe = Join-Path $publishPath "GistGet.exe"
-          $aliasExe = Join-Path $publishPath "gistget.exe"
-          if (Test-Path $primaryExe) {
-            Copy-Item -Path $primaryExe -Destination $aliasExe -Force
-          } else {
-            Write-Host "Warning: '$primaryExe' not found; skip alias creation."
-          }
-
       - name: Create ZIP archive
         shell: pwsh
         run: |
