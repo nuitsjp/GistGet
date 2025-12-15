@@ -29,6 +29,12 @@
 winget install nuitsjp.GistGet
 ```
 
+インストール後は以下で起動できます:
+
+```powershell
+gistget --help
+```
+
 ## 使用方法
 
 ### 認証
