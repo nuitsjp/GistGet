@@ -198,12 +198,21 @@ artifacts/
 # wingetcreate のインストール
 winget install Microsoft.WingetCreate
 
-# マニフェスト更新と PR 作成
+# マニフェストをローカル出力し、PortableCommandAlias を反映してから PR 作成
+$outDir = "./winget-manifest"
+if (Test-Path $outDir) { Remove-Item -Recurse -Force $outDir }
+
 wingetcreate update nuitsjp.GistGet `
-    --version 0.2.0 `
-    --urls https://github.com/nuitsjp/GistGet/releases/download/v0.2.0/GistGet-win-x64.zip `
-           https://github.com/nuitsjp/GistGet/releases/download/v0.2.0/GistGet-win-arm64.zip `
-    --submit
+   --version 0.2.0 `
+   --urls https://github.com/nuitsjp/GistGet/releases/download/v0.2.0/GistGet-win-x64.zip `
+         https://github.com/nuitsjp/GistGet/releases/download/v0.2.0/GistGet-win-arm64.zip `
+   --out $outDir
+
+# installer マニフェスト (*.installer.yaml) の NestedInstallerFiles に以下を設定して保存
+#   - RelativeFilePath: GistGet.exe
+#   - PortableCommandAlias: gistget
+
+wingetcreate submit $outDir --prtitle "Update nuitsjp.GistGet to 0.2.0"
 ```
 
 ---
