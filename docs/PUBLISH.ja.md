@@ -1,6 +1,6 @@
 # GistGet パッケージング・発行ガイド
 
-このドキュメントでは、GistGet CLI を WinGet にパッケージングして発行するための設計と手順を説明します。
+このドキュメントでは、GistGet CLIをWinGetにパッケージングして発行するための設計と手順を説明します。
 
 ## 目次
 
@@ -17,7 +17,7 @@
 
 ## 概要
 
-GistGet は以下の方法で配布されます:
+GistGetは以下の方法で配布されます:
 
 | 配布先 | 形式 | 対応アーキテクチャ |
 |--------|------|-------------------|
@@ -31,8 +31,8 @@ GistGet は以下の方法で配布されます:
 
 ### バージョニング
 
-- セマンティックバージョニング (`MAJOR.MINOR.PATCH`) を採用
-- Git タグ形式: `v0.1.0`, `v1.0.0` など
+- セマンティックバージョニング（`MAJOR.MINOR.PATCH`）を採用
+- Gitタグ形式: `v0.1.0`、`v1.0.0`など
 - プレリリース: `v0.1.0-beta.1`, `v1.0.0-rc.1` など
 
 ---
@@ -144,14 +144,14 @@ dotnet publish src/GistGet/GistGet.csproj -c Release -r win-arm64 --self-contain
    git push origin main --tags
    ```
 
-3. **GitHub Actions が自動実行**
-   - x64/ARM64 両方のビルドが並列実行
-   - GitHub Releases に自動アップロード
-   - winget-pkgs への PR が自動作成 (正式リリースのみ)
+3. **GitHub Actionsが自動実行**
+   - x64/ARM64両方のビルドが並列実行
+   - GitHub Releasesに自動アップロード
+   - winget-pkgsへのPRが自動作成（正式リリースのみ）
 
 ### プレリリース
 
-プレリリースタグ (`-alpha`, `-beta`, `-rc` など) を使用すると、winget-pkgs への PR 作成がスキップされます:
+プレリリースタグ（`-alpha`、`-beta`、`-rc`など）を使用すると、winget-pkgsへのPR作成がスキップされます:
 
 ```powershell
 git tag v0.2.0-beta.1
@@ -221,7 +221,7 @@ wingetcreate submit $outDir --prtitle "Update nuitsjp.GistGet to 0.2.0"
 
 ### マニフェスト形式
 
-GistGet は **Singleton マニフェスト形式** (単一ファイル) を使用しています。
+GistGetは**Singletonマニフェスト形式**（単一ファイル）を使用しています。
 
 > **注意**: ローカルにマニフェストファイルは保持していません。
 > `wingetcreate` が winget-pkgs リポジトリのマニフェストを自動管理します。
@@ -263,13 +263,13 @@ Installers:
 
 ### インストール先
 
-WinGet portable アプリは以下にインストールされます:
+WinGet portableアプリは以下にインストールされます:
 
 ```
 %LOCALAPPDATA%\Microsoft\WinGet\Packages\nuitsjp.GistGet_Microsoft.Winget.Source_<hash>\
 ```
 
-シンボリックリンク (PATH に追加される):
+シンボリックリンク（PATHに追加される）:
 ```
 %LOCALAPPDATA%\Microsoft\WinGet\Links\gistget.exe
 ```
@@ -290,9 +290,9 @@ WinGet portable アプリは以下にインストールされます:
 1. [GitHub Settings > Developer settings > Personal access tokens](https://github.com/settings/tokens) を開く
 2. "Generate new token (classic)" をクリック
 3. 以下のスコープを選択:
-   - `public_repo` (パブリックリポジトリへのアクセス)
+   - `public_repo`（パブリックリポジトリへのアクセス）
 4. トークンを生成してコピー
-5. リポジトリの Settings > Secrets and variables > Actions > New repository secret
+5. リポジトリのSettings > Secrets and variables > Actions > New repository secret
 6. 名前: `WINGET_GITHUB_TOKEN`、値: 生成したトークン
 
 ---
@@ -306,7 +306,7 @@ WinGet portable アプリは以下にインストールされます:
 error NETSDK1045: The current .NET SDK does not support targeting .NET 8.0
 ```
 
-**解決策**: .NET 8.0 SDK をインストール
+**解決策**: .NET 8.0 SDKをインストール
 ```powershell
 winget install Microsoft.DotNet.SDK.8
 ```
@@ -316,7 +316,7 @@ winget install Microsoft.DotNet.SDK.8
 error MSB3073: The command "..." exited with code 1.
 ```
 
-**解決策**: Windows SDK のインストールを確認
+**解決策**: Windows SDKのインストールを確認
 ```powershell
 winget install Microsoft.WindowsSDK.10.0.26100
 ```
@@ -325,7 +325,7 @@ winget install Microsoft.WindowsSDK.10.0.26100
 
 #### "Invalid manifest" エラー
 
-**解決策**: wingetcreate でマニフェストを検証
+**解決策**: wingetcreateでマニフェストを検証
 ```powershell
 # wingetcreate が生成したマニフェストを確認
 wingetcreate show nuitsjp.GistGet
@@ -354,16 +354,16 @@ Get-FileHash -Algorithm SHA256 artifacts/GistGet-win-x64.zip
 ### リリース前チェック
 
 - [ ] すべてのテストがパスしている
-- [ ] `csproj` のバージョンが更新されている
-- [ ] CHANGELOG.md が更新されている
+- [ ] `csproj`のバージョンが更新されている
+- [ ] CHANGELOG.mdが更新されている
 - [ ] `WINGET_GITHUB_TOKEN` シークレットが設定されている
 
 ### リリース後チェック
 
-- [ ] GitHub Releases にアーティファクトがアップロードされている
-- [ ] SHA256 ハッシュが正しい
-- [ ] winget-pkgs への PR が作成されている (正式リリースの場合)
-- [ ] `winget search nuitsjp.GistGet` で検索可能 (PR マージ後)
+- [ ] GitHub Releasesにアーティファクトがアップロードされている
+- [ ] SHA256ハッシュが正しい
+- [ ] winget-pkgsへのPRが作成されている（正式リリースの場合）
+- [ ] `winget search nuitsjp.GistGet`で検索可能（PRマージ後）
 
 ---
 

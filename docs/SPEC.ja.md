@@ -1,13 +1,13 @@
 # GistGet 仕様書
 
-GistGet は、Windows Package Manager (winget) のパッケージ管理状態を GitHub Gist を介してクラウド同期するツールです。
+GistGetは、Windows Package Manager(winget)のパッケージ管理状態をGitHub Gistを介してクラウド同期するツールです。
 
 > **対応 winget バージョン**: v1.12.420 以降  
 > **最終更新**: 2025年12月
 
 ## 設計原則
 
-1. **winget の透過的なラッパー**: winget のオプションを極力そのままパススルーする
+1. **wingetの透過的なラッパー**: wingetのオプションを極力そのままパススルーする
 2. **Gist を単一情報源 (Single Source of Truth)**: `GistGet.yaml`（説明: "GistGet Packages"）がすべてのデバイスで共有される正規の状態
 3. **明示的な ID 指定**: 曖昧な `--query` や `--name` は禁止し、`--id` による一意な指定を必須とする
 4. **シンプルなバージョン管理**: pinする場合のみバージョンを管理し、それ以外は常に最新版を使用
@@ -18,7 +18,7 @@ GistGet は、Windows Package Manager (winget) のパッケージ管理状態を
 
 ### 概要
 
-`GistGet.yaml` は、パッケージ ID をキーとし、インストールオプションと同期フラグを値とするマップです。
+`GistGet.yaml`は、パッケージIDをキーとし、インストールオプションと同期フラグを値とするマップです。
 
 ```yaml
 <PackageId>:
@@ -44,11 +44,11 @@ GistGet は、Windows Package Manager (winget) のパッケージ管理状態を
   header: <string>
 ```
 
-### パラメータ詳細
+### パラメーター詳細
 
-#### コアパラメータ
+#### コアパラメーター
 
-| パラメータ | 型 | 説明 |
+| パラメーター | 型 | 説明 |
 |-----------|-----|------|
 | `pin` | string | ピン留めするバージョン。省略でピン留めなし（常に最新版）。ワイルドカード `*` 使用可（例: `1.7.*`）。 |
 | `pinType` | enum | ピンの種類。`pin` が指定されている場合のみ有効。省略時は `pinning`。 |
@@ -63,11 +63,11 @@ GistGet は、Windows Package Manager (winget) のパッケージ管理状態を
 | `blocking` | `upgrade --all` から除外。明示的 upgrade も可能（v1.12.420 での動作）。 | ❌ スキップ | ✅ 可能※ | ✅ 可能※ |
 | `gating` | 指定バージョン範囲内のみ upgrade 可能（例: `1.7.*`）。 | 範囲内のみ | 範囲内のみ | 範囲内のみ |
 
-※ 公式ドキュメントでは blocking は明示的 upgrade もブロックとあるが、v1.12.420 では可能。
+※公式ドキュメントではblockingは明示的upgradeもブロックとあるが、v1.12.420では可能。
 
-#### インストールオプション（winget パススルー）
+#### インストールオプション(wingetパススルー)
 
-| パラメータ | winget オプション | 説明 |
+| パラメーター | wingetオプション | 説明 |
 |-----------|------------------|------|
 | `scope` | `--scope` | `user` または `machine` |
 | `architecture` | `--architecture` | `x86`, `x64`, `arm`, `arm64` |
@@ -126,29 +126,29 @@ DeepL.DeepL:
 | `auth login` | ❌ | ❌ | GitHub Device Flow でログイン。 |
 | `auth logout` | ❌ | ❌ | GitHub からログアウト。 |
 | `auth status` | ❌ | ❌ | 認証状態を表示。 |
-| `sync` | ❌ | ✅ | Gist の `GistGet.yaml` とローカル状態を同期。差分を検出し、インストール/アンインストール/pin設定を実行。 |
-| `install` | ❌ | ✅ | パッケージをインストールし、Gist に保存。`--id` 必須。インストール済みの場合はアップグレード。 |
-| `uninstall` | ❌ | ✅ | パッケージをアンインストールし、Gist を更新（`uninstall: true` を設定）。`--id` 必須。 |
+| `sync` | ❌ | ✅ | Gistの`GistGet.yaml`とローカル状態を同期。差分を検出し、インストール/アンインストール/pin設定を実行。 |
+| `install` | ❌ | ✅ | パッケージをインストールし、Gistに保存。`--id`必須。インストール済みの場合はアップグレード。 |
+| `uninstall` | ❌ | ✅ | パッケージをアンインストールし、Gistを更新(`uninstall: true`を設定)。`--id`必須。 |
 | `upgrade` | 条件付き | 条件付き | ID指定時: upgrade後にGist更新。ID未指定時: wingetにパススルー。 |
-| `pin add` | ❌ | ✅ | パッケージをピン留めし、Gist に保存。`--version` 必須。`--blocking` / `--gating` / `--force` を指定可能。 |
-| `pin remove` | ❌ | ✅ | ピン留めを解除し、Gist を更新（`pin` を削除）。 |
-| `pin list` | ✅ | ❌ | winget にパススルー。 |
-| `pin reset` | ✅ | ❌ | winget にパススルー。 |
-| `export` | ❌ | ❌ | ローカルのインストール済みパッケージを YAML 形式で出力。 |
-| `import` | ❌ | ✅ | YAML ファイルを Gist にインポート。 |
-| `list` | ✅ | ❌ | winget にパススルー。 |
-| `search` | ✅ | ❌ | winget にパススルー。 |
-| `show` | ✅ | ❌ | winget にパススルー。 |
-| `source` | ✅ | ❌ | winget にパススルー。 |
-| `settings` | ✅ | ❌ | winget にパススルー。 |
-| `features` | ✅ | ❌ | winget にパススルー。 |
-| `hash` | ✅ | ❌ | winget にパススルー。 |
-| `validate` | ✅ | ❌ | winget にパススルー。 |
-| `configure` | ✅ | ❌ | winget にパススルー。 |
-| `download` | ✅ | ❌ | winget にパススルー。 |
-| `repair` | ✅ | ❌ | winget にパススルー。 |
-| `dscv3` | ✅ | ❌ | winget にパススルー。 |
-| `mcp` | ✅ | ❌ | winget にパススルー。 |
+| `pin add` | ❌ | ✅ | パッケージをピン留めし、Gistに保存。`--version`必須。`--blocking` / `--gating` / `--force`を指定可能。 |
+| `pin remove` | ❌ | ✅ | ピン留めを解除し、Gistを更新(`pin`を削除)。 |
+| `pin list` | ✅ | ❌ | wingetにパススルー。 |
+| `pin reset` | ✅ | ❌ | wingetにパススルー。 |
+| `export` | ❌ | ❌ | ローカルのインストール済みパッケージをYAML形式で出力。 |
+| `import` | ❌ | ✅ | YAMLファイルをGistにインポート。 |
+| `list` | ✅ | ❌ | wingetにパススルー。 |
+| `search` | ✅ | ❌ | wingetにパススルー。 |
+| `show` | ✅ | ❌ | wingetにパススルー。 |
+| `source` | ✅ | ❌ | wingetにパススルー。 |
+| `settings` | ✅ | ❌ | wingetにパススルー。 |
+| `features` | ✅ | ❌ | wingetにパススルー。 |
+| `hash` | ✅ | ❌ | wingetにパススルー。 |
+| `validate` | ✅ | ❌ | wingetにパススルー。 |
+| `configure` | ✅ | ❌ | wingetにパススルー。 |
+| `download` | ✅ | ❌ | wingetにパススルー。 |
+| `repair` | ✅ | ❌ | wingetにパススルー。 |
+| `dscv3` | ✅ | ❌ | wingetにパススルー。 |
+| `mcp` | ✅ | ❌ | wingetにパススルー。 |
 
 ---
 
@@ -156,7 +156,7 @@ DeepL.DeepL:
 
 #### sync
 
-Gist の `GistGet.yaml` とローカルのパッケージ状態を同期します。
+Gistの`GistGet.yaml`とローカルのパッケージ状態を同期します。
 
 ```
 gistget sync [--url <yaml-url>]
@@ -164,28 +164,28 @@ gistget sync [--url <yaml-url>]
 
 | オプション | 説明 |
 |-----------|------|
-| `--url` | 同期元の YAML URL。Gist の Raw URL やその他の HTTP/HTTPS URL を指定可能。省略時は認証ユーザーの Gist を使用。 |
+| `--url` | 同期元のYAML URL。GistのRaw URLやその他のHTTP/HTTPS URLを指定可能。省略時は認証ユーザーのGistを使用。 |
 
 **処理フロー:**
 
-1. Gist から `GistGet.yaml` を取得
+1. Gistから`GistGet.yaml`を取得
 2. ローカルのインストール済みパッケージを取得（`winget list`）
 3. 差分を計算:
-   - Gist にあり、ローカルに未インストール → インストール対象
-   - Gist で `uninstall: true`、ローカルにインストール済み → アンインストール対象
+   - Gistにあり、ローカルに未インストール → インストール対象
+   - Gistで`uninstall: true`、ローカルにインストール済み → アンインストール対象
 4. アンインストール実行（`winget uninstall`）
 5. インストール実行（`winget install`）
-6. pin の同期:
-   - YAML に `pin` あり → `winget pin add --version <pin> [--blocking | --gating]`
-   - YAML に `pin` なし → `winget pin remove`（存在すれば）
-7. `--url` 省略時のみ、更新した `GistGet.yaml` を Gist に保存
+6. pinの同期:
+   - YAMLに`pin`あり → `winget pin add --version <pin> [--blocking | --gating]`
+   - YAMLに`pin`なし → `winget pin remove`（存在すれば）
+7. `--url`省略時のみ、更新した`GistGet.yaml`をGistに保存
 
 > [!NOTE]
-> sync は **Gist → ローカルの片方向同期**です。ローカルにのみ存在するパッケージは Gist に書き戻されません。
+> syncは**Gist → ローカルの片方向同期**です。ローカルにのみ存在するパッケージはGistに書き戻されません。
 
 **同期マトリクス:**
 
-以下の表は、ローカル状態（縦軸）と Gist 状態（横軸）の組み合わせに対する sync の動作を定義します。
+以下の表は、ローカル状態（縦軸）とGist状態（横軸）の組み合わせに対するsyncの動作を定義します。
 
 |  | Gist: エントリなし | Gist: `uninstall: true` | Gist: エントリあり（pin なし） | Gist: エントリあり（pin あり） |
 |--|-------------------|------------------------|-------------------------------|-------------------------------|
@@ -194,33 +194,33 @@ gistget sync [--url <yaml-url>]
 | **ローカル: インストール済み + pin あり（一致）** | 何もしない ※1 | アンインストール + pin削除 | pin削除 | 何もしない |
 | **ローカル: インストール済み + pin あり（不一致）** | 何もしない ※1 | アンインストール + pin削除 | pin削除 | pin更新 |
 
-※1: ローカルにのみ存在するパッケージは Gist に自動追加されません。明示的に `gistget install` または `gistget export` + `gistget import` を使用してください。
+※1: ローカルにのみ存在するパッケージはGistに自動追加されません。明示的に`gistget install`または`gistget export` + `gistget import`を使用してください。
 
-**pinType の同期:**
+**pinTypeの同期:**
 
-| Gist の pinType | 動作 |
+| GistのpinType | 動作 |
 |-----------------|------|
-| `pinning`（または省略） | `winget pin add --version <pin>` |
+| `pinning`(または省略) | `winget pin add --version <pin>` |
 | `blocking` | `winget pin add --version <pin> --blocking` |
-| `gating` | `winget pin add --version <pin>`（ワイルドカード使用） |
+| `gating` | `winget pin add --version <pin>`(ワイルドカード使用) |
 
 **バージョン不一致時の動作:**
 
-sync はバージョンの**アップグレード/ダウングレードを行いません**。pin の設定のみを同期します。
+syncはバージョンの**アップグレード/ダウングレードを行いません**。pinの設定のみを同期します。
 
 | 状況 | 動作 |
 |------|------|
-| Gist: `pin: "1.7"`, ローカル: v1.8 インストール済み | pin を `1.7` に設定（次回 upgrade --all から除外） |
-| Gist: `pin: "2.0"`, ローカル: v1.5 インストール済み | pin を `2.0` に設定（アップグレードは行わない） |
-| Gist: pin なし, ローカル: v1.7 + pin あり | pin を削除（upgrade --all の対象になる） |
+| Gist: `pin: "1.7"`, ローカル: v1.8インストール済み | pinを`1.7`に設定(次回upgrade --allから除外) |
+| Gist: `pin: "2.0"`, ローカル: v1.5インストール済み | pinを`2.0`に設定(アップグレードは行わない) |
+| Gist: pinなし, ローカル: v1.7 + pinあり | pinを削除(upgrade --allの対象になる) |
 
-バージョンを変更したい場合は、明示的に `gistget upgrade --id <id> --version <version>` を実行してください。
+バージョンを変更したい場合は、明示的に`gistget upgrade --id <id> --version <version>`を実行してください。
 
 ---
 
 #### install
 
-パッケージをインストールし、`GistGet.yaml` を更新して Gist に保存します。
+パッケージをインストールし、`GistGet.yaml`を更新してGistに保存します。
 
 ```
 gistget install --id <package-id> [--version <version>] [options]
@@ -228,46 +228,46 @@ gistget install --id <package-id> [--version <version>] [options]
 
 | オプション | 必須 | 説明 |
 |-----------|:----:|------|
-| `--id` | ✅ | パッケージ ID |
+| `--id` | ✅ | パッケージID |
 | `--version` | ❌ | インストールするバージョン。省略時は最新版。 |
-| その他 | ❌ | winget install オプション（`--scope`, `--silent` 等） |
+| その他 | ❌ | winget installオプション(`--scope`, `--silent`等) |
 
-**winget install の重要な動作:**
+**winget installの重要な動作:**
 
-- デフォルトでは、インストール済みパッケージに対して install を実行すると**アップグレード**が行われる
-- `--no-upgrade` オプションでアップグレードをスキップ可能
-- `--version` 指定時、インストール済みバージョンと異なる場合はそのバージョンに変更される
+- デフォルトでは、インストール済みパッケージに対してinstallを実行すると**アップグレード**が行われる
+- `--no-upgrade`オプションでアップグレードをスキップ可能
+- `--version`指定時、インストール済みバージョンと異なる場合はそのバージョンに変更される
 
 **同期マトリクス:**
 
 |  | Gist: エントリなし | Gist: エントリあり |
 |--|-------------------|-------------------|
-| **ローカル: 未インストール** | インストール → Gist に追加 | インストール → Gist 更新 |
-| **ローカル: インストール済み（同バージョン）** | Gist に追加 ※1 | 何もしない（`--no-upgrade` 使用） |
-| **ローカル: インストール済み（旧バージョン）** | アップグレード → Gist に追加 | アップグレード → Gist 更新 |
+| **ローカル: 未インストール** | インストール → Gistに追加 | インストール → Gist更新 |
+| **ローカル: インストール済み(同バージョン)** | Gistに追加 ※1 | 何もしない(`--no-upgrade`使用) |
+| **ローカル: インストール済み(旧バージョン)** | アップグレード → Gistに追加 | アップグレード → Gist更新 |
 
-※1: `--version` 指定なしの場合。`--version` 指定時はそのバージョンに変更。
+※1: `--version`指定なしの場合。`--version`指定時はそのバージョンに変更。
 
 **処理フロー:**
 
-1. Gist から `GistGet.yaml` を取得
-2. `winget install --id <id> [--version <version>] [options]` を実行
+1. Gistから`GistGet.yaml`を取得
+2. `winget install --id <id> [--version <version>] [options]`を実行
 3. 失敗時はエラー終了
 4. 成功時:
-   - Gist に既存の `pin` がある場合は `winget pin add --id <id> --version <pin> [--blocking | --gating]` でローカルに同期
-   - `GistGet.yaml` にエントリを追加/更新（インストールオプションを保存、`pin` が存在する場合のみ `version` も保存）
-5. Gist に `GistGet.yaml` を保存
+   - Gistに既存の`pin`がある場合は`winget pin add --id <id> --version <pin> [--blocking | --gating]`でローカルに同期
+   - `GistGet.yaml`にエントリを追加/更新（インストールオプションを保存、`pin`が存在する場合のみ`version`も保存）
+5. Gistに`GistGet.yaml`を保存
 
 **注意:**
-- `--id` は必須。`--query` や `--name` による曖昧な指定はエラー。
-- Gist に pin が存在する場合は install 時にローカルへ pin を同期する。pin が不要な場合は `gistget pin remove` を使用する。
-- バージョンを指定しても pin を指定しない限り YAML には `version` を保存しない。
+- `--id`は必須。`--query`や`--name`による曖昧な指定はエラー。
+- Gistにpinが存在する場合はinstall時にローカルへpinを同期する。pinが不要な場合は`gistget pin remove`を使用する。
+- バージョンを指定してもpinを指定しない限りYAMLには`version`を保存しない。
 
 ---
 
 #### uninstall
 
-パッケージをアンインストールし、`GistGet.yaml` を更新して Gist に保存します。
+パッケージをアンインストールし、`GistGet.yaml`を更新してGistに保存します。
 
 ```
 gistget uninstall --id <package-id>
@@ -275,29 +275,29 @@ gistget uninstall --id <package-id>
 
 | オプション | 必須 | 説明 |
 |-----------|:----:|------|
-| `--id` | ✅ | パッケージ ID |
+| `--id` | ✅ | パッケージID |
 
 **処理フロー:**
 
-1. Gist から `GistGet.yaml` を取得
-2. `winget uninstall --id <id>` を実行
+1. Gistから`GistGet.yaml`を取得
+2. `winget uninstall --id <id>`を実行
 3. 失敗時はエラー終了
 4. 成功時:
-   - `GistGet.yaml` の該当エントリに `uninstall: true` を設定
-   - `winget pin remove <id>` を実行（pin が存在すれば）
-5. Gist に `GistGet.yaml` を保存
+   - `GistGet.yaml`の該当エントリに`uninstall: true`を設定
+   - `winget pin remove <id>`を実行（pinが存在すれば）
+5. Gistに`GistGet.yaml`を保存
 
 **注意:**
-- アンインストールしてもエントリは削除されず、`uninstall: true` が設定される。
-- これにより、他のデバイスで `sync` 実行時に同じパッケージがアンインストールされる。
-- エントリを完全に削除するには、Gist を直接編集する。
-- **重要**: `winget uninstall` は pin を自動削除しないため、明示的に `winget pin remove` を実行する。
+- アンインストールしてもエントリは削除されず、`uninstall: true`が設定される。
+- これにより、他のデバイスで`sync`実行時に同じパッケージがアンインストールされる。
+- エントリを完全に削除するには、Gistを直接編集する。
+- **重要**: `winget uninstall`はpinを自動削除しないため、明示的に`winget pin remove`を実行する。
 
 ---
 
 #### upgrade
 
-パッケージをアップグレードし、`GistGet.yaml` を更新して Gist に保存します。
+パッケージをアップグレードし、`GistGet.yaml`を更新してGistに保存します。
 
 ```
 gistget upgrade [<package-id>] [--id <package-id>] [options]
@@ -318,7 +318,7 @@ gistget upgrade [<package-id>] [--id <package-id>] [options]
 
 **同期マトリクス（ID 指定時）:**
 
-以下の表は、ローカル状態（縦軸）と Gist 状態（横軸）の組み合わせに対する upgrade の動作を定義します。
+以下の表は、ローカル状態（縦軸）とGist状態（横軸）の組み合わせに対するupgradeの動作を定義します。
 
 |  | Gist: エントリなし | Gist: エントリあり（pin なし） | Gist: エントリあり（pin あり） |
 |--|-------------------|-------------------------------|-------------------------------|
@@ -326,37 +326,37 @@ gistget upgrade [<package-id>] [--id <package-id>] [options]
 | **ローカル: インストール済み + pin なし** | upgrade → Gist に追加 | upgrade のみ ※2 | upgrade → Gist の pin を新バージョンに更新 + ローカル pin 更新 |
 | **ローカル: インストール済み + pin あり** | upgrade → Gist に追加（pin 含む）→ ローカル pin 更新 | upgrade → Gist に pin 追加 → ローカル pin 更新 | upgrade → Gist の pin を新バージョンに更新 → ローカル pin 更新 |
 
-※1: winget upgrade は未インストールパッケージに対してエラーを返す。  
-※2: Gist に既にエントリがあり、pin 指定もない場合は YAML 変更なし（最新追従の状態を維持）。
+※1: winget upgradeは未インストールパッケージに対してエラーを返す。  
+※2: Gistにすでにエントリがあり、pin指定もない場合はYAML変更なし（最新追従の状態を維持）。
 
 **Gist を更新する意図:**
 
-1. **pin の同期維持**: ローカルで pin されたバージョンを upgrade した場合、pin を新バージョンに更新する必要がある
-2. **新規エントリの登録**: Gist に未登録のパッケージを upgrade した場合、エントリを追加して管理対象にする
-3. **複数デバイス間の一貫性**: upgrade 結果を他のデバイスに反映可能にする
+1. **pinの同期維持**: ローカルでpinされたバージョンをupgradeした場合、pinを新バージョンに更新する必要がある
+2. **新規エントリの登録**: Gistに未登録のパッケージをupgradeした場合、エントリを追加して管理対象にする
+3. **複数デバイス間の一貫性**: upgrade結果を他のデバイスに反映可能にする
 
 **処理フロー:**
 
-1. `winget upgrade --id <id> [options]` を実行
+1. `winget upgrade --id <id> [options]`を実行
 2. 失敗時はエラー終了
 3. 成功時:
-    - Gist から `GistGet.yaml` を取得
+    - Gistから`GistGet.yaml`を取得
     - エントリがなければ追加
-    - ローカルに pin がある場合:
-       - `winget pin add --id <id> --version <新バージョン> --force` で pin を更新
-       - Gist の `pin` を新バージョンに更新
-4. Gist に `GistGet.yaml` を保存
+    - ローカルにpinがある場合:
+       - `winget pin add --id <id> --version <新バージョン> --force`でpinを更新
+       - Gistの`pin`を新バージョンに更新
+4. Gistに`GistGet.yaml`を保存
 
 **注意:**
-- pin がある状態で明示的に upgrade すると、pin のバージョンも新しいバージョンに自動更新される（winget の動作）。
-- ID 未指定時は `winget upgrade` にそのままパススルーされ、Gist 同期は行われない。
-- pin の新規設定・変更は `gistget pin add` コマンドで行う。upgrade は既存 pin の追従のみ。
+- pinがある状態で明示的にupgradeすると、pinのバージョンも新しいバージョンに自動更新される（wingetの動作）。
+- ID未指定時は`winget upgrade`にそのままパススルーされ、Gist同期は行われない。
+- pinの新規設定・変更は`gistget pin add`コマンドで行う。upgradeは既存pinの追従のみ。
 
 ---
 
 #### pin add
 
-パッケージをピン留めし、`GistGet.yaml` を更新して Gist に保存します。
+パッケージをピン留めし、`GistGet.yaml`を更新してGistに保存します。
 
 ```
 gistget pin add <package-id> --version <version>
@@ -364,31 +364,31 @@ gistget pin add <package-id> --version <version>
 
 | オプション | 必須 | 説明 |
 |-----------|:----:|------|
-| `<package-id>` | ✅ | パッケージ ID |
-| `--version` | ✅ | ピン留めするバージョン（ワイルドカード `*` 使用可） |
-| `--blocking` | ❌ | pinType を blocking として追加 |
-| `--gating` | ❌ | pinType を gating として追加 |
-| `--force` | ❌ | 既存 pin を強制上書き |
+| `<package-id>` | ✅ | パッケージID |
+| `--version` | ✅ | ピン留めするバージョン（ワイルドカード`*`使用可） |
+| `--blocking` | ❌ | pinTypeをblockingとして追加 |
+| `--gating` | ❌ | pinTypeをgatingとして追加 |
+| `--force` | ❌ | すでにpinが存在する場合に強制上書き |
 
 **備考:**
-- CLI で blocking/gating を明示指定可能。両方指定した場合は後勝ちではなく、排他で運用すること。
-- 既に `GistGet.yaml` に `pinType` がある場合は指定がなければその値を維持し、winget 実行時も該当フラグ（`--blocking` / `--gating`）を付与する。
-- `pinType` 未指定の場合は省略（= pinning）として扱う。
+- CLIでblocking/gatingを明示指定可能。両方指定した場合は後勝ちではなく、排他で運用すること。
+- すでに`GistGet.yaml`に`pinType`がある場合は指定がなければその値を維持し、winget実行時も該当フラグ（`--blocking` / `--gating`）を付与する。
+- `pinType`未指定の場合は省略（= pinning）として扱う。
 
 **処理フロー:**
 
-1. Gist から `GistGet.yaml` を取得
-2. `winget pin add --id <id> --version <version> --force` を実行（`pinType` に応じて `--blocking` / `--gating` を付与、CLI 指定があればそれを優先）
+1. Gistから`GistGet.yaml`を取得
+2. `winget pin add --id <id> --version <version> --force`を実行（`pinType`に応じて`--blocking` / `--gating`を付与、CLI指定があればそれを優先）
 3. 失敗時はエラー終了
 4. 成功時:
-   - `GistGet.yaml` の `pin`（および `version`）を更新し、`pinType` は既存値を維持（CLI 指定があれば上書き）
-5. Gist に `GistGet.yaml` を保存
+   - `GistGet.yaml`の`pin`（および`version`）を更新し、`pinType`は既存値を維持（CLI指定があれば上書き）
+5. Gistに`GistGet.yaml`を保存
 
 ---
 
 #### pin remove
 
-ピン留めを解除し、`GistGet.yaml` を更新して Gist に保存します。
+ピン留めを解除し、`GistGet.yaml`を更新してGistに保存します。
 
 ```
 gistget pin remove <package-id>
@@ -400,22 +400,22 @@ gistget pin remove <package-id>
 
 **処理フロー:**
 
-1. Gist から `GistGet.yaml` を取得
-2. `winget pin remove --id <id>` を実行
+1. Gistから`GistGet.yaml`を取得
+2. `winget pin remove --id <id>`を実行
 3. 失敗時はエラー終了
 4. 成功時:
-   - `GistGet.yaml` から `pin`、`pinType`、`version` を削除
-5. Gist に `GistGet.yaml` を保存
+   - `GistGet.yaml`から`pin`、`pinType`、`version`を削除
+5. Gistに`GistGet.yaml`を保存
 
 **注意:**
-- エントリ自体は削除されず、pin 関連フィールドのみが削除される。
+- エントリ自体は削除されず、pin関連フィールドのみが削除される。
 - `uninstall` 等の他のフィールドは保持される。
 
 ---
 
 #### export
 
-ローカルにインストールされているパッケージを YAML 形式でエクスポートします。
+ローカルにインストールされているパッケージをYAML形式でエクスポートします。
 
 ```
 gistget export [--output <file-path>]
@@ -427,8 +427,8 @@ gistget export [--output <file-path>]
 
 **処理フロー:**
 
-1. WinGet COM API を使用してローカルのインストール済みパッケージを取得
-2. パッケージ ID のみを含む YAML を生成
+1. WinGet COM APIを使用してローカルのインストール済みパッケージを取得
+2. パッケージIDのみを含むYAMLを生成
 3. `--output` 指定時はファイルに保存、未指定時は標準出力に出力
 
 **出力例:**
@@ -441,9 +441,9 @@ Git.Git: {}
 
 **注意:**
 - 認証は不要。ローカルの情報のみを使用する。
-- エクスポートされるのはパッケージ ID のみ。pin やインストールオプションは含まれない。
-- Gist との同期は行われない。
-- 新しい環境でのベース YAML を作成する際に使用する。
+- エクスポートされるのはパッケージIDのみ。pinやインストールオプションは含まれない。
+- Gistとの同期は行われない。
+- 新しい環境でのベースYAMLを作成する際に使用する。
 
 **典型的なワークフロー:**
 
@@ -464,7 +464,7 @@ gistget import GistGet.yaml
 
 #### import
 
-YAML ファイルを Gist にインポートします。既存の Gist 内容は**完全に上書き**されます。
+YAMLファイルをGistにインポートします。既存のGist内容は**完全に上書き**されます。
 
 ```
 gistget import <file>
@@ -477,13 +477,13 @@ gistget import <file>
 **処理フロー:**
 
 1. 認証状態を確認（未認証の場合はログインを促す）
-2. 指定された YAML ファイルを読み込み
-3. パース結果を Gist の `GistGet.yaml` として**完全に上書き保存**
+2. 指定されたYAMLファイルを読み込み
+3. パース結果をGistの`GistGet.yaml`として**完全に上書き保存**
 
 **注意:**
 - **既存の Gist 内容はマージされず、完全に上書きされる。**
-- インポート前に既存の Gist をバックアップすることを推奨。
-- YAML のフォーマットエラーがある場合は処理を中断する。
+- インポート前に既存のGistをバックアップすることを推奨。
+- YAMLのフォーマットエラーがある場合は処理を中断する。
 
 **典型的なワークフロー:**
 
@@ -503,24 +503,24 @@ gistget import my-packages.yaml
 
 ### pin に関する注意事項
 
-winget v1.12.420 での検証結果に基づく動作仕様:
+winget v1.12.420での検証結果に基づく動作仕様:
 
-1. **バージョン指定インストールは pin を追加しない**
-   - `winget install --version` だけでは pin されない
-   - pin するには明示的に `winget pin add` が必要
-   - バージョン指定でインストールしても、以降の `winget upgrade` や `winget upgrade --all` でアップグレード対象になる
+1. **バージョン指定インストールはpinを追加しない**
+   - `winget install --version`だけではpinされない
+   - pinするには明示的に`winget pin add`が必要
+   - バージョン指定でインストールしても、以降の`winget upgrade`や`winget upgrade --all`でアップグレード対象になる
 
-2. **アンインストールしても pin は残る**
-   - `winget uninstall` は pin を自動削除しない
-   - GistGet では `uninstall` 時に明示的に `winget pin remove` を実行する
+2. **アンインストールしてもpinは残る**
+   - `winget uninstall`はpinを自動削除しない
+   - GistGetでは`uninstall`時に明示的に`winget pin remove`を実行する
 
-3. **明示的 upgrade 時に pin は維持される**
-   - pin がある状態で `winget upgrade <id>` すると、upgrade は成功する
-   - pin のバージョンは新しいバージョンに自動更新される
+3. **明示的upgrade時にpinは維持される**
+   - pinがある状態で`winget upgrade <id>`すると、upgradeは成功する
+   - pinのバージョンは新しいバージョンに自動更新される
 
-4. **Pinning vs Blocking の実際の動作**
-   - 公式ドキュメントでは blocking は `winget upgrade <id>` もブロックするとあるが、v1.12.420 では明示的 upgrade が可能
-   - 実質的に pinning と blocking の違いは `upgrade --all --include-pinned` の動作のみ
+4. **Pinning vs Blockingの実際の動作**
+   - 公式ドキュメントではblockingは`winget upgrade <id>`もブロックするとあるが、v1.12.420では明示的upgradeが可能
+   - 実質的にpinningとblockingの違いは`upgrade --all --include-pinned`の動作のみ
 
 ### バージョン固定の推奨手順
 
@@ -582,14 +582,14 @@ winget pin reset --force
 
 `sync` コマンドは何度実行しても同じ結果になることを保証します:
 
-- Gist と ローカルが一致していれば何も実行しない
+- Gistとローカルが一致していれば何も実行しない
 - 差分がある場合のみ必要な操作を実行
 - エラーが発生しても部分的に適用された変更は記録される
 
 ### エラーハンドリング
 
-- winget コマンドが失敗した場合、Gist への保存は行わない
-- 複数パッケージの sync 中にエラーが発生しても、他のパッケージの処理は継続する
+- wingetコマンドが失敗した場合、Gistへの保存は行わない
+- 複数パッケージのsync中にエラーが発生しても、他のパッケージの処理は継続する
 - エラーは最後にまとめて報告する
 
 ---
