@@ -1,9 +1,8 @@
 // Runs WinGet as an external process and returns its exit code.
 
 using System.Diagnostics;
-using GistGet.GistGet.Infrastructure;
 
-namespace GistGet.Infrastructure.Diagnostics;
+namespace GistGet.Infrastructure;
 
 /// <summary>
 /// Executes WinGet as a child process.

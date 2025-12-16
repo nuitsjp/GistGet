@@ -2,7 +2,7 @@
 
 using System.Diagnostics;
 
-namespace GistGet.GistGet.Infrastructure;
+namespace GistGet.Infrastructure;
 
 /// <summary>
 /// Defines an API for executing processes and returning their exit code.

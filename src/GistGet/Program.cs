@@ -2,7 +2,6 @@
 
 using System.CommandLine;
 using GistGet;
-using GistGet.GistGet.Infrastructure;
 using GistGet.Infrastructure;
 using GistGet.Infrastructure.Diagnostics;
 using GistGet.Presentation;

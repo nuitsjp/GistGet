@@ -3,7 +3,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using GistGet.GistGet.Infrastructure;
+using GistGet.Infrastructure;
 
 namespace GistGet.Presentation;
 

@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using GistGet.GistGet.Infrastructure;
 using Moq;
 using Shouldly;
 
