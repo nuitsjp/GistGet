@@ -1,9 +1,10 @@
 using System.CommandLine;
+using GistGet.Presentation;
 using Moq;
 using Shouldly;
 using Spectre.Console;
 
-namespace GistGet.Presentation;
+namespace GistGet.Test.Presentation;
 
 [CollectionDefinition("AnsiConsole collection", DisableParallelization = true)]
 public class AnsiConsoleCollection : ICollectionFixture<AnsiConsoleFixture>

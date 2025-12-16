@@ -1,8 +1,9 @@
 using System.Diagnostics;
+using GistGet.Infrastructure;
 using Moq;
 using Shouldly;
 
-namespace GistGet.Infrastructure.Diagnostics;
+namespace GistGet.Test.Infrastructure;
 
 public class WinGetPassthroughRunnerTests
 {

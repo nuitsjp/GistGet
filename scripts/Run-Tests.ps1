@@ -52,7 +52,7 @@ param(
     [string]$Configuration = "Debug",
     [double]$CoverageThreshold = 95,
     [int]$Top = 5,
-    [string]$MetricsOutputPath = "metrics-report.txt",
+    [string]$MetricsOutputPath = ".reports/metrics-report.txt",
     [ValidateSet('Text', 'Json')]
     [string]$MetricsFormat = "Text",
     [ValidateSet('Quick', 'Full')]
@@ -82,7 +82,8 @@ $runSettingsPath = Join-Path $repoRoot "coverlet.runsettings"
 $platform = "x64"
 $solutionPath = Join-Path $repoRoot "src\GistGet.slnx"
 $testProjectPath = Join-Path $repoRoot "src\GistGet.Test\GistGet.Test.csproj"
-$diagnosticsLogPath = Join-Path $repoRoot "build-diagnostics.log"
+$reportsDir = Join-Path $repoRoot ".reports"
+$diagnosticsLogPath = Join-Path $reportsDir "build-diagnostics.log"
 
 
 function Write-Banner {
@@ -596,7 +597,13 @@ foreach ($proj in $csprojFiles) {
 
 # Resolve output path
 if (-not [System.IO.Path]::IsPathRooted($MetricsOutputPath)) {
-    $MetricsOutputPath = Join-Path (Get-Location) $MetricsOutputPath
+    $MetricsOutputPath = Join-Path $repoRoot $MetricsOutputPath
+}
+
+# Ensure reports directory exists
+$metricsDir = Split-Path -Parent $MetricsOutputPath
+if (-not (Test-Path $metricsDir)) {
+    New-Item -ItemType Directory -Path $metricsDir -Force | Out-Null
 }
 
 # Generate report

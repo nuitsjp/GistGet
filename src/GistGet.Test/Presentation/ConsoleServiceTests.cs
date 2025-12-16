@@ -1,9 +1,10 @@
 using System.Diagnostics;
 using GistGet.Infrastructure;
+using GistGet.Presentation;
 using Moq;
 using Shouldly;
 
-namespace GistGet.Presentation;
+namespace GistGet.Test.Presentation;
 
 [Collection("AnsiConsole collection")]
 public class ConsoleServiceTests

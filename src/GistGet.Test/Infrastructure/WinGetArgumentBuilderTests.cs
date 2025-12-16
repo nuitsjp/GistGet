@@ -1,7 +1,7 @@
 using GistGet.Infrastructure;
 using Shouldly;
 
-namespace GistGet.Test.GistGet.Infrastructure;
+namespace GistGet.Test.Infrastructure;
 
 public class WinGetArgumentBuilderTests
 {

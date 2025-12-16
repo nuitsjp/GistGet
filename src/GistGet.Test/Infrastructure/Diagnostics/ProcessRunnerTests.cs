@@ -1,7 +1,8 @@
 using System.Diagnostics;
+using GistGet.Infrastructure.Diagnostics;
 using Shouldly;
 
-namespace GistGet.Infrastructure.Diagnostics;
+namespace GistGet.Test.Infrastructure.Diagnostics;
 
 public class ProcessRunnerTests
 {

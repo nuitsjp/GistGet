@@ -1,10 +1,11 @@
 using System.Net;
 using System.Reflection;
+using GistGet.Infrastructure;
 using Moq;
 using Octokit;
 using Shouldly;
 
-namespace GistGet.Infrastructure;
+namespace GistGet.Test.Infrastructure;
 
 public class GitHubServiceTests
 {

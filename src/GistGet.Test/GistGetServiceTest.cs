@@ -2,7 +2,7 @@ using GistGet.Infrastructure;
 using Moq;
 using Shouldly;
 
-namespace GistGet;
+namespace GistGet.Test;
 
 public class GistGetServiceTests
 {
@@ -23,7 +23,7 @@ public class GistGetServiceTests
         CredentialServiceMock = new Mock<ICredentialService>();
         PassthroughRunnerMock = new Mock<IWinGetPassthroughRunner>();
         WinGetServiceMock = new Mock<IWinGetService>();
-        ArgumentBuilder = new Infrastructure.WinGetArgumentBuilder(); // Real instance
+        ArgumentBuilder = new GistGet.Infrastructure.WinGetArgumentBuilder(); // Real instance
         Target = new GistGetService(
             AuthServiceMock.Object,
             ConsoleServiceMock.Object,

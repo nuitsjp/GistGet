@@ -1,14 +1,12 @@
 # Build and test reports
 .reports/
-metrics-report.txt
 
 docs/winget/*
 
-# Legacy report locations (移行期間中)
+# Legacy report locations
 .serena/
 .claude/settings.local.json
 coverage-report/
-inspection-results.xml
 
 [Oo]utput/
 

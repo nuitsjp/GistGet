@@ -1,6 +1,7 @@
+using GistGet.Infrastructure;
 using Shouldly;
 
-namespace GistGet.Infrastructure;
+namespace GistGet.Test.Infrastructure;
 
 [Collection("CredentialTests")]
 
