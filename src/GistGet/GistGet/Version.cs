@@ -1,4 +1,4 @@
-﻿// Strongly-typed version value used by GistGet models and workflows.
+// Strongly-typed version value used by GistGet models and workflows.
 
 using UnitGenerator;
 

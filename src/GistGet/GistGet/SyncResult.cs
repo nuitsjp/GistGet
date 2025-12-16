@@ -7,11 +7,12 @@ namespace GistGet;
 /// </summary>
 public class SyncResult
 {
-    public List<GistGetPackage> Installed { get; set; } = new();
-    public List<GistGetPackage> Uninstalled { get; set; } = new();
-    public List<GistGetPackage> PinUpdated { get; set; } = new();
-    public List<GistGetPackage> PinRemoved { get; set; } = new();
-    public List<GistGetPackage> Failed { get; set; } = new();
-    public List<string> Errors { get; set; } = new();
+    public IList<GistGetPackage> Installed { get; } = new List<GistGetPackage>();
+    public IList<GistGetPackage> Uninstalled { get; } = new List<GistGetPackage>();
+    public IList<GistGetPackage> PinUpdated { get; } = new List<GistGetPackage>();
+    public IList<GistGetPackage> PinRemoved { get; } = new List<GistGetPackage>();
+    public IList<GistGetPackage> Failed { get; } = new List<GistGetPackage>();
+    public IList<string> Errors { get; } = new List<string>();
     public bool Success => Errors.Count == 0 && Failed.Count == 0;
 }
+

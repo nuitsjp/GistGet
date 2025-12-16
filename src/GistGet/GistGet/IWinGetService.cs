@@ -1,4 +1,4 @@
-﻿// Abstraction for reading WinGet package information.
+// Abstraction for reading WinGet package information.
 
 namespace GistGet;
 

@@ -1,4 +1,4 @@
-﻿// Abstraction for writing user-facing output.
+// Abstraction for writing user-facing output.
 
 namespace GistGet;
 

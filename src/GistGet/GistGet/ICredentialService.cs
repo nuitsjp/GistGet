@@ -1,4 +1,4 @@
-﻿// Abstraction for storing and retrieving credentials.
+// Abstraction for storing and retrieving credentials.
 
 namespace GistGet;
 

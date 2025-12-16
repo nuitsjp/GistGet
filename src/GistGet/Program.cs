@@ -1,4 +1,4 @@
-﻿// GistGet CLI entry point and dependency injection bootstrap.
+// GistGet CLI entry point and dependency injection bootstrap.
 
 using System.CommandLine;
 using GistGet;

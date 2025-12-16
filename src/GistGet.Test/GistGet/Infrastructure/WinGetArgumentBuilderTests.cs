@@ -1,6 +1,5 @@
 using GistGet.Infrastructure;
 using Shouldly;
-using Xunit;
 
 namespace GistGet.Test.GistGet.Infrastructure;
 
@@ -80,7 +79,7 @@ public class WinGetArgumentBuilderTests
 
             args.ShouldBeSubsetOf(expectedArgs); // Basic check
             args.Length.ShouldBe(expectedArgs.Length); // Ensure no missing or extra args
-            
+
             // To ideally test specific pairs like "--id" "Test.Package", we can check sequentially or finding indices.
             // For this test, let's assume the builder produces them in a deterministic order and check containment.
         }
@@ -160,7 +159,7 @@ public class WinGetArgumentBuilderTests
             args.ShouldBeSubsetOf(expectedArgs);
             args.Length.ShouldBe(expectedArgs.Length);
         }
-        
+
         [Fact]
         public void WithGatingPinType_ReturnsGatingArg()
         {

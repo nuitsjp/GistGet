@@ -1,8 +1,5 @@
-﻿// Core application service that orchestrates GitHub and WinGet operations.
+// Core application service that orchestrates GitHub and WinGet operations.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using GistGet.Infrastructure;
 
 namespace GistGet;

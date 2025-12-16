@@ -1,5 +1,4 @@
-﻿using Shouldly;
-using Xunit;
+using Shouldly;
 
 namespace GistGet.Infrastructure;
 
@@ -8,16 +7,16 @@ namespace GistGet.Infrastructure;
 public class CredentialServiceTests : IDisposable
 {
     protected readonly string TestTargetName = $"GistGet.Test.Credential.{Guid.NewGuid()}";
-    protected readonly CredentialService _sut;
+    protected readonly CredentialService Sut;
 
     public CredentialServiceTests()
     {
-        _sut = new CredentialService(TestTargetName);
+        Sut = new CredentialService(TestTargetName);
     }
 
     public void Dispose()
     {
-        _sut.DeleteCredential();
+        Sut.DeleteCredential();
     }
 
     [Collection("CredentialTests")]
@@ -35,15 +34,15 @@ public class CredentialServiceTests : IDisposable
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            var result = _sut.SaveCredential(new Credential(username, token));
+            var result = Sut.SaveCredential(new Credential(username, token));
 
             // -------------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------------
             result.ShouldBeTrue();
-            
+
             // Verify persistence
-            _sut.TryGetCredential(out var retrieved).ShouldBeTrue();
+            Sut.TryGetCredential(out var retrieved).ShouldBeTrue();
             retrieved.ShouldNotBeNull();
             retrieved.Username.ShouldBe(username);
             retrieved.Token.ShouldBe(token);
@@ -61,12 +60,12 @@ public class CredentialServiceTests : IDisposable
             // -------------------------------------------------------------------
             var token = "storedPassword";
             var username = "user";
-            _sut.SaveCredential(new Credential(username, token)).ShouldBeTrue();
+            Sut.SaveCredential(new Credential(username, token)).ShouldBeTrue();
 
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            var result = _sut.TryGetCredential(out var credential);
+            var result = Sut.TryGetCredential(out var credential);
 
             // -------------------------------------------------------------------
             // Assert
@@ -83,12 +82,12 @@ public class CredentialServiceTests : IDisposable
             // -------------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------------
-            _sut.DeleteCredential();
+            Sut.DeleteCredential();
 
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            var result = _sut.TryGetCredential(out var credential);
+            var result = Sut.TryGetCredential(out var credential);
 
             // -------------------------------------------------------------------
             // Assert
@@ -107,18 +106,18 @@ public class CredentialServiceTests : IDisposable
             // -------------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------------
-            _sut.SaveCredential(new Credential("user", "pass")).ShouldBeTrue();
+            Sut.SaveCredential(new Credential("user", "pass")).ShouldBeTrue();
 
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            var result = _sut.DeleteCredential();
+            var result = Sut.DeleteCredential();
 
             // -------------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------------
             result.ShouldBeTrue();
-            _sut.TryGetCredential(out _).ShouldBeFalse();
+            Sut.TryGetCredential(out _).ShouldBeFalse();
         }
 
         [Fact]
@@ -127,12 +126,12 @@ public class CredentialServiceTests : IDisposable
             // -------------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------------
-            _sut.DeleteCredential();
+            Sut.DeleteCredential();
 
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            var result = _sut.DeleteCredential();
+            var result = Sut.DeleteCredential();
 
             // -------------------------------------------------------------------
             // Assert

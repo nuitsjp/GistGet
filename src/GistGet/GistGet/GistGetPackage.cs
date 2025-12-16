@@ -1,6 +1,5 @@
-﻿// Package metadata stored in and synchronized via GitHub Gist.
+// Package metadata stored in and synchronized via GitHub Gist.
 
-using System.Xml.Serialization;
 using YamlDotNet.Serialization;
 
 namespace GistGet;

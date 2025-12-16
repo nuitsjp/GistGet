@@ -210,23 +210,38 @@ csharp_space_between_square_brackets = false
 ###############################
 
 # .NET アナライザー (CA ルール)
+# アプリケーション固有
+dotnet_diagnostic.CA1515.severity = none            # CLI アプリでは public 型で問題なし
+dotnet_diagnostic.CA1812.severity = none            # DI 使用のため内部クラスインスタンス化警告は誤検知
+dotnet_diagnostic.CA1816.severity = none            # P/Invoke クラスでは GC.SuppressFinalize 不要
+dotnet_diagnostic.CA5392.severity = none            # WinGet COM では DefaultDllImportSearchPaths 不要
+dotnet_diagnostic.CA1028.severity = none            # WinGet COM enum 定義に従う
+dotnet_diagnostic.CA1008.severity = none            # WinGet COM enum 定義に従う
+
 # パフォーマンス
 dotnet_diagnostic.CA1822.severity = suggestion      # static にできるメンバー
 dotnet_diagnostic.CA1826.severity = suggestion      # Enumerable メソッドの代わりにプロパティ使用
 dotnet_diagnostic.CA1827.severity = suggestion      # Count/Any の使い分け
 dotnet_diagnostic.CA1829.severity = suggestion      # Length/Count プロパティ使用
+dotnet_diagnostic.CA1847.severity = suggestion      # char 検索には string.Contains(char) を使用
+dotnet_diagnostic.CA1849.severity = suggestion      # 非同期コンテキストで同期メソッド呼び出し
+dotnet_diagnostic.CA1859.severity = suggestion      # 具体的な型を使用
 
 # 信頼性
 dotnet_diagnostic.CA2007.severity = none            # ConfigureAwait (ライブラリ以外では不要)
 dotnet_diagnostic.CA1031.severity = suggestion      # 汎用例外キャッチ
 
 # コード品質
+dotnet_diagnostic.CA1054.severity = none            # CLI ツールでは string URL が使いやすい
 dotnet_diagnostic.CA1062.severity = suggestion      # パブリックメソッドの引数検証
+dotnet_diagnostic.CA1063.severity = none            # IDisposable パターン (P/Invoke で不要)
 dotnet_diagnostic.CA1303.severity = none            # ローカライズ不要
 dotnet_diagnostic.CA1304.severity = none            # CultureInfo 指定 (意図的に省略可)
 dotnet_diagnostic.CA1305.severity = none            # IFormatProvider 指定
 dotnet_diagnostic.CA1307.severity = none            # StringComparison 指定
 dotnet_diagnostic.CA1310.severity = suggestion      # StringComparison 指定
+dotnet_diagnostic.CA2234.severity = none            # Uri overload 使用 (CLI では string URL)
+dotnet_diagnostic.CA1052.severity = suggestion      # static クラス推奨
 dotnet_diagnostic.CA1707.severity = none            # 識別子にアンダースコア (テストでは許可)
 dotnet_diagnostic.CA1848.severity = none            # LoggerMessage デリゲート (小規模プロジェクト向け)
 dotnet_diagnostic.CA2227.severity = suggestion      # コレクションプロパティの setter
@@ -250,6 +265,7 @@ dotnet_diagnostic.RCS1061.severity = suggestion     # メソッドのマージ
 dotnet_diagnostic.RCS1077.severity = suggestion     # 最適化された null チェック
 dotnet_diagnostic.RCS1080.severity = suggestion     # nameof 使用
 dotnet_diagnostic.RCS1097.severity = suggestion     # 不要な冗長性削除
+dotnet_diagnostic.RCS1102.severity = suggestion     # static クラス推奨
 dotnet_diagnostic.RCS1118.severity = none           # static readonly → const (場合による)
 dotnet_diagnostic.RCS1123.severity = suggestion     # コメント形式
 dotnet_diagnostic.RCS1124.severity = suggestion     # インライン変数
@@ -275,13 +291,20 @@ dotnet_diagnostic.MA0048.severity = none            # ファイル名と型名�
 dotnet_diagnostic.MA0049.severity = none            # 型はファイル内で一意
 dotnet_diagnostic.MA0051.severity = none            # メソッドが長すぎる
 dotnet_diagnostic.MA0053.severity = none            # シールドクラス推奨
+dotnet_diagnostic.MA0074.severity = none            # 最適化ヒント (必須ではない)
 dotnet_diagnostic.MA0076.severity = suggestion      # JSON シリアライズ最適化
+dotnet_diagnostic.MA0084.severity = none            # 最適化ヒント (必須ではない)
+dotnet_diagnostic.MA0144.severity = none            # using 宣言推奨 (P/Invoke では不適用)
 
 # テストプロジェクト固有の設定
 [*Test*.cs]
 dotnet_diagnostic.CA1034.severity = none            # 入れ子型 (テスト整理のため許可)
+dotnet_diagnostic.CA1051.severity = none            # テスト用モックフィールドの公開を許可
 dotnet_diagnostic.CA1707.severity = none            # テストメソッド名のアンダースコア許可
+dotnet_diagnostic.CA1711.severity = none            # テスト用 Collection/Delegate 名を許可
 dotnet_diagnostic.CA1822.severity = none            # テストメソッドは static 不要
+dotnet_diagnostic.CA1861.severity = none            # テストデータの配列リテラル許可
+dotnet_diagnostic.CA2000.severity = none            # テスト用 IDisposable の明示的破棄不要
 dotnet_diagnostic.CA2007.severity = none            # ConfigureAwait 不要
+dotnet_diagnostic.MA0002.severity = none            # テスト用 Dictionary の StringComparer 省略許可
 dotnet_diagnostic.RCS1163.severity = none           # 未使用パラメータ (テストでは許容)
-

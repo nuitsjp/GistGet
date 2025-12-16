@@ -1,4 +1,4 @@
-﻿// Abstraction for executing WinGet commands as a passthrough.
+// Abstraction for executing WinGet commands as a passthrough.
 
 namespace GistGet;
 

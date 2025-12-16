@@ -1,4 +1,4 @@
-﻿// Abstraction for user interaction and messaging.
+// Abstraction for user interaction and messaging.
 
 namespace GistGet;
 

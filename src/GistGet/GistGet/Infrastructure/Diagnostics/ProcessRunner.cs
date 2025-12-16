@@ -1,7 +1,7 @@
 // Default implementation for running external processes.
 
-using GistGet.GistGet.Infrastructure;
 using System.Diagnostics;
+using GistGet.GistGet.Infrastructure;
 
 namespace GistGet.Infrastructure.Diagnostics;
 

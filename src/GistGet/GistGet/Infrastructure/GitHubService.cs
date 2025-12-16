@@ -1,9 +1,6 @@
 // GitHub API implementation for authentication and Gist operations.
 
 using System.Diagnostics;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
 using Octokit;
 
 namespace GistGet.Infrastructure;
@@ -77,7 +74,7 @@ public class GitHubService(
         var client = _gitHubClientFactory.Create(token);
 
         var user = await client.GetCurrentUserAsync();
-        
+
         var apiInfo = client.GetLastApiInfo();
         var scopes = apiInfo?.OauthScopes ?? new List<string>();
 
@@ -95,9 +92,9 @@ public class GitHubService(
         {
             httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(Constants.ProductHeader);
         }
-        
+
         var yaml = await httpClient.GetStringAsync(url);
-        
+
         if (string.IsNullOrWhiteSpace(yaml))
         {
             return Array.Empty<GistGetPackage>();

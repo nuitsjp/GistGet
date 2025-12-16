@@ -1,4 +1,4 @@
-﻿// Public contract for GistGet application workflows.
+// Public contract for GistGet application workflows.
 
 namespace GistGet;
 

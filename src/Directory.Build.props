@@ -12,6 +12,7 @@
 		<EnableNETAnalyzers>true</EnableNETAnalyzers>
 		<AnalysisLevel>latest-all</AnalysisLevel>
 		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+		<NoWarn>$(NoWarn);EnableGenerateDocumentationFile</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>

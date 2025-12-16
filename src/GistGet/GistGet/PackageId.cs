@@ -1,4 +1,4 @@
-﻿// Strongly-typed package identifier value object.
+// Strongly-typed package identifier value object.
 
 using UnitGenerator;
 

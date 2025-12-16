@@ -1,11 +1,8 @@
 using System.Net;
-using System.Net.Http;
-using System.Threading;
 using System.Reflection;
-using System.Collections.Generic;
+using Moq;
 using Octokit;
 using Shouldly;
-using Moq;
 
 namespace GistGet.Infrastructure;
 
@@ -201,7 +198,7 @@ public class GitHubServiceTests
                 // -------------------------------------------------------------------
                 retrievedPackages.Count.ShouldBe(1);
                 var pkg = retrievedPackages[0];
-                
+
                 pkg.Id.ShouldBe("TestPackage.AllProperties");
                 pkg.Version.ShouldBe("2.0.0");
                 pkg.Pin.ShouldBe("1.5.0");

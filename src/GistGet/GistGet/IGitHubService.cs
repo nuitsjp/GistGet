@@ -1,4 +1,4 @@
-﻿// Abstraction over GitHub API interactions used by GistGet.
+// Abstraction over GitHub API interactions used by GistGet.
 
 namespace GistGet;
 

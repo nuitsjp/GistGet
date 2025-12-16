@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using GistGet.Infrastructure.Diagnostics;
 using Shouldly;
 
 namespace GistGet.Infrastructure.Diagnostics;

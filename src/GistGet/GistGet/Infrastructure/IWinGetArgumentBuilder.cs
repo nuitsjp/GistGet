@@ -1,7 +1,5 @@
 // Abstraction for building WinGet command-line arguments.
 
-using System.Collections.Generic;
-
 namespace GistGet.Infrastructure;
 
 /// <summary>

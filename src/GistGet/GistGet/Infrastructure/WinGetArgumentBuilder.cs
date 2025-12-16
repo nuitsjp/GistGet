@@ -1,7 +1,5 @@
 // Builds WinGet command-line arguments from options and package entries.
 
-using System.Collections.Generic;
-
 namespace GistGet.Infrastructure;
 
 /// <summary>
@@ -17,13 +15,13 @@ public class WinGetArgumentBuilder : IWinGetArgumentBuilder
         var args = new List<string> { "install", "--id", options.Id };
 
         if (!string.IsNullOrEmpty(options.Version)) { args.Add("--version"); args.Add(options.Version); }
-        
+
         args.AddRange(BuildCommonInstallOptions(
-            options.Scope, options.Architecture, options.Location, 
-            options.Interactive, options.Silent, options.Log, 
-            options.Override, options.Force, options.SkipDependencies, 
-            options.Header, options.InstallerType, options.Custom, 
-            options.Locale, options.AcceptPackageAgreements, 
+            options.Scope, options.Architecture, options.Location,
+            options.Interactive, options.Silent, options.Log,
+            options.Override, options.Force, options.SkipDependencies,
+            options.Header, options.InstallerType, options.Custom,
+            options.Locale, options.AcceptPackageAgreements,
             options.AcceptSourceAgreements, options.AllowHashMismatch));
 
         return args.ToArray();

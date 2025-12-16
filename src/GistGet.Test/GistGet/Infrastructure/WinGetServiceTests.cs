@@ -1,6 +1,5 @@
 namespace GistGet.Infrastructure;
 
-using GistGet;
 using Shouldly;
 
 public class WinGetServiceTests

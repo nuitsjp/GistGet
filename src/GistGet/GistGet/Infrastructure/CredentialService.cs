@@ -1,9 +1,8 @@
 // Credential persistence using Windows Credential Manager.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text;
-using System;
-using System.Diagnostics.CodeAnalysis;
 
 namespace GistGet.Infrastructure;
 

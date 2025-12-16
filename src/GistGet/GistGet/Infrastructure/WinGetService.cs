@@ -1,4 +1,4 @@
-﻿// WinGet COM-based package discovery implementation.
+// WinGet COM-based package discovery implementation.
 
 using Microsoft.Management.Deployment;
 

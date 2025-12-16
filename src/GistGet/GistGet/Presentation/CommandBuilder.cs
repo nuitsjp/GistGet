@@ -1,7 +1,6 @@
 // System.CommandLine command definitions for the GistGet CLI.
 
 using System.CommandLine;
-using System.CommandLine.Invocation;
 using Spectre.Console;
 
 namespace GistGet.Presentation;
@@ -102,9 +101,9 @@ public class CommandBuilder(IGistGetService gistGetService)
                 }
             }
 
-            if (result.Success && 
-                result.Installed.Count == 0 && 
-                result.Uninstalled.Count == 0 && 
+            if (result.Success &&
+                result.Installed.Count == 0 &&
+                result.Uninstalled.Count == 0 &&
                 result.PinUpdated.Count == 0 &&
                 result.PinRemoved.Count == 0)
             {
@@ -257,7 +256,7 @@ public class CommandBuilder(IGistGetService gistGetService)
         var interactiveOption = new Option<bool>("--interactive", "Request interactive uninstall");
         var silentOption = new Option<bool>("--silent", "Request silent uninstall");
         var forceOption = new Option<bool>("--force", "Direct run the command and continue with non security related issues");
-        
+
         command.Add(idOption);
         command.Add(scopeOption);
         command.Add(interactiveOption);
@@ -397,11 +396,11 @@ public class CommandBuilder(IGistGetService gistGetService)
             var blocking = parseResult.GetValueForOption(addBlocking);
             var gating = parseResult.GetValueForOption(addGating);
             var force = parseResult.GetValueForOption(addForce);
-            
+
             string? pinType = null;
             if (blocking) pinType = "blocking";
             else if (gating) pinType = "gating";
-            
+
             await gistGetService.PinAddAndSaveAsync(id, version, pinType, force);
         });
         command.Add(add);
@@ -443,7 +442,7 @@ public class CommandBuilder(IGistGetService gistGetService)
     private Command[] BuildWingetPassthroughCommands()
     {
         var commands = new List<Command>();
-        var wingetCommands = new Dictionary<string, string>
+        var wingetCommands = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["list"] = "Displays installed packages [Passthrough]",
             ["search"] = "Finds and shows basic information of packages [Passthrough]",

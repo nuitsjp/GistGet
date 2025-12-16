@@ -71,7 +71,7 @@ public static class GistGetPackageSerializer
             .Build();
 
         var dict = deserializer.Deserialize<Dictionary<string, GistGetPackage>>(yaml)
-                   ?? new Dictionary<string, GistGetPackage>();
+                   ?? new Dictionary<string, GistGetPackage>(StringComparer.OrdinalIgnoreCase);
 
         var list = new List<GistGetPackage>();
         foreach (var (id, package) in dict)

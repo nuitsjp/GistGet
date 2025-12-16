@@ -1,4 +1,4 @@
-﻿// Local WinGet package model used for listing and comparisons.
+// Local WinGet package model used for listing and comparisons.
 
 namespace GistGet;
 
