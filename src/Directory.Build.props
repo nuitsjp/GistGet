@@ -7,5 +7,17 @@
 		<LangVersion>latest</LangVersion>
 		<RootNamespace></RootNamespace>
 		<MicrosoftManagementDeployment-FactoryLinkage>static</MicrosoftManagementDeployment-FactoryLinkage>
+
+		<!-- 静的解析設定 -->
+		<EnableNETAnalyzers>true</EnableNETAnalyzers>
+		<AnalysisLevel>latest-all</AnalysisLevel>
+		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- アナライザーパッケージ -->
+		<PackageReference Include="Roslynator.Analyzers" PrivateAssets="all" />
+		<PackageReference Include="Meziantou.Analyzer" PrivateAssets="all" />
+	</ItemGroup>
 </Project>
+

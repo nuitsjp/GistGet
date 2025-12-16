@@ -1,13 +1,15 @@
 <#
 .SYNOPSIS
-    GistGet プロジェクトのテスト、カバレッジ分析、メトリクス収集を実行します。
+    GistGet プロジェクトのテスト、カバレッジ分析、静的解析、メトリクス収集を実行します。
 
 .DESCRIPTION
     このスクリプトは以下を順番に実行します:
-    1. ソリューションのビルド
+    1. ソリューションのビルド（Roslyn アナライザー診断収集込み）
     2. テスト実行（カバレッジ収集込み）
     3. カバレッジ分析と閾値チェック
     4. コードメトリクス収集とレポート生成
+    5. [Full モード] フォーマットチェック
+    6. [Full モード] Roslyn 診断レポートとリファクタリング候補
 
 .PARAMETER Configuration
     ビルド構成 (Debug または Release)。既定値は Debug。
@@ -24,13 +26,26 @@
 .PARAMETER MetricsFormat
     メトリクスレポートの出力形式 (Text または Json)。既定値は Text。
 
-.EXAMPLE
-    .\Run-Tests.ps1
-    既定の設定でテスト、カバレッジ分析、メトリクス収集を実行
+.PARAMETER AnalysisMode
+    解析モード。Quick はビルド・テスト・カバレッジのみ。Full (既定) は静的解析を含む。
+
+.PARAMETER SkipTests
+    テスト実行をスキップします。静的解析のみ実行したい場合に使用。
+
+.PARAMETER TreatWarningsAsErrors
+    ビルド警告をエラーとして扱います。
 
 .EXAMPLE
-    .\Run-Tests.ps1 -Configuration Release -CoverageThreshold 90
-    Release ビルドで実行し、カバレッジ閾値を 90% に設定
+    .\Run-Tests.ps1
+    既定の Full モードでテスト、カバレッジ分析、静的解析を実行
+
+.EXAMPLE
+    .\Run-Tests.ps1 -AnalysisMode Quick
+    Quick モードでビルド、テスト、カバレッジのみ実行（高速）
+
+.EXAMPLE
+    .\Run-Tests.ps1 -SkipTests
+    テストをスキップしてビルドと静的解析のみ実行
 #>
 
 param(
@@ -40,6 +55,10 @@ param(
     [string]$MetricsOutputPath = "metrics-report.txt",
     [ValidateSet('Text', 'Json')]
     [string]$MetricsFormat = "Text",
+    [ValidateSet('Quick', 'Full')]
+    [string]$AnalysisMode = "Full",
+    [switch]$SkipTests,
+    [switch]$TreatWarningsAsErrors,
     [string[]]$ExcludePatterns = @(
         '[\\/]obj[\\/]',
         '\.g\.cs$',
@@ -50,11 +69,21 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# コンソールのエンコーディングをUTF-8に設定（文字化け防止）
+$originalOutputEncoding = [Console]::OutputEncoding
+$originalPSOutputEncoding = $OutputEncoding
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+
 #region Common Utilities
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Split-Path -Parent $scriptPath
 $runSettingsPath = Join-Path $repoRoot "coverlet.runsettings"
 $platform = "x64"
+$solutionPath = Join-Path $repoRoot "src\GistGet.slnx"
+$testProjectPath = Join-Path $repoRoot "src\GistGet.Test\GistGet.Test.csproj"
+$diagnosticsLogPath = Join-Path $repoRoot "build-diagnostics.log"
+
 
 function Write-Banner {
     param([string]$Title)
@@ -256,72 +285,255 @@ function Get-CodeQualityMetrics {
 }
 #endregion
 
+#region Static Analysis Functions
+function Get-DiagnosticsSummary {
+    param([string]$LogPath)
+    
+    if (-not (Test-Path $LogPath)) {
+        return $null
+    }
+    
+    $content = Get-Content $LogPath -Raw
+    $diagnostics = @{
+        Errors = @()
+        Warnings = @()
+        Info = @()
+        ByRule = @{}
+        ByFile = @{}
+    }
+    
+    # Parse MSBuild diagnostic output
+    # Format: path(line,col): severity code: message
+    $pattern = '([^(]+)\((\d+),(\d+)\):\s*(error|warning|info)\s+(\w+):\s*(.+)'
+    $matches = [regex]::Matches($content, $pattern, [System.Text.RegularExpressions.RegexOptions]::Multiline)
+    
+    foreach ($match in $matches) {
+        $file = $match.Groups[1].Value.Trim()
+        $line = $match.Groups[2].Value
+        $col = $match.Groups[3].Value
+        $severity = $match.Groups[4].Value
+        $code = $match.Groups[5].Value
+        $message = $match.Groups[6].Value.Trim()
+        
+        $diagnostic = [pscustomobject]@{
+            File = $file
+            Line = [int]$line
+            Column = [int]$col
+            Severity = $severity
+            Code = $code
+            Message = $message
+        }
+        
+        switch ($severity) {
+            "error" { $diagnostics.Errors += $diagnostic }
+            "warning" { $diagnostics.Warnings += $diagnostic }
+            "info" { $diagnostics.Info += $diagnostic }
+        }
+        
+        # Group by rule
+        if (-not $diagnostics.ByRule.ContainsKey($code)) {
+            $diagnostics.ByRule[$code] = @{
+                Code = $code
+                Message = $message
+                Count = 0
+                Severity = $severity
+            }
+        }
+        $diagnostics.ByRule[$code].Count++
+        
+        # Group by file
+        $fileName = Split-Path -Leaf $file
+        if (-not $diagnostics.ByFile.ContainsKey($fileName)) {
+            $diagnostics.ByFile[$fileName] = 0
+        }
+        $diagnostics.ByFile[$fileName]++
+    }
+    
+    return $diagnostics
+}
+
+function Write-DiagnosticsReport {
+    param(
+        [hashtable]$Diagnostics,
+        [int]$TopRules = 10,
+        [int]$TopFiles = 5
+    )
+    
+    if (-not $Diagnostics) {
+        Write-Host "No diagnostics data available." -ForegroundColor Yellow
+        return
+    }
+    
+    $totalErrors = $Diagnostics.Errors.Count
+    $totalWarnings = $Diagnostics.Warnings.Count
+    $totalInfo = $Diagnostics.Info.Count
+    
+    Write-Host ""
+    Write-Host "DIAGNOSTICS SUMMARY" -ForegroundColor Yellow
+    Write-Host "----------------------------------------"
+    
+    if ($totalErrors -gt 0) {
+        Write-Host ("Errors:     {0}" -f $totalErrors) -ForegroundColor Red
+    } else {
+        Write-Host ("Errors:     {0}" -f $totalErrors) -ForegroundColor Green
+    }
+    
+    if ($totalWarnings -gt 0) {
+        Write-Host ("Warnings:   {0}" -f $totalWarnings) -ForegroundColor Yellow
+    } else {
+        Write-Host ("Warnings:   {0}" -f $totalWarnings) -ForegroundColor Green
+    }
+    
+    Write-Host ("Info:       {0}" -f $totalInfo) -ForegroundColor Gray
+    
+    # Top refactoring opportunities
+    if ($Diagnostics.ByRule.Count -gt 0) {
+        Write-Host ""
+        Write-Host "TOP REFACTORING OPPORTUNITIES" -ForegroundColor Yellow
+        Write-Host "----------------------------------------"
+        
+        $Diagnostics.ByRule.Values | 
+            Sort-Object Count -Descending | 
+            Select-Object -First $TopRules |
+            ForEach-Object {
+                $sevColor = switch ($_.Severity) {
+                    "error" { "Red" }
+                    "warning" { "Yellow" }
+                    default { "Gray" }
+                }
+                
+                # Truncate message to fit
+                $msg = $_.Message
+                if ($msg.Length -gt 45) {
+                    $msg = $msg.Substring(0, 42) + "..."
+                }
+                
+                Write-Host ("  {0,-8} {1,-45} ({2} occurrences)" -f $_.Code, $msg, $_.Count) -ForegroundColor $sevColor
+            }
+    }
+    
+    # Diagnostics by file
+    if ($Diagnostics.ByFile.Count -gt 0) {
+        Write-Host ""
+        Write-Host "DIAGNOSTICS BY FILE (Top $TopFiles)" -ForegroundColor Yellow
+        Write-Host "----------------------------------------"
+        
+        $Diagnostics.ByFile.GetEnumerator() |
+            Sort-Object Value -Descending |
+            Select-Object -First $TopFiles |
+            ForEach-Object {
+                Write-Host ("  {0,-50} {1} diagnostics" -f $_.Key, $_.Value)
+            }
+    }
+}
+#endregion
+
 #region Main Execution
 
 Write-Banner "GistGet Test Pipeline"
 Write-Host "Configuration: $Configuration" -ForegroundColor Yellow
+Write-Host "Analysis Mode: $AnalysisMode" -ForegroundColor Yellow
 Write-Host "Coverage Threshold: $CoverageThreshold%" -ForegroundColor Yellow
 Write-Host "Platform: $platform" -ForegroundColor Yellow
+if ($SkipTests) {
+    Write-Host "Tests: SKIPPED" -ForegroundColor Yellow
+}
+
+$stepNumber = 1
 
 # Step 1: Build
-Write-Banner "Step 1: Building Solution"
-dotnet build "$repoRoot\src\GistGet.slnx" -c $Configuration -p:Platform=$platform
-Test-LastExitCode "Build failed!"
+Write-Banner "Step $stepNumber`: Building Solution"
+$stepNumber++
 
-# Step 2: Test
-Write-Banner "Step 2: Running Tests"
-
-$testArgs = @(
-    "test",
-    "$repoRoot\src\GistGet.Test\GistGet.Test.csproj",
+$buildArgs = @(
+    "build",
+    $solutionPath,
     "-c", $Configuration,
-    "--no-build",
-    "-p:Platform=$platform",
-    "--verbosity", "normal",
-    "--collect", "XPlat Code Coverage",
-    "--results-directory", "$repoRoot\TestResults",
-    "--settings", $runSettingsPath
+    "-p:Platform=$platform"
 )
 
-& dotnet $testArgs
-Test-LastExitCode "Tests failed!"
-
-# Step 3: Coverage Analysis
-Write-Banner "Step 3: Analyzing Coverage"
-
-$coverageFile = Get-LatestCoverageFile -Root "$repoRoot\TestResults"
-$summary = Get-CoverageSummary -FilePath $coverageFile.FullName -ExcludePatterns $ExcludePatterns
-
-Write-Host "Coverage file: $($coverageFile.FullName)" -ForegroundColor Gray
-Write-Host ("Line coverage : {0:N2}% ({1}/{2} lines)" -f $summary.LineCoverage, $summary.CoveredLines, $summary.TotalLines) -ForegroundColor Cyan
-Write-Host ("Branch coverage: {0:N2}%" -f $summary.BranchCoverage) -ForegroundColor Cyan
-
-if ($ExcludePatterns -and $ExcludePatterns.Count -gt 0) {
-    Write-Host "Excluded patterns: $($ExcludePatterns -join ', ')" -ForegroundColor Gray
+if ($TreatWarningsAsErrors) {
+    $buildArgs += "-p:TreatWarningsAsErrors=true"
 }
 
-if ($Top -gt 0) {
-    Write-Host ""
-    Write-Host "Coverage (lowest $Top files):" -ForegroundColor Yellow
-    $summary.Files
-        | Sort-Object Coverage
-        | Select-Object -First $Top
-        | ForEach-Object {
-            Write-Host ("  {0,-70} {1,6:N2}% ({2}/{3})" -f $_.File, $_.Coverage, $_.Covered, $_.Total)
-        }
-}
-
-if ($CoverageThreshold -gt 0) {
-    if ($summary.LineCoverage -lt $CoverageThreshold) {
-        Write-Host ("Coverage threshold not met: {0:N2}% < {1:N2}%" -f $summary.LineCoverage, $CoverageThreshold) -ForegroundColor Red
-        exit 1
+if ($AnalysisMode -eq "Full") {
+    # Capture diagnostics to a log file for later analysis
+    Write-Host "Capturing diagnostics for analysis..." -ForegroundColor Gray
+    $buildOutput = & dotnet $buildArgs 2>&1 | Tee-Object -FilePath $diagnosticsLogPath
+    $buildExitCode = $LASTEXITCODE
+    
+    # Output build result
+    $buildOutput | ForEach-Object { Write-Host $_ }
+    
+    if ($buildExitCode -ne 0) {
+        Write-Host ""
+        Write-Host "Build failed!" -ForegroundColor Red
+        exit $buildExitCode
     }
+} else {
+    & dotnet $buildArgs
+    Test-LastExitCode "Build failed!"
+}
 
-    Write-Host ("Coverage threshold met: {0:N2}% >= {1:N2}%" -f $summary.LineCoverage, $CoverageThreshold) -ForegroundColor Green
+# Step 2: Test (unless skipped)
+if (-not $SkipTests) {
+    Write-Banner "Step $stepNumber`: Running Tests"
+    $stepNumber++
+    
+    $testArgs = @(
+        "test",
+        $testProjectPath,
+        "-c", $Configuration,
+        "--no-build",
+        "-p:Platform=$platform",
+        "--verbosity", "normal",
+        "--collect", "XPlat Code Coverage",
+        "--results-directory", "$repoRoot\TestResults",
+        "--settings", $runSettingsPath
+    )
+    
+    & dotnet $testArgs
+    Test-LastExitCode "Tests failed!"
+    
+    # Step 3: Coverage Analysis
+    Write-Banner "Step $stepNumber`: Analyzing Coverage"
+    $stepNumber++
+    
+    $coverageFile = Get-LatestCoverageFile -Root "$repoRoot\TestResults"
+    $summary = Get-CoverageSummary -FilePath $coverageFile.FullName -ExcludePatterns $ExcludePatterns
+    
+    Write-Host "Coverage file: $($coverageFile.FullName)" -ForegroundColor Gray
+    Write-Host ("Line coverage : {0:N2}% ({1}/{2} lines)" -f $summary.LineCoverage, $summary.CoveredLines, $summary.TotalLines) -ForegroundColor Cyan
+    Write-Host ("Branch coverage: {0:N2}%" -f $summary.BranchCoverage) -ForegroundColor Cyan
+    
+    if ($ExcludePatterns -and $ExcludePatterns.Count -gt 0) {
+        Write-Host "Excluded patterns: $($ExcludePatterns -join ', ')" -ForegroundColor Gray
+    }
+    
+    if ($Top -gt 0) {
+        Write-Host ""
+        Write-Host "Coverage (lowest $Top files):" -ForegroundColor Yellow
+        $summary.Files
+            | Sort-Object Coverage
+            | Select-Object -First $Top
+            | ForEach-Object {
+                Write-Host ("  {0,-70} {1,6:N2}% ({2}/{3})" -f $_.File, $_.Coverage, $_.Covered, $_.Total)
+            }
+    }
+    
+    if ($CoverageThreshold -gt 0) {
+        if ($summary.LineCoverage -lt $CoverageThreshold) {
+            Write-Host ("Coverage threshold not met: {0:N2}% < {1:N2}%" -f $summary.LineCoverage, $CoverageThreshold) -ForegroundColor Red
+            exit 1
+        }
+    
+        Write-Host ("Coverage threshold met: {0:N2}% >= {1:N2}%" -f $summary.LineCoverage, $CoverageThreshold) -ForegroundColor Green
+    }
 }
 
 # Step 4: Metrics Collection
-Write-Banner "Step 4: Collecting Metrics"
+Write-Banner "Step $stepNumber`: Collecting Metrics"
+$stepNumber++
 
 $csFiles = Get-ChildItem -Path "$repoRoot\src" -Filter "*.cs" -Recurse -File
 $csprojFiles = Get-ChildItem -Path "$repoRoot\src" -Filter "*.csproj" -Recurse -File
@@ -337,6 +549,7 @@ $qualityMetrics = Get-CodeQualityMetrics -CsFiles $csFiles.FullName
 $metrics = @{
     CollectionDate = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     Repository = "GistGet"
+    AnalysisMode = $AnalysisMode
     Files = @{
         CSharp = $csFiles.Count
         Projects = $csprojFiles.Count
@@ -396,6 +609,7 @@ else {
 GistGet Code Metrics Report
 ========================================
 Collection Date: $($metrics.CollectionDate)
+Analysis Mode: $($metrics.AnalysisMode)
 
 FILE STATISTICS
 ----------------------------------------
@@ -451,7 +665,46 @@ Write-Host "  Total C# Lines: $($metrics.CSharpCode.TotalLines)" -ForegroundColo
 Write-Host "  Classes: $($metrics.CodeQuality.Classes), Methods: $($metrics.CodeQuality.Methods)" -ForegroundColor White
 Write-Host "  Average Complexity: $($metrics.CodeQuality.AverageComplexity)" -ForegroundColor White
 
+# Full Mode Only: Format Check and Diagnostics Report
+if ($AnalysisMode -eq "Full") {
+    # Step 5: Format Check
+    Write-Banner "Step $stepNumber`: Format Check"
+    $stepNumber++
+    
+    Write-Host "Running dotnet format --verify-no-changes..." -ForegroundColor Gray
+    $formatOutput = & dotnet format $solutionPath --verify-no-changes --verbosity quiet 2>&1
+    $formatExitCode = $LASTEXITCODE
+    
+    if ($formatExitCode -eq 0) {
+        Write-Host "FORMAT CHECK: PASSED" -ForegroundColor Green
+    } else {
+        Write-Host "FORMAT CHECK: FAILED" -ForegroundColor Red
+        Write-Host ""
+        Write-Host "The following files need formatting:" -ForegroundColor Yellow
+        $formatOutput | ForEach-Object { Write-Host "  $_" }
+        Write-Host ""
+        Write-Host "Run 'dotnet format $solutionPath' to fix formatting issues." -ForegroundColor Cyan
+        # Don't exit - continue to show diagnostics
+    }
+    
+    # Step 6: Static Analysis Report
+    Write-Banner "Step $stepNumber`: Static Analysis Report"
+    $stepNumber++
+    
+    $diagnostics = Get-DiagnosticsSummary -LogPath $diagnosticsLogPath
+    Write-DiagnosticsReport -Diagnostics $diagnostics -TopRules 10 -TopFiles 5
+    
+    # Cleanup diagnostics log
+    if (Test-Path $diagnosticsLogPath) {
+        Remove-Item $diagnosticsLogPath -Force
+    }
+}
+
 #endregion
+
+# エンコーディングを元に戻す
+[Console]::OutputEncoding = $originalOutputEncoding
+$OutputEncoding = $originalPSOutputEncoding
 
 Write-Banner "All Steps Completed Successfully"
 exit 0

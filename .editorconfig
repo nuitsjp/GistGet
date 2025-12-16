@@ -1,0 +1,287 @@
+# EditorConfig - https://editorconfig.org
+root = true
+
+# 全ファイル共通
+[*]
+indent_style = space
+indent_size = 4
+end_of_line = crlf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# ソリューションファイル
+[*.sln]
+indent_style = tab
+
+# XML プロジェクトファイル
+[*.{csproj,vbproj,vcxproj,vcxproj.filters,proj,projitems,shproj,props,targets}]
+indent_size = 2
+
+# XML 設定ファイル
+[*.{xml,config,nuspec,runsettings}]
+indent_size = 2
+
+# JSON ファイル
+[*.json]
+indent_size = 2
+
+# YAML ファイル
+[*.{yml,yaml}]
+indent_size = 2
+
+# Markdown ファイル
+[*.md]
+trim_trailing_whitespace = false
+
+# PowerShell スクリプト
+[*.ps1]
+indent_size = 4
+
+###############################
+# C# コーディング規約
+###############################
+[*.cs]
+
+# インデントと空白
+indent_size = 4
+tab_width = 4
+
+###############################
+# 命名規則
+###############################
+
+# インターフェースは I プレフィックス
+dotnet_naming_rule.interface_should_be_begins_with_i.severity = warning
+dotnet_naming_rule.interface_should_be_begins_with_i.symbols = interface
+dotnet_naming_rule.interface_should_be_begins_with_i.style = begins_with_i
+
+dotnet_naming_symbols.interface.applicable_kinds = interface
+dotnet_naming_symbols.interface.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
+dotnet_naming_symbols.interface.required_modifiers =
+
+dotnet_naming_style.begins_with_i.required_prefix = I
+dotnet_naming_style.begins_with_i.capitalization = pascal_case
+
+# 型は PascalCase
+dotnet_naming_rule.types_should_be_pascal_case.severity = warning
+dotnet_naming_rule.types_should_be_pascal_case.symbols = types
+dotnet_naming_rule.types_should_be_pascal_case.style = pascal_case
+
+dotnet_naming_symbols.types.applicable_kinds = class, struct, interface, enum
+dotnet_naming_symbols.types.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
+
+dotnet_naming_style.pascal_case.capitalization = pascal_case
+
+# 非プライベートメンバーは PascalCase
+dotnet_naming_rule.non_private_members_should_be_pascal_case.severity = warning
+dotnet_naming_rule.non_private_members_should_be_pascal_case.symbols = non_private_members
+dotnet_naming_rule.non_private_members_should_be_pascal_case.style = pascal_case
+
+dotnet_naming_symbols.non_private_members.applicable_kinds = property, method, field, event, delegate
+dotnet_naming_symbols.non_private_members.applicable_accessibilities = public, internal, protected, protected_internal
+
+# プライベートフィールドはアンダースコアプレフィックス
+dotnet_naming_rule.private_fields_should_be_camel_case_with_underscore.severity = warning
+dotnet_naming_rule.private_fields_should_be_camel_case_with_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_should_be_camel_case_with_underscore.style = camel_case_with_underscore
+
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+
+dotnet_naming_style.camel_case_with_underscore.required_prefix = _
+dotnet_naming_style.camel_case_with_underscore.capitalization = camel_case
+
+# 定数は PascalCase
+dotnet_naming_rule.constants_should_be_pascal_case.severity = warning
+dotnet_naming_rule.constants_should_be_pascal_case.symbols = constants
+dotnet_naming_rule.constants_should_be_pascal_case.style = pascal_case
+
+dotnet_naming_symbols.constants.applicable_kinds = field, local
+dotnet_naming_symbols.constants.required_modifiers = const
+
+# ローカル変数とパラメータは camelCase
+dotnet_naming_rule.locals_should_be_camel_case.severity = warning
+dotnet_naming_rule.locals_should_be_camel_case.symbols = locals
+dotnet_naming_rule.locals_should_be_camel_case.style = camel_case
+
+dotnet_naming_symbols.locals.applicable_kinds = parameter, local
+
+dotnet_naming_style.camel_case.capitalization = camel_case
+
+###############################
+# コードスタイル設定
+###############################
+
+# using ディレクティブ
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+# this. 修飾子
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+dotnet_style_qualification_for_method = false:suggestion
+dotnet_style_qualification_for_event = false:suggestion
+
+# 言語キーワード vs 型名
+dotnet_style_predefined_type_for_locals_parameters_members = true:suggestion
+dotnet_style_predefined_type_for_member_access = true:suggestion
+
+# null チェック
+dotnet_style_coalesce_expression = true:suggestion
+dotnet_style_null_propagation = true:suggestion
+dotnet_style_prefer_is_null_check_over_reference_equality_method = true:suggestion
+
+# var の使用
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = true:suggestion
+
+# 式形式メンバー
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_constructors = false:suggestion
+csharp_style_expression_bodied_operators = when_on_single_line:suggestion
+csharp_style_expression_bodied_properties = when_on_single_line:suggestion
+csharp_style_expression_bodied_indexers = when_on_single_line:suggestion
+csharp_style_expression_bodied_accessors = when_on_single_line:suggestion
+csharp_style_expression_bodied_lambdas = when_on_single_line:suggestion
+csharp_style_expression_bodied_local_functions = when_on_single_line:suggestion
+
+# パターンマッチング
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
+csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
+csharp_style_prefer_switch_expression = true:suggestion
+csharp_style_prefer_pattern_matching = true:suggestion
+csharp_style_prefer_not_pattern = true:suggestion
+
+# 新しい C# 機能
+csharp_style_prefer_primary_constructors = true:suggestion
+csharp_style_prefer_top_level_statements = true:suggestion
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_style_prefer_null_check_over_type_check = true:suggestion
+csharp_prefer_simple_using_statement = true:suggestion
+csharp_style_prefer_range_operator = true:suggestion
+csharp_style_prefer_index_operator = true:suggestion
+csharp_style_implicit_object_creation_when_type_is_apparent = true:suggestion
+
+# 中括弧
+csharp_prefer_braces = true:suggestion
+
+# 改行設定
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+
+# インデント設定
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+csharp_indent_block_contents = true
+csharp_indent_braces = false
+
+# 空白設定
+csharp_space_after_cast = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_between_parentheses = false
+csharp_space_before_colon_in_inheritance_clause = true
+csharp_space_after_colon_in_inheritance_clause = true
+csharp_space_around_binary_operators = before_and_after
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+csharp_space_between_method_declaration_empty_parameter_list_parentheses = false
+csharp_space_between_method_declaration_name_and_open_parenthesis = false
+csharp_space_between_method_call_parameter_list_parentheses = false
+csharp_space_between_method_call_empty_parameter_list_parentheses = false
+csharp_space_between_method_call_name_and_opening_parenthesis = false
+csharp_space_after_comma = true
+csharp_space_before_comma = false
+csharp_space_after_dot = false
+csharp_space_before_dot = false
+csharp_space_after_semicolon_in_for_statement = true
+csharp_space_before_semicolon_in_for_statement = false
+csharp_space_around_declaration_statements = false
+csharp_space_before_open_square_brackets = false
+csharp_space_between_empty_square_brackets = false
+csharp_space_between_square_brackets = false
+
+###############################
+# アナライザー診断設定
+###############################
+
+# .NET アナライザー (CA ルール)
+# パフォーマンス
+dotnet_diagnostic.CA1822.severity = suggestion      # static にできるメンバー
+dotnet_diagnostic.CA1826.severity = suggestion      # Enumerable メソッドの代わりにプロパティ使用
+dotnet_diagnostic.CA1827.severity = suggestion      # Count/Any の使い分け
+dotnet_diagnostic.CA1829.severity = suggestion      # Length/Count プロパティ使用
+
+# 信頼性
+dotnet_diagnostic.CA2007.severity = none            # ConfigureAwait (ライブラリ以外では不要)
+dotnet_diagnostic.CA1031.severity = suggestion      # 汎用例外キャッチ
+
+# コード品質
+dotnet_diagnostic.CA1062.severity = suggestion      # パブリックメソッドの引数検証
+dotnet_diagnostic.CA1303.severity = none            # ローカライズ不要
+dotnet_diagnostic.CA1304.severity = none            # CultureInfo 指定 (意図的に省略可)
+dotnet_diagnostic.CA1305.severity = none            # IFormatProvider 指定
+dotnet_diagnostic.CA1307.severity = none            # StringComparison 指定
+dotnet_diagnostic.CA1310.severity = suggestion      # StringComparison 指定
+dotnet_diagnostic.CA1707.severity = none            # 識別子にアンダースコア (テストでは許可)
+dotnet_diagnostic.CA1848.severity = none            # LoggerMessage デリゲート (小規模プロジェクト向け)
+dotnet_diagnostic.CA2227.severity = suggestion      # コレクションプロパティの setter
+
+# IDE ルール
+dotnet_diagnostic.IDE0005.severity = warning        # 未使用 using
+dotnet_diagnostic.IDE0044.severity = suggestion     # readonly 追加
+dotnet_diagnostic.IDE0051.severity = warning        # 未使用プライベートメンバー
+dotnet_diagnostic.IDE0052.severity = warning        # 読み取られていないプライベートメンバー
+dotnet_diagnostic.IDE0060.severity = suggestion     # 未使用パラメータ
+dotnet_diagnostic.IDE0161.severity = warning        # file-scoped namespace
+dotnet_diagnostic.IDE0290.severity = suggestion     # プライマリコンストラクタ使用
+
+# Roslynator (RCS ルール)
+dotnet_diagnostic.RCS1021.severity = suggestion     # 式形式メンバー
+dotnet_diagnostic.RCS1036.severity = suggestion     # 不要な空行削除
+dotnet_diagnostic.RCS1037.severity = suggestion     # 末尾の空行削除
+dotnet_diagnostic.RCS1049.severity = suggestion     # 不要な else 削除
+dotnet_diagnostic.RCS1058.severity = suggestion     # StringBuilder 使用
+dotnet_diagnostic.RCS1061.severity = suggestion     # メソッドのマージ
+dotnet_diagnostic.RCS1077.severity = suggestion     # 最適化された null チェック
+dotnet_diagnostic.RCS1080.severity = suggestion     # nameof 使用
+dotnet_diagnostic.RCS1097.severity = suggestion     # 不要な冗長性削除
+dotnet_diagnostic.RCS1118.severity = none           # static readonly → const (場合による)
+dotnet_diagnostic.RCS1123.severity = suggestion     # コメント形式
+dotnet_diagnostic.RCS1124.severity = suggestion     # インライン変数
+dotnet_diagnostic.RCS1138.severity = suggestion     # パブリックメンバーにコメント追加
+dotnet_diagnostic.RCS1139.severity = none           # 非パブリックアクセサにコメント追加
+dotnet_diagnostic.RCS1141.severity = suggestion     # パラメータ名を引数に追加
+dotnet_diagnostic.RCS1163.severity = suggestion     # 未使用パラメータ
+dotnet_diagnostic.RCS1169.severity = suggestion     # readonly 追加
+dotnet_diagnostic.RCS1194.severity = none           # IComparable 実装
+dotnet_diagnostic.RCS1197.severity = suggestion     # 最適化された Dictionary 使用
+
+# Meziantou アナライザー (MA ルール)
+dotnet_diagnostic.MA0001.severity = suggestion      # StringComparison 指定
+dotnet_diagnostic.MA0003.severity = suggestion      # 名前付き引数使用
+dotnet_diagnostic.MA0004.severity = none            # ConfigureAwait (アプリでは不要)
+dotnet_diagnostic.MA0006.severity = none            # async void 回避
+dotnet_diagnostic.MA0011.severity = none            # IFormatProvider 指定
+dotnet_diagnostic.MA0015.severity = suggestion      # Argument name 使用
+dotnet_diagnostic.MA0018.severity = none            # メソッドは戻り値を返すべき
+dotnet_diagnostic.MA0026.severity = none            # 完全なエラーハンドリング
+dotnet_diagnostic.MA0028.severity = suggestion      # StringBuilder 最適化
+dotnet_diagnostic.MA0048.severity = none            # ファイル名と型名の一致
+dotnet_diagnostic.MA0049.severity = none            # 型はファイル内で一意
+dotnet_diagnostic.MA0051.severity = none            # メソッドが長すぎる
+dotnet_diagnostic.MA0053.severity = none            # シールドクラス推奨
+dotnet_diagnostic.MA0076.severity = suggestion      # JSON シリアライズ最適化
+
+# テストプロジェクト固有の設定
+[*Test*.cs]
+dotnet_diagnostic.CA1034.severity = none            # 入れ子型 (テスト整理のため許可)
+dotnet_diagnostic.CA1707.severity = none            # テストメソッド名のアンダースコア許可
+dotnet_diagnostic.CA1822.severity = none            # テストメソッドは static 不要
+dotnet_diagnostic.CA2007.severity = none            # ConfigureAwait 不要
+dotnet_diagnostic.RCS1163.severity = none           # 未使用パラメータ (テストでは許容)
+

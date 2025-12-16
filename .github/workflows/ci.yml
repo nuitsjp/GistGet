@@ -65,6 +65,9 @@ jobs:
       - name: Build
         run: dotnet build ${{ env.SOLUTION_FILE }} -c Debug -p:Platform=${{ env.BUILD_PLATFORM }} --no-restore
 
+      - name: Format Check
+        run: dotnet format ${{ env.SOLUTION_FILE }} --verify-no-changes --verbosity diagnostic
+
       - name: Test
         run: dotnet test ${{ env.TEST_PROJECT }} -c Debug -p:Platform=${{ env.BUILD_PLATFORM }} --no-build --collect:"XPlat Code Coverage" --results-directory TestResults
 

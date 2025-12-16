@@ -3,6 +3,9 @@
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 	</PropertyGroup>
 	<ItemGroup>
+		<!-- Analyzers -->
+		<PackageVersion Include="Roslynator.Analyzers" Version="4.12.9" />
+		<PackageVersion Include="Meziantou.Analyzer" Version="2.0.182" />
 		<!-- Microsoft.Extensions -->
 		<PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.1" />
 		<!-- WinGet COM Interop -->

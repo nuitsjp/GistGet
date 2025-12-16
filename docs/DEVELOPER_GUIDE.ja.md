@@ -9,6 +9,7 @@
 - [ビルドとテスト](#ビルドとテスト)
 - [開発ワークフロー](#開発ワークフロー)
 - [コーディング規約](#コーディング規約)
+- [静的解析](#静的解析)
 - [テスト戦略](#テスト戦略)
 - [デバッグ](#デバッグ)
 - [トラブルシューティング](#トラブルシューティング)
@@ -52,7 +53,7 @@ WinGet COM APIを使用するには、以下の設定が必要です：
 
 ```powershell
 # 便利スクリプトを使用 (推奨)
-.\scripts\Run-Tests.ps1 -Configuration Debug -CollectCoverage $true
+.\scripts\Run-Tests.ps1
 ```
 
 カバレッジレポートは `TestResults/` ディレクトリに `coverage.cobertura.xml` として出力されます。
@@ -61,18 +62,31 @@ WinGet COM APIを使用するには、以下の設定が必要です：
 
 #### Run-Tests.ps1
 
-テストとカバレッジを一度に実行する便利スクリプト:
+テスト、カバレッジ、静的解析を実行する統合スクリプト:
 
 ```powershell
-# デフォルト (Debug, カバレッジあり)
+# Full モード (デフォルト) - テスト + カバレッジ + 静的解析
 .\scripts\Run-Tests.ps1
+
+# Quick モード - テスト + カバレッジのみ（高速）
+.\scripts\Run-Tests.ps1 -AnalysisMode Quick
 
 # Releaseビルドでテスト
 .\scripts\Run-Tests.ps1 -Configuration Release
 
-# カバレッジなしでテスト
-.\scripts\Run-Tests.ps1 -CollectCoverage $false
+# テストをスキップして静的解析のみ実行
+.\scripts\Run-Tests.ps1 -SkipTests
+
+# カバレッジ閾値を変更
+.\scripts\Run-Tests.ps1 -CoverageThreshold 90
 ```
+
+##### 解析モード
+
+| モード | 内容 | 用途 |
+|--------|------|------|
+| **Quick** | ビルド + テスト + カバレッジ | CI や高速フィードバック |
+| **Full** (デフォルト) | Quick + フォーマットチェック + 診断レポート | コード品質レビュー |
 
 #### Run-AuthLogin.ps1
 
@@ -80,14 +94,6 @@ WinGet COM APIを使用するには、以下の設定が必要です：
 
 ```powershell
 .\scripts\Run-AuthLogin.ps1
-```
-
-#### Collect-Metrics.ps1
-
-コードメトリクスを収集するスクリプト:
-
-```powershell
-.\scripts\Collect-Metrics.ps1
 ```
 
 メトリクスレポートは `metrics-report.txt` に出力されます。
@@ -140,6 +146,9 @@ Closes #123
 ```
 
 ## コーディング規約
+
+> [!TIP]
+> コーディング規約は `.editorconfig` で自動的に強制されます。`dotnet format` コマンドで自動修正できます。
 
 ### C# スタイルガイド
 
@@ -271,6 +280,54 @@ public class PackageService : IPackageService
     // 実装
 }
 ```
+
+## 静的解析
+
+### 導入されているアナライザー
+
+GistGet プロジェクトでは以下の Roslyn アナライザーを使用しています：
+
+| アナライザー | 目的 |
+|--------------|------|
+| **.NET Analyzers** (CA) | Microsoft 公式の品質・パフォーマンスルール |
+| **Roslynator** (RCS) | リファクタリング提案と追加ルール |
+| **Meziantou** (MA) | パフォーマンス・セキュリティ・ベストプラクティス |
+
+### 設定ファイル
+
+- **`.editorconfig`**: ルートディレクトリに配置。コードスタイルとアナライザールールの重大度を定義
+- **`Directory.Build.props`**: 静的解析オプションとアナライザーパッケージの共通参照を定義
+
+### 診断レポートの活用
+
+`Run-Tests.ps1` を Full モードで実行すると、リファクタリング候補が表示されます：
+
+```
+TOP REFACTORING OPPORTUNITIES
+----------------------------------------
+  RCS1021  Consider using expression-bodied member    (8 occurrences)
+  CA1822   Mark members as static                     (5 occurrences)
+  IDE0044  Make field readonly                        (3 occurrences)
+```
+
+### コードフォーマット
+
+```powershell
+# フォーマット違反をチェック
+dotnet format src/GistGet.slnx --verify-no-changes
+
+# 自動修正
+dotnet format src/GistGet.slnx
+```
+
+### 主要なルールと対処法
+
+| ルール | 説明 | 対処法 |
+|--------|------|--------|
+| CA1822 | メンバーを static にできる | インスタンス状態を使わないメソッドは `static` に |
+| IDE0044 | フィールドを readonly にできる | 変更されないフィールドは `readonly` に |
+| RCS1021 | 式形式メンバーを使用可能 | 単一式のメソッドは `=>` 構文に |
+| IDE0161 | ファイルスコープ名前空間を使用 | `namespace X { }` → `namespace X;` |
 
 ## テスト戦略
 
