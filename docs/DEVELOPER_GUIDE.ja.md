@@ -24,110 +24,7 @@
 - **Windows Package Manager**: winget（Windows App Installer経由）
 - **PowerShell**: 5.1以降（スクリプト実行用）
 
-### Windows SDK のインストール
-
-WinGet COM APIを使用するため、Windows SDKの**UAP Platform**コンポーネントが必要です。
-
-#### Visual Studio Installer でのインストール
-
-1. Visual Studio Installerを起動
-2. 「変更」をクリック
-3. 「個別のコンポーネント」タブを選択
-4. 以下のコンポーネントを選択してインストール：
-   - **Windows 11 SDK (10.0.26100.0)**
-   - **Windows ユニバーサル C ランタイム**
-
-#### 確認方法
-
-```powershell
-# Platform.xml が存在することを確認
-Test-Path "C:\Program Files (x86)\Windows Kits\10\Platforms\UAP\10.0.26100.0\Platform.xml"
-```
-
-### リポジトリのクローン
-
-```powershell
-git clone https://github.com/nuitsjp/GistGet.git
-cd GistGet
-```
-
-### 依存関係の復元
-
-```powershell
-dotnet restore GistGet.sln
-```
-
-### ビルド
-
-```powershell
-# Debug ビルド
-dotnet build GistGet.sln -c Debug
-
-# Release ビルド
-dotnet build GistGet.sln -c Release
-```
-
-## プロジェクト構造
-
-GistGetは、レイヤー化アーキテクチャを採用しています。詳細は[DESIGN.ja.md](file:///d:/GistGet/docs/DESIGN.ja.md)を参照してください。
-
-```
-GistGet/
-├── src/
-│   ├── GistGet/                    # メインプロジェクト
-│   │   ├── App/                    # アプリケーションエントリーポイント
-│   │   │   └── Program.cs          # エントリーポイント
-│   │   ├── Com/                    # WinGet COM API 連携
-│   │   │   └── WinGetService.cs    # WinGet サービス実装
-│   │   ├── IWinGetService.cs       # WinGet サービスインターフェース
-│   │   ├── WinGetPackage.cs        # パッケージモデル
-│   │   ├── PackageId.cs            # パッケージID値オブジェクト
-│   │   └── Version.cs              # バージョン値オブジェクト
-│   └── GistGet.Test/               # テストプロジェクト
-│       └── Com/                    # COM API テスト
-│           └── WinGetServiceTests.cs
-├── scripts/                        # 開発用スクリプト
-│   ├── Run-Tests.ps1               # テスト実行スクリプト
-│   ├── Run-AuthLogin.ps1           # 認証テストスクリプト
-│   └── Collect-Metrics.ps1         # メトリクス収集スクリプト
-├── docs/                           # ドキュメント
-│   ├── DESIGN.ja.md                # システム設計書
-│   ├── DEVELOPER_GUIDE.ja.md       # 開発者ガイド（本ドキュメント）
-│   ├── SPEC.ja.md                  # 仕様書
-│   └── YAML_SPEC.ja.md             # YAML仕様書
-└── external/                       # 外部参照
-    └── winget-cli/                 # WinGet CLI リポジトリ（サンプル参照用）
-```
-
-### 主要なレイヤー
-
-#### Presentation層 (`Presentation/`)
-- CLIコマンドの定義とパース
-- `System.CommandLine`を使用したコマンドライン処理
-- ユーザー入力の検証とエラーハンドリング
-
-#### Application層 (`Application/Services/`)
-- ビジネスロジックの実装
-- `AuthService`: GitHub認証 (Device Flow)
-- `GistService`: Gist操作（取得、更新）
-- `PackageService`: パッケージ同期のオーケストレーション
-
-#### COM 層 (`Com/`)
-- WinGet COM APIとの統合
-- `WinGetService`: WinGet COM APIを使用したパッケージ検索・情報取得
-
-### WinGet COM API について
-
-GistGetは、WinGet COM APIを使用してパッケージ情報を取得します。
-
-#### 主要な依存パッケージ
-
-```xml
-<PackageReference Include="Microsoft.WindowsPackageManager.ComInterop" Version="1.10.340" />
-<PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.2.0" />
-```
-
-#### プロジェクト設定
+### プロジェクト設定
 
 WinGet COM APIを使用するには、以下の設定が必要です：
 
@@ -138,7 +35,8 @@ WinGet COM APIを使用するには、以下の設定が必要です：
 </PropertyGroup>
 ```
 
-- **RuntimeIdentifier**: WinGet COM APIはx64プラットフォームでのみ動作
+- **RuntimeIdentifier**: GistGetプロジェクトでは現時点で `win-x64` のみをサポート
+  - WinGet COM API自体は `win-x64`、`win-x86`、`win-arm64` の3つをサポートしていますが、テスト環境の制約により本プロジェクトではx64のみを対象としています
 - **MicrosoftManagementDeployment-FactoryLinkage**: 
     - `static`（推奨）: WinGetのプロセス内でCOMオブジェクトを作成
   - `embedded`: テスト用途
@@ -148,95 +46,16 @@ WinGet COM APIを使用するには、以下の設定が必要です：
 - 実装サンプル: `external/winget-cli/samples/WinGetClientSample/`
 - GitHub: [microsoft/winget-cli](https://github.com/microsoft/winget-cli)
 
-#### 既知の問題と回避策
-
-##### IsUpdateAvailable が正しく動作しない
-
-WinGet COM APIの`IsUpdateAvailable`プロパティは、更新が利用可能な場合でも`false`を返すことがあります。
-
-**回避策**: `InstalledVersion` と `AvailableVersions[0]` を比較して更新の有無を判定：
-
-```csharp
-var installedVersion = package.InstalledVersion.Version;
-var availableVersion = package.AvailableVersions.Count > 0 
-    ? package.AvailableVersions[0].Version 
-    : installedVersion;
-
-bool isUpdateAvailable = installedVersion != availableVersion;
-```
-
 ## ビルドとテスト
-
-### ビルドコマンド
-
-```powershell
-# ソリューション全体をビルド
-dotnet build GistGet.sln -c Debug
-
-# 特定のプロジェクトをビルド
-dotnet build src/GistGet/GistGet.csproj -c Debug
-dotnet build src/GistGet.Test/GistGet.Test.csproj -c Debug
-```
-
-### テストの実行
-
-#### 基本的なテスト実行
-
-```powershell
-# すべてのテストを実行
-dotnet test src/GistGet.Test/GistGet.Test.csproj -c Debug
-
-# 詳細な出力
-dotnet test src/GistGet.Test/GistGet.Test.csproj -c Debug --logger "console;verbosity=detailed"
-```
 
 #### カバレッジ付きテスト実行
 
 ```powershell
-# カバレッジを収集してテスト実行
-dotnet test src/GistGet.Test/GistGet.Test.csproj -c Debug `
-  --collect:"XPlat Code Coverage" `
-  --results-directory TestResults
-
 # 便利スクリプトを使用 (推奨)
 .\scripts\Run-Tests.ps1 -Configuration Debug -CollectCoverage $true
 ```
 
 カバレッジレポートは `TestResults/` ディレクトリに `coverage.cobertura.xml` として出力されます。
-
-#### 特定のテストの実行
-
-```powershell
-# 特定のテストクラスを実行
-dotnet test --filter "FullyQualifiedName~PackageServiceTests"
-
-# 特定のテストメソッドを実行
-dotnet test --filter "FullyQualifiedName~PackageServiceTests.SyncAsync_WithNewPackage_InstallsPackage"
-```
-
-### CLIの実行
-
-開発中のCLIを実行するには:
-
-```powershell
-# dotnet run を使用
-dotnet run --project src/GistGet/GistGet.csproj -- <command>
-
-# 例: 認証
-dotnet run --project src/GistGet/GistGet.csproj -- auth login
-
-# 例: 同期
-dotnet run --project src/GistGet/GistGet.csproj -- sync
-
-# 例: ヘルプ
-dotnet run --project src/GistGet/GistGet.csproj -- --help
-```
-
-または、ビルド後の実行ファイルを直接実行:
-
-```powershell
-.\src\GistGet\bin\Debug\net10.0-windows10.0.26100.0\GistGet.exe <command>
-```
 
 ### 開発用スクリプト
 
@@ -278,49 +97,6 @@ dotnet run --project src/GistGet/GistGet.csproj -- --help
 ### TDD (Test-Driven Development)
 
 GistGetプロジェクトでは、**t-wadaスタイルのTDD**を厳格に遵守しています。
-
-#### RED-GREEN-REFACTORサイクル
-
-1. **RED**: 失敗するテストを書く
-   ```csharp
-   [Fact]
-   public async Task SyncAsync_WithNewPackage_InstallsPackage()
-   {
-       // Arrange
-       var mockExecutor = new Mock<IWinGetExecutor>();
-       var service = new PackageService(mockExecutor.Object, ...);
-       
-       // Act
-       var result = await service.SyncAsync(...);
-       
-       // Assert
-       mockExecutor.Verify(x => x.InstallPackageAsync(It.IsAny<GistGetPackage>()), Times.Once);
-   }
-   ```
-
-2. **GREEN**: テストを通す最小限の実装
-   ```csharp
-   public async Task<SyncResult> SyncAsync(...)
-   {
-       // 最小限の実装
-       await _executor.InstallPackageAsync(package);
-       return new SyncResult();
-   }
-   ```
-
-3. **REFACTOR**: コードをリファクタリング
-   ```csharp
-   public async Task<SyncResult> SyncAsync(...)
-   {
-       // より良い実装にリファクタリング
-       var packagesToInstall = CalculatePackagesToInstall(...);
-       foreach (var package in packagesToInstall)
-       {
-           await _executor.InstallPackageAsync(package);
-       }
-       return new SyncResult { InstalledCount = packagesToInstall.Count };
-   }
-   ```
 
 ### ブランチ戦略
 

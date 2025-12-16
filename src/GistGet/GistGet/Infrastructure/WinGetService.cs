@@ -65,6 +65,10 @@ public class WinGetService : IWinGetService
 
         var installedVersion = catalogPackage.InstalledVersion;
 
+        // Check for available updates by comparing versions.
+        // Note: IsUpdateAvailable performs applicability checks (architecture, requirements, pinning)
+        // and may return false even when AvailableVersions contains newer versions (e.g., arm64-only on x64).
+        // We use AvailableVersions[0] for simple version comparison without applicability constraints.
         Version? usableVersion = null;
         if (catalogPackage.AvailableVersions.Count > 0)
         {
@@ -135,6 +139,10 @@ public class WinGetService : IWinGetService
 
             var installedVersion = catalogPackage.InstalledVersion;
 
+            // Check for available updates by comparing versions.
+            // Note: IsUpdateAvailable performs applicability checks (architecture, requirements, pinning)
+            // and may return false even when AvailableVersions contains newer versions (e.g., arm64-only on x64).
+            // We use AvailableVersions[0] for simple version comparison without applicability constraints.
             Version? usableVersion = null;
             if (catalogPackage.AvailableVersions.Count > 0)
             {

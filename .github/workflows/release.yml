@@ -30,8 +30,6 @@ jobs:
         include:
           - rid: win-x64
             arch: x64
-          - rid: win-arm64
-            arch: arm64
 
     steps:
       - name: Checkout
@@ -98,7 +96,6 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
       x64_sha256: ${{ steps.hashes.outputs.X64_SHA256 }}
-      arm64_sha256: ${{ steps.hashes.outputs.ARM64_SHA256 }}
 
     steps:
       - name: Checkout
@@ -127,16 +124,12 @@ jobs:
         id: hashes
         run: |
           X64_HASH=$(cat artifacts/GistGet-win-x64.zip.sha256 | cut -d' ' -f1)
-          ARM64_HASH=$(cat artifacts/GistGet-win-arm64.zip.sha256 | cut -d' ' -f1)
           echo "X64_SHA256=$X64_HASH" >> $GITHUB_OUTPUT
-          echo "ARM64_SHA256=$ARM64_HASH" >> $GITHUB_OUTPUT
           echo "x64 SHA256: $X64_HASH"
-          echo "arm64 SHA256: $ARM64_HASH"
 
       - name: Create SHA256SUMS.txt
         run: |
           cat artifacts/GistGet-win-x64.zip.sha256 > artifacts/SHA256SUMS.txt
-          cat artifacts/GistGet-win-arm64.zip.sha256 >> artifacts/SHA256SUMS.txt
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -163,13 +156,11 @@ jobs:
             | アーキテクチャ | ファイル | SHA256 |
             |---------------|----------|--------|
             | x64 | GistGet-win-x64.zip | `${{ steps.hashes.outputs.X64_SHA256 }}` |
-            | ARM64 | GistGet-win-arm64.zip | `${{ steps.hashes.outputs.ARM64_SHA256 }}` |
             
             ### 変更点
             詳細は [CHANGELOG](https://github.com/nuitsjp/GistGet/blob/main/CHANGELOG.md) を参照してください。
           files: |
             artifacts/GistGet-win-x64.zip
-            artifacts/GistGet-win-arm64.zip
             artifacts/SHA256SUMS.txt
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
@@ -201,7 +192,6 @@ jobs:
         run: |
           $version = "${{ needs.release.outputs.version }}"
           $x64Url = "https://github.com/nuitsjp/GistGet/releases/download/v$version/GistGet-win-x64.zip"
-          $arm64Url = "https://github.com/nuitsjp/GistGet/releases/download/v$version/GistGet-win-arm64.zip"
 
           # wingetcreate の update は PortableCommandAlias を引数で指定できないため、
           # ローカルに生成したマニフェストを PowerShell で補正してから submit します。
@@ -211,7 +201,7 @@ jobs:
 
           ./wingetcreate.exe update nuitsjp.GistGet `
             --version $version `
-            --urls $x64Url $arm64Url `
+            --urls $x64Url `
             --out $outDir 2>&1 | Out-String | Write-Host
 
           # YAML を安全に編集するため powershell-yaml を使用

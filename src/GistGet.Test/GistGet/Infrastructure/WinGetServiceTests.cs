@@ -18,6 +18,8 @@ public class WinGetServiceTests
         [Fact]
         public void ExistingPackageWithUpdate_ReturnsPackageWithUsableVersionWhenAvailable()
         {
+            // Tests that UsableVersion is populated when AvailableVersions[0] differs from InstalledVersion.
+            // This comparison ignores IsUpdateAvailable's applicability checks (architecture, requirements).
             // -------------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------------
@@ -46,6 +48,8 @@ public class WinGetServiceTests
         [Fact]
         public void ExistingPackageWithoutUpdate_ReturnsPackageWithNullUsableVersion()
         {
+            // Tests that UsableVersion is null when no newer version exists in AvailableVersions,
+            // or when AvailableVersions[0] matches the installed version.
             // -------------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------------
