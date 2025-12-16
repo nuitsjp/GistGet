@@ -18,7 +18,7 @@
 ### 必要な環境
 
 - **OS**: Windows 10/11（Windows 10.0.26100.0以降）
-- **.NET SDK**: .NET 8.0以降
+- **.NET SDK**: .NET 10.0以降
 - **Windows SDK**: 10.0.26100.0以降（UAP Platformを含む）
 - **IDE**: Visual Studio 2022またはVisual Studio Code（推奨）
 - **Windows Package Manager**: winget（Windows App Installer経由）
@@ -235,7 +235,7 @@ dotnet run --project src/GistGet/GistGet.csproj -- --help
 または、ビルド後の実行ファイルを直接実行:
 
 ```powershell
-.\src\GistGet\bin\Debug\net8.0-windows10.0.26100.0\GistGet.exe <command>
+.\src\GistGet\bin\Debug\net10.0-windows10.0.26100.0\GistGet.exe <command>
 ```
 
 ### 開発用スクリプト
@@ -368,7 +368,7 @@ Closes #123
 ### C# スタイルガイド
 
 - **言語バージョン**: C# 12
-- **ターゲットフレームワーク**: `net8.0-windows10.0.26100.0`
+- **ターゲットフレームワーク**: `net10.0-windows10.0.26100.0`
 - **インデント**: 4スペース
 - **エンコーディング**: UTF-8
 - **Nullable**: 有効 (`<Nullable>enable</Nullable>`)
@@ -743,7 +743,7 @@ public class GistServiceIntegrationTests : IClassFixture<GistIntegrationTestFixt
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/src/GistGet/bin/Debug/net8.0-windows10.0.26100.0/GistGet.exe",
+            "program": "${workspaceFolder}/src/GistGet/bin/Debug/net10.0-windows10.0.26100.0/GistGet.exe",
             "args": ["auth", "login"],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
@@ -754,7 +754,7 @@ public class GistServiceIntegrationTests : IClassFixture<GistIntegrationTestFixt
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/src/GistGet/bin/Debug/net8.0-windows10.0.26100.0/GistGet.exe",
+            "program": "${workspaceFolder}/src/GistGet/bin/Debug/net10.0-windows10.0.26100.0/GistGet.exe",
             "args": ["sync"],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
