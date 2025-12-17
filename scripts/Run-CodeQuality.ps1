@@ -54,7 +54,7 @@
 
 param(
     [string]$Configuration = "Debug",
-    [double]$CoverageThreshold = 95,
+    [double]$CoverageThreshold = 98,
     [int]$Top = 5,
     [string]$MetricsOutputPath = ".reports/metrics-report.txt",
     [ValidateSet('Text', 'Json')]
@@ -776,6 +776,21 @@ if (-not $SkipTests) {
     }
 
     if ($CoverageThreshold -gt 0) {
+        # Check individual file threshold (90%)
+        $fileThreshold = 90
+        $lowCoverageFiles = $summary.Files | Where-Object { $_.Coverage -lt $fileThreshold -and $_.Total -gt 0 }
+        if ($lowCoverageFiles) {
+            Write-Host ""
+            Write-Host ("Files below {0}% coverage:" -f $fileThreshold) -ForegroundColor Red
+            $lowCoverageFiles | Sort-Object Coverage | ForEach-Object {
+                Write-Host ("  {0,-70} {1,6:N2}% ({2}/{3})" -f $_.File, $_.Coverage, $_.Covered, $_.Total) -ForegroundColor Red
+            }
+            $script:pipelineResults.Coverage = @{ Status = "Failed"; Details = "{0} files below {1}%" -f $lowCoverageFiles.Count, $fileThreshold }
+            Write-PipelineSummary
+            exit 1
+        }
+
+        # Check overall threshold (98%)
         if ($summary.LineCoverage -lt $CoverageThreshold) {
             Write-Host ("Coverage threshold not met: {0:N2}% < {1:N2}%" -f $summary.LineCoverage, $CoverageThreshold) -ForegroundColor Red
             $script:pipelineResults.Coverage = @{ Status = "Failed"; Details = "{0:N2}% < {1:N2}%" -f $summary.LineCoverage, $CoverageThreshold }

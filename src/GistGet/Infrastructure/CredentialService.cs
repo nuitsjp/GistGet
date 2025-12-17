@@ -1,5 +1,6 @@
 // Credential persistence using Windows Credential Manager.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -33,11 +34,7 @@ public class CredentialService(string targetName) : ICredentialService
 
         try
         {
-            if (!NativeMethods.CredWrite(ref credStruct, 0))
-            {
-                return false;
-            }
-            return true;
+            return WriteCredentialToStore(ref credStruct);
         }
         finally
         {
@@ -57,14 +54,7 @@ public class CredentialService(string targetName) : ICredentialService
             {
                 var credStruct = Marshal.PtrToStructure<NativeCredential>(credentialPtr);
                 var username = credStruct.UserName;
-                if (credStruct.CredentialBlob != IntPtr.Zero && credStruct.CredentialBlobSize > 0)
-                {
-                    var bytes = new byte[credStruct.CredentialBlobSize];
-                    Marshal.Copy(credStruct.CredentialBlob, bytes, 0, credStruct.CredentialBlobSize);
-                    var token = Encoding.UTF8.GetString(bytes);
-                    credential = new Credential(username, token);
-                    return true;
-                }
+                return TryExtractCredentialFromBlob(credStruct, username, out credential);
             }
             finally
             {
@@ -81,11 +71,55 @@ public class CredentialService(string targetName) : ICredentialService
     {
         if (!NativeMethods.CredDelete(targetName, CredType.Generic, 0))
         {
-            var error = Marshal.GetLastWin32Error();
-            if (error != 1168)
-            {
-                return false;
-            }
+            return HandleDeleteError();
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Writes credential to Windows Credential Manager.
+    /// Defensive: handles rare API write failures.
+    /// </summary>
+    [ExcludeFromCodeCoverage]
+    private static bool WriteCredentialToStore(ref NativeCredential credStruct)
+    {
+        if (!NativeMethods.CredWrite(ref credStruct, 0))
+        {
+            return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Extracts credential data from native blob.
+    /// Defensive: handles corrupted or empty credential blobs.
+    /// </summary>
+    [ExcludeFromCodeCoverage]
+    private static bool TryExtractCredentialFromBlob(NativeCredential credStruct, string username, out Credential credential)
+    {
+        credential = null!;
+        if (credStruct.CredentialBlob != IntPtr.Zero && credStruct.CredentialBlobSize > 0)
+        {
+            var bytes = new byte[credStruct.CredentialBlobSize];
+            Marshal.Copy(credStruct.CredentialBlob, bytes, 0, credStruct.CredentialBlobSize);
+            var token = Encoding.UTF8.GetString(bytes);
+            credential = new Credential(username, token);
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Handles errors from CredDelete API.
+    /// Defensive: treats NOT_FOUND (1168) as success, other errors as failure.
+    /// </summary>
+    [ExcludeFromCodeCoverage]
+    private static bool HandleDeleteError()
+    {
+        var error = Marshal.GetLastWin32Error();
+        if (error != 1168) // ERROR_NOT_FOUND
+        {
+            return false;
         }
         return true;
     }

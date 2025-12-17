@@ -48,6 +48,20 @@ public class CredentialServiceTests : IDisposable
             retrieved.Username.ShouldBe(username);
             retrieved.Token.ShouldBe(token);
         }
+
+        [Fact]
+        public void NullCredential_ShouldThrowArgumentNullException()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            Credential nullCredential = null!;
+
+            // -------------------------------------------------------------------
+            // Act & Assert
+            // -------------------------------------------------------------------
+            Should.Throw<ArgumentNullException>(() => Sut.SaveCredential(nullCredential));
+        }
     }
 
     [Collection("CredentialTests")]
