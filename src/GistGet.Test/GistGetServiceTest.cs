@@ -3129,6 +3129,49 @@ Test.PackageB:
                 File.Delete(tempFile);
             }
         }
+
+        [Fact]
+        public async Task WhenLoginFails_ThrowsInvalidOperation()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var tempFile = Path.GetTempFileName();
+            try
+            {
+                var yamlContent = @"Test.Package: {}
+";
+                await File.WriteAllTextAsync(tempFile, yamlContent);
+
+                // 最初のTryGetCredentialは失敗、LoginAsync後も失敗
+                CredentialServiceMock
+                    .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                    .Returns(new TryGetCredentialDelegate((out c) =>
+                    {
+                        c = null;
+                        return false;
+                    }));
+
+                var failedCredential = new Credential("user", "token");
+                AuthServiceMock.Setup(x => x.LoginAsync())
+                    .ReturnsAsync(failedCredential);
+
+                // SaveCredentialは呼ばれるが、TryGetCredentialは引き続き失敗
+                CredentialServiceMock.Setup(x => x.SaveCredential(It.IsAny<Credential>()));
+
+                // -------------------------------------------------------------------
+                // Act & Assert
+                // -------------------------------------------------------------------
+                await Should.ThrowAsync<InvalidOperationException>(async () =>
+                {
+                    await Target.ImportAsync(tempFile);
+                });
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
     }
 }
 

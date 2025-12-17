@@ -64,20 +64,7 @@ public class WinGetService : IWinGetService
         }
 
         var installedVersion = catalogPackage.InstalledVersion;
-
-        // Check for available updates by comparing versions.
-        // Note: IsUpdateAvailable performs applicability checks (architecture, requirements, pinning)
-        // and may return false even when AvailableVersions contains newer versions (e.g., arm64-only on x64).
-        // We use AvailableVersions[0] for simple version comparison without applicability constraints.
-        Version? usableVersion = null;
-        if (catalogPackage.AvailableVersions.Count > 0)
-        {
-            var latestAvailableVersion = catalogPackage.AvailableVersions[0].Version;
-            if (latestAvailableVersion != installedVersion.Version)
-            {
-                usableVersion = new Version(latestAvailableVersion);
-            }
-        }
+        var usableVersion = GetUsableVersion(catalogPackage, installedVersion);
 
         return new WinGetPackage(
             Name: catalogPackage.Name,
@@ -137,20 +124,7 @@ public class WinGetService : IWinGetService
             }
 
             var installedVersion = catalogPackage.InstalledVersion;
-
-            // Check for available updates by comparing versions.
-            // Note: IsUpdateAvailable performs applicability checks (architecture, requirements, pinning)
-            // and may return false even when AvailableVersions contains newer versions (e.g., arm64-only on x64).
-            // We use AvailableVersions[0] for simple version comparison without applicability constraints.
-            Version? usableVersion = null;
-            if (catalogPackage.AvailableVersions.Count > 0)
-            {
-                var latestAvailableVersion = catalogPackage.AvailableVersions[0].Version;
-                if (latestAvailableVersion != installedVersion.Version)
-                {
-                    usableVersion = new Version(latestAvailableVersion);
-                }
-            }
+            var usableVersion = GetUsableVersion(catalogPackage, installedVersion);
 
             packages.Add(new WinGetPackage(
                 Name: catalogPackage.Name,
@@ -203,5 +177,25 @@ public class WinGetService : IWinGetService
             return false;
         }
         return true;
+    }
+
+    /// <summary>
+    /// Determines usable version from available versions.
+    /// </summary>
+    private static Version? GetUsableVersion(Microsoft.Management.Deployment.CatalogPackage catalogPackage, Microsoft.Management.Deployment.PackageVersionInfo installedVersion)
+    {
+        // Check for available updates by comparing versions.
+        // Note: IsUpdateAvailable performs applicability checks (architecture, requirements, pinning)
+        // and may return false even when AvailableVersions contains newer versions (e.g., arm64-only on x64).
+        // We use AvailableVersions[0] for simple version comparison without applicability constraints.
+        if (catalogPackage.AvailableVersions.Count > 0)
+        {
+            var latestAvailableVersion = catalogPackage.AvailableVersions[0].Version;
+            if (latestAvailableVersion != installedVersion.Version)
+            {
+                return new Version(latestAvailableVersion);
+            }
+        }
+        return null;
     }
 }

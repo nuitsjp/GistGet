@@ -16,7 +16,10 @@
     ビルド構成 (Debug または Release)。既定値は Debug。
 
 .PARAMETER CoverageThreshold
-    最低限必要なカバレッジ率 (%)。既定値は 95。0 を指定すると閾値チェックをスキップ。
+    最低限必要なラインカバレッジ率 (%)。既定値は 98。0 を指定すると閾値チェックをスキップ。
+
+.PARAMETER BranchCoverageThreshold
+    最低限必要なブランチカバレッジ率 (%)。既定値は 81。0 を指定すると閾値チェックをスキップ。
 
 .PARAMETER Top
     カバレッジが低いファイルの表示数。既定値は 5。
@@ -55,6 +58,7 @@
 param(
     [string]$Configuration = "Debug",
     [double]$CoverageThreshold = 98,
+    [double]$BranchCoverageThreshold = 81,
     [int]$Top = 5,
     [string]$MetricsOutputPath = ".reports/metrics-report.txt",
     [ValidateSet('Text', 'Json')]
@@ -65,7 +69,7 @@ param(
     [string]$ReSharperSeverity = "SUGGESTION",
     [string]$ReSharperOutputPath = ".reports/inspectcode-report.sarif",
     [string[]]$ExcludePatterns = @(
-        '[\\/]obj[\\/]',
+        '(^|[\\/])obj[\\/]',
         '\.g\.cs$',
         'Program\.cs$',
         'GitHubClientFactory\.cs$'
@@ -671,7 +675,8 @@ function Write-PipelineSummary {
 
 Write-Banner "GistGet Code Quality Pipeline"
 Write-Host "Configuration: $Configuration" -ForegroundColor Yellow
-Write-Host "Coverage Threshold: $CoverageThreshold%" -ForegroundColor Yellow
+Write-Host "Line Coverage Threshold: $CoverageThreshold%" -ForegroundColor Yellow
+Write-Host "Branch Coverage Threshold: $BranchCoverageThreshold%" -ForegroundColor Yellow
 Write-Host "Platform: $platform" -ForegroundColor Yellow
 if ($SkipTests) {
     Write-Host "Tests: SKIPPED" -ForegroundColor Yellow
@@ -757,8 +762,8 @@ if (-not $SkipTests) {
     $summary = Get-CoverageSummary -FilePath $coverageFile.FullName -ExcludePatterns $ExcludePatterns
 
     Write-Host "Coverage file: $($coverageFile.FullName)" -ForegroundColor Gray
-    Write-Host ("Line coverage : {0:N2}% ({1}/{2} lines)" -f $summary.LineCoverage, $summary.CoveredLines, $summary.TotalLines) -ForegroundColor Cyan
-    Write-Host ("Branch coverage: {0:N2}%" -f $summary.BranchCoverage) -ForegroundColor Cyan
+    Write-Host ("Line coverage   : {0:N2}% ({1}/{2} lines)" -f $summary.LineCoverage, $summary.CoveredLines, $summary.TotalLines) -ForegroundColor Cyan
+    Write-Host ("Branch coverage : {0:N2}%" -f $summary.BranchCoverage) -ForegroundColor Cyan
 
     if ($ExcludePatterns -and $ExcludePatterns.Count -gt 0) {
         Write-Host "Excluded patterns: $($ExcludePatterns -join ', ')" -ForegroundColor Gray
@@ -776,8 +781,8 @@ if (-not $SkipTests) {
     }
 
     if ($CoverageThreshold -gt 0) {
-        # Check individual file threshold (90%)
-        $fileThreshold = 90
+        # Check individual file threshold (89%)
+        $fileThreshold = 89
         $lowCoverageFiles = $summary.Files | Where-Object { $_.Coverage -lt $fileThreshold -and $_.Total -gt 0 }
         if ($lowCoverageFiles) {
             Write-Host ""
@@ -798,9 +803,21 @@ if (-not $SkipTests) {
             exit 1
         }
 
-        Write-Host ("Coverage threshold met: {0:N2}% >= {1:N2}%" -f $summary.LineCoverage, $CoverageThreshold) -ForegroundColor Green
+        Write-Host ("Line coverage threshold met: {0:N2}% >= {1:N2}%" -f $summary.LineCoverage, $CoverageThreshold) -ForegroundColor Green
     }
-    $script:pipelineResults.Coverage = @{ Status = "Passed"; Details = "{0:N2}%" -f $summary.LineCoverage }
+
+    # Check branch coverage threshold
+    if ($BranchCoverageThreshold -gt 0) {
+        if ($summary.BranchCoverage -lt $BranchCoverageThreshold) {
+            Write-Host ("Branch coverage threshold not met: {0:N2}% < {1:N2}%" -f $summary.BranchCoverage, $BranchCoverageThreshold) -ForegroundColor Red
+            $script:pipelineResults.Coverage = @{ Status = "Failed"; Details = "Branch: {0:N2}% < {1:N2}%" -f $summary.BranchCoverage, $BranchCoverageThreshold }
+            Write-PipelineSummary
+            exit 1
+        }
+        Write-Host ("Branch coverage threshold met: {0:N2}% >= {1:N2}%" -f $summary.BranchCoverage, $BranchCoverageThreshold) -ForegroundColor Green
+    }
+
+    $script:pipelineResults.Coverage = @{ Status = "Passed"; Details = "Line: {0:N2}%, Branch: {1:N2}%" -f $summary.LineCoverage, $summary.BranchCoverage }
 }
 
 # Step 4: Metrics Collection

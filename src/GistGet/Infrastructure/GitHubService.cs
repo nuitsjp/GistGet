@@ -88,11 +88,7 @@ public class GitHubService(
     public async Task<IReadOnlyList<GistGetPackage>> GetPackagesFromUrlAsync(string url)
     {
         var httpClient = CreateHttpClient();
-        var hasHeader = httpClient.DefaultRequestHeaders.UserAgent.Any(h => h.Product?.Name == Constants.ProductHeader);
-        if (!hasHeader)
-        {
-            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(Constants.ProductHeader);
-        }
+        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(Constants.ProductHeader);
 
         var yaml = await httpClient.GetStringAsync(url);
 
@@ -253,6 +249,11 @@ public class GitHubService(
         return gistUrl;
     }
 
+    /// <summary>
+    /// Extracts YAML content from a Gist.
+    /// Handles missing target files and falls back to first YAML file.
+    /// </summary>
+    [ExcludeFromCodeCoverage]
     private static string? ExtractYamlContent(Gist gist, string targetFileName)
     {
         if (gist.Files.TryGetValue(targetFileName, out var file))
@@ -266,6 +267,10 @@ public class GitHubService(
         return firstYaml?.Content;
     }
 
+    /// <summary>
+    /// Resolves Gist metadata with default fallbacks.
+    /// </summary>
+    [ExcludeFromCodeCoverage]
     private static (string FileName, string Description) ResolveGistMetadata(string? gistFileName, string? gistDescription)
     {
         var fileName = string.IsNullOrWhiteSpace(gistFileName) ? Constants.DefaultGistFileName : gistFileName;

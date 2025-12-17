@@ -1,7 +1,6 @@
 // Console I/O implementation for the CLI layer.
 
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using GistGet.Infrastructure;
 
@@ -40,11 +39,7 @@ public class ConsoleService : IConsoleService
     public void SetClipboard(string text)
     {
         ArgumentNullException.ThrowIfNull(text);
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            SetClipboardWindows(text);
-        }
+        SetClipboardWindows(text);
     }
 
     [SupportedOSPlatform("windows")]

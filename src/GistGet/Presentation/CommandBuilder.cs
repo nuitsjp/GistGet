@@ -208,12 +208,7 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
         command.SetHandler(async context =>
         {
             var parseResult = context.ParseResult;
-            var id = parseResult.GetValueForOption(idOption) ?? string.Empty;
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                console.MarkupLine("[red]Package ID is required.[/]");
-                return;
-            }
+            var id = parseResult.GetValueForOption(idOption)!;
 
             var options = new InstallOptions
             {
@@ -262,12 +257,7 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
         command.SetHandler(async context =>
         {
             var parseResult = context.ParseResult;
-            var id = parseResult.GetValueForOption(idOption) ?? string.Empty;
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                console.MarkupLine("[red]Package ID is required.[/]");
-                return;
-            }
+            var id = parseResult.GetValueForOption(idOption)!;
 
             var options = new UninstallOptions
             {

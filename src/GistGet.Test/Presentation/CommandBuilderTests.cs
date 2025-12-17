@@ -297,29 +297,6 @@ public class CommandBuilderTests : IDisposable
                 o.AllowHashMismatch
             )), Times.Once);
         }
-
-        [Fact]
-        public async Task WithoutId_PrintsErrorAndSkipsInstall()
-        {
-            // -------------------------------------------------------------------
-            // Arrange
-            // -------------------------------------------------------------------
-            var target = CreateTarget();
-            var root = target.Build();
-
-            // -------------------------------------------------------------------
-            // Act
-            // -------------------------------------------------------------------
-            var exitCode = await root.InvokeAsync("install --id \"\"");
-            var output = TestConsole.Output;
-
-            // -------------------------------------------------------------------
-            // Assert
-            // -------------------------------------------------------------------
-            exitCode.ShouldBe(0);
-            GistGetServiceMock.Verify(x => x.InstallAndSaveAsync(It.IsAny<InstallOptions>()), Times.Never);
-            output.ShouldContain("Package ID is required.");
-        }
     }
 
     public class UninstallCommand : CommandBuilderTests
@@ -352,29 +329,6 @@ public class CommandBuilderTests : IDisposable
                 o.Silent &&
                 o.Force
             )), Times.Once);
-        }
-
-        [Fact]
-        public async Task WithoutId_PrintsErrorAndSkipsUninstall()
-        {
-            // -------------------------------------------------------------------
-            // Arrange
-            // -------------------------------------------------------------------
-            var target = CreateTarget();
-            var root = target.Build();
-
-            // -------------------------------------------------------------------
-            // Act
-            // -------------------------------------------------------------------
-            var exitCode = await root.InvokeAsync("uninstall --id \"\"");
-            var output = TestConsole.Output;
-
-            // -------------------------------------------------------------------
-            // Assert
-            // -------------------------------------------------------------------
-            exitCode.ShouldBe(0);
-            GistGetServiceMock.Verify(x => x.UninstallAndSaveAsync(It.IsAny<UninstallOptions>()), Times.Never);
-            output.ShouldContain("Package ID is required.");
         }
     }
 

@@ -192,6 +192,10 @@ public class GitHubServiceTests
                 // Act: 保存後に再取得
                 // -------------------------------------------------------------------
                 await target.SavePackagesAsync(token, gist.HtmlUrl, fileName, description, packages);
+
+                // GitHub API の反映を待つ
+                await Task.Delay(TimeSpan.FromSeconds(2));
+
                 var retrievedPackages = await target.GetPackagesAsync(token, fileName, description);
 
                 // -------------------------------------------------------------------
@@ -473,6 +477,38 @@ public class GitHubServiceTests
             status.Username.ShouldBe("octocat");
             status.Scopes.ShouldContain("gist");
             status.Scopes.ShouldContain("repo");
+        }
+
+        [Fact]
+        public async Task WhenApiInfoIsNull_ReturnsEmptyScopes()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var credentialService = new Mock<ICredentialService>();
+            var consoleService = new Mock<IConsoleService>();
+
+            var usersClient = new Mock<IGitHubClientWrapper>();
+            var user = new User();
+            SetProperty(user, "Login", "testuser");
+            usersClient.Setup(x => x.GetCurrentUserAsync()).ReturnsAsync(user);
+            usersClient.Setup(x => x.GetLastApiInfo()).Returns((ApiInfo?)null);
+
+            var factory = new Mock<IGitHubClientFactory>();
+            factory.Setup(x => x.Create("token-456")).Returns(usersClient.Object);
+
+            var target = new GitHubService(credentialService.Object, consoleService.Object, factory.Object);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var status = await target.GetTokenStatusAsync("token-456");
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            status.Username.ShouldBe("testuser");
+            status.Scopes.ShouldBeEmpty();
         }
     }
 
