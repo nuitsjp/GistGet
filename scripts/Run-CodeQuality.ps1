@@ -62,7 +62,7 @@ param(
     [switch]$SkipTests,
     [switch]$TreatWarningsAsErrors,
     [ValidateSet('HINT', 'SUGGESTION', 'WARNING', 'ERROR')]
-    [string]$ReSharperSeverity = "WARNING",
+    [string]$ReSharperSeverity = "SUGGESTION",
     [string]$ReSharperOutputPath = ".reports/inspectcode-report.sarif",
     [string[]]$ExcludePatterns = @(
         '[\\/]obj[\\/]',
