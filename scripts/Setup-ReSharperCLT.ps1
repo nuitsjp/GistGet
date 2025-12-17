@@ -59,7 +59,7 @@ try {
     $toolList = dotnet tool list --local 2>&1
     if ($toolList -match "jetbrains\.resharper\.globaltools") {
         Write-Host "ReSharper CLI tools are already installed." -ForegroundColor Green
-        
+
         # 更新があるかチェック
         Write-Host "Checking for updates..." -ForegroundColor Yellow
         dotnet tool update JetBrains.ReSharper.GlobalTools --local

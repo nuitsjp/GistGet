@@ -205,17 +205,17 @@ function Get-CoverageSummary {
 #region Metrics Functions
 function Get-LineCount {
     param([string[]]$Files)
-    
+
     $totalLines = 0
     $codeLines = 0
     $commentLines = 0
     $blankLines = 0
-    
+
     foreach ($file in $Files) {
         $content = Get-Content $file -ErrorAction SilentlyContinue
         if ($content) {
             $totalLines += $content.Count
-            
+
             foreach ($line in $content) {
                 $trimmed = $line.Trim()
                 if ($trimmed -eq "") {
@@ -230,7 +230,7 @@ function Get-LineCount {
             }
         }
     }
-    
+
     return @{
         Total = $totalLines
         Code = $codeLines
@@ -241,7 +241,7 @@ function Get-LineCount {
 
 function Get-CodeQualityMetrics {
     param([string[]]$CsFiles)
-    
+
     $totalClasses = 0
     $totalInterfaces = 0
     $totalMethods = 0
@@ -249,27 +249,27 @@ function Get-CodeQualityMetrics {
     $totalComplexity = 0
     $maxComplexity = 0
     $maxComplexityMethod = ""
-    
+
     foreach ($file in $CsFiles) {
         $content = Get-Content $file -Raw -ErrorAction SilentlyContinue
         if (-not $content) { continue }
-        
+
         # Count classes (excluding comments)
         $classMatches = [regex]::Matches($content, '\bclass\s+\w+')
         $totalClasses += $classMatches.Count
-        
+
         # Count interfaces
         $interfaceMatches = [regex]::Matches($content, '\binterface\s+\w+')
         $totalInterfaces += $interfaceMatches.Count
-        
+
         # Count methods (public, private, protected, internal)
         $methodMatches = [regex]::Matches($content, '(public|private|protected|internal|static)\s+[\w<>\[\]]+\s+\w+\s*\(')
         $totalMethods += $methodMatches.Count
-        
+
         # Count properties
         $propertyMatches = [regex]::Matches($content, '(public|private|protected|internal)\s+[\w<>\[\]]+\s+\w+\s*\{\s*(get|set)')
         $totalProperties += $propertyMatches.Count
-        
+
         # Calculate cyclomatic complexity (simplified)
         $lines = Get-Content $file
         foreach ($line in $lines) {
@@ -277,7 +277,7 @@ function Get-CodeQualityMetrics {
             if ($trimmed.StartsWith("//") -or $trimmed.StartsWith("/*") -or $trimmed.StartsWith("*")) {
                 continue
             }
-            
+
             $complexity = 0
             $complexity += ([regex]::Matches($trimmed, '\bif\s*\(')).Count
             $complexity += ([regex]::Matches($trimmed, '\belse\b')).Count
@@ -289,16 +289,16 @@ function Get-CodeQualityMetrics {
             $complexity += ([regex]::Matches($trimmed, '\&\&')).Count
             $complexity += ([regex]::Matches($trimmed, '\|\|')).Count
             $complexity += ([regex]::Matches($trimmed, '\?')).Count - ([regex]::Matches($trimmed, '\?\?')).Count
-            
+
             $totalComplexity += $complexity
-            
+
             if ($complexity -gt $maxComplexity) {
                 $maxComplexity = $complexity
                 $maxComplexityMethod = Split-Path -Leaf $file
             }
         }
     }
-    
+
     return @{
         Classes = $totalClasses
         Interfaces = $totalInterfaces
@@ -315,11 +315,11 @@ function Get-CodeQualityMetrics {
 #region Static Analysis Functions
 function Get-DiagnosticsSummary {
     param([string]$LogPath)
-    
+
     if (-not (Test-Path $LogPath)) {
         return $null
     }
-    
+
     $content = Get-Content $LogPath -Raw
     $diagnostics = @{
         Errors = @()
@@ -328,12 +328,12 @@ function Get-DiagnosticsSummary {
         ByRule = @{}
         ByFile = @{}
     }
-    
+
     # Parse MSBuild diagnostic output
     # Format: path(line,col): severity code: message
     $pattern = '([^(]+)\((\d+),(\d+)\):\s*(error|warning|info)\s+(\w+):\s*(.+)'
     $matches = [regex]::Matches($content, $pattern, [System.Text.RegularExpressions.RegexOptions]::Multiline)
-    
+
     foreach ($match in $matches) {
         $file = $match.Groups[1].Value.Trim()
         $line = $match.Groups[2].Value
@@ -341,7 +341,7 @@ function Get-DiagnosticsSummary {
         $severity = $match.Groups[4].Value
         $code = $match.Groups[5].Value
         $message = $match.Groups[6].Value.Trim()
-        
+
         $diagnostic = [pscustomobject]@{
             File = $file
             Line = [int]$line
@@ -350,13 +350,13 @@ function Get-DiagnosticsSummary {
             Code = $code
             Message = $message
         }
-        
+
         switch ($severity) {
             "error" { $diagnostics.Errors += $diagnostic }
             "warning" { $diagnostics.Warnings += $diagnostic }
             "info" { $diagnostics.Info += $diagnostic }
         }
-        
+
         # Group by rule
         if (-not $diagnostics.ByRule.ContainsKey($code)) {
             $diagnostics.ByRule[$code] = @{
@@ -367,7 +367,7 @@ function Get-DiagnosticsSummary {
             }
         }
         $diagnostics.ByRule[$code].Count++
-        
+
         # Group by file
         $fileName = Split-Path -Leaf $file
         if (-not $diagnostics.ByFile.ContainsKey($fileName)) {
@@ -375,7 +375,7 @@ function Get-DiagnosticsSummary {
         }
         $diagnostics.ByFile[$fileName]++
     }
-    
+
     return $diagnostics
 }
 
@@ -385,42 +385,42 @@ function Write-DiagnosticsReport {
         [int]$TopRules = 10,
         [int]$TopFiles = 5
     )
-    
+
     if (-not $Diagnostics) {
         Write-Host "No diagnostics data available." -ForegroundColor Yellow
         return
     }
-    
+
     $totalErrors = $Diagnostics.Errors.Count
     $totalWarnings = $Diagnostics.Warnings.Count
     $totalInfo = $Diagnostics.Info.Count
-    
+
     Write-Host ""
     Write-Host "DIAGNOSTICS SUMMARY" -ForegroundColor Yellow
     Write-Host "----------------------------------------"
-    
+
     if ($totalErrors -gt 0) {
         Write-Host ("Errors:     {0}" -f $totalErrors) -ForegroundColor Red
     } else {
         Write-Host ("Errors:     {0}" -f $totalErrors) -ForegroundColor Green
     }
-    
+
     if ($totalWarnings -gt 0) {
         Write-Host ("Warnings:   {0}" -f $totalWarnings) -ForegroundColor Yellow
     } else {
         Write-Host ("Warnings:   {0}" -f $totalWarnings) -ForegroundColor Green
     }
-    
+
     Write-Host ("Info:       {0}" -f $totalInfo) -ForegroundColor Gray
-    
+
     # Top refactoring opportunities
     if ($Diagnostics.ByRule.Count -gt 0) {
         Write-Host ""
         Write-Host "TOP REFACTORING OPPORTUNITIES" -ForegroundColor Yellow
         Write-Host "----------------------------------------"
-        
-        $Diagnostics.ByRule.Values | 
-            Sort-Object Count -Descending | 
+
+        $Diagnostics.ByRule.Values |
+            Sort-Object Count -Descending |
             Select-Object -First $TopRules |
             ForEach-Object {
                 $sevColor = switch ($_.Severity) {
@@ -428,23 +428,23 @@ function Write-DiagnosticsReport {
                     "warning" { "Yellow" }
                     default { "Gray" }
                 }
-                
+
                 # Truncate message to fit
                 $msg = $_.Message
                 if ($msg.Length -gt 45) {
                     $msg = $msg.Substring(0, 42) + "..."
                 }
-                
+
                 Write-Host ("  {0,-8} {1,-45} ({2} occurrences)" -f $_.Code, $msg, $_.Count) -ForegroundColor $sevColor
             }
     }
-    
+
     # Diagnostics by file
     if ($Diagnostics.ByFile.Count -gt 0) {
         Write-Host ""
         Write-Host "DIAGNOSTICS BY FILE (Top $TopFiles)" -ForegroundColor Yellow
         Write-Host "----------------------------------------"
-        
+
         $Diagnostics.ByFile.GetEnumerator() |
             Sort-Object Value -Descending |
             Select-Object -First $TopFiles |
@@ -461,29 +461,29 @@ function Invoke-ReSharperInspectCode {
         [string]$OutputPath,
         [string]$Severity
     )
-    
+
     # Resolve output path
     if (-not [System.IO.Path]::IsPathRooted($OutputPath)) {
         $OutputPath = Join-Path $repoRoot $OutputPath
     }
-    
+
     # Ensure output directory exists
     $outputDir = Split-Path -Parent $OutputPath
     if (-not (Test-Path $outputDir)) {
         New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
     }
-    
+
     Write-Host "Running InspectCode..." -ForegroundColor Yellow
     Write-Host "  Solution: $solutionPath" -ForegroundColor Gray
     Write-Host "  Output: $OutputPath" -ForegroundColor Gray
     Write-Host "  Severity: $Severity" -ForegroundColor Gray
     Write-Host ""
-    
+
     Push-Location $repoRoot
     try {
         # Restore tools first
         dotnet tool restore 2>&1 | Out-Null
-        
+
         $inspectArgs = @(
             "jb",
             "inspectcode",
@@ -493,17 +493,17 @@ function Invoke-ReSharperInspectCode {
             "--severity=$Severity",
             "--verbosity=WARN"
         )
-        
+
         # 既存の設定ファイルがあれば使用
         $dotsettingsPath = Join-Path $repoRoot "src\GistGet.slnx.DotSettings"
         if (Test-Path $dotsettingsPath) {
             $inspectArgs += "--profile=$dotsettingsPath"
             Write-Host "Using settings: $dotsettingsPath" -ForegroundColor Gray
         }
-        
+
         & dotnet $inspectArgs
         $exitCode = $LASTEXITCODE
-        
+
         # Parse SARIF and return summary
         $summary = @{
             ExitCode = $exitCode
@@ -512,23 +512,23 @@ function Invoke-ReSharperInspectCode {
             ByLevel = @{}
             TopRules = @()
         }
-        
+
         if (Test-Path $OutputPath) {
             try {
                 $sarif = Get-Content $OutputPath -Raw | ConvertFrom-Json
                 $results = $sarif.runs[0].results
-                
+
                 if ($results) {
                     $summary.IssueCount = $results.Count
-                    
+
                     # Group by level
                     $results | Group-Object { $_.level } | ForEach-Object {
                         $summary.ByLevel[$_.Name] = $_.Count
                     }
-                    
+
                     # Top rules
-                    $summary.TopRules = $results | Group-Object { $_.ruleId } | 
-                        Sort-Object Count -Descending | 
+                    $summary.TopRules = $results | Group-Object { $_.ruleId } |
+                        Sort-Object Count -Descending |
                         Select-Object -First 5 |
                         ForEach-Object { @{ RuleId = $_.Name; Count = $_.Count } }
                 }
@@ -537,7 +537,7 @@ function Invoke-ReSharperInspectCode {
                 Write-Host "Could not parse SARIF report for summary." -ForegroundColor Gray
             }
         }
-        
+
         return $summary
     }
     finally {
@@ -547,22 +547,22 @@ function Invoke-ReSharperInspectCode {
 
 function Write-ReSharperReport {
     param([hashtable]$Summary)
-    
+
     if (-not $Summary) {
         Write-Host "No ReSharper data available." -ForegroundColor Yellow
         return
     }
-    
+
     $fileInfo = Get-Item $Summary.OutputPath -ErrorAction SilentlyContinue
     if ($fileInfo) {
         Write-Host "Report generated: $($Summary.OutputPath)" -ForegroundColor Green
         Write-Host "Report size: $([math]::Round($fileInfo.Length / 1024, 2)) KB" -ForegroundColor Gray
     }
-    
+
     Write-Host ""
     $issueColor = if ($Summary.IssueCount -gt 0) { "Yellow" } else { "Green" }
     Write-Host "Issues found: $($Summary.IssueCount)" -ForegroundColor $issueColor
-    
+
     foreach ($level in $Summary.ByLevel.Keys | Sort-Object) {
         $levelColor = switch ($level) {
             "error" { "Red" }
@@ -572,7 +572,7 @@ function Write-ReSharperReport {
         }
         Write-Host "  ${level}: $($Summary.ByLevel[$level])" -ForegroundColor $levelColor
     }
-    
+
     if ($Summary.TopRules.Count -gt 0) {
         Write-Host ""
         Write-Host "Top issue types:" -ForegroundColor Yellow
@@ -586,18 +586,18 @@ function Write-ReSharperReport {
 #region Final Summary
 function Write-PipelineSummary {
     Write-Banner "PIPELINE EXECUTION SUMMARY"
-    
+
     $statusSymbols = @{
         "Passed" = @{ Symbol = "[OK]"; Color = "Green" }
         "Failed" = @{ Symbol = "[NG]"; Color = "Red" }
         "Warning" = @{ Symbol = "[!]"; Color = "Yellow" }
         "Skipped" = @{ Symbol = "[-]"; Color = "Gray" }
     }
-    
+
     Write-Host ""
     Write-Host "STEP RESULTS" -ForegroundColor Yellow
     Write-Host "----------------------------------------"
-    
+
     $steps = @(
         @{ Name = "Build"; Key = "Build" },
         @{ Name = "Tests"; Key = "Tests" },
@@ -607,37 +607,37 @@ function Write-PipelineSummary {
         @{ Name = "Roslyn Diagnostics"; Key = "RoslynDiagnostics" },
         @{ Name = "ReSharper InspectCode"; Key = "ReSharper" }
     )
-    
+
     $hasFailure = $false
-    
+
     foreach ($step in $steps) {
         $result = $script:pipelineResults[$step.Key]
         $statusInfo = $statusSymbols[$result.Status]
-        
+
         $symbol = $statusInfo.Symbol
         $color = $statusInfo.Color
-        
+
         $line = "{0,-5} {1,-25}" -f $symbol, $step.Name
         if ($result.Details) {
             $line += " - $($result.Details)"
         }
-        
+
         Write-Host $line -ForegroundColor $color
-        
+
         if ($result.Status -eq "Failed") {
             $hasFailure = $true
         }
     }
-    
+
     Write-Host ""
     Write-Host "----------------------------------------"
-    
+
     if ($hasFailure) {
         Write-Host "OVERALL: FAILED" -ForegroundColor Red
     } else {
         Write-Host "OVERALL: SUCCESS" -ForegroundColor Green
     }
-    
+
     Write-Host ""
 }
 #endregion
@@ -703,7 +703,7 @@ $script:pipelineResults.Build = @{ Status = "Passed"; Details = "Configuration: 
 if (-not $SkipTests) {
     Write-Banner "Step $stepNumber`: Running Tests"
     $stepNumber++
-    
+
     $testArgs = @(
         "test",
         $testProjectPath,
@@ -715,7 +715,7 @@ if (-not $SkipTests) {
         "--results-directory", "$repoRoot\TestResults",
         "--settings", $runSettingsPath
     )
-    
+
     & dotnet $testArgs
     if ($LASTEXITCODE -ne 0) {
         $script:pipelineResults.Tests = @{ Status = "Failed"; Details = "Exit code: $LASTEXITCODE" }
@@ -723,22 +723,22 @@ if (-not $SkipTests) {
         exit $LASTEXITCODE
     }
     $script:pipelineResults.Tests = @{ Status = "Passed"; Details = "" }
-    
+
     # Step 3: Coverage Analysis
     Write-Banner "Step $stepNumber`: Analyzing Coverage"
     $stepNumber++
-    
+
     $coverageFile = Get-LatestCoverageFile -Root "$repoRoot\TestResults"
     $summary = Get-CoverageSummary -FilePath $coverageFile.FullName -ExcludePatterns $ExcludePatterns
-    
+
     Write-Host "Coverage file: $($coverageFile.FullName)" -ForegroundColor Gray
     Write-Host ("Line coverage : {0:N2}% ({1}/{2} lines)" -f $summary.LineCoverage, $summary.CoveredLines, $summary.TotalLines) -ForegroundColor Cyan
     Write-Host ("Branch coverage: {0:N2}%" -f $summary.BranchCoverage) -ForegroundColor Cyan
-    
+
     if ($ExcludePatterns -and $ExcludePatterns.Count -gt 0) {
         Write-Host "Excluded patterns: $($ExcludePatterns -join ', ')" -ForegroundColor Gray
     }
-    
+
     if ($Top -gt 0) {
         Write-Host ""
         Write-Host "Coverage (lowest $Top files):" -ForegroundColor Yellow
@@ -749,7 +749,7 @@ if (-not $SkipTests) {
                 Write-Host ("  {0,-70} {1,6:N2}% ({2}/{3})" -f $_.File, $_.Coverage, $_.Covered, $_.Total)
             }
     }
-    
+
     if ($CoverageThreshold -gt 0) {
         if ($summary.LineCoverage -lt $CoverageThreshold) {
             Write-Host ("Coverage threshold not met: {0:N2}% < {1:N2}%" -f $summary.LineCoverage, $CoverageThreshold) -ForegroundColor Red
@@ -757,7 +757,7 @@ if (-not $SkipTests) {
             Write-PipelineSummary
             exit 1
         }
-    
+
         Write-Host ("Coverage threshold met: {0:N2}% >= {1:N2}%" -f $summary.LineCoverage, $CoverageThreshold) -ForegroundColor Green
     }
     $script:pipelineResults.Coverage = @{ Status = "Passed"; Details = "{0:N2}%" -f $summary.LineCoverage }
@@ -817,7 +817,7 @@ foreach ($proj in $csprojFiles) {
     $projDir = Split-Path -Parent $proj.FullName
     $projName = $proj.BaseName
     $projCsFiles = Get-ChildItem -Path $projDir -Filter "*.cs" -Recurse -File
-    
+
     $metrics.Projects += @{
         Name = $projName
         Path = $proj.FullName.Replace($repoRoot, "").TrimStart("\")
@@ -882,13 +882,13 @@ Max Complexity:    $($metrics.CodeQuality.MaxComplexity) (in $($metrics.CodeQual
 PROJECTS
 ----------------------------------------
 "@
-    
+
     foreach ($proj in $metrics.Projects) {
         $report += "`n$($proj.Name): $($proj.Files) files"
     }
-    
+
     $report += "`n`n========================================`n"
-    
+
     $report | Out-File -FilePath $MetricsOutputPath -Encoding UTF8
 }
 
@@ -906,11 +906,11 @@ $script:pipelineResults.Metrics = @{ Status = "Passed"; Details = "$($metrics.Fi
 # Step 5: Format Check
     Write-Banner "Step $stepNumber`: Format Check"
     $stepNumber++
-    
+
     Write-Host "Running dotnet format --verify-no-changes..." -ForegroundColor Gray
     $formatOutput = & dotnet format $solutionPath --verify-no-changes --verbosity quiet 2>&1
     $formatExitCode = $LASTEXITCODE
-    
+
     if ($formatExitCode -eq 0) {
         Write-Host "FORMAT CHECK: PASSED" -ForegroundColor Green
         $script:pipelineResults.FormatCheck = @{ Status = "Passed"; Details = "" }
@@ -924,14 +924,14 @@ $script:pipelineResults.Metrics = @{ Status = "Passed"; Details = "$($metrics.Fi
         $script:pipelineResults.FormatCheck = @{ Status = "Warning"; Details = "Files need formatting" }
         # Don't exit - continue to show diagnostics
     }
-    
+
     # Step 6: Static Analysis Report
     Write-Banner "Step $stepNumber`: Roslyn Diagnostics Report"
     $stepNumber++
-    
+
     $diagnostics = Get-DiagnosticsSummary -LogPath $diagnosticsLogPath
     Write-DiagnosticsReport -Diagnostics $diagnostics -TopRules 10 -TopFiles 5
-    
+
     if ($diagnostics) {
         $errorCount = $diagnostics.Errors.Count
         $warningCount = $diagnostics.Warnings.Count
@@ -945,24 +945,24 @@ $script:pipelineResults.Metrics = @{ Status = "Passed"; Details = "$($metrics.Fi
     } else {
         $script:pipelineResults.RoslynDiagnostics = @{ Status = "Passed"; Details = "No issues" }
     }
-    
+
     # Cleanup diagnostics log
     if (Test-Path $diagnosticsLogPath) {
         Remove-Item $diagnosticsLogPath -Force
     }
-    
+
     # Step 7: ReSharper InspectCode (if available)
     if ($resharperAvailable) {
         Write-Banner "Step $stepNumber`: ReSharper InspectCode"
         $stepNumber++
-        
+
         $resharperSummary = Invoke-ReSharperInspectCode -OutputPath $ReSharperOutputPath -Severity $ReSharperSeverity
         Write-ReSharperReport -Summary $resharperSummary
-        
+
         if ($resharperSummary.IssueCount -gt 0) {
             $errorCount = if ($resharperSummary.ByLevel.ContainsKey("error")) { $resharperSummary.ByLevel["error"] } else { 0 }
             $warningCount = if ($resharperSummary.ByLevel.ContainsKey("warning")) { $resharperSummary.ByLevel["warning"] } else { 0 }
-            
+
             if ($errorCount -gt 0) {
                 $script:pipelineResults.ReSharper = @{ Status = "Warning"; Details = "$($resharperSummary.IssueCount) issues ($errorCount errors)" }
             } else {
@@ -974,12 +974,12 @@ $script:pipelineResults.Metrics = @{ Status = "Passed"; Details = "$($metrics.Fi
     } else {
         Write-Banner "Step $stepNumber`: ReSharper InspectCode"
         $stepNumber++
-        
+
         Write-Host "ReSharper CLI tools are not installed. Skipping..." -ForegroundColor Yellow
         Write-Host ""
         Write-Host "To install ReSharper CLI tools, run:" -ForegroundColor Cyan
         Write-Host "  .\scripts\Setup-ReSharperCLT.ps1" -ForegroundColor White
-        
+
     $script:pipelineResults.ReSharper = @{ Status = "Skipped"; Details = "Not installed" }
 }
 
