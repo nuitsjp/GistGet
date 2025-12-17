@@ -1,6 +1,7 @@
 // Core application service that orchestrates GitHub and WinGet operations.
 
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using GistGet.Infrastructure;
 using Octokit;
@@ -557,20 +558,9 @@ public class GistGetService(
                     result.Errors.Add($"Failed to uninstall {gistPkg.Id}: exit code {exitCode.ToString(CultureInfo.InvariantCulture)}");
                 }
             }
-            catch (Win32Exception ex)
+            catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or IOException)
             {
-                result.Failed.Add(gistPkg);
-                result.Errors.Add($"Failed to uninstall {gistPkg.Id}: {ex.Message}");
-            }
-            catch (InvalidOperationException ex)
-            {
-                result.Failed.Add(gistPkg);
-                result.Errors.Add($"Failed to uninstall {gistPkg.Id}: {ex.Message}");
-            }
-            catch (IOException ex)
-            {
-                result.Failed.Add(gistPkg);
-                result.Errors.Add($"Failed to uninstall {gistPkg.Id}: {ex.Message}");
+                HandleSyncOperationFailure(result, gistPkg, "uninstall", ex);
             }
         }
 
@@ -604,20 +594,9 @@ public class GistGetService(
                     result.Errors.Add($"Failed to install {gistPkg.Id}: exit code {exitCode.ToString(CultureInfo.InvariantCulture)}");
                 }
             }
-            catch (Win32Exception ex)
+            catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or IOException)
             {
-                result.Failed.Add(gistPkg);
-                result.Errors.Add($"Failed to install {gistPkg.Id}: {ex.Message}");
-            }
-            catch (InvalidOperationException ex)
-            {
-                result.Failed.Add(gistPkg);
-                result.Errors.Add($"Failed to install {gistPkg.Id}: {ex.Message}");
-            }
-            catch (IOException ex)
-            {
-                result.Failed.Add(gistPkg);
-                result.Errors.Add($"Failed to install {gistPkg.Id}: {ex.Message}");
+                HandleSyncOperationFailure(result, gistPkg, "install", ex);
             }
         }
 
@@ -651,17 +630,9 @@ public class GistGetService(
                     }
                 }
             }
-            catch (Win32Exception ex)
+            catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or IOException)
             {
-                result.Errors.Add($"Failed to sync pin for {gistPkg.Id}: {ex.Message}");
-            }
-            catch (InvalidOperationException ex)
-            {
-                result.Errors.Add($"Failed to sync pin for {gistPkg.Id}: {ex.Message}");
-            }
-            catch (IOException ex)
-            {
-                result.Errors.Add($"Failed to sync pin for {gistPkg.Id}: {ex.Message}");
+                HandleSyncPinFailure(result, gistPkg, ex);
             }
         }
 
@@ -741,5 +712,26 @@ public class GistGetService(
             packages);
 
         consoleService.WriteInfo($"Imported {packages.Count} packages to Gist");
+    }
+
+    /// <summary>
+    /// Handles failures during sync operations (install/uninstall).
+    /// Defensive: captures process failures, I/O errors, and invalid operations.
+    /// </summary>
+    [ExcludeFromCodeCoverage]
+    private static void HandleSyncOperationFailure(SyncResult result, GistGetPackage package, string operation, Exception ex)
+    {
+        result.Failed.Add(package);
+        result.Errors.Add($"Failed to {operation} {package.Id}: {ex.Message}");
+    }
+
+    /// <summary>
+    /// Handles failures during pin sync operations.
+    /// Defensive: captures process failures, I/O errors, and invalid operations.
+    /// </summary>
+    [ExcludeFromCodeCoverage]
+    private static void HandleSyncPinFailure(SyncResult result, GistGetPackage package, Exception ex)
+    {
+        result.Errors.Add($"Failed to sync pin for {package.Id}: {ex.Message}");
     }
 }

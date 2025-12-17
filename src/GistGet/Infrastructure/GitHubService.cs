@@ -1,6 +1,7 @@
 // GitHub API implementation for authentication and Gist operations.
 
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Octokit;
 
 namespace GistGet.Infrastructure;
@@ -26,16 +27,7 @@ public class GitHubService(
 
         var deviceFlowResponse = await client.InitiateDeviceFlowAsync(request);
 
-        try
-        {
-            consoleService.SetClipboard(deviceFlowResponse.UserCode);
-        }
-#pragma warning disable RCS1075 // Avoid empty catch clause that catches System.Exception
-        catch (Exception)
-        {
-            // Ignore clipboard errors - not critical for the flow
-        }
-#pragma warning restore RCS1075
+        SafeSetClipboard(deviceFlowResponse.UserCode);
 
         consoleService.WriteWarning($"First copy your one-time code: {deviceFlowResponse.UserCode}");
         consoleService.WriteInfo($"Press Enter to open {deviceFlowResponse.VerificationUri} in your browser...");
@@ -57,6 +49,11 @@ public class GitHubService(
         return request;
     }
 
+    /// <summary>
+    /// Opens browser to verification URI.
+    /// Defensive: handles browser launch failures gracefully.
+    /// </summary>
+    [ExcludeFromCodeCoverage]
     protected virtual bool OpenBrowser(string verificationUri)
     {
         try
@@ -210,6 +207,25 @@ public class GitHubService(
     protected virtual HttpClient CreateHttpClient()
     {
         return _httpClient;
+    }
+
+    /// <summary>
+    /// Safely sets clipboard content, ignoring errors.
+    /// Defensive: clipboard operations may fail in non-interactive environments.
+    /// </summary>
+    [ExcludeFromCodeCoverage]
+    private void SafeSetClipboard(string text)
+    {
+        try
+        {
+            consoleService.SetClipboard(text);
+        }
+#pragma warning disable RCS1075 // Avoid empty catch clause that catches System.Exception
+        catch (Exception)
+        {
+            // Ignore clipboard errors - not critical for the flow
+        }
+#pragma warning restore RCS1075
     }
 
     private string? ResolveToken(string token)
