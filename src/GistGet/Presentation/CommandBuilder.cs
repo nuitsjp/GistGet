@@ -8,7 +8,7 @@ namespace GistGet.Presentation;
 /// <summary>
 /// Builds the root command and subcommands for the CLI.
 /// </summary>
-public class CommandBuilder(IGistGetService gistGetService)
+public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console)
 {
     /// <summary>
     /// Builds the root command tree.
@@ -49,55 +49,55 @@ public class CommandBuilder(IGistGetService gistGetService)
             var result = await gistGetService.SyncAsync(url, filePath);
             if (result.Installed.Count > 0)
             {
-                AnsiConsole.MarkupLine($"[green]Installed {result.Installed.Count} package(s):[/]");
+                console.MarkupLine($"[green]Installed {result.Installed.Count} package(s):[/]");
                 foreach (var pkg in result.Installed)
                 {
-                    AnsiConsole.MarkupLine($"  - {pkg.Id}");
+                    console.MarkupLine($"  - {pkg.Id}");
                 }
             }
 
             if (result.Uninstalled.Count > 0)
             {
-                AnsiConsole.MarkupLine($"[yellow]Uninstalled {result.Uninstalled.Count} package(s):[/]");
+                console.MarkupLine($"[yellow]Uninstalled {result.Uninstalled.Count} package(s):[/]");
                 foreach (var pkg in result.Uninstalled)
                 {
-                    AnsiConsole.MarkupLine($"  - {pkg.Id}");
+                    console.MarkupLine($"  - {pkg.Id}");
                 }
             }
 
             if (result.PinUpdated.Count > 0)
             {
-                AnsiConsole.MarkupLine($"[blue]Updated pin for {result.PinUpdated.Count} package(s):[/]");
+                console.MarkupLine($"[blue]Updated pin for {result.PinUpdated.Count} package(s):[/]");
                 foreach (var pkg in result.PinUpdated)
                 {
-                    AnsiConsole.MarkupLine($"  - {pkg.Id}: {pkg.Pin}");
+                    console.MarkupLine($"  - {pkg.Id}: {pkg.Pin}");
                 }
             }
 
             if (result.PinRemoved.Count > 0)
             {
-                AnsiConsole.MarkupLine($"[blue]Removed pin for {result.PinRemoved.Count} package(s):[/]");
+                console.MarkupLine($"[blue]Removed pin for {result.PinRemoved.Count} package(s):[/]");
                 foreach (var pkg in result.PinRemoved)
                 {
-                    AnsiConsole.MarkupLine($"  - {pkg.Id}");
+                    console.MarkupLine($"  - {pkg.Id}");
                 }
             }
 
             if (result.Failed.Count > 0)
             {
-                AnsiConsole.MarkupLine($"[red]Failed {result.Failed.Count} package(s):[/]");
+                console.MarkupLine($"[red]Failed {result.Failed.Count} package(s):[/]");
                 foreach (var pkg in result.Failed)
                 {
-                    AnsiConsole.MarkupLine($"  - {pkg.Id}");
+                    console.MarkupLine($"  - {pkg.Id}");
                 }
             }
 
             if (result.Errors.Count > 0)
             {
-                AnsiConsole.MarkupLine("[red]Errors:[/]");
+                console.MarkupLine("[red]Errors:[/]");
                 foreach (var error in result.Errors)
                 {
-                    AnsiConsole.MarkupLine($"  - {error}");
+                    console.MarkupLine($"  - {error}");
                 }
             }
 
@@ -107,11 +107,11 @@ public class CommandBuilder(IGistGetService gistGetService)
                 result.PinUpdated.Count == 0 &&
                 result.PinRemoved.Count == 0)
             {
-                AnsiConsole.MarkupLine("[green]Already in sync. No changes needed.[/]");
+                console.MarkupLine("[green]Already in sync. No changes needed.[/]");
             }
             else if (result.Success)
             {
-                AnsiConsole.MarkupLine("[green]Sync completed successfully.[/]");
+                console.MarkupLine("[green]Sync completed successfully.[/]");
             }
         }, urlOption, fileOption);
 
@@ -215,7 +215,7 @@ public class CommandBuilder(IGistGetService gistGetService)
             var id = parseResult.GetValueForOption(idOption) ?? string.Empty;
             if (string.IsNullOrWhiteSpace(id))
             {
-                AnsiConsole.MarkupLine("[red]Package ID is required.[/]");
+                console.MarkupLine("[red]Package ID is required.[/]");
                 return;
             }
 
@@ -269,7 +269,7 @@ public class CommandBuilder(IGistGetService gistGetService)
             var id = parseResult.GetValueForOption(idOption) ?? string.Empty;
             if (string.IsNullOrWhiteSpace(id))
             {
-                AnsiConsole.MarkupLine("[red]Package ID is required.[/]");
+                console.MarkupLine("[red]Package ID is required.[/]");
                 return;
             }
 

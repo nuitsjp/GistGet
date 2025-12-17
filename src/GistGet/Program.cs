@@ -6,6 +6,7 @@ using GistGet.Infrastructure;
 using GistGet.Infrastructure.Diagnostics;
 using GistGet.Presentation;
 using Microsoft.Extensions.DependencyInjection;
+using Spectre.Console;
 
 ServiceCollection services = new();
 
@@ -13,6 +14,7 @@ services.AddSingleton<IGitHubClientFactory, GitHubClientFactory>();
 services.AddTransient<IGitHubService, GitHubService>();
 services.AddTransient<IGistGetService, GistGetService>();
 
+services.AddSingleton<IAnsiConsole>(AnsiConsole.Console);
 services.AddTransient<CommandBuilder>();
 services.AddTransient<IConsoleService, ConsoleService>();
 

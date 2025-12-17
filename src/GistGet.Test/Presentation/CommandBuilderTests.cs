@@ -3,26 +3,24 @@ using GistGet.Presentation;
 using Moq;
 using Shouldly;
 using Spectre.Console;
+using Spectre.Console.Testing;
 
 namespace GistGet.Test.Presentation;
 
-[CollectionDefinition("AnsiConsole collection", DisableParallelization = true)]
-public class AnsiConsoleCollection : ICollectionFixture<AnsiConsoleFixture>
-{
-}
-
-public class AnsiConsoleFixture
-{
-}
-
-[Collection("AnsiConsole collection")]
-public class CommandBuilderTests
+public class CommandBuilderTests : IDisposable
 {
     protected readonly Mock<IGistGetService> GistGetServiceMock = new();
+    protected readonly TestConsole TestConsole = new();
 
     protected CommandBuilder CreateTarget()
     {
-        return new CommandBuilder(GistGetServiceMock.Object);
+        return new CommandBuilder(GistGetServiceMock.Object, TestConsole);
+    }
+
+    public void Dispose()
+    {
+        TestConsole.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     public class Build : CommandBuilderTests
@@ -82,9 +80,8 @@ public class CommandBuilderTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            AnsiConsole.Record();
             var exitCode = await root.InvokeAsync("sync --url https://example.com/gist --file local.yaml");
-            var output = AnsiConsole.ExportText();
+            var output = TestConsole.Output;
 
             // -------------------------------------------------------------------
             // Assert
@@ -119,9 +116,8 @@ public class CommandBuilderTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            AnsiConsole.Record();
             var exitCode = await root.InvokeAsync("sync");
-            var output = AnsiConsole.ExportText();
+            var output = TestConsole.Output;
 
             // -------------------------------------------------------------------
             // Assert
@@ -150,9 +146,8 @@ public class CommandBuilderTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            AnsiConsole.Record();
             var exitCode = await root.InvokeAsync("sync");
-            var output = AnsiConsole.ExportText();
+            var output = TestConsole.Output;
 
             // -------------------------------------------------------------------
             // Assert
@@ -316,9 +311,8 @@ public class CommandBuilderTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            AnsiConsole.Record();
             var exitCode = await root.InvokeAsync("install --id \"\"");
-            var output = AnsiConsole.ExportText();
+            var output = TestConsole.Output;
 
             // -------------------------------------------------------------------
             // Assert
@@ -373,9 +367,8 @@ public class CommandBuilderTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            AnsiConsole.Record();
             var exitCode = await root.InvokeAsync("uninstall --id \"\"");
-            var output = AnsiConsole.ExportText();
+            var output = TestConsole.Output;
 
             // -------------------------------------------------------------------
             // Assert
