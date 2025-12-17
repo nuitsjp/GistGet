@@ -497,6 +497,7 @@ function Invoke-ReSharperInspectCode {
             "-o=$OutputPath",
             "--format=sarif",
             "--severity=$Severity",
+            "--no-buildin-settings",
             "--verbosity=WARN"
         )
 
@@ -525,6 +526,24 @@ function Invoke-ReSharperInspectCode {
                 $results = $sarif.runs[0].results
 
                 if ($results) {
+                    # Filter out issues that are set to DO_NOT_SHOW in .DotSettings
+                    # ReSharper CLI ignores DO_NOT_SHOW when using --severity parameter
+                    $suppressedRules = @(
+                        'SuggestVarOrType_BuiltInTypes',
+                        'SuggestVarOrType_SimpleTypes',
+                        'SuggestVarOrType_Elsewhere',
+                        'MemberCanBePrivate.Global',
+                        'PropertyCanBeMadeInitOnly.Global',
+                        'ClassNeverInstantiated.Global',
+                        'UnusedType.Global',
+                        'VirtualMemberNeverOverridden.Global',
+                        'EmptyNamespace',
+                        'MemberCanBeProtected.Global',
+                        'UnusedMethodReturnValue.Global'
+                    )
+
+                    $results = $results | Where-Object { $_.ruleId -notin $suppressedRules }
+
                     $summary.IssueCount = $results.Count
 
                     # Group by level

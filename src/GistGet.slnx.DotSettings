@@ -41,4 +41,10 @@
 
 	<!-- Unused member detection - global analysis -->
 	<s:String x:Key="/Default/CodeInspection/Highlighting/InspectionSeverities/=UnusedMember.Global/@EntryIndexedValue">SUGGESTION</s:String>
+
+	<!-- Additional suppressions for test code and internal implementation details -->
+	<s:String x:Key="/Default/CodeInspection/Highlighting/InspectionSeverities/=VirtualMemberNeverOverridden.Global/@EntryIndexedValue">DO_NOT_SHOW</s:String>
+	<s:String x:Key="/Default/CodeInspection/Highlighting/InspectionSeverities/=EmptyNamespace/@EntryIndexedValue">DO_NOT_SHOW</s:String>
+	<s:String x:Key="/Default/CodeInspection/Highlighting/InspectionSeverities/=MemberCanBeProtected.Global/@EntryIndexedValue">DO_NOT_SHOW</s:String>
+	<s:String x:Key="/Default/CodeInspection/Highlighting/InspectionSeverities/=UnusedMethodReturnValue.Global/@EntryIndexedValue">DO_NOT_SHOW</s:String>
 </wpf:ResourceDictionary>
