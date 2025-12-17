@@ -7,4 +7,5 @@ namespace GistGet.Properties;
 /// <summary>
 /// Provides the IsExternalInit type required for init-only setters.
 /// </summary>
+// ReSharper disable once UnusedType.Global
 internal sealed class IsExternalInit;

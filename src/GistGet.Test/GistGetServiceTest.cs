@@ -1,5 +1,7 @@
+using System.Net;
 using GistGet.Infrastructure;
 using Moq;
+using Octokit;
 using Shouldly;
 
 namespace GistGet.Test;
@@ -143,6 +145,77 @@ public class GistGetServiceTests
             ConsoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("- Token: gho_**********"))), Times.Once);
             ConsoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("- Token scopes: 'gist', 'read:org'"))), Times.Once);
         }
+
+        [Fact]
+        public async Task WhenAuthenticated_WithNonGhoToken_PrintsMaskedPrefix()
+        {
+            var credential = new Credential("testuser", "abcd1234");
+            var scopes = new List<string> { "gist" };
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetTokenStatusAsync(credential.Token))
+                .ReturnsAsync(new TokenStatus("testuser", scopes));
+
+            await Target.AuthStatusAsync();
+
+            ConsoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("- Token: abcd**********"))), Times.Once);
+        }
+
+        [Fact]
+        public async Task WhenApiExceptionThrown_LogsError()
+        {
+            var credential = new Credential("testuser", "gho_1234567890");
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetTokenStatusAsync(credential.Token))
+                .ThrowsAsync(new ApiException("api error", HttpStatusCode.BadRequest));
+
+            await Target.AuthStatusAsync();
+
+            ConsoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s =>
+                s.Contains("Failed to retrieve status from GitHub", StringComparison.OrdinalIgnoreCase) &&
+                s.Contains("api error", StringComparison.OrdinalIgnoreCase))), Times.Once);
+        }
+
+        [Fact]
+        public async Task WhenStatusLookupFails_LogsError()
+        {
+            var credential = new Credential("testuser", "gho_1234567890");
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetTokenStatusAsync(credential.Token))
+                .ThrowsAsync(new HttpRequestException("network error"));
+
+            await Target.AuthStatusAsync();
+
+            ConsoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s =>
+                s.Contains("Failed to retrieve status from GitHub", StringComparison.OrdinalIgnoreCase) &&
+                s.Contains("network error", StringComparison.OrdinalIgnoreCase))), Times.Once);
+        }
     }
 
     public class RunPassthroughAsync : GistGetServiceTests
@@ -171,7 +244,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             result.ShouldBe(expectedExitCode);
             PassthroughRunnerMock.Verify(x => x.RunAsync(
-                It.Is<string[]>(a => a.SequenceEqual(expectedArgs))
+                It.Is<string[]>(a => a.SequenceEqual(expectedArgs, StringComparer.Ordinal))
             ), Times.Once);
         }
     }
@@ -222,6 +295,31 @@ public class GistGetServiceTests
         }
 
         [Fact]
+        public async Task WhenCredentialsUnavailableAfterLogin_Throws()
+        {
+            var options = new InstallOptions { Id = "Test.Package" };
+            var savedCredential = new Credential("user", "token");
+            var credentialAttempts = 0;
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = null;
+                    credentialAttempts++;
+                    return false;
+                }));
+
+            AuthServiceMock.Setup(x => x.LoginAsync())
+                .ReturnsAsync(savedCredential);
+
+            await Should.ThrowAsync<InvalidOperationException>(async () => await Target.InstallAndSaveAsync(options));
+
+            AuthServiceMock.Verify(x => x.LoginAsync(), Times.Once);
+            CredentialServiceMock.Verify(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny), Times.Exactly(2));
+        }
+
+        [Fact]
         public async Task CallsWinGet_AndUpdatesGist_WithPinLogic()
         {
             // -------------------------------------------------------------------
@@ -254,18 +352,18 @@ public class GistGetServiceTests
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "install" &&
-                    args.Contains("--id") && args.Contains(packageId) &&
-                    args.Contains("--version") && args.Contains("1.2.3") &&
-                    args.Contains("--silent"))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId) &&
+                    args.Contains("--version", StringComparer.Ordinal) && args.Contains("1.2.3", StringComparer.Ordinal) &&
+                    args.Contains("--silent", StringComparer.Ordinal))))
                 .ReturnsAsync(0);
 
             // Expect Pin Add command (restore pin)
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "pin" && args[1] == "add" &&
-                    args.Contains("--id") && args.Contains(packageId) &&
-                    args.Contains("--version") && args.Contains("1.2.3") &&
-                    args.Contains("--blocking"))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId) &&
+                    args.Contains("--version", StringComparer.Ordinal) && args.Contains("1.2.3", StringComparer.Ordinal) &&
+                    args.Contains("--blocking", StringComparer.Ordinal))))
                 .ReturnsAsync(0);
 
             // -------------------------------------------------------------------
@@ -322,16 +420,16 @@ public class GistGetServiceTests
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "install" &&
-                    args.Contains("--id") && args.Contains(packageId) &&
-                    args.Contains("--version") && args.Contains(explicitVersion))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId) &&
+                    args.Contains("--version", StringComparer.Ordinal) && args.Contains(explicitVersion))))
                 .ReturnsAsync(0);
 
             // Expect Pin Add command (update pin to 2.0.0)
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "pin" && args[1] == "add" &&
-                    args.Contains("--id") && args.Contains(packageId) &&
-                    args.Contains("--version") && args.Contains(explicitVersion))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId) &&
+                    args.Contains("--version", StringComparer.Ordinal) && args.Contains(explicitVersion))))
                 .ReturnsAsync(0);
 
             // -------------------------------------------------------------------
@@ -383,8 +481,8 @@ public class GistGetServiceTests
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "install" &&
-                    args.Contains("--id") && args.Contains(packageId) &&
-                    args.Contains("--version") && args.Contains(explicitVersion))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId) &&
+                    args.Contains("--version", StringComparer.Ordinal) && args.Contains(explicitVersion))))
                 .ReturnsAsync(0);
 
             // -------------------------------------------------------------------
@@ -439,11 +537,11 @@ public class GistGetServiceTests
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "install" &&
-                    args.Contains("--id") && args.Contains(packageId) &&
-                    args.Contains("--ignore-security-hash") &&
-                    args.Contains("--skip-dependencies") &&
-                    args.Contains("--installer-type") && args.Contains("msi") &&
-                    args.Contains("--locale") && args.Contains("ja-JP"))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId) &&
+                    args.Contains("--ignore-security-hash", StringComparer.Ordinal) &&
+                    args.Contains("--skip-dependencies", StringComparer.Ordinal) &&
+                    args.Contains("--installer-type", StringComparer.Ordinal) && args.Contains("msi", StringComparer.Ordinal) &&
+                    args.Contains("--locale", StringComparer.Ordinal) && args.Contains("ja-JP", StringComparer.Ordinal))))
                 .ReturnsAsync(0);
 
             // -------------------------------------------------------------------
@@ -488,8 +586,8 @@ public class GistGetServiceTests
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "install" &&
-                    args.Contains("--id") && args.Contains(packageId) &&
-                    args.Contains("--custom") && args.Contains(customArgs))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId) &&
+                    args.Contains("--custom", StringComparer.Ordinal) && args.Contains(customArgs))))
                 .ReturnsAsync(0);
 
             // -------------------------------------------------------------------
@@ -528,7 +626,7 @@ public class GistGetServiceTests
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "install" &&
-                    args.Contains("--id") && args.Contains(packageId))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(expectedExitCode);
 
             // -------------------------------------------------------------------
@@ -551,6 +649,92 @@ public class GistGetServiceTests
 
     public class UpgradeAndSaveAsync : GistGetServiceTests
     {
+        [Fact]
+        public async Task WhenCredentialsUnavailableAfterLogin_Throws()
+        {
+            var options = new UpgradeOptions { Id = "Test.Package" };
+            var savedCredential = new Credential("user", "token");
+            var attempts = 0;
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = null;
+                    attempts++;
+                    return false;
+                }));
+
+            AuthServiceMock.Setup(x => x.LoginAsync())
+                .ReturnsAsync(savedCredential);
+
+            await Should.ThrowAsync<InvalidOperationException>(async () => await Target.UpgradeAndSaveAsync(options));
+
+            AuthServiceMock.Verify(x => x.LoginAsync(), Times.Once);
+            CredentialServiceMock.Verify(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny), Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task WhenFlagsProvided_SavesFlagsToGist()
+        {
+            var options = new UpgradeOptions
+            {
+                Id = "Test.Package",
+                Force = true,
+                AcceptPackageAgreements = true,
+                AcceptSourceAgreements = true,
+                AllowHashMismatch = true,
+                SkipDependencies = true,
+                InstallerType = "exe",
+                Header = "Custom",
+                Custom = "--foo"
+            };
+
+            var credential = new Credential("user", "token");
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new List<GistGetPackage>());
+
+            PassthroughRunnerMock
+                .Setup(x => x.RunAsync(It.IsAny<string[]>()))
+                .ReturnsAsync(0);
+
+            List<GistGetPackage>? savedPackages = null;
+            AuthServiceMock
+                .Setup(x => x.SavePackagesAsync(
+                    credential.Token,
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<IReadOnlyList<GistGetPackage>>()))
+                .Callback<string, string, string, string, IReadOnlyList<GistGetPackage>>((_, _, _, _, list) =>
+                {
+                    savedPackages = list.ToList();
+                })
+                .Returns(Task.CompletedTask);
+
+            await Target.UpgradeAndSaveAsync(options);
+
+            savedPackages.ShouldNotBeNull();
+            var pkg = savedPackages!.Single(p => p.Id == options.Id);
+            pkg.Force.ShouldBeTrue();
+            pkg.AcceptPackageAgreements.ShouldBeTrue();
+            pkg.AcceptSourceAgreements.ShouldBeTrue();
+            pkg.AllowHashMismatch.ShouldBeTrue();
+            pkg.SkipDependencies.ShouldBeTrue();
+            pkg.InstallerType.ShouldBe("exe");
+            pkg.Header.ShouldBe("Custom");
+            pkg.Custom.ShouldBe("--foo");
+        }
+
         [Fact]
         public async Task WhenPinnedAndNoVersion_UpdatesPinWithUsableVersion()
         {
@@ -586,17 +770,17 @@ public class GistGetServiceTests
                 .InSequence(sequence)
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "upgrade" &&
-                    args.Contains("--id") && args.Contains(packageId))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(0);
 
             PassthroughRunnerMock
                 .InSequence(sequence)
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "pin" && args[1] == "add" &&
-                    args.Contains("--id") && args.Contains(packageId) &&
-                    args.Contains("--version") && args.Contains("2.0.0") &&
-                    args.Contains("--blocking") &&
-                    args.Contains("--force"))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId) &&
+                    args.Contains("--version", StringComparer.Ordinal) && args.Contains("2.0.0", StringComparer.Ordinal) &&
+                    args.Contains("--blocking", StringComparer.Ordinal) &&
+                    args.Contains("--force", StringComparer.Ordinal))))
                 .ReturnsAsync(0);
 
             AuthServiceMock
@@ -657,7 +841,7 @@ public class GistGetServiceTests
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "upgrade" &&
-                    args.Contains("--id") && args.Contains(packageId))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(0);
 
             // -------------------------------------------------------------------
@@ -703,8 +887,8 @@ public class GistGetServiceTests
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "upgrade" &&
-                    args.Contains("--id") && args.Contains(packageId) &&
-                    args.Contains("--version") && args.Contains(version))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId) &&
+                    args.Contains("--version", StringComparer.Ordinal) && args.Contains(version))))
                 .ReturnsAsync(0);
 
             AuthServiceMock
@@ -757,7 +941,7 @@ public class GistGetServiceTests
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "upgrade" &&
-                    args.Contains("--id") && args.Contains(packageId))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(1);
 
             // -------------------------------------------------------------------
@@ -805,7 +989,7 @@ public class GistGetServiceTests
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "upgrade" &&
-                    args.Contains("--id") && args.Contains(packageId))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(0);
 
             AuthServiceMock
@@ -846,7 +1030,7 @@ public class GistGetServiceTests
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "upgrade" &&
-                    args.Contains("--id") && args.Contains(packageId))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(expectedExitCode);
 
             // -------------------------------------------------------------------
@@ -870,6 +1054,31 @@ public class GistGetServiceTests
 
     public class UninstallAndSaveAsync : GistGetServiceTests
     {
+        [Fact]
+        public async Task WhenCredentialsUnavailableAfterLogin_Throws()
+        {
+            var options = new UninstallOptions { Id = "Test.Package" };
+            var savedCredential = new Credential("user", "token");
+            var attempts = 0;
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = null;
+                    attempts++;
+                    return false;
+                }));
+
+            AuthServiceMock.Setup(x => x.LoginAsync())
+                .ReturnsAsync(savedCredential);
+
+            await Should.ThrowAsync<InvalidOperationException>(async () => await Target.UninstallAndSaveAsync(options));
+
+            AuthServiceMock.Verify(x => x.LoginAsync(), Times.Once);
+            CredentialServiceMock.Verify(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny), Times.Exactly(2));
+        }
+
         [Fact]
         public async Task WhenNotLoggedIn_PerformsLogin_AndSavesUninstallEntry()
         {
@@ -902,7 +1111,7 @@ public class GistGetServiceTests
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "uninstall" &&
-                    args.Contains("--id") && args.Contains(packageId))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(0);
 
             AuthServiceMock
@@ -925,7 +1134,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             AuthServiceMock.Verify(x => x.LoginAsync(), Times.Once);
             PassthroughRunnerMock.Verify(x => x.RunAsync(
-                It.Is<string[]>(args => args[0] == "uninstall" && args.Contains("--id") && args.Contains(packageId))
+                It.Is<string[]>(args => args[0] == "uninstall" && args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))
             ), Times.Once);
             AuthServiceMock.Verify(x => x.SavePackagesAsync(
                 savedCredential.Token,
@@ -966,14 +1175,14 @@ public class GistGetServiceTests
                 .InSequence(sequence)
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "uninstall" &&
-                    args.Contains("--id") && args.Contains(packageId))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(0);
 
             PassthroughRunnerMock
                 .InSequence(sequence)
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "pin" && args[1] == "remove" &&
-                    args.Contains("--id") && args.Contains(packageId))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(0);
 
             AuthServiceMock
@@ -1032,7 +1241,7 @@ public class GistGetServiceTests
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "uninstall" &&
-                    args.Contains("--id") && args.Contains(packageId))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(1);
 
             // -------------------------------------------------------------------
@@ -1044,7 +1253,7 @@ public class GistGetServiceTests
             // Assert
             // -------------------------------------------------------------------
             PassthroughRunnerMock.Verify(x => x.RunAsync(
-                It.Is<string[]>(args => args[0] == "pin" && args.Contains("remove"))
+                It.Is<string[]>(args => args[0] == "pin" && args.Contains("remove", StringComparer.Ordinal))
             ), Times.Never);
             AuthServiceMock.Verify(x => x.SavePackagesAsync(
                 It.IsAny<string>(),
@@ -1079,7 +1288,7 @@ public class GistGetServiceTests
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "uninstall" &&
-                    args.Contains("--id") && args.Contains(packageId))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(expectedExitCode);
 
             // -------------------------------------------------------------------
@@ -1092,7 +1301,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             result.ShouldBe(expectedExitCode);
             PassthroughRunnerMock.Verify(x => x.RunAsync(
-                It.Is<string[]>(args => args[0] == "pin" && args.Contains("remove"))
+                It.Is<string[]>(args => args[0] == "pin" && args.Contains("remove", StringComparer.Ordinal))
             ), Times.Never);
             AuthServiceMock.Verify(x => x.SavePackagesAsync(
                 It.IsAny<string>(),
@@ -1127,14 +1336,14 @@ public class GistGetServiceTests
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "uninstall" &&
-                    args.Contains("--id") && args.Contains(packageId))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(0);
 
             // pin remove は常に呼ばれる（エラーは無視）
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "pin" && args[1] == "remove" &&
-                    args.Contains("--id") && args.Contains(packageId))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(0);
 
             // -------------------------------------------------------------------
@@ -1147,7 +1356,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // ローカルのpinを確実に削除するため、常に pin remove が呼ばれる
             PassthroughRunnerMock.Verify(x => x.RunAsync(
-                It.Is<string[]>(args => args[0] == "pin" && args.Contains("remove"))
+                It.Is<string[]>(args => args[0] == "pin" && args.Contains("remove", StringComparer.Ordinal))
             ), Times.Once);
 
             // 新規エントリが作成され、uninstall: true で保存される
@@ -1192,14 +1401,14 @@ public class GistGetServiceTests
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "uninstall" &&
-                    args.Contains("--id") && args.Contains(packageId))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(0);
 
             // pin remove は常に呼ばれる（ローカルにpinがある可能性があるため）
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "pin" && args[1] == "remove" &&
-                    args.Contains("--id") && args.Contains(packageId))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(0);
 
             // -------------------------------------------------------------------
@@ -1212,7 +1421,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Gist側にPinがなくても、ローカルのpinを確実に削除するため pin remove が呼ばれる
             PassthroughRunnerMock.Verify(x => x.RunAsync(
-                It.Is<string[]>(args => args[0] == "pin" && args.Contains("remove"))
+                It.Is<string[]>(args => args[0] == "pin" && args.Contains("remove", StringComparer.Ordinal))
             ), Times.Once);
 
             // 既存のプロパティが保持され、uninstall: true で保存される
@@ -1229,6 +1438,31 @@ public class GistGetServiceTests
 
     public class PinAddAndSaveAsync : GistGetServiceTests
     {
+        [Fact]
+        public async Task WhenCredentialsUnavailableAfterLogin_Throws()
+        {
+            var packageId = "Pkg";
+            var credential = new Credential("user", "token");
+            var attempts = 0;
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = null;
+                    attempts++;
+                    return false;
+                }));
+
+            AuthServiceMock.Setup(x => x.LoginAsync())
+                .ReturnsAsync(credential);
+
+            await Should.ThrowAsync<InvalidOperationException>(async () => await Target.PinAddAndSaveAsync(packageId, "1.0.0"));
+
+            AuthServiceMock.Verify(x => x.LoginAsync(), Times.Once);
+            CredentialServiceMock.Verify(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny), Times.Exactly(2));
+        }
+
         [Fact]
         public async Task WhenPinSucceeds_SavesPinToGist()
         {
@@ -1256,9 +1490,9 @@ public class GistGetServiceTests
                     args.Length >= 2 &&
                     args[0] == "pin" &&
                     args[1] == "add" &&
-                    args.Contains("--id") && args.Contains(packageId) &&
-                    args.Contains("--version") && args.Contains(version) &&
-                    !args.Contains("--force"))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId) &&
+                    args.Contains("--version", StringComparer.Ordinal) && args.Contains(version) &&
+                    !args.Contains("--force", StringComparer.Ordinal))))
                 .ReturnsAsync(0);
 
             // -------------------------------------------------------------------
@@ -1312,8 +1546,8 @@ public class GistGetServiceTests
                     args.Length >= 2 &&
                     args[0] == "pin" &&
                     args[1] == "add" &&
-                    args.Contains("--id") && args.Contains(packageId) &&
-                    args.Contains("--version") && args.Contains(version))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId) &&
+                    args.Contains("--version", StringComparer.Ordinal) && args.Contains(version))))
                 .ReturnsAsync(1);
 
             // -------------------------------------------------------------------
@@ -1365,10 +1599,10 @@ public class GistGetServiceTests
                     args.Length >= 2 &&
                     args[0] == "pin" &&
                     args[1] == "add" &&
-                    args.Contains("--id") && args.Contains(packageId) &&
-                    args.Contains("--version") && args.Contains(version) &&
-                    args.Contains("--force") &&
-                    args.Contains("--blocking"))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId) &&
+                    args.Contains("--version", StringComparer.Ordinal) && args.Contains(version) &&
+                    args.Contains("--force", StringComparer.Ordinal) &&
+                    args.Contains("--blocking", StringComparer.Ordinal))))
                 .ReturnsAsync(0);
 
             // -------------------------------------------------------------------
@@ -1473,10 +1707,10 @@ public class GistGetServiceTests
                     args.Length >= 2 &&
                     args[0] == "pin" &&
                     args[1] == "add" &&
-                    args.Contains("--id") && args.Contains(packageId) &&
-                    args.Contains("--version") && args.Contains(version) &&
-                    args.Contains("--force") &&
-                    args.Contains("--gating"))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId) &&
+                    args.Contains("--version", StringComparer.Ordinal) && args.Contains(version) &&
+                    args.Contains("--force", StringComparer.Ordinal) &&
+                    args.Contains("--gating", StringComparer.Ordinal))))
                 .ReturnsAsync(0);
 
             // -------------------------------------------------------------------
@@ -1505,6 +1739,31 @@ public class GistGetServiceTests
 
     public class PinRemoveAndSaveAsync : GistGetServiceTests
     {
+        [Fact]
+        public async Task WhenCredentialsUnavailableAfterLogin_Throws()
+        {
+            var packageId = "Pkg";
+            var credential = new Credential("user", "token");
+            var attempts = 0;
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = null;
+                    attempts++;
+                    return false;
+                }));
+
+            AuthServiceMock.Setup(x => x.LoginAsync())
+                .ReturnsAsync(credential);
+
+            await Should.ThrowAsync<InvalidOperationException>(async () => await Target.PinRemoveAndSaveAsync(packageId));
+
+            AuthServiceMock.Verify(x => x.LoginAsync(), Times.Once);
+            CredentialServiceMock.Verify(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny), Times.Exactly(2));
+        }
+
         [Fact]
         public async Task WhenPinRemoveSucceeds_RemovesPinFromGist()
         {
@@ -1536,7 +1795,7 @@ public class GistGetServiceTests
                     args.Length >= 2 &&
                     args[0] == "pin" &&
                     args[1] == "remove" &&
-                    args.Contains("--id") && args.Contains(packageId))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(0);
 
             // -------------------------------------------------------------------
@@ -1595,7 +1854,7 @@ public class GistGetServiceTests
                     args.Length >= 2 &&
                     args[0] == "pin" &&
                     args[1] == "remove" &&
-                    args.Contains("--id") && args.Contains(packageId))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(1);
 
             // -------------------------------------------------------------------
@@ -1641,7 +1900,7 @@ public class GistGetServiceTests
                     args.Length >= 2 &&
                     args[0] == "pin" &&
                     args[1] == "remove" &&
-                    args.Contains("--id") && args.Contains(packageId))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(0);
 
             // -------------------------------------------------------------------
@@ -1741,7 +2000,7 @@ public class GistGetServiceTests
                     args.Length >= 2 &&
                     args[0] == "pin" &&
                     args[1] == "remove" &&
-                    args.Contains("--id") && args.Contains(packageId))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(0);
 
             // -------------------------------------------------------------------
@@ -1802,8 +2061,8 @@ public class GistGetServiceTests
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "install" &&
-                    args.Contains("--id") && args.Contains(packageId) &&
-                    args.Contains("--silent"))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId) &&
+                    args.Contains("--silent", StringComparer.Ordinal))))
                 .ReturnsAsync(0);
 
             // -------------------------------------------------------------------
@@ -1851,7 +2110,7 @@ public class GistGetServiceTests
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "install" &&
-                    args.Contains("--id") && args.Contains(packageId))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(0);
 
             // -------------------------------------------------------------------
@@ -1903,7 +2162,7 @@ public class GistGetServiceTests
 
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
-                    args[0] == "uninstall" && args.Contains("--id") && args.Contains(packageId))))
+                    args[0] == "uninstall" && args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(0);
 
             PassthroughRunnerMock
@@ -1960,7 +2219,7 @@ public class GistGetServiceTests
 
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
-                    args[0] == "uninstall" && args.Contains("--id") && args.Contains(packageId))))
+                    args[0] == "uninstall" && args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(0);
 
             PassthroughRunnerMock
@@ -2018,9 +2277,9 @@ public class GistGetServiceTests
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "pin" && args[1] == "add" &&
-                    args.Contains("--id") && args.Contains(packageId) &&
-                    args.Contains("--version") && args.Contains("1.5.0") &&
-                    args.Contains("--blocking") && args.Contains("--force"))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId) &&
+                    args.Contains("--version", StringComparer.Ordinal) && args.Contains("1.5.0", StringComparer.Ordinal) &&
+                    args.Contains("--blocking", StringComparer.Ordinal) && args.Contains("--force", StringComparer.Ordinal))))
                 .ReturnsAsync(0);
 
             // -------------------------------------------------------------------
@@ -2073,9 +2332,9 @@ public class GistGetServiceTests
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "pin" && args[1] == "add" &&
-                    args.Contains("--id") && args.Contains(packageId) &&
-                    args.Contains("--version") && args.Contains("1.5.0") &&
-                    args.Contains("--blocking") && args.Contains("--force"))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId) &&
+                    args.Contains("--version", StringComparer.Ordinal) && args.Contains("1.5.0", StringComparer.Ordinal) &&
+                    args.Contains("--blocking", StringComparer.Ordinal) && args.Contains("--force", StringComparer.Ordinal))))
                 .ReturnsAsync(0);
 
             // -------------------------------------------------------------------
@@ -2127,7 +2386,7 @@ public class GistGetServiceTests
 
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
-                    args[0] == "pin" && args[1] == "remove" && args.Contains("--id") && args.Contains(packageId))))
+                    args[0] == "pin" && args[1] == "remove" && args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(0);
 
             // -------------------------------------------------------------------
@@ -2268,8 +2527,8 @@ public class GistGetServiceTests
                 PassthroughRunnerMock
                     .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                         args[0] == "install" &&
-                        args.Contains("--id") && args.Contains(packageId) &&
-                        args.Contains("--silent"))))
+                        args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId) &&
+                        args.Contains("--silent", StringComparer.Ordinal))))
                     .ReturnsAsync(0);
 
                 // -------------------------------------------------------------------
@@ -2341,8 +2600,8 @@ public class GistGetServiceTests
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "install" &&
-                    args.Contains("--id") && args.Contains(packageId) &&
-                    args.Contains("--silent"))))
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId) &&
+                    args.Contains("--silent", StringComparer.Ordinal))))
                 .ReturnsAsync(0);
 
             // -------------------------------------------------------------------
@@ -2391,6 +2650,176 @@ public class GistGetServiceTests
             // 認証関連のメソッドが呼ばれないことを確認
             CredentialServiceMock.Verify(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny), Times.Never);
             AuthServiceMock.Verify(x => x.LoginAsync(), Times.Never);
+        }
+
+        [Fact]
+        public async Task WhenUninstallThrows_AddsFailedAndError()
+        {
+            var packageId = "Throw.Uninstall";
+            var credential = new Credential("user", "token");
+            var gistPackages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = packageId, Uninstall = true }
+            };
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(gistPackages);
+
+            WinGetServiceMock
+                .Setup(x => x.GetAllInstalledPackages())
+                .Returns(new List<WinGetPackage> { new("Throw Uninstall", new PackageId(packageId), new Version("1.0.0"), new Version("1.0.0")) });
+
+            PassthroughRunnerMock
+                .Setup(x => x.RunAsync(It.IsAny<string[]>()))
+                .ThrowsAsync(new InvalidOperationException("run failed"));
+
+            var result = await Target.SyncAsync();
+
+            result.Failed.ShouldContain(p => p.Id == packageId);
+            result.Errors.ShouldContain(s => s.Contains("run failed", StringComparison.OrdinalIgnoreCase));
+        }
+
+        [Fact]
+        public async Task WhenInstallThrows_AddsFailedAndError()
+        {
+            var packageId = "Throw.Install";
+            var credential = new Credential("user", "token");
+            var gistPackages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = packageId }
+            };
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(gistPackages);
+
+            WinGetServiceMock
+                .Setup(x => x.GetAllInstalledPackages())
+                .Returns(new List<WinGetPackage>());
+
+            PassthroughRunnerMock
+                .Setup(x => x.RunAsync(It.IsAny<string[]>()))
+                .ThrowsAsync(new InvalidOperationException("install failed"));
+
+            var result = await Target.SyncAsync();
+
+            result.Failed.ShouldContain(p => p.Id == packageId);
+            result.Errors.ShouldContain(s => s.Contains("install failed", StringComparison.OrdinalIgnoreCase));
+        }
+
+        [Fact]
+        public async Task WhenPinSyncThrows_AddsError()
+        {
+            var packageId = "Throw.Pin";
+            var credential = new Credential("user", "token");
+            var gistPackages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = packageId, Pin = "1.0.0" }
+            };
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(gistPackages);
+
+            WinGetServiceMock
+                .Setup(x => x.GetAllInstalledPackages())
+                .Returns(new List<WinGetPackage> { new("Throw Pin", new PackageId(packageId), new Version("1.0.0"), new Version("1.0.0")) });
+
+            PassthroughRunnerMock
+                .Setup(x => x.RunAsync(It.IsAny<string[]>()))
+                .ThrowsAsync(new InvalidOperationException("pin failed"));
+
+            var result = await Target.SyncAsync();
+
+            result.Errors.ShouldContain(s => s.Contains("pin failed", StringComparison.OrdinalIgnoreCase));
+        }
+
+        [Fact]
+        public async Task WhenUninstallExitCodeNonZero_AddsFailedAndError()
+        {
+            var packageId = "Exit.Uninstall";
+            var credential = new Credential("user", "token");
+            var gistPackages = new List<GistGetPackage> { new() { Id = packageId, Uninstall = true } };
+            var localPackages = new List<WinGetPackage> { new("Exit Uninstall", new PackageId(packageId), new Version("1.0.0"), null) };
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(gistPackages);
+
+            WinGetServiceMock.Setup(x => x.GetAllInstalledPackages()).Returns(localPackages);
+
+            PassthroughRunnerMock
+                .SetupSequence(x => x.RunAsync(It.IsAny<string[]>()))
+                .ReturnsAsync(1); // uninstall fail
+
+            var result = await Target.SyncAsync();
+
+            result.Failed.ShouldContain(p => p.Id == packageId);
+            result.Errors.ShouldContain(s => s.Contains("Failed to uninstall", StringComparison.OrdinalIgnoreCase));
+        }
+
+        [Fact]
+        public async Task WhenInstallExitCodeNonZero_AddsFailedAndError()
+        {
+            var packageId = "Exit.Install";
+            var credential = new Credential("user", "token");
+            var gistPackages = new List<GistGetPackage> { new() { Id = packageId } };
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(gistPackages);
+
+            WinGetServiceMock.Setup(x => x.GetAllInstalledPackages()).Returns(new List<WinGetPackage>());
+
+            PassthroughRunnerMock
+                .Setup(x => x.RunAsync(It.IsAny<string[]>()))
+                .ReturnsAsync(2); // install fail
+
+            var result = await Target.SyncAsync();
+
+            result.Failed.ShouldContain(p => p.Id == packageId);
+            result.Errors.ShouldContain(s => s.Contains("Failed to install", StringComparison.OrdinalIgnoreCase));
         }
     }
 
@@ -2702,3 +3131,4 @@ Test.PackageB:
         }
     }
 }
+

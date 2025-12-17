@@ -1,12 +1,21 @@
 // Core application service that orchestrates GitHub and WinGet operations.
 
+using System.ComponentModel;
+using System.Globalization;
 using GistGet.Infrastructure;
+using Octokit;
 
 namespace GistGet;
 
 /// <summary>
 /// Implements the main workflows for syncing, exporting, importing, and package operations.
 /// </summary>
+/// <param name="gitHubService">GitHub API facade.</param>
+/// <param name="consoleService">Console output service.</param>
+/// <param name="credentialService">Credential storage service.</param>
+/// <param name="passthroughRunner">WinGet passthrough runner.</param>
+/// <param name="winGetService">WinGet manifest service.</param>
+/// <param name="argumentBuilder">WinGet argument builder.</param>
 public class GistGetService(
     IGitHubService gitHubService,
     IConsoleService consoleService,
@@ -50,13 +59,16 @@ public class GistGetService(
             var status = await gitHubService.GetTokenStatusAsync(credential.Token);
 
             var tokenSafeDisplay = "**********";
-            if (!string.IsNullOrEmpty(credential.Token) && credential.Token.StartsWith("gho_"))
+            if (!string.IsNullOrEmpty(credential.Token))
             {
-                tokenSafeDisplay = "gho_**********";
-            }
-            else if (!string.IsNullOrEmpty(credential.Token) && credential.Token.Length > 4)
-            {
-                tokenSafeDisplay = credential.Token[..4] + "**********";
+                if (credential.Token.StartsWith("gho_", StringComparison.Ordinal))
+                {
+                    tokenSafeDisplay = "gho_**********";
+                }
+                else if (credential.Token.Length > 4)
+                {
+                    tokenSafeDisplay = credential.Token[..4] + "**********";
+                }
             }
 
             var scopesStr = string.Join(", ", status.Scopes.Select(s => $"'{s}'"));
@@ -68,7 +80,11 @@ public class GistGetService(
             consoleService.WriteInfo($"  - Token: {tokenSafeDisplay}");
             consoleService.WriteInfo($"  - Token scopes: {scopesStr}");
         }
-        catch (Exception ex)
+        catch (HttpRequestException ex)
+        {
+            consoleService.WriteInfo($"Failed to retrieve status from GitHub: {ex.Message}");
+        }
+        catch (ApiException ex)
         {
             consoleService.WriteInfo($"Failed to retrieve status from GitHub: {ex.Message}");
         }
@@ -77,8 +93,12 @@ public class GistGetService(
     /// <summary>
     /// Installs a package and persists it to the manifest.
     /// </summary>
+    /// <param name="options">Install options.</param>
+    /// <returns>Process exit code.</returns>
     public async Task<int> InstallAndSaveAsync(InstallOptions options)
     {
+        ArgumentNullException.ThrowIfNull(options);
+
         if (!credentialService.TryGetCredential(out var credential))
         {
             await AuthLoginAsync();
@@ -96,9 +116,9 @@ public class GistGetService(
         var existingPackage = existingPackages.FirstOrDefault(p =>
             string.Equals(p.Id, options.Id, StringComparison.OrdinalIgnoreCase));
 
-        string? installVersion = options.Version;
+        var installVersion = options.Version;
         string? pinVersionToSet = null;
-        string? pinTypeToSet = existingPackage?.PinType;
+        var pinTypeToSet = existingPackage?.PinType;
 
         if (!string.IsNullOrEmpty(options.Version))
         {
@@ -161,7 +181,7 @@ public class GistGetService(
             Locale = options.Locale,
             AcceptPackageAgreements = options.AcceptPackageAgreements,
             AcceptSourceAgreements = options.AcceptSourceAgreements,
-            Uninstall = false,
+            Uninstall = false
         };
 
         newPackagesList.Add(packageToSave);
@@ -179,8 +199,12 @@ public class GistGetService(
     /// <summary>
     /// Uninstalls a package and updates the manifest.
     /// </summary>
+    /// <param name="options">Uninstall options.</param>
+    /// <returns>Process exit code.</returns>
     public async Task<int> UninstallAndSaveAsync(UninstallOptions options)
     {
+        ArgumentNullException.ThrowIfNull(options);
+
         if (!credentialService.TryGetCredential(out var credential))
         {
             await AuthLoginAsync();
@@ -206,7 +230,7 @@ public class GistGetService(
             return exitCode;
         }
 
-        await passthroughRunner.RunAsync(new[] { "pin", "remove", "--id", options.Id });
+        await passthroughRunner.RunAsync(["pin", "remove", "--id", options.Id]);
 
         var newPackages = existingPackages
             .Where(p => !string.Equals(p.Id, options.Id, StringComparison.OrdinalIgnoreCase))
@@ -233,8 +257,12 @@ public class GistGetService(
     /// <summary>
     /// Upgrades a package and updates the manifest.
     /// </summary>
+    /// <param name="options">Upgrade options.</param>
+    /// <returns>Process exit code.</returns>
     public async Task<int> UpgradeAndSaveAsync(UpgradeOptions options)
     {
+        ArgumentNullException.ThrowIfNull(options);
+
         if (!credentialService.TryGetCredential(out var credential))
         {
             await AuthLoginAsync();
@@ -284,7 +312,7 @@ public class GistGetService(
 
         if (hasPin && !string.IsNullOrEmpty(pinVersionToSet))
         {
-            var pinArgs = argumentBuilder.BuildPinAddArgs(options.Id, pinVersionToSet, pinTypeToSet, true);
+            var pinArgs = argumentBuilder.BuildPinAddArgs(options.Id, pinVersionToSet, pinTypeToSet, force: true);
             await passthroughRunner.RunAsync(pinArgs);
         }
 
@@ -316,11 +344,30 @@ public class GistGetService(
         packageToSave.Override = options.Override ?? packageToSave.Override;
         packageToSave.InstallerType = options.InstallerType ?? packageToSave.InstallerType;
         packageToSave.Header = options.Header ?? packageToSave.Header;
-        if (options.Force) packageToSave.Force = options.Force;
-        if (options.AcceptPackageAgreements) packageToSave.AcceptPackageAgreements = options.AcceptPackageAgreements;
-        if (options.AcceptSourceAgreements) packageToSave.AcceptSourceAgreements = options.AcceptSourceAgreements;
-        if (options.AllowHashMismatch) packageToSave.AllowHashMismatch = options.AllowHashMismatch;
-        if (options.SkipDependencies) packageToSave.SkipDependencies = options.SkipDependencies;
+        if (options.Force)
+        {
+            packageToSave.Force = options.Force;
+        }
+
+        if (options.AcceptPackageAgreements)
+        {
+            packageToSave.AcceptPackageAgreements = options.AcceptPackageAgreements;
+        }
+
+        if (options.AcceptSourceAgreements)
+        {
+            packageToSave.AcceptSourceAgreements = options.AcceptSourceAgreements;
+        }
+
+        if (options.AllowHashMismatch)
+        {
+            packageToSave.AllowHashMismatch = options.AllowHashMismatch;
+        }
+
+        if (options.SkipDependencies)
+        {
+            packageToSave.SkipDependencies = options.SkipDependencies;
+        }
 
         newPackages.Add(packageToSave);
 
@@ -337,6 +384,10 @@ public class GistGetService(
     /// <summary>
     /// Adds a pin and persists it to the manifest.
     /// </summary>
+    /// <param name="packageId">Package identifier to pin.</param>
+    /// <param name="version">Version to pin.</param>
+    /// <param name="pinType">Optional pin type.</param>
+    /// <param name="force">Whether to force pinning.</param>
     public async Task PinAddAndSaveAsync(string packageId, string version, string? pinType = null, bool force = false)
     {
         if (!credentialService.TryGetCredential(out var credential))
@@ -388,6 +439,7 @@ public class GistGetService(
     /// <summary>
     /// Removes a pin and updates the manifest.
     /// </summary>
+    /// <param name="packageId">Package identifier to unpin.</param>
     public async Task PinRemoveAndSaveAsync(string packageId)
     {
         if (!credentialService.TryGetCredential(out var credential))
@@ -436,6 +488,9 @@ public class GistGetService(
     /// <summary>
     /// Synchronizes the manifest with local state.
     /// </summary>
+    /// <param name="url">Optional Gist URL to sync from.</param>
+    /// <param name="filePath">Optional local YAML path to sync from.</param>
+    /// <returns>Sync result.</returns>
     public async Task<SyncResult> SyncAsync(string? url = null, string? filePath = null)
     {
         var result = new SyncResult();
@@ -494,15 +549,25 @@ public class GistGetService(
                 {
                     result.Uninstalled.Add(gistPkg);
                     consoleService.WriteInfo($"[sync] Removing pin for {gistPkg.Id}...");
-                    await passthroughRunner.RunAsync(new[] { "pin", "remove", "--id", gistPkg.Id });
+                    await passthroughRunner.RunAsync(["pin", "remove", "--id", gistPkg.Id]);
                 }
                 else
                 {
                     result.Failed.Add(gistPkg);
-                    result.Errors.Add($"Failed to uninstall {gistPkg.Id}: exit code {exitCode}");
+                    result.Errors.Add($"Failed to uninstall {gistPkg.Id}: exit code {exitCode.ToString(CultureInfo.InvariantCulture)}");
                 }
             }
-            catch (Exception ex)
+            catch (Win32Exception ex)
+            {
+                result.Failed.Add(gistPkg);
+                result.Errors.Add($"Failed to uninstall {gistPkg.Id}: {ex.Message}");
+            }
+            catch (InvalidOperationException ex)
+            {
+                result.Failed.Add(gistPkg);
+                result.Errors.Add($"Failed to uninstall {gistPkg.Id}: {ex.Message}");
+            }
+            catch (IOException ex)
             {
                 result.Failed.Add(gistPkg);
                 result.Errors.Add($"Failed to uninstall {gistPkg.Id}: {ex.Message}");
@@ -536,10 +601,20 @@ public class GistGetService(
                 else
                 {
                     result.Failed.Add(gistPkg);
-                    result.Errors.Add($"Failed to install {gistPkg.Id}: exit code {exitCode}");
+                    result.Errors.Add($"Failed to install {gistPkg.Id}: exit code {exitCode.ToString(CultureInfo.InvariantCulture)}");
                 }
             }
-            catch (Exception ex)
+            catch (Win32Exception ex)
+            {
+                result.Failed.Add(gistPkg);
+                result.Errors.Add($"Failed to install {gistPkg.Id}: {ex.Message}");
+            }
+            catch (InvalidOperationException ex)
+            {
+                result.Failed.Add(gistPkg);
+                result.Errors.Add($"Failed to install {gistPkg.Id}: {ex.Message}");
+            }
+            catch (IOException ex)
             {
                 result.Failed.Add(gistPkg);
                 result.Errors.Add($"Failed to install {gistPkg.Id}: {ex.Message}");
@@ -576,7 +651,15 @@ public class GistGetService(
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Win32Exception ex)
+            {
+                result.Errors.Add($"Failed to sync pin for {gistPkg.Id}: {ex.Message}");
+            }
+            catch (InvalidOperationException ex)
+            {
+                result.Errors.Add($"Failed to sync pin for {gistPkg.Id}: {ex.Message}");
+            }
+            catch (IOException ex)
             {
                 result.Errors.Add($"Failed to sync pin for {gistPkg.Id}: {ex.Message}");
             }
@@ -588,6 +671,9 @@ public class GistGetService(
     /// <summary>
     /// Runs a WinGet command without syncing.
     /// </summary>
+    /// <param name="command">WinGet command.</param>
+    /// <param name="args">Arguments to pass.</param>
+    /// <returns>Process exit code.</returns>
     public Task<int> RunPassthroughAsync(string command, string[] args)
     {
         var fullArgs = new List<string> { command };
@@ -598,6 +684,8 @@ public class GistGetService(
     /// <summary>
     /// Exports installed packages to YAML.
     /// </summary>
+    /// <param name="outputPath">Optional output file path.</param>
+    /// <returns>Serialized YAML content.</returns>
     public async Task<string> ExportAsync(string? outputPath = null)
     {
         var installedPackages = winGetService.GetAllInstalledPackages();
@@ -625,6 +713,7 @@ public class GistGetService(
     /// <summary>
     /// Imports package definitions from a YAML file.
     /// </summary>
+    /// <param name="filePath">YAML file path.</param>
     public async Task ImportAsync(string filePath)
     {
         if (!credentialService.TryGetCredential(out var credential))

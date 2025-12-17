@@ -12,6 +12,8 @@ public class WinGetArgumentBuilder : IWinGetArgumentBuilder
     /// </summary>
     public string[] BuildInstallArgs(InstallOptions options)
     {
+        ArgumentNullException.ThrowIfNull(options);
+
         var args = new List<string> { "install", "--id", options.Id };
 
         if (!string.IsNullOrEmpty(options.Version)) { args.Add("--version"); args.Add(options.Version); }
@@ -47,6 +49,8 @@ public class WinGetArgumentBuilder : IWinGetArgumentBuilder
 
     public string[] BuildUpgradeArgs(UpgradeOptions options)
     {
+        ArgumentNullException.ThrowIfNull(options);
+
         var args = new List<string> { "upgrade", "--id", options.Id };
 
         if (!string.IsNullOrEmpty(options.Version)) { args.Add("--version"); args.Add(options.Version); }
@@ -63,6 +67,8 @@ public class WinGetArgumentBuilder : IWinGetArgumentBuilder
 
     public string[] BuildUninstallArgs(UninstallOptions options)
     {
+        ArgumentNullException.ThrowIfNull(options);
+
         var args = new List<string> { "uninstall", "--id", options.Id };
 
         if (options.Silent) args.Add("--silent");
@@ -94,7 +100,7 @@ public class WinGetArgumentBuilder : IWinGetArgumentBuilder
         return args.ToArray();
     }
 
-    private IEnumerable<string> BuildCommonInstallOptions(
+    private static List<string> BuildCommonInstallOptions(
         string? scope, string? architecture, string? location,
         bool interactive, bool silent, string? log,
         string? overrideArgs, bool force, bool skipDependencies,

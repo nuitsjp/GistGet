@@ -15,17 +15,17 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
     /// </summary>
     public RootCommand Build()
     {
-        var rootCommand = new RootCommand("GistGet - Windows Package Manager Cloud Sync Tool");
-
-        rootCommand.Add(BuildSyncCommand());
-        rootCommand.Add(BuildExportCommand());
-        rootCommand.Add(BuildImportCommand());
-        rootCommand.Add(BuildAuthCommand());
-
-        rootCommand.Add(BuildInstallCommand());
-        rootCommand.Add(BuildUninstallCommand());
-        rootCommand.Add(BuildUpgradeCommand());
-        rootCommand.Add(BuildPinCommand());
+        var rootCommand = new RootCommand("GistGet - Windows Package Manager Cloud Sync Tool")
+        {
+            BuildSyncCommand(),
+            BuildExportCommand(),
+            BuildImportCommand(),
+            BuildAuthCommand(),
+            BuildInstallCommand(),
+            BuildUninstallCommand(),
+            BuildUpgradeCommand(),
+            BuildPinCommand()
+        };
 
         foreach (var cmd in BuildWingetPassthroughCommands())
         {
@@ -101,11 +101,7 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
                 }
             }
 
-            if (result.Success &&
-                result.Installed.Count == 0 &&
-                result.Uninstalled.Count == 0 &&
-                result.PinUpdated.Count == 0 &&
-                result.PinRemoved.Count == 0)
+            if (result is { Success: true, Installed.Count: 0, Uninstalled.Count: 0, PinUpdated.Count: 0, PinRemoved.Count: 0 })
             {
                 console.MarkupLine("[green]Already in sync. No changes needed.[/]");
             }

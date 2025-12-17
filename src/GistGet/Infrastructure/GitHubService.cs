@@ -14,7 +14,6 @@ public class GitHubService(
     IGitHubClientFactory gitHubClientFactory,
     HttpClient? httpClient = null) : IGitHubService
 {
-    private readonly IGitHubClientFactory _gitHubClientFactory = gitHubClientFactory;
     private readonly HttpClient _httpClient = httpClient ?? new HttpClient();
 
     /// <summary>
@@ -22,7 +21,7 @@ public class GitHubService(
     /// </summary>
     public async Task<Credential> LoginAsync()
     {
-        var client = _gitHubClientFactory.Create(null);
+        var client = gitHubClientFactory.Create(null);
         var request = CreateDeviceFlowRequest();
 
         var deviceFlowResponse = await client.InitiateDeviceFlowAsync(request);
@@ -45,7 +44,7 @@ public class GitHubService(
 
         var token = await client.CreateAccessTokenForDeviceFlowAsync(Constants.ClientId, deviceFlowResponse);
 
-        var authenticatedClient = _gitHubClientFactory.Create(token.AccessToken);
+        var authenticatedClient = gitHubClientFactory.Create(token.AccessToken);
         var user = await authenticatedClient.GetCurrentUserAsync();
 
         return new Credential(user.Login, token.AccessToken);
@@ -76,7 +75,7 @@ public class GitHubService(
     /// </summary>
     public async Task<TokenStatus> GetTokenStatusAsync(string token)
     {
-        var client = _gitHubClientFactory.Create(token);
+        var client = gitHubClientFactory.Create(token);
 
         var user = await client.GetCurrentUserAsync();
 
@@ -119,7 +118,7 @@ public class GitHubService(
             throw new InvalidOperationException("Authentication required to fetch default Gist.");
         }
 
-        var client = _gitHubClientFactory.Create(resolvedToken);
+        var client = gitHubClientFactory.Create(resolvedToken);
         var (targetFileName, targetDescription) = ResolveGistMetadata(gistFileName, gistDescription);
 
         var gists = await client.GetAllGistsAsync();
@@ -162,7 +161,7 @@ public class GitHubService(
             throw new InvalidOperationException("Authentication required to save packages.");
         }
 
-        var client = _gitHubClientFactory.Create(resolvedToken);
+        var client = gitHubClientFactory.Create(resolvedToken);
         var (targetFileName, targetDescription) = ResolveGistMetadata(gistFileName, gistDescription);
         var yaml = GistGetPackageSerializer.Serialize(packages);
 

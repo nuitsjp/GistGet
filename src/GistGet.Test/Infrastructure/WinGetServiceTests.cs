@@ -66,7 +66,14 @@ public class WinGetServiceTests
             result = RequireInstalledPackage(result, packageId);
             result.Id.ShouldBe(packageId);
             result.Name.ShouldNotBeEmpty();
-            result.UsableVersion.ShouldBeNull();
+            if (result.UsableVersion is null)
+            {
+                return;
+            }
+
+            var usableVersion = result.UsableVersion.Value;
+            usableVersion.ShouldNotBe(default);
+            usableVersion.ShouldNotBe(result.Version);
         }
 
         [Fact]

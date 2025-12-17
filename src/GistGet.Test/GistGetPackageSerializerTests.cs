@@ -2,6 +2,7 @@ using Shouldly;
 
 namespace GistGet.Test;
 
+// ReSharper disable once ClassNeverInstantiated.Global
 public class GistGetPackageSerializerTests
 {
     public class Serialize

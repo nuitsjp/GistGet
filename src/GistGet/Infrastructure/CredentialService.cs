@@ -19,6 +19,8 @@ public class CredentialService(string targetName) : ICredentialService
     /// </summary>
     public bool SaveCredential(Credential credential)
     {
+        ArgumentNullException.ThrowIfNull(credential);
+
         var credStruct = new NativeCredential
         {
             Type = CredType.Generic,

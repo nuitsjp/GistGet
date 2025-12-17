@@ -21,6 +21,8 @@ public class WinGetPassthroughRunner : IWinGetPassthroughRunner
     /// </summary>
     public async Task<int> RunAsync(string[] args)
     {
+        ArgumentNullException.ThrowIfNull(args);
+
         var startInfo = new ProcessStartInfo
         {
             FileName = ResolveWinGetPath(),
@@ -38,7 +40,7 @@ public class WinGetPassthroughRunner : IWinGetPassthroughRunner
         return await _processRunner.RunAsync(startInfo);
     }
 
-    private string ResolveWinGetPath()
+    private static string ResolveWinGetPath()
     {
         var pathEnv = Environment.GetEnvironmentVariable("PATH");
         if (pathEnv != null)

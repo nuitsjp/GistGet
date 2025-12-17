@@ -33,6 +33,5 @@ await services
 /// <summary>
 /// Entry point type for the top-level program.
 /// </summary>
-internal partial class Program
-{
-}
+// ReSharper disable once ClassNeverInstantiated.Global
+internal partial class Program;

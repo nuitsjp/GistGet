@@ -22,30 +22,25 @@ public class ConsoleService : IConsoleService
     /// <summary>
     /// Writes an informational message.
     /// </summary>
-    public void WriteInfo(string message)
-    {
-        Console.WriteLine(message);
-    }
+    public void WriteInfo(string message) =>
+        Console.WriteLine(message ?? throw new ArgumentNullException(nameof(message)));
 
     /// <summary>
     /// Writes a warning message.
     /// </summary>
-    public void WriteWarning(string message)
-    {
-        Console.WriteLine($"! {message}");
-    }
+    public void WriteWarning(string message) =>
+        Console.WriteLine($"! {message ?? throw new ArgumentNullException(nameof(message))}");
 
     /// <summary>
     /// Reads a single line from standard input.
     /// </summary>
-    public string? ReadLine()
-    {
-        return Console.ReadLine();
-    }
+    public string? ReadLine() => Console.ReadLine();
 
     [SupportedOSPlatform("windows")]
     public void SetClipboard(string text)
     {
+        ArgumentNullException.ThrowIfNull(text);
+
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             SetClipboardWindows(text);

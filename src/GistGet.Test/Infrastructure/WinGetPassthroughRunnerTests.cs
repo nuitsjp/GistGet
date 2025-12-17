@@ -15,7 +15,7 @@ public class WinGetPassthroughRunnerTests
         // -------------------------------------------------------------------
         var tempDir = Directory.CreateTempSubdirectory();
         var wingetPath = Path.Combine(tempDir.FullName, "winget.exe");
-        File.WriteAllText(wingetPath, string.Empty);
+        await File.WriteAllTextAsync(wingetPath, string.Empty);
 
         var originalPath = Environment.GetEnvironmentVariable("PATH");
         Environment.SetEnvironmentVariable("PATH", $"{tempDir.FullName}{Path.PathSeparator}{originalPath}");

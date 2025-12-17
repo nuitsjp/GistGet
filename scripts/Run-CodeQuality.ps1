@@ -34,7 +34,7 @@
     ビルド警告をエラーとして扱います。
 
 .PARAMETER ReSharperSeverity
-    ReSharper InspectCode の検出する最小の重大度レベル (HINT, SUGGESTION, WARNING, ERROR)。既定値は WARNING。
+    ReSharper InspectCode の検出する最小の重大度レベル (HINT, SUGGESTION, WARNING, ERROR)。既定値は SUGGESTION。
 
 .PARAMETER ReSharperOutputPath
     ReSharper レポートの出力先パス。既定値は .reports/inspectcode-report.sarif。
@@ -79,6 +79,12 @@ $originalOutputEncoding = [Console]::OutputEncoding
 $originalPSOutputEncoding = $OutputEncoding
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
+
+# Force .NET/CLI UI culture to English to avoid culture initialization issues in JetBrains CLI tools
+$env:DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = "0"
+$env:DOTNET_CLI_UI_LANGUAGE = "en"
+$env:COMPlus_DefaultThreadCurrentCulture = "en-US"
+$env:COMPlus_DefaultThreadCurrentUICulture = "en-US"
 
 #region Common Utilities
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -332,9 +338,9 @@ function Get-DiagnosticsSummary {
     # Parse MSBuild diagnostic output
     # Format: path(line,col): severity code: message
     $pattern = '([^(]+)\((\d+),(\d+)\):\s*(error|warning|info)\s+(\w+):\s*(.+)'
-    $matches = [regex]::Matches($content, $pattern, [System.Text.RegularExpressions.RegexOptions]::Multiline)
+    $regexMatches = [regex]::Matches($content, $pattern, [System.Text.RegularExpressions.RegexOptions]::Multiline)
 
-    foreach ($match in $matches) {
+    foreach ($match in $regexMatches) {
         $file = $match.Groups[1].Value.Trim()
         $line = $match.Groups[2].Value
         $col = $match.Groups[3].Value
