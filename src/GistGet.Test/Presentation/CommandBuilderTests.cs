@@ -2,7 +2,6 @@ using System.CommandLine;
 using GistGet.Presentation;
 using Moq;
 using Shouldly;
-using Spectre.Console;
 using Spectre.Console.Testing;
 
 namespace GistGet.Test.Presentation;

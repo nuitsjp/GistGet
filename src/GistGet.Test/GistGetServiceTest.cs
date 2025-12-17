@@ -23,7 +23,7 @@ public class GistGetServiceTests
         CredentialServiceMock = new Mock<ICredentialService>();
         PassthroughRunnerMock = new Mock<IWinGetPassthroughRunner>();
         WinGetServiceMock = new Mock<IWinGetService>();
-        ArgumentBuilder = new GistGet.Infrastructure.WinGetArgumentBuilder(); // Real instance
+        ArgumentBuilder = new WinGetArgumentBuilder(); // Real instance
         Target = new GistGetService(
             AuthServiceMock.Object,
             ConsoleServiceMock.Object,
@@ -90,7 +90,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = null;
                     return false;
@@ -118,7 +118,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -190,7 +190,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = currentCredential;
                     return c != null;
@@ -238,7 +238,7 @@ public class GistGetServiceTests
             var credential = new Credential("user", "token");
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -306,7 +306,7 @@ public class GistGetServiceTests
             var credential = new Credential("user", "token");
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -368,7 +368,7 @@ public class GistGetServiceTests
             var credential = new Credential("user", "token");
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -426,7 +426,7 @@ public class GistGetServiceTests
             var credential = new Credential("user", "token");
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -475,7 +475,7 @@ public class GistGetServiceTests
             var credential = new Credential("user", "token");
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -515,7 +515,7 @@ public class GistGetServiceTests
             var credential = new Credential("user", "token");
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -566,7 +566,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -644,7 +644,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -690,7 +690,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -748,7 +748,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -790,7 +790,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = currentCredential;
                     return c != null;
@@ -837,7 +837,7 @@ public class GistGetServiceTests
             var credential = new Credential("user", "token");
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -882,7 +882,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = currentCredential;
                     return c != null;
@@ -950,7 +950,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -1014,7 +1014,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -1066,7 +1066,7 @@ public class GistGetServiceTests
             var credential = new Credential("user", "token");
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -1113,7 +1113,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -1173,7 +1173,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -1241,7 +1241,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -1297,7 +1297,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -1345,7 +1345,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -1410,7 +1410,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = currentCredential;
                     return c != null;
@@ -1453,7 +1453,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -1516,7 +1516,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -1575,7 +1575,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -1626,7 +1626,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -1679,7 +1679,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = currentCredential;
                     return c != null;
@@ -1721,7 +1721,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -1785,7 +1785,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -1834,7 +1834,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -1887,7 +1887,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -1944,7 +1944,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -2001,7 +2001,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -2056,7 +2056,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -2111,7 +2111,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -2160,7 +2160,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -2213,7 +2213,7 @@ public class GistGetServiceTests
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = currentCredential;
                     return c != null;
@@ -2513,7 +2513,7 @@ Test.PackageB:
 
                 CredentialServiceMock
                     .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                    .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                    .Returns(new TryGetCredentialDelegate((out c) =>
                     {
                         c = credential;
                         return true;
@@ -2571,7 +2571,7 @@ Test.PackageB:
 
                 CredentialServiceMock
                     .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                    .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                    .Returns(new TryGetCredentialDelegate((out c) =>
                     {
                         c = currentCredential;
                         return c != null;
@@ -2625,7 +2625,7 @@ Test.PackageB:
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                .Returns(new TryGetCredentialDelegate((out c) =>
                 {
                     c = credential;
                     return true;
@@ -2658,7 +2658,7 @@ Test.PackageB:
 
                 CredentialServiceMock
                     .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                    .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                    .Returns(new TryGetCredentialDelegate((out c) =>
                     {
                         c = credential;
                         return true;

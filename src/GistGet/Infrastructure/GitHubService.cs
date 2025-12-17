@@ -31,7 +31,12 @@ public class GitHubService(
         {
             consoleService.SetClipboard(deviceFlowResponse.UserCode);
         }
-        catch { }
+#pragma warning disable RCS1075 // Avoid empty catch clause that catches System.Exception
+        catch (Exception)
+        {
+            // Ignore clipboard errors - not critical for the flow
+        }
+#pragma warning restore RCS1075
 
         consoleService.WriteWarning($"First copy your one-time code: {deviceFlowResponse.UserCode}");
         consoleService.WriteInfo($"Press Enter to open {deviceFlowResponse.VerificationUri} in your browser...");

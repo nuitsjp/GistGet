@@ -10,7 +10,7 @@ public class WinGetServiceTests
     private static WinGetPackage RequireInstalledPackage(WinGetPackage? package, PackageId id)
     {
         package.ShouldNotBeNull($"Package '{id.AsPrimitive()}' is required for this test run.");
-        return package!;
+        return package;
     }
 
     public class FindById : WinGetServiceTests

@@ -7,7 +7,7 @@ public class WinGetArgumentBuilderTests
 {
     private readonly WinGetArgumentBuilder _builder = new();
 
-    public class BuildInstallArgs_FromOptions : WinGetArgumentBuilderTests
+    public class BuildInstallArgsFromOptions : WinGetArgumentBuilderTests
     {
         [Fact]
         public void WithRequiredProperties_ReturnsMinimalArgs()
@@ -53,7 +53,7 @@ public class WinGetArgumentBuilderTests
 
             // Assert
             // Note: The order of arguments depends on implementation, but checking for containment is safer for robustness,
-            // though strict ordering in implementation makes testing exact sequence easier. 
+            // though strict ordering in implementation makes testing exact sequence easier.
             // Here we check for presence of all expected flags.
             var expectedArgs = new[]
             {
@@ -85,7 +85,7 @@ public class WinGetArgumentBuilderTests
         }
     }
 
-    public class BuildUpgradeArgs_FromOptions : WinGetArgumentBuilderTests
+    public class BuildUpgradeArgsFromOptions : WinGetArgumentBuilderTests
     {
         [Fact]
         public void WithAllProperties_ReturnsAllArgs()
@@ -115,7 +115,7 @@ public class WinGetArgumentBuilderTests
         }
     }
 
-    public class BuildUninstallArgs_FromOptions : WinGetArgumentBuilderTests
+    public class BuildUninstallArgsFromOptions : WinGetArgumentBuilderTests
     {
         [Fact]
         public void WithAllProperties_ReturnsAllArgs()
@@ -141,7 +141,7 @@ public class WinGetArgumentBuilderTests
         }
     }
 
-    public class BuildPinAddArgs_FromParams : WinGetArgumentBuilderTests
+    public class BuildPinAddArgsFromParams : WinGetArgumentBuilderTests
     {
         [Fact]
         public void WithPinTypeAndForce_ReturnsAllArgs()

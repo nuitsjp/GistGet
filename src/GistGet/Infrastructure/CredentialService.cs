@@ -1,6 +1,5 @@
 // Credential persistence using Windows Credential Manager.
 
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -20,14 +19,14 @@ public class CredentialService(string targetName) : ICredentialService
     /// </summary>
     public bool SaveCredential(Credential credential)
     {
-        var credStruct = new CREDENTIAL
+        var credStruct = new NativeCredential
         {
-            Type = CRED_TYPE.GENERIC,
+            Type = CredType.Generic,
             TargetName = targetName,
             UserName = credential.Username,
             CredentialBlobSize = Encoding.UTF8.GetByteCount(credential.Token),
             CredentialBlob = Marshal.StringToCoTaskMemUTF8(credential.Token),
-            Persist = CRED_PERSIST.LOCAL_MACHINE
+            Persist = CredPersist.LocalMachine
         };
 
         try
@@ -47,14 +46,14 @@ public class CredentialService(string targetName) : ICredentialService
     /// <summary>
     /// Attempts to read the stored credential.
     /// </summary>
-    public bool TryGetCredential([NotNullWhen(true)] out Credential credential)
+    public bool TryGetCredential(out Credential credential)
     {
         credential = null!;
-        if (NativeMethods.CredRead(targetName, CRED_TYPE.GENERIC, 0, out var credentialPtr))
+        if (NativeMethods.CredRead(targetName, CredType.Generic, 0, out var credentialPtr))
         {
             try
             {
-                var credStruct = Marshal.PtrToStructure<CREDENTIAL>(credentialPtr);
+                var credStruct = Marshal.PtrToStructure<NativeCredential>(credentialPtr);
                 var username = credStruct.UserName;
                 if (credStruct.CredentialBlob != IntPtr.Zero && credStruct.CredentialBlobSize > 0)
                 {
@@ -78,7 +77,7 @@ public class CredentialService(string targetName) : ICredentialService
     /// </summary>
     public bool DeleteCredential()
     {
-        if (!NativeMethods.CredDelete(targetName, CRED_TYPE.GENERIC, 0))
+        if (!NativeMethods.CredDelete(targetName, CredType.Generic, 0))
         {
             var error = Marshal.GetLastWin32Error();
             if (error != 1168)
@@ -92,44 +91,48 @@ public class CredentialService(string targetName) : ICredentialService
     private static class NativeMethods
     {
         [DllImport("advapi32.dll", EntryPoint = "CredWriteW", CharSet = CharSet.Unicode, SetLastError = true)]
-        public static extern bool CredWrite(ref CREDENTIAL userCredential, uint flags);
+        public static extern bool CredWrite(ref NativeCredential userCredential, uint flags);
 
         [DllImport("advapi32.dll", EntryPoint = "CredReadW", CharSet = CharSet.Unicode, SetLastError = true)]
-        public static extern bool CredRead(string target, CRED_TYPE type, uint reservedFlag, out IntPtr credentialPtr);
+        public static extern bool CredRead(string target, CredType type, uint reservedFlag, out IntPtr credentialPtr);
 
         [DllImport("advapi32.dll", EntryPoint = "CredDeleteW", CharSet = CharSet.Unicode, SetLastError = true)]
-        public static extern bool CredDelete(string target, CRED_TYPE type, uint flags);
+        public static extern bool CredDelete(string target, CredType type, uint flags);
 
         [DllImport("advapi32.dll", SetLastError = true)]
         public static extern void CredFree(IntPtr buffer);
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    private struct CREDENTIAL
+    private struct NativeCredential
     {
         public uint Flags;
-        public CRED_TYPE Type;
+        public CredType Type;
         public string TargetName;
         public string Comment;
         public System.Runtime.InteropServices.ComTypes.FILETIME LastWritten;
         public int CredentialBlobSize;
         public IntPtr CredentialBlob;
-        public CRED_PERSIST Persist;
+        public CredPersist Persist;
         public int AttributeCount;
         public IntPtr Attributes;
         public string TargetAlias;
         public string UserName;
     }
 
-    public enum CRED_TYPE : uint
+    private enum CredType : uint
     {
-        GENERIC = 1
+        Generic = 1
     }
 
-    public enum CRED_PERSIST : uint
+    // ReSharper disable UnusedMember.Local
+#pragma warning disable IDE0051 // Remove unused private members
+    private enum CredPersist : uint
     {
-        SESSION = 1,
-        LOCAL_MACHINE = 2,
-        ENTERPRISE = 3
+        Session = 1,
+        LocalMachine = 2,
+        Enterprise = 3
     }
+#pragma warning restore IDE0051
+    // ReSharper restore UnusedMember.Local
 }

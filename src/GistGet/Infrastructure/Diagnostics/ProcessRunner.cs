@@ -14,7 +14,8 @@ public class ProcessRunner : IProcessRunner
     /// </summary>
     public async Task<int> RunAsync(ProcessStartInfo startInfo)
     {
-        using var process = new Process { StartInfo = startInfo };
+        using var process = new Process();
+        process.StartInfo = startInfo;
         process.Start();
         await process.WaitForExitAsync();
         return process.ExitCode;

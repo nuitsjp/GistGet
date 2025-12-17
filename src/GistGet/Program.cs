@@ -14,7 +14,7 @@ services.AddSingleton<IGitHubClientFactory, GitHubClientFactory>();
 services.AddTransient<IGitHubService, GitHubService>();
 services.AddTransient<IGistGetService, GistGetService>();
 
-services.AddSingleton<IAnsiConsole>(AnsiConsole.Console);
+services.AddSingleton(AnsiConsole.Console);
 services.AddTransient<CommandBuilder>();
 services.AddTransient<IConsoleService, ConsoleService>();
 

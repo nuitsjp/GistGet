@@ -250,7 +250,7 @@ public class GitHubServiceTests
 
             var isolatedResult = await CreateIsolatedGistAsync(fileName, description, yaml);
             if (isolatedResult == null) return;
-            var (client, token, gist) = isolatedResult.Value;
+            var (client, _, gist) = isolatedResult.Value;
             var target = CreateTarget();
 
             try

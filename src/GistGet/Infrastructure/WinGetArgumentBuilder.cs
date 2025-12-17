@@ -81,11 +81,11 @@ public class WinGetArgumentBuilder : IWinGetArgumentBuilder
 
         if (!string.IsNullOrEmpty(pinType))
         {
-            if (pinType.Equals("blocking", System.StringComparison.OrdinalIgnoreCase))
+            if (pinType.Equals("blocking", StringComparison.OrdinalIgnoreCase))
             {
                 args.Add("--blocking");
             }
-            else if (pinType.Equals("gating", System.StringComparison.OrdinalIgnoreCase))
+            else if (pinType.Equals("gating", StringComparison.OrdinalIgnoreCase))
             {
                 args.Add("--gating");
             }

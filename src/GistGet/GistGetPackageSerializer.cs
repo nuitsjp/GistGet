@@ -70,13 +70,17 @@ public static class GistGetPackageSerializer
             .IgnoreUnmatchedProperties()
             .Build();
 
-        var dict = deserializer.Deserialize<Dictionary<string, GistGetPackage>>(yaml)
-                   ?? new Dictionary<string, GistGetPackage>(StringComparer.OrdinalIgnoreCase);
+#pragma warning disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
+        var dict = deserializer.Deserialize<Dictionary<string, GistGetPackage>>(yaml);
+        dict ??= new Dictionary<string, GistGetPackage>(StringComparer.OrdinalIgnoreCase);
+#pragma warning restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 
         var list = new List<GistGetPackage>();
         foreach (var (id, package) in dict)
         {
+#pragma warning disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
             var item = package ?? new GistGetPackage();
+#pragma warning restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
             item.Id = id;
             list.Add(item);
         }
