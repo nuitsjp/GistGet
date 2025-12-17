@@ -88,6 +88,7 @@ Write-Host "使用例:" -ForegroundColor Yellow
 Write-Host "  dotnet jb inspectcode src\GistGet.slnx -o=inspectcode-report.xml" -ForegroundColor Gray
 Write-Host "  dotnet jb inspectcode src\GistGet.slnx -o=inspectcode-report.sarif --format=sarif" -ForegroundColor Gray
 Write-Host ""
-Write-Host "コードインスペクションを実行するには:" -ForegroundColor Cyan
-Write-Host "  .\scripts\Run-ReSharperInspect.ps1" -ForegroundColor White
+Write-Host "コードインスペクション（ReSharper 含む）を実行するには:" -ForegroundColor Cyan
+Write-Host "  .\scripts\Run-CodeQuality.ps1" -ForegroundColor White
+Write-Host "  .\scripts\Run-CodeQuality.ps1 -AnalysisMode Quick  # ReSharper をスキップ" -ForegroundColor White
 Write-Host ""
