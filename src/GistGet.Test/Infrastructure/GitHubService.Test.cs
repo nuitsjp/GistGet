@@ -805,6 +805,260 @@ public class GitHubServiceTests
         }
     }
 
+    public class LoginAsyncErrorCases : GitHubServiceTests
+    {
+        [Fact]
+        public async Task WhenDeviceFlowInitiationFails_ThrowsApiException()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var credentialService = new Mock<ICredentialService>();
+            var consoleService = new Mock<IConsoleService>();
+
+            var unauthenticatedClient = new Mock<IGitHubClientWrapper>();
+            unauthenticatedClient
+                .Setup(x => x.InitiateDeviceFlowAsync(It.IsAny<OauthDeviceFlowRequest>()))
+                .ThrowsAsync(new ApiException("Device flow failed", HttpStatusCode.ServiceUnavailable));
+
+            var factory = new Mock<IGitHubClientFactory>();
+            factory.Setup(x => x.Create(It.IsAny<string?>())).Returns(unauthenticatedClient.Object);
+
+            var target = new GitHubService(credentialService.Object, consoleService.Object, factory.Object);
+
+            // -------------------------------------------------------------------
+            // Act & Assert
+            // -------------------------------------------------------------------
+            await Should.ThrowAsync<ApiException>(() => target.LoginAsync());
+        }
+
+        [Fact]
+        public async Task WhenTokenCreationFails_ThrowsApiException()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var credentialService = new Mock<ICredentialService>();
+            var consoleService = new Mock<IConsoleService>();
+            consoleService.Setup(x => x.ReadLine()).Returns(string.Empty);
+
+            var deviceFlowResponse = new OauthDeviceFlowResponse(
+                "device-code",
+                "USER-CODE",
+                "https://example.com/verify",
+                900,
+                5);
+
+            var unauthenticatedClient = new Mock<IGitHubClientWrapper>();
+            unauthenticatedClient
+                .Setup(x => x.InitiateDeviceFlowAsync(It.IsAny<OauthDeviceFlowRequest>()))
+                .ReturnsAsync(deviceFlowResponse);
+            unauthenticatedClient
+                .Setup(x => x.CreateAccessTokenForDeviceFlowAsync(Constants.ClientId, deviceFlowResponse))
+                .ThrowsAsync(new ApiException("Token creation failed", HttpStatusCode.Unauthorized));
+
+            var factory = new Mock<IGitHubClientFactory>();
+            factory.Setup(x => x.Create(It.IsAny<string?>())).Returns(unauthenticatedClient.Object);
+
+            var target = new TestableGitHubServiceForErrorTests(credentialService.Object, consoleService.Object, factory.Object);
+
+            // -------------------------------------------------------------------
+            // Act & Assert
+            // -------------------------------------------------------------------
+            await Should.ThrowAsync<ApiException>(() => target.LoginAsync());
+        }
+
+        private sealed class TestableGitHubServiceForErrorTests : GitHubService
+        {
+            public TestableGitHubServiceForErrorTests(ICredentialService credentialService, IConsoleService consoleService, IGitHubClientFactory gitHubClientFactory)
+                : base(credentialService, consoleService, gitHubClientFactory)
+            {
+            }
+
+            protected override bool OpenBrowser(string verificationUri)
+            {
+                return true;
+            }
+        }
+    }
+
+    public class GetTokenStatusAsyncErrorCases : GitHubServiceTests
+    {
+        [Fact]
+        public async Task WhenGetCurrentUserFails_ThrowsApiException()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var credentialService = new Mock<ICredentialService>();
+            var consoleService = new Mock<IConsoleService>();
+
+            var usersClient = new Mock<IGitHubClientWrapper>();
+            usersClient
+                .Setup(x => x.GetCurrentUserAsync())
+                .ThrowsAsync(new ApiException("User lookup failed", HttpStatusCode.Unauthorized));
+
+            var factory = new Mock<IGitHubClientFactory>();
+            factory.Setup(x => x.Create("invalid-token")).Returns(usersClient.Object);
+
+            var target = new GitHubService(credentialService.Object, consoleService.Object, factory.Object);
+
+            // -------------------------------------------------------------------
+            // Act & Assert
+            // -------------------------------------------------------------------
+            await Should.ThrowAsync<ApiException>(() => target.GetTokenStatusAsync("invalid-token"));
+        }
+    }
+
+    public class GetPackagesFromUrlAsyncErrorCases : GitHubServiceTests
+    {
+        [Fact]
+        public async Task WhenHttpRequestFails_ThrowsException()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var credentialService = new Mock<ICredentialService>();
+            var consoleService = new Mock<IConsoleService>();
+            var httpClient = new HttpClient(new FailingHttpMessageHandler());
+            var factory = new Mock<IGitHubClientFactory>();
+            factory.Setup(x => x.Create(It.IsAny<string?>())).Returns(Mock.Of<IGitHubClientWrapper>());
+            var target = new GitHubService(credentialService.Object, consoleService.Object, factory.Object, httpClient);
+
+            // -------------------------------------------------------------------
+            // Act & Assert
+            // -------------------------------------------------------------------
+            await Should.ThrowAsync<HttpRequestException>(() => target.GetPackagesFromUrlAsync("https://example.com/bad"));
+        }
+
+        private sealed class FailingHttpMessageHandler : HttpMessageHandler
+        {
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                throw new HttpRequestException("Network error");
+            }
+        }
+    }
+
+    public class GetPackagesAsyncErrorCases : GitHubServiceTests
+    {
+        [Fact]
+        public async Task WhenGetAllGistsFails_ThrowsApiException()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var credentialService = new Mock<ICredentialService>();
+            var consoleService = new Mock<IConsoleService>();
+
+            var clientWrapper = new Mock<IGitHubClientWrapper>();
+            clientWrapper
+                .Setup(x => x.GetAllGistsAsync())
+                .ThrowsAsync(new ApiException("Gist listing failed", HttpStatusCode.InternalServerError));
+
+            var factory = new Mock<IGitHubClientFactory>();
+            factory.Setup(x => x.Create("token")).Returns(clientWrapper.Object);
+
+            var target = new GitHubService(credentialService.Object, consoleService.Object, factory.Object);
+
+            // -------------------------------------------------------------------
+            // Act & Assert
+            // -------------------------------------------------------------------
+            await Should.ThrowAsync<ApiException>(() => target.GetPackagesAsync("token", "packages.yaml", "description"));
+        }
+
+        [Fact]
+        public async Task WhenGetGistFails_ThrowsApiException()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var credentialService = new Mock<ICredentialService>();
+            var consoleService = new Mock<IConsoleService>();
+
+            var listingGist = new Gist();
+            SetProperty(listingGist, "Id", "1");
+            SetProperty(listingGist, "Files", new Dictionary<string, GistFile>
+            {
+                { "packages.yaml", new GistFile(0, "packages.yaml", string.Empty, string.Empty, string.Empty, string.Empty) }
+            });
+
+            var clientWrapper = new Mock<IGitHubClientWrapper>();
+            clientWrapper.Setup(x => x.GetAllGistsAsync()).ReturnsAsync(new List<Gist> { listingGist });
+            clientWrapper
+                .Setup(x => x.GetGistAsync("1"))
+                .ThrowsAsync(new ApiException("Gist retrieval failed", HttpStatusCode.NotFound));
+
+            var factory = new Mock<IGitHubClientFactory>();
+            factory.Setup(x => x.Create("token")).Returns(clientWrapper.Object);
+
+            var target = new GitHubService(credentialService.Object, consoleService.Object, factory.Object);
+
+            // -------------------------------------------------------------------
+            // Act & Assert
+            // -------------------------------------------------------------------
+            await Should.ThrowAsync<ApiException>(() => target.GetPackagesAsync("token", "packages.yaml", "description"));
+        }
+    }
+
+    public class SavePackagesAsyncErrorCases : GitHubServiceTests
+    {
+        [Fact]
+        public async Task WhenEditGistFails_ThrowsApiException()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var credentialService = new Mock<ICredentialService>();
+            var consoleService = new Mock<IConsoleService>();
+            var packages = new List<GistGetPackage> { new() { Id = "Foo.Bar" } };
+
+            var clientWrapper = new Mock<IGitHubClientWrapper>();
+            clientWrapper
+                .Setup(x => x.EditGistAsync("gist-id", It.IsAny<GistUpdate>()))
+                .ThrowsAsync(new ApiException("Edit failed", HttpStatusCode.Forbidden));
+
+            var factory = new Mock<IGitHubClientFactory>();
+            factory.Setup(x => x.Create("token")).Returns(clientWrapper.Object);
+
+            var target = new GitHubService(credentialService.Object, consoleService.Object, factory.Object);
+
+            // -------------------------------------------------------------------
+            // Act & Assert
+            // -------------------------------------------------------------------
+            await Should.ThrowAsync<ApiException>(() =>
+                target.SavePackagesAsync("token", "gist-id", "packages.yaml", "description", packages));
+        }
+
+        [Fact]
+        public async Task WhenCreateGistFails_ThrowsApiException()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var credentialService = new Mock<ICredentialService>();
+            var consoleService = new Mock<IConsoleService>();
+            var packages = new List<GistGetPackage> { new() { Id = "New.Package" } };
+
+            var clientWrapper = new Mock<IGitHubClientWrapper>();
+            clientWrapper.Setup(x => x.GetAllGistsAsync()).ReturnsAsync(new List<Gist>());
+            clientWrapper
+                .Setup(x => x.CreateGistAsync(It.IsAny<NewGist>()))
+                .ThrowsAsync(new ApiException("Create failed", HttpStatusCode.UnprocessableEntity));
+
+            var factory = new Mock<IGitHubClientFactory>();
+            factory.Setup(x => x.Create("token")).Returns(clientWrapper.Object);
+
+            var target = new GitHubService(credentialService.Object, consoleService.Object, factory.Object);
+
+            // -------------------------------------------------------------------
+            // Act & Assert
+            // -------------------------------------------------------------------
+            await Should.ThrowAsync<ApiException>(() =>
+                target.SavePackagesAsync("token", string.Empty, "packages.yaml", "GistGet Packages", packages));
+        }
+    }
+
     public class SavePackagesAsyncMock : GitHubServiceTests
     {
         [Fact]

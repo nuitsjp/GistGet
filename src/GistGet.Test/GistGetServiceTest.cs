@@ -650,6 +650,153 @@ public class GistGetServiceTests
     public class UpgradeAndSaveAsync : GistGetServiceTests
     {
         [Fact]
+        public async Task WhenPinnedPackageNoVersionOption_FindsVersionFromWinGet()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            // This test covers the branch in UpgradeAndSaveAsync where hasPin=true
+            // and resolvedVersion=null, triggering WinGetService.FindById call.
+            var packageId = "Test.Package";
+            var installedVersion = "3.0.0";
+            var upgradeOptions = new UpgradeOptions { Id = packageId }; // Version is null
+
+            var existingPackages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = packageId, Pin = "2.0.0", PinType = "blocking" }
+            };
+
+            // Credential setup
+            var credential = new Credential("user", "token");
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            // First call: upgrade command
+            PassthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "upgrade" &&
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
+                .ReturnsAsync(0);
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(existingPackages);
+
+            // WinGetService returns the installed package with updated version
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.Is<PackageId>(p => p.AsPrimitive() == packageId)))
+                .Returns(new WinGetPackage(
+                    Name: "Test Package",
+                    Id: new PackageId(packageId),
+                    Version: new Version(installedVersion),
+                    UsableVersion: null
+                ));
+
+            // Expect pin add with resolved version from WinGet
+            PassthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "pin" && args[1] == "add" &&
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId) &&
+                    args.Contains("--version", StringComparer.Ordinal) && args.Contains(installedVersion))))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await Target.UpgradeAndSaveAsync(upgradeOptions);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            WinGetServiceMock.Verify(x => x.FindById(It.Is<PackageId>(p => p.AsPrimitive() == packageId)), Times.Once);
+            PassthroughRunnerMock.VerifyAll();
+            AuthServiceMock.Verify(x => x.SavePackagesAsync(
+                credential.Token,
+                "",
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.Is<IReadOnlyList<GistGetPackage>>(list =>
+                    list.Any(p => p.Id == packageId && p.Pin == installedVersion && p.Version == installedVersion)
+                )), Times.Once);
+        }
+
+        [Fact]
+        public async Task WhenPinnedPackageNoVersionOption_AndWinGetReturnsNull_UsesFallbackPin()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            // This test covers the branch where hasPin=true, resolvedVersion=null,
+            // and WinGetService.FindById returns null (package not found).
+            var packageId = "Test.Package";
+            var originalPin = "2.0.0";
+            var upgradeOptions = new UpgradeOptions { Id = packageId }; // Version is null
+
+            var existingPackages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = packageId, Pin = originalPin, PinType = "gating" }
+            };
+
+            // Credential setup
+            var credential = new Credential("user", "token");
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            // First call: upgrade command
+            PassthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "upgrade" &&
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
+                .ReturnsAsync(0);
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(existingPackages);
+
+            // WinGetService returns null (package not found after upgrade)
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.Is<PackageId>(p => p.AsPrimitive() == packageId)))
+                .Returns((WinGetPackage?)null);
+
+            // Expect pin add with fallback to original pin
+            PassthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "pin" && args[1] == "add" &&
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId) &&
+                    args.Contains("--version", StringComparer.Ordinal) && args.Contains(originalPin))))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await Target.UpgradeAndSaveAsync(upgradeOptions);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            WinGetServiceMock.Verify(x => x.FindById(It.Is<PackageId>(p => p.AsPrimitive() == packageId)), Times.Once);
+            PassthroughRunnerMock.VerifyAll();
+            AuthServiceMock.Verify(x => x.SavePackagesAsync(
+                credential.Token,
+                "",
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.Is<IReadOnlyList<GistGetPackage>>(list =>
+                    list.Any(p => p.Id == packageId && p.Pin == originalPin)
+                )), Times.Once);
+        }
+
+        [Fact]
         public async Task WhenCredentialsUnavailableAfterLogin_Throws()
         {
             var options = new UpgradeOptions { Id = "Test.Package" };

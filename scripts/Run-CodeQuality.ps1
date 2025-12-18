@@ -58,7 +58,7 @@
 param(
     [string]$Configuration = "Debug",
     [double]$CoverageThreshold = 98,
-    [double]$BranchCoverageThreshold = 81,
+    [double]$BranchCoverageThreshold = 85,
     [int]$Top = 5,
     [string]$MetricsOutputPath = ".reports/metrics-report.txt",
     [ValidateSet('Text', 'Json')]
@@ -169,6 +169,8 @@ function Get-CoverageSummary {
     }
 
     $fileMap = @{}
+    $totalBranches = 0
+    $coveredBranches = 0
     foreach ($cls in $classes) {
         $file = $cls.filename
         if (-not $fileMap.ContainsKey($file)) {
@@ -183,6 +185,15 @@ function Get-CoverageSummary {
             $fileMap[$file].Total++
             if ([int]$line.hits -gt 0) {
                 $fileMap[$file].Covered++
+            }
+            # Calculate branch coverage from lines with branches
+            if ($line.'branch' -eq 'True' -and $line.'condition-coverage') {
+                # Parse condition-coverage format: "50% (1/2)"
+                $condCoverage = $line.'condition-coverage'
+                if ($condCoverage -match '\((\d+)/(\d+)\)') {
+                    $totalBranches += [int]$Matches[2]
+                    $coveredBranches += [int]$Matches[1]
+                }
             }
         }
     }
@@ -200,11 +211,12 @@ function Get-CoverageSummary {
     $coveredTotal = ($files | Measure-Object -Property Covered -Sum).Sum
     $linesTotal = ($files | Measure-Object -Property Total -Sum).Sum
     $lineCoverage = if ($linesTotal -eq 0) { 0 } else { ($coveredTotal / $linesTotal) * 100 }
+    $branchCoverage = if ($totalBranches -eq 0) { 100 } else { ($coveredBranches / $totalBranches) * 100 }
 
     return [pscustomobject]@{
         FilePath      = $FilePath
         LineCoverage  = $lineCoverage
-        BranchCoverage = [double]$xml.coverage.'branch-rate' * 100
+        BranchCoverage = $branchCoverage
         Files         = $files
         CoveredLines  = $coveredTotal
         TotalLines    = $linesTotal

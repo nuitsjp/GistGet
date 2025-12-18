@@ -1,6 +1,5 @@
 // WinGet COM-based package discovery implementation.
 
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.Management.Deployment;
 
 namespace GistGet.Infrastructure;
@@ -10,6 +9,24 @@ namespace GistGet.Infrastructure;
 /// </summary>
 public class WinGetService : IWinGetService
 {
+    private readonly IPackageCatalogConnector _connector;
+
+    /// <summary>
+    /// Initializes a new instance with the default connector.
+    /// </summary>
+    public WinGetService() : this(new PackageCatalogConnector())
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance with a custom connector for testing.
+    /// </summary>
+    /// <param name="connector">Package catalog connector.</param>
+    public WinGetService(IPackageCatalogConnector connector)
+    {
+        _connector = connector;
+    }
+
     /// <summary>
     /// Finds an installed package by ID.
     /// </summary>
@@ -17,25 +34,7 @@ public class WinGetService : IWinGetService
     /// <returns>The installed package, or <see langword="null"/> if not found.</returns>
     public WinGetPackage? FindById(PackageId id)
     {
-        var packageManager = new PackageManager();
-
-        var createCompositePackageCatalogOptions = new CreateCompositePackageCatalogOptions();
-
-        var catalogs = packageManager.GetPackageCatalogs();
-        for (var i = 0; i < catalogs.Count; i++)
-        {
-            var catalogRef = catalogs[i];
-            if (!catalogRef.Info.Explicit)
-            {
-                createCompositePackageCatalogOptions.Catalogs.Add(catalogRef);
-            }
-        }
-        createCompositePackageCatalogOptions.CompositeSearchBehavior = CompositeSearchBehavior.AllCatalogs;
-
-        var compositeRef = packageManager.CreateCompositePackageCatalog(createCompositePackageCatalogOptions);
-        var connectResult = compositeRef.Connect();
-
-        var catalog = ValidateConnectResult(connectResult);
+        var catalog = _connector.Connect(CompositeSearchBehavior.AllCatalogs);
         if (catalog == null)
         {
             return null;
@@ -49,9 +48,9 @@ public class WinGetService : IWinGetService
             Value = id.AsPrimitive()
         });
 
-        var findResult = catalog.FindPackages(findPackagesOptions);
+        var findResult = _connector.FindPackages(catalog, findPackagesOptions);
 
-        if (!ValidateFindResult(findResult))
+        if (findResult.Status != FindPackagesResultStatus.Ok || findResult.Matches.Count == 0)
         {
             return null;
         }
@@ -81,34 +80,17 @@ public class WinGetService : IWinGetService
     public IReadOnlyList<WinGetPackage> GetAllInstalledPackages()
     {
         var packages = new List<WinGetPackage>();
-        var packageManager = new PackageManager();
 
-        var createCompositePackageCatalogOptions = new CreateCompositePackageCatalogOptions();
-
-        var catalogs = packageManager.GetPackageCatalogs();
-        for (var i = 0; i < catalogs.Count; i++)
-        {
-            var catalogRef = catalogs[i];
-            if (!catalogRef.Info.Explicit)
-            {
-                createCompositePackageCatalogOptions.Catalogs.Add(catalogRef);
-            }
-        }
-        createCompositePackageCatalogOptions.CompositeSearchBehavior = CompositeSearchBehavior.LocalCatalogs;
-
-        var compositeRef = packageManager.CreateCompositePackageCatalog(createCompositePackageCatalogOptions);
-        var connectResult = compositeRef.Connect();
-
-        var catalog = ValidateConnectResult(connectResult);
+        var catalog = _connector.Connect(CompositeSearchBehavior.LocalCatalogs);
         if (catalog == null)
         {
             return packages;
         }
 
         var findPackagesOptions = new FindPackagesOptions();
-        var findResult = catalog.FindPackages(findPackagesOptions);
+        var findResult = _connector.FindPackages(catalog, findPackagesOptions);
 
-        if (!ValidateFindResultForList(findResult))
+        if (findResult.Status != FindPackagesResultStatus.Ok)
         {
             return packages;
         }
@@ -135,48 +117,6 @@ public class WinGetService : IWinGetService
         }
 
         return packages;
-    }
-
-    /// <summary>
-    /// Validates catalog connection result.
-    /// Defensive: handles WinGet COM API connection failures.
-    /// </summary>
-    [ExcludeFromCodeCoverage]
-    private static PackageCatalog? ValidateConnectResult(ConnectResult connectResult)
-    {
-        if (connectResult.Status != ConnectResultStatus.Ok)
-        {
-            return null;
-        }
-        return connectResult.PackageCatalog;
-    }
-
-    /// <summary>
-    /// Validates package search result.
-    /// Defensive: handles WinGet COM API search failures or empty results.
-    /// </summary>
-    [ExcludeFromCodeCoverage]
-    private static bool ValidateFindResult(FindPackagesResult findResult)
-    {
-        if (findResult.Status != FindPackagesResultStatus.Ok || findResult.Matches.Count == 0)
-        {
-            return false;
-        }
-        return true;
-    }
-
-    /// <summary>
-    /// Validates package list search result.
-    /// Defensive: handles WinGet COM API search failures.
-    /// </summary>
-    [ExcludeFromCodeCoverage]
-    private static bool ValidateFindResultForList(FindPackagesResult findResult)
-    {
-        if (findResult.Status != FindPackagesResultStatus.Ok)
-        {
-            return false;
-        }
-        return true;
     }
 
     /// <summary>
