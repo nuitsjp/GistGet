@@ -2,7 +2,7 @@
 
 using Microsoft.Management.Deployment;
 
-namespace GistGet.Infrastructure.WinGet;
+namespace GistGet.Infrastructure;
 
 /// <summary>
 /// Abstracts WinGet PackageManager operations for testability.
