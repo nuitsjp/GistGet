@@ -232,6 +232,10 @@ dotnet_diagnostic.CA2007.severity = none            # ConfigureAwait (ライブ�
 dotnet_diagnostic.CA1031.severity = suggestion      # 汎用例外キャッチ
 
 # コード品質
+# サイクロマティック複雑度 (メソッドの複雑性を検出)
+dotnet_diagnostic.CA1502.severity = suggestion
+dotnet_code_quality.CA1502.threshold = 15
+
 dotnet_diagnostic.CA1054.severity = none            # CLI ツールでは string URL が使いやすい
 dotnet_diagnostic.CA1062.severity = suggestion      # パブリックメソッドの引数検証
 dotnet_diagnostic.CA1063.severity = none            # IDisposable パターン (P/Invoke で不要)

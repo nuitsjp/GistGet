@@ -60,9 +60,6 @@ param(
     [double]$CoverageThreshold = 98,
     [double]$BranchCoverageThreshold = 85,
     [int]$Top = 5,
-    [string]$MetricsOutputPath = ".reports/metrics-report.txt",
-    [ValidateSet('Text', 'Json')]
-    [string]$MetricsFormat = "Text",
     [switch]$SkipTests,
     [switch]$TreatWarningsAsErrors,
     [ValidateSet('HINT', 'SUGGESTION', 'WARNING', 'ERROR')]
@@ -105,7 +102,6 @@ $script:pipelineResults = @{
     Build = @{ Status = "Skipped"; Details = "" }
     Tests = @{ Status = "Skipped"; Details = "" }
     Coverage = @{ Status = "Skipped"; Details = "" }
-    Metrics = @{ Status = "Skipped"; Details = "" }
     FormatCheck = @{ Status = "Skipped"; Details = "" }
     RoslynDiagnostics = @{ Status = "Skipped"; Details = "" }
     ReSharper = @{ Status = "Skipped"; Details = "" }
@@ -220,116 +216,6 @@ function Get-CoverageSummary {
         Files         = $files
         CoveredLines  = $coveredTotal
         TotalLines    = $linesTotal
-    }
-}
-#endregion
-
-#region Metrics Functions
-function Get-LineCount {
-    param([string[]]$Files)
-
-    $totalLines = 0
-    $codeLines = 0
-    $commentLines = 0
-    $blankLines = 0
-
-    foreach ($file in $Files) {
-        $content = Get-Content $file -ErrorAction SilentlyContinue
-        if ($content) {
-            $totalLines += $content.Count
-
-            foreach ($line in $content) {
-                $trimmed = $line.Trim()
-                if ($trimmed -eq "") {
-                    $blankLines++
-                }
-                elseif ($trimmed.StartsWith("//") -or $trimmed.StartsWith("/*") -or $trimmed.StartsWith("*")) {
-                    $commentLines++
-                }
-                else {
-                    $codeLines++
-                }
-            }
-        }
-    }
-
-    return @{
-        Total = $totalLines
-        Code = $codeLines
-        Comments = $commentLines
-        Blank = $blankLines
-    }
-}
-
-function Get-CodeQualityMetrics {
-    param([string[]]$CsFiles)
-
-    $totalClasses = 0
-    $totalInterfaces = 0
-    $totalMethods = 0
-    $totalProperties = 0
-    $totalComplexity = 0
-    $maxComplexity = 0
-    $maxComplexityMethod = ""
-
-    foreach ($file in $CsFiles) {
-        $content = Get-Content $file -Raw -ErrorAction SilentlyContinue
-        if (-not $content) { continue }
-
-        # Count classes (excluding comments)
-        $classMatches = [regex]::Matches($content, '\bclass\s+\w+')
-        $totalClasses += $classMatches.Count
-
-        # Count interfaces
-        $interfaceMatches = [regex]::Matches($content, '\binterface\s+\w+')
-        $totalInterfaces += $interfaceMatches.Count
-
-        # Count methods (public, private, protected, internal)
-        $methodMatches = [regex]::Matches($content, '(public|private|protected|internal|static)\s+[\w<>\[\]]+\s+\w+\s*\(')
-        $totalMethods += $methodMatches.Count
-
-        # Count properties
-        $propertyMatches = [regex]::Matches($content, '(public|private|protected|internal)\s+[\w<>\[\]]+\s+\w+\s*\{\s*(get|set)')
-        $totalProperties += $propertyMatches.Count
-
-        # Calculate cyclomatic complexity (simplified)
-        $lines = Get-Content $file
-        foreach ($line in $lines) {
-            $trimmed = $line.Trim()
-            if ($trimmed.StartsWith("//") -or $trimmed.StartsWith("/*") -or $trimmed.StartsWith("*")) {
-                continue
-            }
-
-            $complexity = 0
-            $complexity += ([regex]::Matches($trimmed, '\bif\s*\(')).Count
-            $complexity += ([regex]::Matches($trimmed, '\belse\b')).Count
-            $complexity += ([regex]::Matches($trimmed, '\bwhile\s*\(')).Count
-            $complexity += ([regex]::Matches($trimmed, '\bfor\s*\(')).Count
-            $complexity += ([regex]::Matches($trimmed, '\bforeach\s*\(')).Count
-            $complexity += ([regex]::Matches($trimmed, '\bcase\s+')).Count
-            $complexity += ([regex]::Matches($trimmed, '\bcatch\s*[\(\{]')).Count
-            $complexity += ([regex]::Matches($trimmed, '\&\&')).Count
-            $complexity += ([regex]::Matches($trimmed, '\|\|')).Count
-            $complexity += ([regex]::Matches($trimmed, '\?')).Count - ([regex]::Matches($trimmed, '\?\?')).Count
-
-            $totalComplexity += $complexity
-
-            if ($complexity -gt $maxComplexity) {
-                $maxComplexity = $complexity
-                $maxComplexityMethod = Split-Path -Leaf $file
-            }
-        }
-    }
-
-    return @{
-        Classes = $totalClasses
-        Interfaces = $totalInterfaces
-        Methods = $totalMethods
-        Properties = $totalProperties
-        TotalComplexity = $totalComplexity
-        AverageComplexity = if ($totalMethods -gt 0) { [math]::Round($totalComplexity / $totalMethods, 2) } else { 0 }
-        MaxComplexity = $maxComplexity
-        MaxComplexityLocation = $maxComplexityMethod
     }
 }
 #endregion
@@ -643,7 +529,6 @@ function Write-PipelineSummary {
         @{ Name = "Build"; Key = "Build" },
         @{ Name = "Tests"; Key = "Tests" },
         @{ Name = "Coverage"; Key = "Coverage" },
-        @{ Name = "Metrics"; Key = "Metrics" },
         @{ Name = "Format Check"; Key = "FormatCheck" },
         @{ Name = "Roslyn Diagnostics"; Key = "RoslynDiagnostics" },
         @{ Name = "ReSharper InspectCode"; Key = "ReSharper" }
@@ -832,148 +717,8 @@ if (-not $SkipTests) {
     $script:pipelineResults.Coverage = @{ Status = "Passed"; Details = "Line: {0:N2}%, Branch: {1:N2}%" -f $summary.LineCoverage, $summary.BranchCoverage }
 }
 
-# Step 4: Metrics Collection
-Write-Banner "Step $stepNumber`: Collecting Metrics"
-$stepNumber++
-
-$csFiles = Get-ChildItem -Path "$repoRoot\src" -Filter "*.cs" -Recurse -File
-$csprojFiles = Get-ChildItem -Path "$repoRoot\src" -Filter "*.csproj" -Recurse -File
-$yamlFiles = Get-ChildItem -Path "$repoRoot" -Filter "*.yaml" -Recurse -File
-$ymlFiles = Get-ChildItem -Path "$repoRoot" -Filter "*.yml" -Recurse -File
-$mdFiles = Get-ChildItem -Path "$repoRoot" -Filter "*.md" -Recurse -File
-$ps1Files = Get-ChildItem -Path "$repoRoot" -Filter "*.ps1" -Recurse -File
-
-$csMetrics = Get-LineCount -Files $csFiles.FullName
-$ps1Metrics = Get-LineCount -Files $ps1Files.FullName
-$qualityMetrics = Get-CodeQualityMetrics -CsFiles $csFiles.FullName
-
-$metrics = @{
-    CollectionDate = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    Repository = "GistGet"
-    Files = @{
-        CSharp = $csFiles.Count
-        Projects = $csprojFiles.Count
-        YAML = $yamlFiles.Count + $ymlFiles.Count
-        Markdown = $mdFiles.Count
-        PowerShell = $ps1Files.Count
-    }
-    CSharpCode = @{
-        TotalLines = $csMetrics.Total
-        CodeLines = $csMetrics.Code
-        CommentLines = $csMetrics.Comments
-        BlankLines = $csMetrics.Blank
-    }
-    PowerShellCode = @{
-        TotalLines = $ps1Metrics.Total
-        CodeLines = $ps1Metrics.Code
-        CommentLines = $ps1Metrics.Comments
-        BlankLines = $ps1Metrics.Blank
-    }
-    CodeQuality = @{
-        Classes = $qualityMetrics.Classes
-        Interfaces = $qualityMetrics.Interfaces
-        Methods = $qualityMetrics.Methods
-        Properties = $qualityMetrics.Properties
-        CyclomaticComplexity = $qualityMetrics.TotalComplexity
-        AverageComplexity = $qualityMetrics.AverageComplexity
-        MaxComplexity = $qualityMetrics.MaxComplexity
-        MaxComplexityLocation = $qualityMetrics.MaxComplexityLocation
-    }
-    Projects = @()
-}
-
-foreach ($proj in $csprojFiles) {
-    $projDir = Split-Path -Parent $proj.FullName
-    $projName = $proj.BaseName
-    $projCsFiles = Get-ChildItem -Path $projDir -Filter "*.cs" -Recurse -File
-
-    $metrics.Projects += @{
-        Name = $projName
-        Path = $proj.FullName.Replace($repoRoot, "").TrimStart("\")
-        Files = $projCsFiles.Count
-    }
-}
-
-# Resolve output path
-if (-not [System.IO.Path]::IsPathRooted($MetricsOutputPath)) {
-    $MetricsOutputPath = Join-Path $repoRoot $MetricsOutputPath
-}
-
-# Ensure reports directory exists
-$metricsDir = Split-Path -Parent $MetricsOutputPath
-if (-not (Test-Path $metricsDir)) {
-    New-Item -ItemType Directory -Path $metricsDir -Force | Out-Null
-}
-
-# Generate report
-if ($MetricsFormat -eq "Json") {
-    $metrics | ConvertTo-Json -Depth 10 | Out-File -FilePath $MetricsOutputPath -Encoding UTF8
-}
-else {
-    $report = @"
-========================================
-GistGet Code Metrics Report
-========================================
-Collection Date: $($metrics.CollectionDate)
-
-FILE STATISTICS
-----------------------------------------
-C# Files:          $($metrics.Files.CSharp)
-Project Files:     $($metrics.Files.Projects)
-YAML Files:        $($metrics.Files.YAML)
-Markdown Files:    $($metrics.Files.Markdown)
-PowerShell Files:  $($metrics.Files.PowerShell)
-
-C# CODE METRICS
-----------------------------------------
-Total Lines:       $($metrics.CSharpCode.TotalLines)
-Code Lines:        $($metrics.CSharpCode.CodeLines)
-Comment Lines:     $($metrics.CSharpCode.CommentLines)
-Blank Lines:       $($metrics.CSharpCode.BlankLines)
-
-POWERSHELL CODE METRICS
-----------------------------------------
-Total Lines:       $($metrics.PowerShellCode.TotalLines)
-Code Lines:        $($metrics.PowerShellCode.CodeLines)
-Comment Lines:     $($metrics.PowerShellCode.CommentLines)
-Blank Lines:       $($metrics.PowerShellCode.BlankLines)
-
-CODE QUALITY METRICS
-----------------------------------------
-Classes:           $($metrics.CodeQuality.Classes)
-Interfaces:        $($metrics.CodeQuality.Interfaces)
-Methods:           $($metrics.CodeQuality.Methods)
-Properties:        $($metrics.CodeQuality.Properties)
-Total Complexity:  $($metrics.CodeQuality.CyclomaticComplexity)
-Avg Complexity:    $($metrics.CodeQuality.AverageComplexity)
-Max Complexity:    $($metrics.CodeQuality.MaxComplexity) (in $($metrics.CodeQuality.MaxComplexityLocation))
-
-PROJECTS
-----------------------------------------
-"@
-
-    foreach ($proj in $metrics.Projects) {
-        $report += "`n$($proj.Name): $($proj.Files) files"
-    }
-
-    $report += "`n`n========================================`n"
-
-    $report | Out-File -FilePath $MetricsOutputPath -Encoding UTF8
-}
-
-Write-Host "Metrics report saved to: $MetricsOutputPath" -ForegroundColor Yellow
-Write-Host ""
-Write-Host "METRICS SUMMARY:" -ForegroundColor Cyan
-Write-Host "  C# Files: $($metrics.Files.CSharp) ($($metrics.CSharpCode.CodeLines) lines of code)" -ForegroundColor White
-Write-Host "  Projects: $($metrics.Files.Projects)" -ForegroundColor White
-Write-Host "  Total C# Lines: $($metrics.CSharpCode.TotalLines)" -ForegroundColor White
-Write-Host "  Classes: $($metrics.CodeQuality.Classes), Methods: $($metrics.CodeQuality.Methods)" -ForegroundColor White
-Write-Host "  Average Complexity: $($metrics.CodeQuality.AverageComplexity)" -ForegroundColor White
-
-$script:pipelineResults.Metrics = @{ Status = "Passed"; Details = "$($metrics.Files.CSharp) files, $($metrics.CSharpCode.CodeLines) LOC" }
-
-# Step 5: Format Check
-    Write-Banner "Step $stepNumber`: Format Check"
+# Step 4: Format Check
+Write-Banner "Step $stepNumber`: Format Check"
     $stepNumber++
 
     Write-Host "Running dotnet format --verify-no-changes..." -ForegroundColor Gray
@@ -994,12 +739,29 @@ $script:pipelineResults.Metrics = @{ Status = "Passed"; Details = "$($metrics.Fi
         # Don't exit - continue to show diagnostics
     }
 
-    # Step 6: Static Analysis Report
-    Write-Banner "Step $stepNumber`: Roslyn Diagnostics Report"
+    # Step 5: Static Analysis Report
+Write-Banner "Step $stepNumber`: Roslyn Diagnostics Report"
     $stepNumber++
 
     $diagnostics = Get-DiagnosticsSummary -LogPath $diagnosticsLogPath
     Write-DiagnosticsReport -Diagnostics $diagnostics -TopRules 10 -TopFiles 5
+
+    # Extract and display CA1502 (cyclomatic complexity) violations
+    if ($diagnostics -and $diagnostics.Warnings) {
+        $complexityIssues = $diagnostics.Warnings | Where-Object { $_.Code -eq "CA1502" }
+        if ($complexityIssues.Count -gt 0) {
+            Write-Host ""
+            Write-Host "HIGH COMPLEXITY METHODS (CA1502)" -ForegroundColor Yellow
+            Write-Host "----------------------------------------"
+            Write-Host "Methods exceeding cyclomatic complexity threshold (15):" -ForegroundColor Gray
+            $complexityIssues | ForEach-Object {
+                $fileName = Split-Path -Leaf $_.File
+                Write-Host ("  {0}:{1} - {2}" -f $fileName, $_.Line, $_.Message) -ForegroundColor Yellow
+            }
+            Write-Host ""
+            Write-Host "TIP: Consider refactoring methods with high complexity." -ForegroundColor Cyan
+        }
+    }
 
     if ($diagnostics) {
         $errorCount = $diagnostics.Errors.Count
@@ -1020,7 +782,7 @@ $script:pipelineResults.Metrics = @{ Status = "Passed"; Details = "$($metrics.Fi
         Remove-Item $diagnosticsLogPath -Force
     }
 
-    # Step 7: ReSharper InspectCode (if available)
+    # Step 6: ReSharper InspectCode (if available)
     if ($resharperAvailable) {
         Write-Banner "Step $stepNumber`: ReSharper InspectCode"
         $stepNumber++
