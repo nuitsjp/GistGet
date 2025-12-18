@@ -1,5 +1,6 @@
 // WinGet COM-based package discovery implementation.
 
+using GistGet.Infrastructure.WinGet;
 using Microsoft.Management.Deployment;
 
 namespace GistGet.Infrastructure;
@@ -122,7 +123,7 @@ public class WinGetService : IWinGetService
     /// <summary>
     /// Determines usable version from available versions.
     /// </summary>
-    private static Version? GetUsableVersion(Microsoft.Management.Deployment.CatalogPackage catalogPackage, Microsoft.Management.Deployment.PackageVersionInfo installedVersion)
+    private static Version? GetUsableVersion(CatalogPackage catalogPackage, PackageVersionInfo installedVersion)
     {
         // Check for available updates by comparing versions.
         // Note: IsUpdateAvailable performs applicability checks (architecture, requirements, pinning)

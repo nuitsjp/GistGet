@@ -182,7 +182,7 @@ public class WinGetArgumentBuilderTests
             // -------------------------------------------------------------------
             // Arrange & Act
             // -------------------------------------------------------------------
-            var args = _builder.BuildPinAddArgs("Test.Package", "1.0.0", null, false);
+            var args = _builder.BuildPinAddArgs("Test.Package", "1.0.0");
 
             // -------------------------------------------------------------------
             // Assert
@@ -206,7 +206,7 @@ public class WinGetArgumentBuilderTests
             // -------------------------------------------------------------------
             // Arrange & Act
             // -------------------------------------------------------------------
-            var args = _builder.BuildPinAddArgs("Test.Package", "1.0.0", "unknown", false);
+            var args = _builder.BuildPinAddArgs("Test.Package", "1.0.0", "unknown");
 
             // -------------------------------------------------------------------
             // Assert

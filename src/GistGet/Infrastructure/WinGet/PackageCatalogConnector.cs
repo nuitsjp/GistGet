@@ -3,7 +3,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Management.Deployment;
 
-namespace GistGet.Infrastructure;
+namespace GistGet.Infrastructure.WinGet;
 
 /// <summary>
 /// Production implementation that connects to real WinGet COM APIs.

@@ -1,4 +1,5 @@
 using GistGet.Infrastructure;
+using GistGet.Infrastructure.WinGet;
 using Microsoft.Management.Deployment;
 using Moq;
 using Shouldly;
