@@ -23,21 +23,35 @@ public class WinGetPassthroughRunner : IWinGetPassthroughRunner
     {
         ArgumentNullException.ThrowIfNull(args);
 
+        var wingetPath = ResolveWinGetPath();
+        var wingetArgs = string.Join(" ", args.Select(EscapeArgument));
+
         var startInfo = new ProcessStartInfo
         {
-            FileName = ResolveWinGetPath(),
+            FileName = "cmd.exe",
+            Arguments = $"/c \"\"{wingetPath}\" {wingetArgs}\"",
             UseShellExecute = false,
-            CreateNoWindow = false,
-            RedirectStandardOutput = false,
-            RedirectStandardError = false
+            CreateNoWindow = false
         };
 
-        foreach (var arg in args)
+        return await _processRunner.RunAsync(startInfo);
+    }
+
+    private static string EscapeArgument(string arg)
+    {
+        if (string.IsNullOrEmpty(arg))
         {
-            startInfo.ArgumentList.Add(arg);
+            return "\"\"";
         }
 
-        return await _processRunner.RunAsync(startInfo);
+        // If the argument contains spaces, quotes, or special characters, wrap it in quotes
+        if (arg.Contains(' ') || arg.Contains('"') || arg.Contains('&') || arg.Contains('|') || arg.Contains('<') || arg.Contains('>') || arg.Contains('^'))
+        {
+            // Escape internal quotes by doubling them
+            return $"\"{arg.Replace("\"", "\"\"")}\"";
+        }
+
+        return arg;
     }
 
     private static string ResolveWinGetPath()

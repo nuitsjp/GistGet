@@ -34,15 +34,18 @@ public class WinGetPassthroughRunnerTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            var exitCode = await target.RunAsync(new[] { "install", "Test.Package" });
+            var exitCode = await target.RunAsync(["install", "Test.Package"]);
 
             // -------------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------------
             exitCode.ShouldBe(27);
             captured.ShouldNotBeNull();
-            captured!.FileName.ShouldBe(wingetPath);
-            captured.ArgumentList.ShouldBe(["install", "Test.Package"]);
+            // cmd.exe is used to execute winget for proper shell environment
+            captured!.FileName.ShouldBe("cmd.exe");
+            captured.Arguments.ShouldContain(wingetPath);
+            captured.Arguments.ShouldContain("install");
+            captured.Arguments.ShouldContain("Test.Package");
             captured.UseShellExecute.ShouldBeFalse();
             captured.CreateNoWindow.ShouldBeFalse();
         }
@@ -65,6 +68,8 @@ public class WinGetPassthroughRunnerTests
         Environment.SetEnvironmentVariable("PATH", tempDir.FullName);
         Environment.SetEnvironmentVariable("LOCALAPPDATA", tempDir.FullName);
 
+        var expectedWingetPath = Path.Combine(tempDir.FullName, "Microsoft", "WindowsApps", "winget.exe");
+
         var processRunner = new Mock<IProcessRunner>();
         ProcessStartInfo? captured = null;
         processRunner
@@ -79,14 +84,16 @@ public class WinGetPassthroughRunnerTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            var exitCode = await target.RunAsync(Array.Empty<string>());
+            var exitCode = await target.RunAsync([]);
 
             // -------------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------------
             exitCode.ShouldBe(0);
             captured.ShouldNotBeNull();
-            captured!.FileName.ShouldBe(Path.Combine(tempDir.FullName, "Microsoft", "WindowsApps", "winget.exe"));
+            // cmd.exe is used to execute winget for proper shell environment
+            captured!.FileName.ShouldBe("cmd.exe");
+            captured.Arguments.ShouldContain(expectedWingetPath);
         }
         finally
         {
