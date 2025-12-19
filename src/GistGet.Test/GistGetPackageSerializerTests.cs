@@ -151,6 +151,54 @@ public class GistGetPackageSerializerTests
             yaml.ShouldNotContain("silent:");
             yaml.ShouldNotContain("force:");
         }
+
+        [Fact]
+        public void WithEmptyPackage_WritesNullValueInsteadOfEmptyMapping()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packages = new List<GistGetPackage>
+            {
+                new() { Id = "Empty.Package" }
+            };
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var yaml = GistGetPackageSerializer.Serialize(packages);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            yaml.ShouldNotContain("{}");
+            yaml.Trim().ShouldBe("Empty.Package:");
+        }
+
+        [Fact]
+        public void WithMultiplePackages_SerializesKeysInAscendingOrder()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packages = new List<GistGetPackage>
+            {
+                new() { Id = "Zeta.Package" },
+                new() { Id = "Alpha.Package" }
+            };
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var yaml = GistGetPackageSerializer.Serialize(packages);
+            var lines = yaml.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+            var keys = lines.Select(line => line.Split(':')[0]).ToList();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            keys.ShouldBe(new[] { "Alpha.Package", "Zeta.Package" });
+        }
     }
 
     public class Deserialize

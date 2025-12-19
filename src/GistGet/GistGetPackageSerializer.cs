@@ -15,8 +15,8 @@ public static class GistGetPackageSerializer
     /// </summary>
     public static string Serialize(IReadOnlyList<GistGetPackage> packages)
     {
-        var dict = new Dictionary<string, GistGetPackage>(StringComparer.OrdinalIgnoreCase);
-        foreach (var package in packages)
+        var dict = new Dictionary<string, GistGetPackage?>(StringComparer.OrdinalIgnoreCase);
+        foreach (var package in packages.OrderBy(p => p.Id, StringComparer.OrdinalIgnoreCase))
         {
             if (string.IsNullOrWhiteSpace(package.Id))
             {
@@ -49,7 +49,7 @@ public static class GistGetPackageSerializer
                 Silent = package.Silent
             };
 
-            dict[package.Id] = copy;
+            dict[package.Id] = HasValues(copy) ? copy : null;
         }
 
         var serializer = new SerializerBuilder()
@@ -58,6 +58,30 @@ public static class GistGetPackageSerializer
             .Build();
 
         return serializer.Serialize(dict);
+
+        static bool HasValues(GistGetPackage package)
+        {
+            return !string.IsNullOrWhiteSpace(package.Version)
+                   || !string.IsNullOrWhiteSpace(package.Pin)
+                   || !string.IsNullOrWhiteSpace(package.PinType)
+                   || !string.IsNullOrWhiteSpace(package.Custom)
+                   || package.Uninstall
+                   || !string.IsNullOrWhiteSpace(package.Scope)
+                   || !string.IsNullOrWhiteSpace(package.Architecture)
+                   || !string.IsNullOrWhiteSpace(package.Location)
+                   || !string.IsNullOrWhiteSpace(package.Locale)
+                   || package.AllowHashMismatch
+                   || package.Force
+                   || package.AcceptPackageAgreements
+                   || package.AcceptSourceAgreements
+                   || package.SkipDependencies
+                   || !string.IsNullOrWhiteSpace(package.Header)
+                   || !string.IsNullOrWhiteSpace(package.InstallerType)
+                   || !string.IsNullOrWhiteSpace(package.Log)
+                   || !string.IsNullOrWhiteSpace(package.Override)
+                   || package.Interactive
+                   || package.Silent;
+        }
     }
 
     /// <summary>
