@@ -1255,6 +1255,11 @@ public class GistGetServiceTests
                 .Setup(x => x.GetPackagesAsync(savedCredential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new List<GistGetPackage>());
 
+            // ローカルにインストール済み
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == packageId)))
+                .Returns(new WinGetPackage(packageId, new PackageId(packageId), new Version("1.0.0"), null));
+
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "uninstall" &&
@@ -1315,6 +1320,11 @@ public class GistGetServiceTests
             AuthServiceMock
                 .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(existingPackages);
+
+            // ローカルにインストール済み
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == packageId)))
+                .Returns(new WinGetPackage(packageId, new PackageId(packageId), new Version("1.0.0"), null));
 
             var sequence = new MockSequence();
 
@@ -1385,6 +1395,11 @@ public class GistGetServiceTests
                 .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(existingPackages);
 
+            // ローカルにインストール済み
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == packageId)))
+                .Returns(new WinGetPackage(packageId, new PackageId(packageId), new Version("1.0.0"), null));
+
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "uninstall" &&
@@ -1431,6 +1446,11 @@ public class GistGetServiceTests
             AuthServiceMock
                 .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new List<GistGetPackage>());
+
+            // ローカルにインストール済み
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == packageId)))
+                .Returns(new WinGetPackage(packageId, new PackageId(packageId), new Version("1.0.0"), null));
 
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
@@ -1479,6 +1499,11 @@ public class GistGetServiceTests
             AuthServiceMock
                 .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new List<GistGetPackage>());
+
+            // ローカルにインストール済み
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == packageId)))
+                .Returns(new WinGetPackage(packageId, new PackageId(packageId), new Version("1.0.0"), null));
 
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
@@ -1545,6 +1570,11 @@ public class GistGetServiceTests
                 .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(existingPackages);
 
+            // ローカルにインストール済み
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == packageId)))
+                .Returns(new WinGetPackage(packageId, new PackageId(packageId), new Version("1.0.0"), null));
+
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args[0] == "uninstall" &&
@@ -1580,6 +1610,71 @@ public class GistGetServiceTests
                 It.Is<IReadOnlyList<GistGetPackage>>(list =>
                     list.Any(p => p.Id == packageId && p.Uninstall && p.Silent && p.Scope == "user")
                 )), Times.Once);
+        }
+
+        [Fact]
+        public async Task WhenPackageNotInstalledLocally_SkipsWinGetUninstallAndUpdatesGist()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "NotInstalled.Package";
+            var credential = new Credential("user", "token");
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            // Gist にはエントリが存在する（インストール状態）
+            var existingPackages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = packageId, Silent = true }
+            };
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(existingPackages);
+
+            // ローカルには未インストール
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == packageId)))
+                .Returns((WinGetPackage?)null);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await Target.UninstallAndSaveAsync(new UninstallOptions { Id = packageId });
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            // ローカルに未インストールなので、winget uninstall は呼ばれない
+            PassthroughRunnerMock.Verify(x => x.RunAsync(
+                It.Is<string[]>(args => args[0] == "uninstall")
+            ), Times.Never);
+
+            // pin remove も呼ばれない（ローカルにパッケージがないため）
+            PassthroughRunnerMock.Verify(x => x.RunAsync(
+                It.Is<string[]>(args => args[0] == "pin" && args.Contains("remove", StringComparer.Ordinal))
+            ), Times.Never);
+
+            // Gist には uninstall: true で保存される
+            AuthServiceMock.Verify(x => x.SavePackagesAsync(
+                credential.Token,
+                "",
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.Is<IReadOnlyList<GistGetPackage>>(list =>
+                    list.Count == 1 &&
+                    list.Any(p => p.Id == packageId && p.Uninstall && p.Silent)
+                )), Times.Once);
+
+            // 正常終了
+            result.ShouldBe(0);
         }
     }
 

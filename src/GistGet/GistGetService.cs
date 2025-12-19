@@ -223,15 +223,23 @@ public class GistGetService(
         var targetPackage = existingPackages.FirstOrDefault(p =>
             string.Equals(p.Id, options.Id, StringComparison.OrdinalIgnoreCase));
 
-        var uninstallArgs = argumentBuilder.BuildUninstallArgs(options);
+        // Check if the package is installed locally
+        var localPackage = winGetService.FindById(new PackageId(options.Id));
+        var isInstalledLocally = localPackage != null;
 
-        var exitCode = await passthroughRunner.RunAsync(uninstallArgs.ToArray());
-        if (exitCode != 0)
+        // Only run winget uninstall if the package is installed locally
+        if (isInstalledLocally)
         {
-            return exitCode;
-        }
+            var uninstallArgs = argumentBuilder.BuildUninstallArgs(options);
+            var exitCode = await passthroughRunner.RunAsync(uninstallArgs.ToArray());
+            if (exitCode != 0)
+            {
+                return exitCode;
+            }
 
-        await passthroughRunner.RunAsync(["pin", "remove", "--id", options.Id]);
+            // Remove pin only if package was installed locally
+            await passthroughRunner.RunAsync(["pin", "remove", "--id", options.Id]);
+        }
 
         var newPackages = existingPackages
             .Where(p => !string.Equals(p.Id, options.Id, StringComparison.OrdinalIgnoreCase))
