@@ -19,7 +19,7 @@ public class ConsoleServiceTests
         var originalOut = Console.Out;
         Console.SetOut(writer);
         var processRunner = new Mock<IProcessRunner>();
-        var target = new ConsoleService(processRunner.Object);
+        IConsoleService target = new ConsoleService(processRunner.Object);
 
         try
         {
@@ -49,7 +49,7 @@ public class ConsoleServiceTests
         var originalOut = Console.Out;
         Console.SetOut(writer);
         var processRunner = new Mock<IProcessRunner>();
-        var target = new ConsoleService(processRunner.Object);
+        IConsoleService target = new ConsoleService(processRunner.Object);
 
         try
         {
@@ -79,7 +79,7 @@ public class ConsoleServiceTests
         var originalIn = Console.In;
         Console.SetIn(input);
         var processRunner = new Mock<IProcessRunner>();
-        var target = new ConsoleService(processRunner.Object);
+        IConsoleService target = new ConsoleService(processRunner.Object);
 
         try
         {
@@ -112,7 +112,7 @@ public class ConsoleServiceTests
             .Callback<ProcessStartInfo>(info => captured = info)
             .ReturnsAsync(0);
 
-        var target = new ConsoleService(processRunner.Object);
+        IConsoleService target = new ConsoleService(processRunner.Object);
 
         // -------------------------------------------------------------------
         // Act
@@ -129,5 +129,65 @@ public class ConsoleServiceTests
         captured.CreateNoWindow.ShouldBeTrue();
         captured.RedirectStandardOutput.ShouldBeTrue();
         captured.RedirectStandardError.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void WriteStep_WritesFormattedProgressMessage()
+    {
+        // -------------------------------------------------------------------
+        // Arrange
+        // -------------------------------------------------------------------
+        var writer = new StringWriter();
+        var originalOut = Console.Out;
+        Console.SetOut(writer);
+        var processRunner = new Mock<IProcessRunner>();
+        IConsoleService target = new ConsoleService(processRunner.Object);
+
+        try
+        {
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            target.WriteStep(3, 10, "Installing package");
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            writer.ToString().ShouldContain("[3/10] Installing package");
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+        }
+    }
+
+    [Fact]
+    public void WriteError_WritesErrorMessageToStandardError()
+    {
+        // -------------------------------------------------------------------
+        // Arrange
+        // -------------------------------------------------------------------
+        var writer = new StringWriter();
+        var originalError = Console.Error;
+        Console.SetError(writer);
+        var processRunner = new Mock<IProcessRunner>();
+        IConsoleService target = new ConsoleService(processRunner.Object);
+
+        try
+        {
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            target.WriteError("Something went wrong");
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            writer.ToString().ShouldContain("✗ Something went wrong");
+        }
+        finally
+        {
+            Console.SetError(originalError);
+        }
     }
 }

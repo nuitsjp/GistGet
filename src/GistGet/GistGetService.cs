@@ -1,9 +1,10 @@
-﻿// Core application service that orchestrates GitHub and WinGet operations.
+// Core application service that orchestrates GitHub and WinGet operations.
 
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using GistGet.Infrastructure;
+using GistGet.Resources;
 using Octokit;
 
 namespace GistGet;
@@ -110,7 +111,7 @@ public class GistGetService(
         }
 
         IReadOnlyList<GistGetPackage> existingPackages;
-        using (consoleService.WriteProgress("Fetching package information from Gist..."))
+        using (consoleService.WriteProgress(Messages.FetchingFromGist))
         {
             existingPackages = await gitHubService.GetPackagesAsync(
                 credential.Token,
@@ -191,7 +192,7 @@ public class GistGetService(
 
         newPackagesList.Add(packageToSave);
 
-        using (consoleService.WriteProgress("Saving package information to Gist..."))
+        using (consoleService.WriteProgress(Messages.SavingToGist))
         {
             await gitHubService.SavePackagesAsync(
                 credential.Token,
@@ -201,7 +202,7 @@ public class GistGetService(
                 newPackagesList);
         }
 
-        consoleService.WriteSuccess($"{options.Id} has been installed and saved to Gist");
+        consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.InstallSuccess, options.Id));
 
         return 0;
     }
@@ -225,7 +226,7 @@ public class GistGetService(
         }
 
         IReadOnlyList<GistGetPackage> existingPackages;
-        using (consoleService.WriteProgress("Fetching package information from Gist..."))
+        using (consoleService.WriteProgress(Messages.FetchingFromGist))
         {
             existingPackages = await gitHubService.GetPackagesAsync(
                 credential.Token,
@@ -266,7 +267,7 @@ public class GistGetService(
 
         newPackages.Add(packageToSave);
 
-        using (consoleService.WriteProgress("Saving package information to Gist..."))
+        using (consoleService.WriteProgress(Messages.SavingToGist))
         {
             await gitHubService.SavePackagesAsync(
                 credential.Token,
@@ -276,7 +277,7 @@ public class GistGetService(
                 newPackages);
         }
 
-        consoleService.WriteSuccess($"{options.Id} has been uninstalled and saved to Gist");
+        consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.UninstallSuccess, options.Id));
 
         return 0;
     }
@@ -308,7 +309,7 @@ public class GistGetService(
         }
 
         IReadOnlyList<GistGetPackage> existingPackages;
-        using (consoleService.WriteProgress("Fetching package information from Gist..."))
+        using (consoleService.WriteProgress(Messages.FetchingFromGist))
         {
             existingPackages = await gitHubService.GetPackagesAsync(
                 credential.Token,
@@ -338,7 +339,7 @@ public class GistGetService(
         var shouldUpdateGist = existingPackage == null || existingPackage.Uninstall || hasPin;
         if (!shouldUpdateGist)
         {
-            consoleService.WriteSuccess($"{options.Id} has been upgraded");
+            consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.UpgradeSuccess, options.Id));
             return 0;
         }
 
@@ -403,7 +404,7 @@ public class GistGetService(
 
         newPackages.Add(packageToSave);
 
-        using (consoleService.WriteProgress("Saving package information to Gist..."))
+        using (consoleService.WriteProgress(Messages.SavingToGist))
         {
             await gitHubService.SavePackagesAsync(
                 credential.Token,
@@ -413,7 +414,7 @@ public class GistGetService(
                 newPackages);
         }
 
-        consoleService.WriteSuccess($"{options.Id} has been upgraded and saved to Gist");
+        consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.UpgradeAndSaveSuccess, options.Id));
 
         return 0;
     }
@@ -437,7 +438,7 @@ public class GistGetService(
         }
 
         IReadOnlyList<GistGetPackage> existingPackages;
-        using (consoleService.WriteProgress("Fetching package information from Gist..."))
+        using (consoleService.WriteProgress(Messages.FetchingFromGist))
         {
             existingPackages = await gitHubService.GetPackagesAsync(
                 credential.Token,
@@ -469,7 +470,7 @@ public class GistGetService(
 
         newPackages.Add(packageToSave);
 
-        using (consoleService.WriteProgress("Saving pin information to Gist..."))
+        using (consoleService.WriteProgress(Messages.SavingPinToGist))
         {
             await gitHubService.SavePackagesAsync(
                 credential.Token,
@@ -479,7 +480,7 @@ public class GistGetService(
                 newPackages);
         }
 
-        consoleService.WriteSuccess($"{packageId} has been pinned and saved to Gist");
+        consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.PinAddSuccess, packageId));
     }
 
     /// <summary>
@@ -498,7 +499,7 @@ public class GistGetService(
         }
 
         IReadOnlyList<GistGetPackage> existingPackages;
-        using (consoleService.WriteProgress("Fetching package information from Gist..."))
+        using (consoleService.WriteProgress(Messages.FetchingFromGist))
         {
             existingPackages = await gitHubService.GetPackagesAsync(
                 credential.Token,
@@ -527,7 +528,7 @@ public class GistGetService(
 
         newPackages.Add(packageToSave);
 
-        using (consoleService.WriteProgress("Saving pin information to Gist..."))
+        using (consoleService.WriteProgress(Messages.SavingPinToGist))
         {
             await gitHubService.SavePackagesAsync(
                 credential.Token,
@@ -537,7 +538,7 @@ public class GistGetService(
                 newPackages);
         }
 
-        consoleService.WriteSuccess($"{packageId} has been unpinned and saved to Gist");
+        consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.PinRemoveSuccess, packageId));
     }
 
     /// <summary>
@@ -550,7 +551,7 @@ public class GistGetService(
     {
         var result = new SyncResult();
 
-        consoleService.WriteInfo("[sync] Starting synchronization...");
+        consoleService.WriteInfo(Messages.SyncStarting);
 
         IReadOnlyList<GistGetPackage> gistPackages;
         if (!string.IsNullOrEmpty(filePath))
@@ -560,7 +561,7 @@ public class GistGetService(
                 throw new FileNotFoundException($"File not found: {filePath}", filePath);
             }
 
-            using (consoleService.WriteProgress("Loading package information from file..."))
+            using (consoleService.WriteProgress(Messages.LoadingFromFile))
             {
                 var yaml = await File.ReadAllTextAsync(filePath);
                 gistPackages = GistGetPackageSerializer.Deserialize(yaml);
@@ -568,7 +569,7 @@ public class GistGetService(
         }
         else if (!string.IsNullOrEmpty(url))
         {
-            using (consoleService.WriteProgress("Fetching package information from URL..."))
+            using (consoleService.WriteProgress(Messages.FetchingFromUrl))
             {
                 gistPackages = await gitHubService.GetPackagesFromUrlAsync(url);
             }
@@ -584,7 +585,7 @@ public class GistGetService(
                 }
             }
 
-            using (consoleService.WriteProgress("Fetching package information from Gist..."))
+            using (consoleService.WriteProgress(Messages.FetchingFromGist))
             {
                 gistPackages = await gitHubService.GetPackagesAsync(
                     credential.Token,
@@ -701,8 +702,8 @@ public class GistGetService(
             }
         }
 
-        consoleService.WriteSuccess("Synchronization completed");
-        consoleService.WriteInfo($"Installed: {result.Installed.Count}, アンInstalled: {result.Uninstalled.Count}, Failed: {result.Failed.Count}");
+        consoleService.WriteSuccess(Messages.SyncCompleted);
+        consoleService.WriteInfo(string.Format(CultureInfo.CurrentCulture, Messages.SyncSummary, result.Installed.Count, result.Uninstalled.Count, result.Failed.Count));
 
         return result;
     }
@@ -728,7 +729,7 @@ public class GistGetService(
     public async Task<string> ExportAsync(string? outputPath = null)
     {
         IReadOnlyList<WinGetPackage> installedPackages;
-        using (consoleService.WriteProgress("Fetching installed packages..."))
+        using (consoleService.WriteProgress(Messages.FetchingInstalledPackages))
         {
             installedPackages = winGetService.GetAllInstalledPackages();
         }
@@ -743,7 +744,7 @@ public class GistGetService(
         if (!string.IsNullOrEmpty(outputPath))
         {
             await File.WriteAllTextAsync(outputPath, yaml);
-            consoleService.WriteSuccess($"{packages.Count} packages exported to {outputPath}");
+            consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.ExportSuccess, packages.Count, outputPath));
         }
         else
         {
@@ -776,7 +777,7 @@ public class GistGetService(
         var yaml = await File.ReadAllTextAsync(filePath);
         var packages = GistGetPackageSerializer.Deserialize(yaml);
 
-        using (consoleService.WriteProgress("Saving package information to Gist..."))
+        using (consoleService.WriteProgress(Messages.SavingToGist))
         {
             await gitHubService.SavePackagesAsync(
                 credential.Token,
@@ -786,7 +787,7 @@ public class GistGetService(
                 packages);
         }
 
-        consoleService.WriteSuccess($"{packages.Count} packages imported to Gist");
+        consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.ImportSuccess, packages.Count));
     }
 
     /// <summary>

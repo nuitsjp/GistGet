@@ -1,6 +1,7 @@
 // Console I/O implementation for the CLI layer.
 
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Versioning;
 using GistGet.Infrastructure;
 
@@ -9,6 +10,7 @@ namespace GistGet.Presentation;
 /// <summary>
 /// Writes messages to the console and provides clipboard support.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ConsoleService : IConsoleService
 {
     private readonly IProcessRunner _processRunner;
@@ -86,9 +88,10 @@ public class ConsoleService : IConsoleService
     public void WriteError(string message) =>
         Console.Error.WriteLine($"✗ {message}");
 
+    [ExcludeFromCodeCoverage]
     private sealed class SpinnerProgress : IDisposable
     {
-        private static readonly string[] SpinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+        private static readonly string[] s_spinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
         private readonly CancellationTokenSource _cts = new();
         private readonly Task _spinnerTask;
         private readonly string _message;
@@ -105,8 +108,8 @@ public class ConsoleService : IConsoleService
         {
             while (!token.IsCancellationRequested)
             {
-                Console.Write($"\r{SpinnerFrames[_frameIndex]} {_message}");
-                _frameIndex = (_frameIndex + 1) % SpinnerFrames.Length;
+                Console.Write($"\r{s_spinnerFrames[_frameIndex]} {_message}");
+                _frameIndex = (_frameIndex + 1) % s_spinnerFrames.Length;
                 try
                 {
                     await Task.Delay(100, token);
@@ -121,7 +124,7 @@ public class ConsoleService : IConsoleService
         public void Dispose()
         {
             _cts.Cancel();
-            try { _spinnerTask.Wait(); } catch { }
+            try { _spinnerTask.Wait(); } catch (AggregateException) { /* Expected on cancellation */ }
             Console.Write($"\r{new string(' ', _message.Length + 2)}\r");
             Console.CursorVisible = true;
             _cts.Dispose();

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" msdata:Ordinal="0" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Progress Messages -->
+  <data name="FetchingFromGist" xml:space="preserve">
+    <value>Gist からパッケージ情報を取得中...</value>
+  </data>
+  <data name="SavingToGist" xml:space="preserve">
+    <value>パッケージ情報を Gist に保存中...</value>
+  </data>
+  <data name="SavingPinToGist" xml:space="preserve">
+    <value>ピン情報を Gist に保存中...</value>
+  </data>
+  <data name="FetchingInstalledPackages" xml:space="preserve">
+    <value>インストール済みパッケージを取得中...</value>
+  </data>
+  <data name="LoadingFromFile" xml:space="preserve">
+    <value>ファイルからパッケージ情報を読み込み中...</value>
+  </data>
+  <data name="FetchingFromUrl" xml:space="preserve">
+    <value>URL からパッケージ情報を取得中...</value>
+  </data>
+
+  <!-- Success Messages -->
+  <data name="InstallSuccess" xml:space="preserve">
+    <value>{0} のインストールと Gist への保存が完了しました</value>
+  </data>
+  <data name="UninstallSuccess" xml:space="preserve">
+    <value>{0} のアンインストールと Gist への保存が完了しました</value>
+  </data>
+  <data name="UpgradeSuccess" xml:space="preserve">
+    <value>{0} のアップグレードが完了しました</value>
+  </data>
+  <data name="UpgradeAndSaveSuccess" xml:space="preserve">
+    <value>{0} のアップグレードと Gist への保存が完了しました</value>
+  </data>
+  <data name="PinAddSuccess" xml:space="preserve">
+    <value>{0} のピン設定と Gist への保存が完了しました</value>
+  </data>
+  <data name="PinRemoveSuccess" xml:space="preserve">
+    <value>{0} のピン解除と Gist への保存が完了しました</value>
+  </data>
+  <data name="SyncCompleted" xml:space="preserve">
+    <value>同期が完了しました</value>
+  </data>
+  <data name="ExportSuccess" xml:space="preserve">
+    <value>{0} 個のパッケージを {1} にエクスポートしました</value>
+  </data>
+  <data name="ImportSuccess" xml:space="preserve">
+    <value>{0} 個のパッケージを Gist にインポートしました</value>
+  </data>
+
+  <!-- Sync Messages -->
+  <data name="SyncStarting" xml:space="preserve">
+    <value>[sync] 同期を開始します...</value>
+  </data>
+  <data name="SyncSummary" xml:space="preserve">
+    <value>インストール: {0}, アンインストール: {1}, 失敗: {2}</value>
+  </data>
+</root>

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" msdata:Ordinal="0" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Progress Messages -->
+  <data name="FetchingFromGist" xml:space="preserve">
+    <value>Fetching package information from Gist...</value>
+  </data>
+  <data name="SavingToGist" xml:space="preserve">
+    <value>Saving package information to Gist...</value>
+  </data>
+  <data name="SavingPinToGist" xml:space="preserve">
+    <value>Saving pin information to Gist...</value>
+  </data>
+  <data name="FetchingInstalledPackages" xml:space="preserve">
+    <value>Fetching installed packages...</value>
+  </data>
+  <data name="LoadingFromFile" xml:space="preserve">
+    <value>Loading package information from file...</value>
+  </data>
+  <data name="FetchingFromUrl" xml:space="preserve">
+    <value>Fetching package information from URL...</value>
+  </data>
+
+  <!-- Success Messages -->
+  <data name="InstallSuccess" xml:space="preserve">
+    <value>{0} has been installed and saved to Gist</value>
+  </data>
+  <data name="UninstallSuccess" xml:space="preserve">
+    <value>{0} has been uninstalled and saved to Gist</value>
+  </data>
+  <data name="UpgradeSuccess" xml:space="preserve">
+    <value>{0} has been upgraded</value>
+  </data>
+  <data name="UpgradeAndSaveSuccess" xml:space="preserve">
+    <value>{0} has been upgraded and saved to Gist</value>
+  </data>
+  <data name="PinAddSuccess" xml:space="preserve">
+    <value>{0} has been pinned and saved to Gist</value>
+  </data>
+  <data name="PinRemoveSuccess" xml:space="preserve">
+    <value>{0} has been unpinned and saved to Gist</value>
+  </data>
+  <data name="SyncCompleted" xml:space="preserve">
+    <value>Synchronization completed</value>
+  </data>
+  <data name="ExportSuccess" xml:space="preserve">
+    <value>{0} packages exported to {1}</value>
+  </data>
+  <data name="ImportSuccess" xml:space="preserve">
+    <value>{0} packages imported to Gist</value>
+  </data>
+
+  <!-- Sync Messages -->
+  <data name="SyncStarting" xml:space="preserve">
+    <value>[sync] Starting synchronization...</value>
+  </data>
+  <data name="SyncSummary" xml:space="preserve">
+    <value>Installed: {0}, Uninstalled: {1}, Failed: {2}</value>
+  </data>
+</root>

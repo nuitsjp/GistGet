@@ -3123,7 +3123,7 @@ public class GistGetServiceTests
                 // -------------------------------------------------------------------
                 var content = await File.ReadAllTextAsync(tempFile);
                 content.ShouldContain("Test.PackageA");
-                ConsoleServiceMock.Verify(x => x.WriteSuccess(It.Is<string>(s => s.Contains("exported") && s.Contains(tempFile))), Times.Once);
+                ConsoleServiceMock.Verify(x => x.WriteSuccess(It.Is<string>(s => s.Contains("1") && s.Contains(tempFile))), Times.Once);
             }
             finally
             {
@@ -3217,7 +3217,7 @@ Test.PackageB:
                     It.IsAny<string>(),
                     It.IsAny<IReadOnlyList<GistGetPackage>>()), Times.Once);
 
-                ConsoleServiceMock.Verify(x => x.WriteSuccess(It.Is<string>(s => s.Contains("imported") && s.Contains("2"))), Times.Once);
+                ConsoleServiceMock.Verify(x => x.WriteSuccess(It.Is<string>(s => s.Contains("2"))), Times.Once);
             }
             finally
             {

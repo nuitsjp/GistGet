@@ -92,6 +92,18 @@ dotnet_naming_symbols.private_fields.applicable_accessibilities = private
 dotnet_naming_style.camel_case_with_underscore.required_prefix = _
 dotnet_naming_style.camel_case_with_underscore.capitalization = camel_case
 
+# 静的プライベートフィールドは s_ プレフィックス
+dotnet_naming_rule.static_private_fields_should_be_s_prefix.severity = warning
+dotnet_naming_rule.static_private_fields_should_be_s_prefix.symbols = static_private_fields
+dotnet_naming_rule.static_private_fields_should_be_s_prefix.style = static_camel_case_with_s
+
+dotnet_naming_symbols.static_private_fields.applicable_kinds = field
+dotnet_naming_symbols.static_private_fields.applicable_accessibilities = private
+dotnet_naming_symbols.static_private_fields.required_modifiers = static
+
+dotnet_naming_style.static_camel_case_with_s.required_prefix = s_
+dotnet_naming_style.static_camel_case_with_s.capitalization = camel_case
+
 # 定数は PascalCase
 dotnet_naming_rule.constants_should_be_pascal_case.severity = warning
 dotnet_naming_rule.constants_should_be_pascal_case.symbols = constants
@@ -226,6 +238,7 @@ dotnet_diagnostic.CA1829.severity = suggestion      # Length/Count プロパテ�
 dotnet_diagnostic.CA1847.severity = suggestion      # char 検索には string.Contains(char) を使用
 dotnet_diagnostic.CA1849.severity = suggestion      # 非同期コンテキストで同期メソッド呼び出し
 dotnet_diagnostic.CA1859.severity = suggestion      # 具体的な型を使用
+dotnet_diagnostic.CA1863.severity = none            # CompositeFormat キャッシュ (リソース文字列使用時は不要)
 
 # 信頼性
 dotnet_diagnostic.CA2007.severity = none            # ConfigureAwait (ライブラリ以外では不要)
