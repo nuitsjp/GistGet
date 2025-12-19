@@ -149,8 +149,14 @@ public class GistGetService(
         }
 
         var exitCode = await passthroughRunner.RunAsync(installArgs.ToArray());
-        if (exitCode != 0)
+
+        // Check if the package is installed locally after winget install attempt.
+        // This handles cases where winget returns non-zero exit code but the package
+        // is already installed (e.g., "no upgrade available" scenario).
+        var localPackage = winGetService.FindById(new PackageId(options.Id));
+        if (localPackage == null)
         {
+            // Package is not installed, so winget install truly failed
             return exitCode;
         }
 

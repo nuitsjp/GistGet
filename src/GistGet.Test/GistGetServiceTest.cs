@@ -251,6 +251,17 @@ public class GistGetServiceTests
 
     public class InstallAndSaveAsync : GistGetServiceTests
     {
+        public InstallAndSaveAsync()
+        {
+            // Default setup: FindById returns a package (simulating successful install)
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.IsAny<PackageId>()))
+                .Returns((PackageId id) => new WinGetPackage(
+                    Name: "Test Package",
+                    Id: id,
+                    Version: new Version("1.0.0"),
+                    UsableVersion: null));
+        }
         [Fact]
         public async Task WhenNotLoggedIn_CallsLogin_ThenProceeds()
         {
@@ -629,6 +640,11 @@ public class GistGetServiceTests
                     args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(expectedExitCode);
 
+            // パッケージはローカルにインストールされていない
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == packageId)))
+                .Returns((WinGetPackage?)null);
+
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
@@ -644,6 +660,71 @@ public class GistGetServiceTests
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<IReadOnlyList<GistGetPackage>>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task WhenAlreadyInstalledLocally_UpdatesGistEvenIfWinGetReturnsNonZero()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            // シナリオ: パッケージは既にローカルにインストール済みだが、Gist には未定義。
+            // winget install は「アップグレード不可」として非ゼロ exit code を返す。
+            // 期待動作: ローカルにインストールされているので Gist に追加すべき。
+            var packageId = "Already.Installed.Package";
+            var nonZeroExitCode = -1978335189; // APPINSTALLER_CLI_ERROR_UPDATE_NOT_APPLICABLE
+
+            var credential = new Credential("user", "token");
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            // Gist にはパッケージ定義なし
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new List<GistGetPackage>());
+
+            // winget install は非ゼロ exit code を返す
+            PassthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "install" &&
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
+                .ReturnsAsync(nonZeroExitCode);
+
+            // パッケージはローカルにインストールされている
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == packageId)))
+                .Returns(new WinGetPackage(
+                    Name: "Already Installed Package",
+                    Id: new PackageId(packageId),
+                    Version: new Version("1.0.0"),
+                    UsableVersion: null));
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await Target.InstallAndSaveAsync(new InstallOptions { Id = packageId });
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            // 成功（0）を返すべき
+            result.ShouldBe(0);
+
+            // Gist に保存されるべき
+            AuthServiceMock.Verify(x => x.SavePackagesAsync(
+                credential.Token,
+                "",
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.Is<IReadOnlyList<GistGetPackage>>(list =>
+                    list.Count == 1 &&
+                    list.Any(p => p.Id == packageId && !p.Uninstall)
+                )), Times.Once);
         }
     }
 
