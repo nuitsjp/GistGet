@@ -59,4 +59,72 @@ public class ConsoleService : IConsoleService
 
         _processRunner.RunAsync(startInfo).GetAwaiter().GetResult();
     }
+
+    /// <summary>
+    /// Starts a spinner progress display.
+    /// </summary>
+    public IDisposable WriteProgress(string message)
+    {
+        return new SpinnerProgress(message);
+    }
+
+    /// <summary>
+    /// Writes a step progress message (simple one-line output).
+    /// </summary>
+    public void WriteStep(int current, int total, string message) =>
+        Console.WriteLine($"[{current}/{total}] {message}");
+
+    /// <summary>
+    /// Writes a success message.
+    /// </summary>
+    public void WriteSuccess(string message) =>
+        Console.WriteLine($"✓ {message}");
+
+    /// <summary>
+    /// Writes an error message.
+    /// </summary>
+    public void WriteError(string message) =>
+        Console.Error.WriteLine($"✗ {message}");
+
+    private sealed class SpinnerProgress : IDisposable
+    {
+        private static readonly string[] SpinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+        private readonly CancellationTokenSource _cts = new();
+        private readonly Task _spinnerTask;
+        private readonly string _message;
+        private int _frameIndex;
+
+        public SpinnerProgress(string message)
+        {
+            _message = message;
+            Console.CursorVisible = false;
+            _spinnerTask = RunSpinnerAsync(_cts.Token);
+        }
+
+        private async Task RunSpinnerAsync(CancellationToken token)
+        {
+            while (!token.IsCancellationRequested)
+            {
+                Console.Write($"\r{SpinnerFrames[_frameIndex]} {_message}");
+                _frameIndex = (_frameIndex + 1) % SpinnerFrames.Length;
+                try
+                {
+                    await Task.Delay(100, token);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+            }
+        }
+
+        public void Dispose()
+        {
+            _cts.Cancel();
+            try { _spinnerTask.Wait(); } catch { }
+            Console.Write($"\r{new string(' ', _message.Length + 2)}\r");
+            Console.CursorVisible = true;
+            _cts.Dispose();
+        }
+    }
 }

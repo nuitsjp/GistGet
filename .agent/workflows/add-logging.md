@@ -1,168 +1,96 @@
 ---
-description: GistGetService.cs にログ出力を追加する
+description: Reference for adding logging to GistGetService.cs
 ---
 
-# GistGetService ログ追加ワークフロー
+# GistGetService Logging Reference
 
-このワークフローは `GistGetService.cs` にログ出力を追加します。
+This document is a reference for logging implementation in `GistGetService.cs`.
 
-## 前提条件
+## Implemented Methods
 
-- `docs/LOGGING_POLICY.ja.md` のログ出力方針を確認済みであること
+### IConsoleService
 
-## 手順
-
-### ステップ 1: IConsoleService に新規メソッドを追加
-
-`src/GistGet/IConsoleService.cs` に以下のメソッドを追加します：
+The following methods are implemented in `src/GistGet/IConsoleService.cs`:
 
 ```csharp
 /// <summary>
-/// スピナー付きプログレス表示を開始します。
-/// バックグラウンドでスピナーをアニメーション表示し、Dispose 時に停止します。
+/// Starts a spinner progress display.
+/// The spinner animates in the background and stops on Dispose.
 /// </summary>
-/// <returns>Dispose 時にスピナーを停止する IDisposable</returns>
 IDisposable WriteProgress(string message);
 
 /// <summary>
-/// ステップ進捗を表示します（単純な一行表示）。
+/// Writes a step progress message (simple one-line output).
 /// </summary>
 void WriteStep(int current, int total, string message);
 
 /// <summary>
-/// 成功メッセージを表示します。
+/// Writes a success message.
 /// </summary>
 void WriteSuccess(string message);
 
 /// <summary>
-/// エラーメッセージを表示します。
+/// Writes an error message.
 /// </summary>
 void WriteError(string message);
 ```
 
-### ステップ 2: ConsoleService に実装を追加
+### ConsoleService
 
-`src/GistGet/Presentation/ConsoleService.cs` に実装を追加します：
+The SpinnerProgress class and methods are implemented in `src/GistGet/Presentation/ConsoleService.cs`.
+
+Spinner pattern: `["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]`
+
+---
+
+## Usage Examples
+
+### Spinner Progress
 
 ```csharp
-/// <summary>
-/// スピナー付きプログレス表示を開始します。
-/// </summary>
-public IDisposable WriteProgress(string message)
+using (consoleService.WriteProgress("Fetching package information from Gist..."))
 {
-    return new SpinnerProgress(message);
+    existingPackages = await gitHubService.GetPackagesAsync(...);
 }
-
-private sealed class SpinnerProgress : IDisposable
-{
-    private static readonly string[] SpinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-    private readonly CancellationTokenSource _cts = new();
-    private readonly Task _spinnerTask;
-    private readonly string _message;
-    private int _frameIndex;
-
-    public SpinnerProgress(string message)
-    {
-        _message = message;
-        Console.CursorVisible = false;
-        _spinnerTask = RunSpinnerAsync(_cts.Token);
-    }
-
-    private async Task RunSpinnerAsync(CancellationToken token)
-    {
-        while (!token.IsCancellationRequested)
-        {
-            Console.Write($"\r{SpinnerFrames[_frameIndex]} {_message}");
-            _frameIndex = (_frameIndex + 1) % SpinnerFrames.Length;
-            try
-            {
-                await Task.Delay(100, token);
-            }
-            catch (OperationCanceledException)
-            {
-                break;
-            }
-        }
-    }
-
-    public void Dispose()
-    {
-        _cts.Cancel();
-        try { _spinnerTask.Wait(); } catch { }
-        Console.Write($"\r{new string(' ', _message.Length + 2)}\r");
-        Console.CursorVisible = true;
-        _cts.Dispose();
-    }
-}
-
-/// <summary>
-/// ステップ進捗を表示します（単純な一行表示）。
-/// </summary>
-public void WriteStep(int current, int total, string message) =>
-    Console.WriteLine($"[{current}/{total}] {message}");
-
-/// <summary>
-/// 成功メッセージを表示します。
-/// </summary>
-public void WriteSuccess(string message) =>
-    Console.WriteLine($"✓ {message}");
-
-/// <summary>
-/// エラーメッセージを表示します。
-/// </summary>
-public void WriteError(string message) =>
-    Console.Error.WriteLine($"✗ {message}");
 ```
 
-### ステップ 3: 各 public メソッドにログを追加
+### Success Message
 
-`docs/LOGGING_POLICY.ja.md` の方針に従い、以下の順序で **1つずつ** ログを追加します：
+```csharp
+consoleService.WriteSuccess($"{options.Id} has been installed and saved to Gist");
+// Output: ✓ {options.Id} has been installed and saved to Gist
+```
 
-1. `AuthLoginAsync()` - 進捗と成功ログを追加
-2. `InstallAndSaveAsync()` - Gist 操作の進捗ログを追加
-3. `UninstallAndSaveAsync()` - Gist 操作の進捗ログを追加
-4. `UpgradeAndSaveAsync()` - Gist 操作の進捗ログを追加
-5. `PinAddAndSaveAsync()` - Gist 操作の進捗ログを追加
-6. `PinRemoveAndSaveAsync()` - Gist 操作の進捗ログを追加
-7. `SyncAsync()` - ステップ付き進捗ログを追加
-8. `ExportAsync()` - 進捗ログを追加
-9. `ImportAsync()` - 進捗ログを追加
+### Step Display
 
-> [!IMPORTANT]
-> 以下のメソッドはログ追加不要です：
-> - `AuthLogout()` - 既存のログで十分
-> - `AuthStatusAsync()` - 既存のログで十分
-> - `RunPassthroughAsync()` - winget に完全委譲
+```csharp
+consoleService.WriteStep(1, 10, "Installing package xxx...");
+// Output: [1/10] Installing package xxx...
+```
 
-### ステップ 4: ビルドとテストの確認
+---
+
+## Adding Logging to New Methods
 
 // turbo
 ```powershell
-dotnet build
+dotnet build src\GistGet.slnx
 ```
 
 // turbo
 ```powershell
-dotnet test
+dotnet test src\GistGet.slnx --no-build
 ```
 
-## 注意事項
+### Patterns
 
-- winget へのパススルー処理では、winget 自体の出力に任せてください
-- プログレス表示 (`WriteProgress`) はスピナーアニメーション付きで、`using` ブロックで使用してください
-- ステップ表示 (`WriteStep`) は単純な一行表示のみで、アニメーションなし
+1. **Gist fetch**: `using (consoleService.WriteProgress("Fetching package information from Gist..."))`
+2. **Gist save**: `using (consoleService.WriteProgress("Saving package information to Gist..."))`
+3. **Success**: `consoleService.WriteSuccess($"{id} has been completed")`
+4. **winget passthrough**: No logging (delegate to winget)
 
-```csharp
-// 例: スピナー付きプログレス
-// 処理中は │ / ─ \ が回転して動いていることを表示
-using (consoleService.WriteProgress("Gist からパッケージ情報を取得中..."))
-{
-    await gitHubService.GetPackagesAsync(...);
-}
+### Notes
 
-// 例: ステップ表示（シンプルな一行出力）
-consoleService.WriteStep(1, 10, "パッケージ xxx をインストール中...");
-// 出力: [1/10] パッケージ xxx をインストール中...
-```
-
-- sync 処理では既存の `[sync]` プレフィックスを維持してください
+- For winget passthrough operations, let winget handle its own output
+- Use `using` blocks for progress display to ensure cleanup on exceptions
+- Maintain existing `[sync]` prefix for sync operations
