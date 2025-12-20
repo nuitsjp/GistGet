@@ -16,4 +16,10 @@ public interface IWinGetService
     /// Returns all installed packages.
     /// </summary>
     IReadOnlyList<WinGetPackage> GetAllInstalledPackages();
+
+    /// <summary>
+    /// Returns all pinned packages.
+    /// </summary>
+    IReadOnlyList<WinGetPin> GetPinnedPackages();
 }
+

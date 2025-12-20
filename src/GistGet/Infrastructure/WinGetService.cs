@@ -1,5 +1,7 @@
 // WinGet COM-based package discovery implementation.
 
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using GistGet.Infrastructure.WinGet;
 using Microsoft.Management.Deployment;
 
@@ -139,4 +141,208 @@ public class WinGetService : IWinGetService
         }
         return null;
     }
+
+    /// <summary>
+    /// Gets all pinned packages by parsing winget pin list output.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Unlike FindById and GetAllInstalledPackages which use the WinGet COM API
+    /// (Microsoft.Management.Deployment), this method uses CLI output parsing.
+    /// </para>
+    /// <para>
+    /// This is because the WinGet COM API does not expose pin management functionality.
+    /// Pin information is managed internally by WinGet in PinningIndex.cpp and PinningData.cpp,
+    /// but these are not part of the public COM API surface (PackageManager.idl).
+    /// </para>
+    /// <para>
+    /// The CLI approach is consistent with how GistGet handles other pin operations
+    /// (pin add, pin remove) via WinGetPassthroughRunner.
+    /// </para>
+    /// </remarks>
+    /// <returns>Pinned packages.</returns>
+    [ExcludeFromCodeCoverage]
+    public IReadOnlyList<WinGetPin> GetPinnedPackages()
+    {
+        var pins = new List<WinGetPin>();
+
+        var output = RunWinGetPinList();
+        if (string.IsNullOrEmpty(output))
+        {
+            return pins;
+        }
+
+        var lines = output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+        if (lines.Length < 2)
+        {
+            return pins;
+        }
+
+        // Find header line (contains dashes separator)
+        var headerIndex = -1;
+        for (var i = 0; i < lines.Length; i++)
+        {
+            if (lines[i].StartsWith("---"))
+            {
+                headerIndex = i;
+                break;
+            }
+        }
+
+        if (headerIndex < 1)
+        {
+            return pins;
+        }
+
+        // Parse column positions from header
+        var headerLine = lines[headerIndex - 1];
+        var columnPositions = ParseColumnPositions(headerLine);
+
+        // Parse data lines
+        for (var i = headerIndex + 1; i < lines.Length; i++)
+        {
+            var pin = ParsePinLine(lines[i], columnPositions);
+            if (pin != null)
+            {
+                pins.Add(pin);
+            }
+        }
+
+        return pins;
+    }
+
+    [ExcludeFromCodeCoverage]
+    private static string RunWinGetPinList()
+    {
+        try
+        {
+            var wingetPath = ResolveWinGetPath();
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = wingetPath,
+                Arguments = "pin list",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(startInfo);
+            if (process == null)
+            {
+                return string.Empty;
+            }
+
+            var output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit();
+
+            return output;
+        }
+        catch
+        {
+            // Process execution can fail in certain environments (e.g., restricted contexts)
+            return string.Empty;
+        }
+    }
+
+    [ExcludeFromCodeCoverage]
+    private static string ResolveWinGetPath()
+    {
+        var pathEnv = Environment.GetEnvironmentVariable("PATH");
+        if (pathEnv != null)
+        {
+            var paths = pathEnv.Split(Path.PathSeparator);
+            foreach (var path in paths)
+            {
+                var fullPath = Path.Combine(path, "winget.exe");
+                if (File.Exists(fullPath))
+                {
+                    return fullPath;
+                }
+            }
+        }
+
+        var localAppData = Environment.GetEnvironmentVariable("LOCALAPPDATA");
+        return Path.Combine(localAppData!, "Microsoft", "WindowsApps", "winget.exe");
+    }
+
+    [ExcludeFromCodeCoverage]
+    private static int[] ParseColumnPositions(string headerLine)
+    {
+        // Find positions where each column starts based on whitespace patterns
+        var positions = new List<int> { 0 };
+        var inWhitespace = false;
+
+        for (var i = 1; i < headerLine.Length; i++)
+        {
+            if (char.IsWhiteSpace(headerLine[i]))
+            {
+                inWhitespace = true;
+            }
+            else if (inWhitespace)
+            {
+                positions.Add(i);
+                inWhitespace = false;
+            }
+        }
+
+        return [.. positions];
+    }
+
+    [ExcludeFromCodeCoverage]
+    private static WinGetPin? ParsePinLine(string line, int[] columnPositions)
+    {
+        if (columnPositions.Length < 5)
+        {
+            return null;
+        }
+
+        try
+        {
+            // Column order: Name, Id, Version, Source, PinType, PinnedVersion
+            var id = ExtractColumn(line, columnPositions, 1).Trim();
+            var version = ExtractColumn(line, columnPositions, 2).Trim();
+            var pinType = ExtractColumn(line, columnPositions, 4).Trim();
+            var pinnedVersion = ExtractColumn(line, columnPositions, 5).Trim();
+
+            if (string.IsNullOrEmpty(id))
+            {
+                return null;
+            }
+
+            return new WinGetPin(
+                Id: new PackageId(id),
+                Version: new Version(version),
+                PinType: pinType,
+                PinnedVersion: string.IsNullOrEmpty(pinnedVersion) ? null : new Version(pinnedVersion)
+            );
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    [ExcludeFromCodeCoverage]
+    private static string ExtractColumn(string line, int[] positions, int columnIndex)
+    {
+        if (columnIndex >= positions.Length)
+        {
+            return columnIndex == positions.Length && positions.Length > 0
+                ? line[positions[^1]..].Trim()
+                : string.Empty;
+        }
+
+        var start = positions[columnIndex];
+        var end = columnIndex + 1 < positions.Length ? positions[columnIndex + 1] : line.Length;
+
+        if (start >= line.Length)
+        {
+            return string.Empty;
+        }
+
+        end = Math.Min(end, line.Length);
+        return line[start..end];
+    }
 }
+
