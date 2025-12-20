@@ -25,6 +25,8 @@ public class GistGetServiceTests
         CredentialServiceMock = new Mock<ICredentialService>();
         PassthroughRunnerMock = new Mock<IWinGetPassthroughRunner>();
         WinGetServiceMock = new Mock<IWinGetService>();
+        // Default setup: GetPinnedPackages returns empty list
+        WinGetServiceMock.Setup(x => x.GetPinnedPackages()).Returns(new List<WinGetPin>());
         ArgumentBuilder = new WinGetArgumentBuilder(); // Real instance
         Target = new GistGetService(
             AuthServiceMock.Object,
@@ -2691,6 +2693,12 @@ public class GistGetServiceTests
                 new WinGetPackage("Existing Package", new PackageId(packageId), new Version("1.5.0"), null)
             };
 
+            // Package is currently pinned locally - so pin remove should be triggered
+            var pinnedPackages = new List<WinGetPin>
+            {
+                new WinGetPin(new PackageId(packageId), "Pinning", new Version("1.5.0"))
+            };
+
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
                 .Returns(new TryGetCredentialDelegate((out c) =>
@@ -2706,6 +2714,10 @@ public class GistGetServiceTests
             WinGetServiceMock
                 .Setup(x => x.GetAllInstalledPackages())
                 .Returns(localPackages);
+
+            WinGetServiceMock
+                .Setup(x => x.GetPinnedPackages())
+                .Returns(pinnedPackages);
 
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
@@ -3143,6 +3155,183 @@ public class GistGetServiceTests
 
             result.Failed.ShouldContain(p => p.Id == packageId);
             result.Errors.ShouldContain(s => s.Contains("Failed to install", StringComparison.OrdinalIgnoreCase));
+        }
+
+        [Fact]
+        public async Task WhenGistHasNoPin_AndLocalPackageNotPinned_SkipsPinRemove()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Existing.Package";
+            var credential = new Credential("user", "token");
+            var gistPackages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = packageId } // No pin in Gist
+            };
+
+            var localPackages = new List<WinGetPackage>
+            {
+                new WinGetPackage("Existing Package", new PackageId(packageId), new Version("1.5.0"), null)
+            };
+
+            // Package is NOT pinned locally - so pin remove should NOT be called
+            var pinnedPackages = Array.Empty<WinGetPin>(); // Empty - no pins
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(gistPackages);
+
+            WinGetServiceMock
+                .Setup(x => x.GetAllInstalledPackages())
+                .Returns(localPackages);
+
+            WinGetServiceMock
+                .Setup(x => x.GetPinnedPackages())
+                .Returns(pinnedPackages);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await Target.SyncAsync();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.PinRemoved.Count.ShouldBe(0); // No pin removal
+            result.Success.ShouldBeTrue();
+            // Verify pin remove was never called
+            PassthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args =>
+                args[0] == "pin" && args[1] == "remove")), Times.Never);
+        }
+
+        [Fact]
+        public async Task WhenGistHasPin_AndLocalAlreadyPinnedToSameVersion_SkipsPinAdd()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Existing.Package";
+            var credential = new Credential("user", "token");
+            var pinnedVersion = "1.5.0";
+            var gistPackages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = packageId, Pin = pinnedVersion, PinType = "blocking" }
+            };
+
+            var localPackages = new List<WinGetPackage>
+            {
+                new WinGetPackage("Existing Package", new PackageId(packageId), new Version(pinnedVersion), null)
+            };
+
+            // Package is ALREADY pinned to the same version - so pin add should NOT be called
+            var pinnedPackages = new List<WinGetPin>
+            {
+                new WinGetPin(new PackageId(packageId), "Blocking", new Version(pinnedVersion))
+            };
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(gistPackages);
+
+            WinGetServiceMock
+                .Setup(x => x.GetAllInstalledPackages())
+                .Returns(localPackages);
+
+            WinGetServiceMock
+                .Setup(x => x.GetPinnedPackages())
+                .Returns(pinnedPackages);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await Target.SyncAsync();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.PinUpdated.Count.ShouldBe(0); // No pin update - already in desired state
+            result.Success.ShouldBeTrue();
+            // Verify pin add was never called
+            PassthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args =>
+                args[0] == "pin" && args[1] == "add")), Times.Never);
+        }
+
+        [Fact]
+        public async Task WhenUninstalling_AndPackageNotPinned_SkipsPinRemove()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Old.Package";
+            var credential = new Credential("user", "token");
+            var gistPackages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = packageId, Uninstall = true }
+            };
+
+            var localPackages = new List<WinGetPackage>
+            {
+                new WinGetPackage("Old Package", new PackageId(packageId), new Version("1.0.0"), null)
+            };
+
+            // Package is NOT pinned locally
+            var pinnedPackages = Array.Empty<WinGetPin>(); // Empty - no pins
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(gistPackages);
+
+            WinGetServiceMock
+                .Setup(x => x.GetAllInstalledPackages())
+                .Returns(localPackages);
+
+            WinGetServiceMock
+                .Setup(x => x.GetPinnedPackages())
+                .Returns(pinnedPackages);
+
+            PassthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "uninstall" && args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await Target.SyncAsync();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.Uninstalled.Count.ShouldBe(1);
+            result.Success.ShouldBeTrue();
+            // Verify pin remove was never called (since package was not pinned)
+            PassthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args =>
+                args[0] == "pin" && args[1] == "remove")), Times.Never);
         }
     }
 

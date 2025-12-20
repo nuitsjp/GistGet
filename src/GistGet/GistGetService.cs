@@ -606,6 +606,13 @@ public class GistGetService(
             p => p,
             StringComparer.OrdinalIgnoreCase);
 
+        // Get current pinned packages to avoid unnecessary pin operations
+        var pinnedPackages = winGetService.GetPinnedPackages();
+        var pinnedPackageDict = pinnedPackages.ToDictionary(
+            p => p.Id.AsPrimitive(),
+            p => p,
+            StringComparer.OrdinalIgnoreCase);
+
         foreach (var gistPkg in gistPackages.Where(p => p.Uninstall))
         {
             if (!localPackageDict.ContainsKey(gistPkg.Id))
@@ -621,8 +628,13 @@ public class GistGetService(
                 if (exitCode == 0)
                 {
                     result.Uninstalled.Add(gistPkg);
-                    consoleService.WriteInfo($"[sync] Removing pin for {gistPkg.Id}...");
-                    await passthroughRunner.RunAsync(["pin", "remove", "--id", gistPkg.Id]);
+
+                    // Only remove pin if the package is actually pinned
+                    if (pinnedPackageDict.ContainsKey(gistPkg.Id))
+                    {
+                        consoleService.WriteInfo($"[sync] Removing pin for {gistPkg.Id}...");
+                        await passthroughRunner.RunAsync(["pin", "remove", "--id", gistPkg.Id]);
+                    }
                 }
                 else
                 {
@@ -683,22 +695,34 @@ public class GistGetService(
             {
                 if (!string.IsNullOrEmpty(gistPkg.Pin))
                 {
-                    var pinArgs = argumentBuilder.BuildPinAddArgs(gistPkg.Id, gistPkg.Pin, gistPkg.PinType, true);
-                    consoleService.WriteInfo($"[sync] Pinning {gistPkg.Id} to {gistPkg.Pin}...");
-                    var exitCode = await passthroughRunner.RunAsync(pinArgs);
-                    if (exitCode == 0)
+                    // Check if pin is already in the desired state
+                    var existingPin = pinnedPackageDict.GetValueOrDefault(gistPkg.Id);
+                    var desiredVersion = new Version(gistPkg.Pin);
+                    var isAlreadyPinned = existingPin?.PinnedVersion?.Equals(desiredVersion) == true;
+
+                    if (!isAlreadyPinned)
                     {
-                        result.PinUpdated.Add(gistPkg);
+                        var pinArgs = argumentBuilder.BuildPinAddArgs(gistPkg.Id, gistPkg.Pin, gistPkg.PinType, true);
+                        consoleService.WriteInfo($"[sync] Pinning {gistPkg.Id} to {gistPkg.Pin}...");
+                        var exitCode = await passthroughRunner.RunAsync(pinArgs);
+                        if (exitCode == 0)
+                        {
+                            result.PinUpdated.Add(gistPkg);
+                        }
                     }
                 }
                 else
                 {
-                    var pinRemoveArgs = new[] { "pin", "remove", "--id", gistPkg.Id };
-                    consoleService.WriteInfo($"[sync] Removing pin for {gistPkg.Id}...");
-                    var exitCode = await passthroughRunner.RunAsync(pinRemoveArgs);
-                    if (exitCode == 0)
+                    // Only remove pin if the package is actually pinned
+                    if (pinnedPackageDict.ContainsKey(gistPkg.Id))
                     {
-                        result.PinRemoved.Add(gistPkg);
+                        var pinRemoveArgs = new[] { "pin", "remove", "--id", gistPkg.Id };
+                        consoleService.WriteInfo($"[sync] Removing pin for {gistPkg.Id}...");
+                        var exitCode = await passthroughRunner.RunAsync(pinRemoveArgs);
+                        if (exitCode == 0)
+                        {
+                            result.PinRemoved.Add(gistPkg);
+                        }
                     }
                 }
             }

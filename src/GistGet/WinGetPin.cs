@@ -8,13 +8,13 @@ namespace GistGet;
 /// Represents a pinned package from WinGet.
 /// </summary>
 /// <param name="Id">Package identifier.</param>
-/// <param name="Version">Currently installed version.</param>
 /// <param name="PinType">Type of pin: Gating, Blocking, or Pinning.</param>
 /// <param name="PinnedVersion">The version to which the package is pinned.</param>
 [ExcludeFromCodeCoverage]
+[SuppressMessage("ReSharper", "NotAccessedPositionalProperty.Global", Justification = "PinType is kept for API consistency with winget pin list output")]
 public record WinGetPin(
     PackageId Id,
-    Version Version,
     string PinType,
     Version? PinnedVersion
 );
+

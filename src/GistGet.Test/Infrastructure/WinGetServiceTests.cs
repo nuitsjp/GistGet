@@ -145,7 +145,7 @@ public class WinGetServiceTests
         private const string TestPackageId = "jqlang.jq";
         private const string TestPinVersion = "1.7.0";
         private bool _pinWasAdded;
-        private bool _wingetAvailable = true;
+        private readonly bool _wingetAvailable;
 
         public GetPinnedPackages()
         {
@@ -154,6 +154,7 @@ public class WinGetServiceTests
             try
             {
                 EnsurePackageIsPinned();
+                _wingetAvailable = true;
             }
             catch
             {

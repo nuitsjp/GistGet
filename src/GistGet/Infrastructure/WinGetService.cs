@@ -301,7 +301,6 @@ public class WinGetService : IWinGetService
         {
             // Column order: Name, Id, Version, Source, PinType, PinnedVersion
             var id = ExtractColumn(line, columnPositions, 1).Trim();
-            var version = ExtractColumn(line, columnPositions, 2).Trim();
             var pinType = ExtractColumn(line, columnPositions, 4).Trim();
             var pinnedVersion = ExtractColumn(line, columnPositions, 5).Trim();
 
@@ -312,7 +311,6 @@ public class WinGetService : IWinGetService
 
             return new WinGetPin(
                 Id: new PackageId(id),
-                Version: new Version(version),
                 PinType: pinType,
                 PinnedVersion: string.IsNullOrEmpty(pinnedVersion) ? null : new Version(pinnedVersion)
             );
