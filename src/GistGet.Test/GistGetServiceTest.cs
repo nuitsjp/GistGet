@@ -1839,7 +1839,6 @@ public class GistGetServiceTests
                         p.Id == packageId &&
                         p.Uninstall == false &&
                         p.Pin == version &&
-                        p.Version == version &&
                         p.PinType == null)
                 )), Times.Once);
         }
@@ -1949,7 +1948,6 @@ public class GistGetServiceTests
                         p.Id == packageId &&
                         p.Uninstall == false &&
                         p.Pin == version &&
-                        p.Version == version &&
                         p.PinType == "blocking" &&
                         p.Silent &&
                         p.Scope == "user")
@@ -3211,6 +3209,9 @@ public class GistGetServiceTests
             // Verify pin remove was never called
             PassthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args =>
                 args[0] == "pin" && args[1] == "remove")), Times.Never);
+            // Verify "already installed" message is logged
+            ConsoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s =>
+                s.Contains(packageId) && s.Contains("already installed", StringComparison.OrdinalIgnoreCase))), Times.Once);
         }
 
         [Fact]
@@ -3271,6 +3272,11 @@ public class GistGetServiceTests
             // Verify pin add was never called
             PassthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args =>
                 args[0] == "pin" && args[1] == "add")), Times.Never);
+            // Verify "already installed and pinned" message is logged
+            ConsoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s =>
+                s.Contains(packageId) &&
+                s.Contains("already installed", StringComparison.OrdinalIgnoreCase) &&
+                s.Contains(pinnedVersion))), Times.Once);
         }
 
         [Fact]

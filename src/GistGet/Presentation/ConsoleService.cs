@@ -125,7 +125,9 @@ public class ConsoleService : IConsoleService
         {
             _cts.Cancel();
             try { _spinnerTask.Wait(); } catch (AggregateException) { /* Expected on cancellation */ }
-            Console.Write($"\r{new string(' ', _message.Length + 2)}\r");
+            // Clear the entire line using console buffer width
+            var clearLength = Math.Max(Console.BufferWidth - 1, _message.Length + 2);
+            Console.Write($"\r{new string(' ', clearLength)}\r");
             Console.CursorVisible = true;
             _cts.Dispose();
         }

@@ -472,7 +472,6 @@ public class GistGetService(
         packageToSave.Uninstall = false;
         packageToSave.Pin = version;
         packageToSave.PinType = pinTypeToSet;
-        packageToSave.Version = version;
 
         newPackages.Add(packageToSave);
 
@@ -661,7 +660,14 @@ public class GistGetService(
 
                 consoleService.WriteInfo($"[sync] Installing {gistPkg.Id}...");
                 var exitCode = await passthroughRunner.RunAsync(installArgs.ToArray());
-                if (exitCode == 0)
+
+                // Check if the package is installed locally after winget install attempt.
+                // This handles cases where winget returns non-zero exit code but the package
+                // is already installed (e.g., "no upgrade available" scenario).
+                var installedPackage = winGetService.FindById(new PackageId(gistPkg.Id));
+                var isInstalled = exitCode == 0 || installedPackage != null;
+
+                if (isInstalled)
                 {
                     result.Installed.Add(gistPkg);
 
@@ -710,6 +716,10 @@ public class GistGetService(
                             result.PinUpdated.Add(gistPkg);
                         }
                     }
+                    else
+                    {
+                        consoleService.WriteInfo($"[sync] {gistPkg.Id} is already installed and pinned to {gistPkg.Pin}.");
+                    }
                 }
                 else
                 {
@@ -723,6 +733,10 @@ public class GistGetService(
                         {
                             result.PinRemoved.Add(gistPkg);
                         }
+                    }
+                    else
+                    {
+                        consoleService.WriteInfo($"[sync] {gistPkg.Id} is already installed.");
                     }
                 }
             }
