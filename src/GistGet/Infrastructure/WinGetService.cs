@@ -2,6 +2,7 @@
 
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
 using GistGet.Infrastructure.WinGet;
 using Microsoft.Management.Deployment;
 
@@ -10,9 +11,21 @@ namespace GistGet.Infrastructure;
 /// <summary>
 /// Provides access to installed package data via WinGet COM APIs.
 /// </summary>
-public class WinGetService : IWinGetService
+public partial class WinGetService : IWinGetService
 {
     private readonly IPackageCatalogConnector _connector;
+
+    /// <summary>
+    /// Regex pattern for parsing winget pin list data lines.
+    /// Format: Name  Id  Version  Source  PinType  PinnedVersion
+    /// Example: jq   jqlang.jq 1.7        winget Gating     1.7.0
+    /// </summary>
+    /// <remarks>
+    /// Named groups: Name, Id (vendor.package format), Version, Source, PinType, PinnedVersion (optional)
+    /// Uses ExplicitCapture, non-backtracking patterns, and timeout to avoid ReDoS.
+    /// </remarks>
+    [GeneratedRegex(@"^(?<Name>\S+)\s+(?<Id>\S+\.\S+)\s+(?<Version>\S+)\s+(?<Source>\S+)\s+(?<PinType>\S+)(?:\s+(?<PinnedVersion>\S+))?$", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex PinLineRegex();
 
     /// <summary>
     /// Initializes a new instance with the default connector.
@@ -178,30 +191,26 @@ public class WinGetService : IWinGetService
             return pins;
         }
 
-        // Find header line (contains dashes separator)
-        var headerIndex = -1;
+        // Find separator line (contains dashes)
+        var separatorIndex = -1;
         for (var i = 0; i < lines.Length; i++)
         {
             if (lines[i].StartsWith("---"))
             {
-                headerIndex = i;
+                separatorIndex = i;
                 break;
             }
         }
 
-        if (headerIndex < 1)
+        if (separatorIndex < 0)
         {
             return pins;
         }
 
-        // Parse column positions from header
-        var headerLine = lines[headerIndex - 1];
-        var columnPositions = ParseColumnPositions(headerLine);
-
-        // Parse data lines
-        for (var i = headerIndex + 1; i < lines.Length; i++)
+        // Parse data lines using whitespace splitting (language-independent)
+        for (var i = separatorIndex + 1; i < lines.Length; i++)
         {
-            var pin = ParsePinLine(lines[i], columnPositions);
+            var pin = ParsePinLineByWhitespace(lines[i]);
             if (pin != null)
             {
                 pins.Add(pin);
@@ -266,43 +275,29 @@ public class WinGetService : IWinGetService
         return Path.Combine(localAppData!, "Microsoft", "WindowsApps", "winget.exe");
     }
 
+    /// <summary>
+    /// Parses a pin data line using regex pattern matching.
+    /// This approach is language-independent and anchors on the package ID format.
+    /// </summary>
+    /// <remarks>
+    /// Expected format: Name  Id  Version  Source  PinType  PinnedVersion
+    /// Example: jq   jqlang.jq 1.7        winget Gating     1.7.0
+    /// </remarks>
     [ExcludeFromCodeCoverage]
-    private static int[] ParseColumnPositions(string headerLine)
+    private static WinGetPin? ParsePinLineByWhitespace(string line)
     {
-        // Find positions where each column starts based on whitespace patterns
-        var positions = new List<int> { 0 };
-        var inWhitespace = false;
-
-        for (var i = 1; i < headerLine.Length; i++)
-        {
-            if (char.IsWhiteSpace(headerLine[i]))
-            {
-                inWhitespace = true;
-            }
-            else if (inWhitespace)
-            {
-                positions.Add(i);
-                inWhitespace = false;
-            }
-        }
-
-        return [.. positions];
-    }
-
-    [ExcludeFromCodeCoverage]
-    private static WinGetPin? ParsePinLine(string line, int[] columnPositions)
-    {
-        if (columnPositions.Length < 5)
-        {
-            return null;
-        }
-
         try
         {
-            // Column order: Name, Id, Version, Source, PinType, PinnedVersion
-            var id = ExtractColumn(line, columnPositions, 1).Trim();
-            var pinType = ExtractColumn(line, columnPositions, 4).Trim();
-            var pinnedVersion = ExtractColumn(line, columnPositions, 5).Trim();
+            var match = PinLineRegex().Match(line.Trim());
+            if (!match.Success)
+            {
+                return null;
+            }
+
+            // Named groups: Name, Id, Version, Source, PinType, PinnedVersion
+            var id = match.Groups["Id"].Value.Trim();
+            var pinType = match.Groups["PinType"].Value.Trim();
+            var pinnedVersion = match.Groups["PinnedVersion"].Success ? match.Groups["PinnedVersion"].Value.Trim() : string.Empty;
 
             if (string.IsNullOrEmpty(id))
             {
@@ -319,28 +314,6 @@ public class WinGetService : IWinGetService
         {
             return null;
         }
-    }
-
-    [ExcludeFromCodeCoverage]
-    private static string ExtractColumn(string line, int[] positions, int columnIndex)
-    {
-        if (columnIndex >= positions.Length)
-        {
-            return columnIndex == positions.Length && positions.Length > 0
-                ? line[positions[^1]..].Trim()
-                : string.Empty;
-        }
-
-        var start = positions[columnIndex];
-        var end = columnIndex + 1 < positions.Length ? positions[columnIndex + 1] : line.Length;
-
-        if (start >= line.Length)
-        {
-            return string.Empty;
-        }
-
-        end = Math.Min(end, line.Length);
-        return line[start..end];
     }
 }
 
