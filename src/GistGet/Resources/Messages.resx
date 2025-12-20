@@ -102,7 +102,7 @@
     <value>Starting interactive initialization...</value>
   </data>
   <data name="InitConfirmPackage" xml:space="preserve">
-    <value>Include {0} ({1}) in sync?</value>
+    <value>Include {0} in sync?</value>
   </data>
   <data name="InitFinalConfirm" xml:space="preserve">
     <value>Are you sure you want to overwrite your Gist with these {0} packages?</value>

@@ -75,15 +75,29 @@ public class GistGetPackage
     [YamlMember(Alias = "silent", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
     public bool Silent { get; set; }
 
-    public override string ToString()
+    public string ToDisplayString(bool colorize = false)
     {
         var id = string.IsNullOrEmpty(Id) ? string.Empty : Id;
-        if (string.IsNullOrWhiteSpace(Name))
+        var hasName = !string.IsNullOrWhiteSpace(Name);
+
+        if (!colorize)
         {
-            return id;
+            return hasName
+                ? $"{Name} [{id}]"
+                : id;
         }
 
-        return $"{Name} ({id})";
+        const string cyan = "\u001b[96m";
+        const string reset = "\u001b[0m";
+
+        if (!hasName)
+        {
+            return $"{cyan}{id}{reset}";
+        }
+
+        return $"{cyan}{Name}{reset} [{cyan}{id}{reset}]";
     }
+
+    public override string ToString() => ToDisplayString();
 }
 

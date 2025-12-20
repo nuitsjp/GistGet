@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "GistGet": {
-      "commandName": "Project",
-      "commandLineArgs": "install --id 9NTRHF51WGGB"
-    }
-  }
-}

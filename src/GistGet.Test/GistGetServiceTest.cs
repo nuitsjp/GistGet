@@ -450,7 +450,7 @@ public class GistGetServiceTests
             // Assert
             // -------------------------------------------------------------------
             ConsoleServiceMock.Verify(x => x.WriteSuccess(It.Is<string>(s =>
-                s.Contains($"{packageName} ({packageId})", StringComparison.Ordinal))), Times.Once);
+                s.Contains("\u001b[96mTest Package\u001b[0m [\u001b[96mTest.Package\u001b[0m]", StringComparison.Ordinal))), Times.Once);
         }
 
         [Fact]

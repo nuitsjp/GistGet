@@ -209,7 +209,7 @@ public class GistGetService(
                 newPackagesList);
         }
 
-        consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.InstallSuccess, packageToSave));
+        consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.InstallSuccess, packageToSave.ToDisplayString(colorize: true)));
 
         return 0;
     }
@@ -285,7 +285,7 @@ public class GistGetService(
                 newPackages);
         }
 
-        consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.UninstallSuccess, packageToSave));
+        consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.UninstallSuccess, packageToSave.ToDisplayString(colorize: true)));
 
         return 0;
     }
@@ -353,7 +353,7 @@ public class GistGetService(
         var shouldUpdateGist = existingPackage == null || existingPackage.Uninstall || hasPin;
         if (!shouldUpdateGist)
         {
-            consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.UpgradeSuccess, packageDisplay));
+            consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.UpgradeSuccess, packageDisplay.ToDisplayString(colorize: true)));
             return 0;
         }
 
@@ -429,7 +429,7 @@ public class GistGetService(
                 newPackages);
         }
 
-        consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.UpgradeAndSaveSuccess, packageToSave));
+        consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.UpgradeAndSaveSuccess, packageToSave.ToDisplayString(colorize: true)));
 
         return 0;
     }
@@ -497,7 +497,7 @@ public class GistGetService(
                 newPackages);
         }
 
-        consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.PinAddSuccess, packageToSave));
+        consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.PinAddSuccess, packageToSave.ToDisplayString(colorize: true)));
     }
 
     /// <summary>
@@ -558,7 +558,7 @@ public class GistGetService(
                 newPackages);
         }
 
-        consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.PinRemoveSuccess, packageToSave));
+        consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.PinRemoveSuccess, packageToSave.ToDisplayString(colorize: true)));
     }
 
     /// <summary>
@@ -636,7 +636,7 @@ public class GistGetService(
 
             try
             {
-                consoleService.WriteInfo($"[sync] Uninstalling {gistPkg}...");
+                consoleService.WriteInfo($"[sync] Uninstalling {gistPkg.ToDisplayString(colorize: true)}...");
                 var uninstallArgs = new[] { "uninstall", "--id", gistPkg.Id };
                 var exitCode = await passthroughRunner.RunAsync(uninstallArgs);
                 if (exitCode == 0)
@@ -646,14 +646,14 @@ public class GistGetService(
                     // Only remove pin if the package is actually pinned
                     if (pinnedPackageDict.ContainsKey(gistPkg.Id))
                     {
-                        consoleService.WriteInfo($"[sync] Removing pin for {gistPkg}...");
+                        consoleService.WriteInfo($"[sync] Removing pin for {gistPkg.ToDisplayString(colorize: true)}...");
                         await passthroughRunner.RunAsync(["pin", "remove", "--id", gistPkg.Id]);
                     }
                 }
                 else
                 {
                     result.Failed.Add(gistPkg);
-                    result.Errors.Add($"Failed to uninstall {gistPkg}: exit code {exitCode.ToString(CultureInfo.InvariantCulture)}");
+                    result.Errors.Add($"Failed to uninstall {gistPkg.ToDisplayString(colorize: true)}: exit code {exitCode.ToString(CultureInfo.InvariantCulture)}");
                 }
             }
             catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or IOException)
@@ -673,7 +673,7 @@ public class GistGetService(
             {
                 var installArgs = argumentBuilder.BuildInstallArgs(gistPkg);
 
-                consoleService.WriteInfo($"[sync] Installing {gistPkg}...");
+                consoleService.WriteInfo($"[sync] Installing {gistPkg.ToDisplayString(colorize: true)}...");
                 var exitCode = await passthroughRunner.RunAsync(installArgs.ToArray());
 
                 // Check if the package is installed locally after winget install attempt.
@@ -689,14 +689,14 @@ public class GistGetService(
                     if (!string.IsNullOrEmpty(gistPkg.Pin))
                     {
                         var pinArgs = argumentBuilder.BuildPinAddArgs(gistPkg.Id, gistPkg.Pin, gistPkg.PinType);
-                        consoleService.WriteInfo($"[sync] Pinning {gistPkg} to {gistPkg.Pin}...");
+                        consoleService.WriteInfo($"[sync] Pinning {gistPkg.ToDisplayString(colorize: true)} to {gistPkg.Pin}...");
                         await passthroughRunner.RunAsync(pinArgs);
                     }
                 }
                 else
                 {
                     result.Failed.Add(gistPkg);
-                    result.Errors.Add($"Failed to install {gistPkg}: exit code {exitCode.ToString(CultureInfo.InvariantCulture)}");
+                    result.Errors.Add($"Failed to install {gistPkg.ToDisplayString(colorize: true)}: exit code {exitCode.ToString(CultureInfo.InvariantCulture)}");
                 }
             }
             catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or IOException)
@@ -724,7 +724,7 @@ public class GistGetService(
                     if (!isAlreadyPinned)
                     {
                         var pinArgs = argumentBuilder.BuildPinAddArgs(gistPkg.Id, gistPkg.Pin, gistPkg.PinType, true);
-                        consoleService.WriteInfo($"[sync] Pinning {gistPkg} to {gistPkg.Pin}...");
+                        consoleService.WriteInfo($"[sync] Pinning {gistPkg.ToDisplayString(colorize: true)} to {gistPkg.Pin}...");
                         var exitCode = await passthroughRunner.RunAsync(pinArgs);
                         if (exitCode == 0)
                         {
@@ -733,7 +733,7 @@ public class GistGetService(
                     }
                     else
                     {
-                        consoleService.WriteInfo($"[sync] {gistPkg} is already installed and pinned to {gistPkg.Pin}.");
+                        consoleService.WriteInfo($"[sync] {gistPkg.ToDisplayString(colorize: true)} is already installed and pinned to {gistPkg.Pin}.");
                     }
                 }
                 else
@@ -742,7 +742,7 @@ public class GistGetService(
                     if (pinnedPackageDict.ContainsKey(gistPkg.Id))
                     {
                         var pinRemoveArgs = new[] { "pin", "remove", "--id", gistPkg.Id };
-                        consoleService.WriteInfo($"[sync] Removing pin for {gistPkg}...");
+                        consoleService.WriteInfo($"[sync] Removing pin for {gistPkg.ToDisplayString(colorize: true)}...");
                         var exitCode = await passthroughRunner.RunAsync(pinRemoveArgs);
                         if (exitCode == 0)
                         {
@@ -751,7 +751,7 @@ public class GistGetService(
                     }
                     else
                     {
-                        consoleService.WriteInfo($"[sync] {gistPkg} is already installed.");
+                        consoleService.WriteInfo($"[sync] {gistPkg.ToDisplayString(colorize: true)} is already installed.");
                     }
                 }
             }
@@ -810,7 +810,10 @@ public class GistGetService(
         var currentIndex = 1;
         foreach (var pkg in sortedPackages)
         {
-            var message = string.Format(CultureInfo.CurrentCulture, Messages.InitConfirmPackage, pkg.Name, pkg.Id);
+            var message = string.Format(
+                CultureInfo.CurrentCulture,
+                Messages.InitConfirmPackage,
+                new GistGetPackage { Id = pkg.Id.AsPrimitive(), Name = pkg.Name }.ToDisplayString(colorize: true));
             var messageWithProgress = $"[{currentIndex}/{totalCount}] {message}";
             if (consoleService.Confirm(messageWithProgress, defaultValue: false))
             {
@@ -829,7 +832,8 @@ public class GistGetService(
         consoleService.WriteInfo("Selected packages:");
         foreach (var info in selectedPackageInfo)
         {
-            consoleService.WriteInfo($"  - {info.Name} ({info.Id})");
+            var displayPackage = new GistGetPackage { Id = info.Id, Name = info.Name };
+            consoleService.WriteInfo($"  - {displayPackage.ToDisplayString(colorize: true)}");
         }
         consoleService.WriteInfo("");
 
