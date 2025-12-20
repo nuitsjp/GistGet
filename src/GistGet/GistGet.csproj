@@ -25,6 +25,7 @@
 		<PackageReference Include="Microsoft.Windows.CsWinRT" />
 		<PackageReference Include="Microsoft.WindowsPackageManager.ComInterop" />
 		<PackageReference Include="Octokit" />
+		<PackageReference Include="Sharprompt" />
 		<PackageReference Include="Spectre.Console" />
 		<PackageReference Include="System.CommandLine" />
 		<PackageReference Include="UnitGenerator">

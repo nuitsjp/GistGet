@@ -9,4 +9,5 @@ public record WinGetPackage(
     string Name,
     PackageId Id,
     Version Version,
-    Version? UsableVersion);
+    Version? UsableVersion,
+    string? Source);

@@ -262,7 +262,8 @@ public class GistGetServiceTests
                     Name: "Test Package",
                     Id: id,
                     Version: new Version("1.0.0"),
-                    UsableVersion: null));
+                    UsableVersion: null,
+                    Source: null));
         }
         [Fact]
         public async Task WhenNotLoggedIn_CallsLogin_ThenProceeds()
@@ -704,7 +705,8 @@ public class GistGetServiceTests
                     Name: "Already Installed Package",
                     Id: new PackageId(packageId),
                     Version: new Version("1.0.0"),
-                    UsableVersion: null));
+                    UsableVersion: null,
+                    Source: null));
 
             // -------------------------------------------------------------------
             // Act
@@ -777,7 +779,8 @@ public class GistGetServiceTests
                     Name: "Test Package",
                     Id: new PackageId(packageId),
                     Version: new Version(installedVersion),
-                    UsableVersion: null
+                    UsableVersion: null,
+                    Source: null
                 ));
 
             // Expect pin add with resolved version from WinGet
@@ -988,7 +991,7 @@ public class GistGetServiceTests
 
             WinGetServiceMock
                 .Setup(x => x.FindById(It.Is<PackageId>(p => p.AsPrimitive() == packageId)))
-                .Returns(new WinGetPackage("Test Package", new PackageId(packageId), new Version("1.0.0"), new Version("2.0.0")));
+                .Returns(new WinGetPackage("Test Package", new PackageId(packageId), new Version("1.0.0"), new Version("2.0.0"), null));
 
             AuthServiceMock
                 .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
@@ -1341,7 +1344,7 @@ public class GistGetServiceTests
             // ローカルにインストール済み
             WinGetServiceMock
                 .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == packageId)))
-                .Returns(new WinGetPackage(packageId, new PackageId(packageId), new Version("1.0.0"), null));
+                .Returns(new WinGetPackage(packageId, new PackageId(packageId), new Version("1.0.0"), null, null));
 
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
@@ -1407,7 +1410,7 @@ public class GistGetServiceTests
             // ローカルにインストール済み
             WinGetServiceMock
                 .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == packageId)))
-                .Returns(new WinGetPackage(packageId, new PackageId(packageId), new Version("1.0.0"), null));
+                .Returns(new WinGetPackage(packageId, new PackageId(packageId), new Version("1.0.0"), null, null));
 
             var sequence = new MockSequence();
 
@@ -1481,7 +1484,7 @@ public class GistGetServiceTests
             // ローカルにインストール済み
             WinGetServiceMock
                 .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == packageId)))
-                .Returns(new WinGetPackage(packageId, new PackageId(packageId), new Version("1.0.0"), null));
+                .Returns(new WinGetPackage(packageId, new PackageId(packageId), new Version("1.0.0"), null, null));
 
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
@@ -1533,7 +1536,7 @@ public class GistGetServiceTests
             // ローカルにインストール済み
             WinGetServiceMock
                 .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == packageId)))
-                .Returns(new WinGetPackage(packageId, new PackageId(packageId), new Version("1.0.0"), null));
+                .Returns(new WinGetPackage(packageId, new PackageId(packageId), new Version("1.0.0"), null, null));
 
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
@@ -1586,7 +1589,7 @@ public class GistGetServiceTests
             // ローカルにインストール済み
             WinGetServiceMock
                 .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == packageId)))
-                .Returns(new WinGetPackage(packageId, new PackageId(packageId), new Version("1.0.0"), null));
+                .Returns(new WinGetPackage(packageId, new PackageId(packageId), new Version("1.0.0"), null, null));
 
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
@@ -1656,7 +1659,7 @@ public class GistGetServiceTests
             // ローカルにインストール済み
             WinGetServiceMock
                 .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == packageId)))
-                .Returns(new WinGetPackage(packageId, new PackageId(packageId), new Version("1.0.0"), null));
+                .Returns(new WinGetPackage(packageId, new PackageId(packageId), new Version("1.0.0"), null, null));
 
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
@@ -2464,7 +2467,7 @@ public class GistGetServiceTests
 
             var localPackages = new List<WinGetPackage>
             {
-                new WinGetPackage("Old Package", new PackageId(packageId), new Version("1.0.0"), null)
+                new WinGetPackage("Old Package", new PackageId(packageId), new Version("1.0.0"), null, null)
             };
 
             CredentialServiceMock
@@ -2521,7 +2524,7 @@ public class GistGetServiceTests
 
             var localPackages = new List<WinGetPackage>
             {
-                new WinGetPackage("Old Package", new PackageId(packageId), new Version("1.0.0"), null)
+                new WinGetPackage("Old Package", new PackageId(packageId), new Version("1.0.0"), null, null)
             };
 
             CredentialServiceMock
@@ -2578,7 +2581,7 @@ public class GistGetServiceTests
 
             var localPackages = new List<WinGetPackage>
             {
-                new WinGetPackage("Existing Package", new PackageId(packageId), new Version("1.5.0"), null)
+                new WinGetPackage("Existing Package", new PackageId(packageId), new Version("1.5.0"), null, null)
             };
 
             CredentialServiceMock
@@ -2633,7 +2636,7 @@ public class GistGetServiceTests
 
             var localPackages = new List<WinGetPackage>
             {
-                new WinGetPackage("Existing Package", new PackageId(packageId), new Version("1.5.0"), null)
+                new WinGetPackage("Existing Package", new PackageId(packageId), new Version("1.5.0"), null, null)
             };
 
             CredentialServiceMock
@@ -2688,7 +2691,7 @@ public class GistGetServiceTests
 
             var localPackages = new List<WinGetPackage>
             {
-                new WinGetPackage("Existing Package", new PackageId(packageId), new Version("1.5.0"), null)
+                new WinGetPackage("Existing Package", new PackageId(packageId), new Version("1.5.0"), null, null)
             };
 
             // Package is currently pinned locally - so pin remove should be triggered
@@ -3009,7 +3012,7 @@ public class GistGetServiceTests
 
             WinGetServiceMock
                 .Setup(x => x.GetAllInstalledPackages())
-                .Returns(new List<WinGetPackage> { new("Throw Uninstall", new PackageId(packageId), new Version("1.0.0"), new Version("1.0.0")) });
+                .Returns(new List<WinGetPackage> { new("Throw Uninstall", new PackageId(packageId), new Version("1.0.0"), new Version("1.0.0"), null) });
 
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.IsAny<string[]>()))
@@ -3081,7 +3084,7 @@ public class GistGetServiceTests
 
             WinGetServiceMock
                 .Setup(x => x.GetAllInstalledPackages())
-                .Returns(new List<WinGetPackage> { new("Throw Pin", new PackageId(packageId), new Version("1.0.0"), new Version("1.0.0")) });
+                .Returns(new List<WinGetPackage> { new("Throw Pin", new PackageId(packageId), new Version("1.0.0"), new Version("1.0.0"), null) });
 
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.IsAny<string[]>()))
@@ -3098,7 +3101,7 @@ public class GistGetServiceTests
             var packageId = "Exit.Uninstall";
             var credential = new Credential("user", "token");
             var gistPackages = new List<GistGetPackage> { new() { Id = packageId, Uninstall = true } };
-            var localPackages = new List<WinGetPackage> { new("Exit Uninstall", new PackageId(packageId), new Version("1.0.0"), null) };
+            var localPackages = new List<WinGetPackage> { new("Exit Uninstall", new PackageId(packageId), new Version("1.0.0"), null, null) };
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
@@ -3170,7 +3173,7 @@ public class GistGetServiceTests
 
             var localPackages = new List<WinGetPackage>
             {
-                new WinGetPackage("Existing Package", new PackageId(packageId), new Version("1.5.0"), null)
+                new WinGetPackage("Existing Package", new PackageId(packageId), new Version("1.5.0"), null, null)
             };
 
             // Package is NOT pinned locally - so pin remove should NOT be called
@@ -3230,7 +3233,7 @@ public class GistGetServiceTests
 
             var localPackages = new List<WinGetPackage>
             {
-                new WinGetPackage("Existing Package", new PackageId(packageId), new Version(pinnedVersion), null)
+                new WinGetPackage("Existing Package", new PackageId(packageId), new Version(pinnedVersion), null, null)
             };
 
             // Package is ALREADY pinned to the same version - so pin add should NOT be called
@@ -3294,7 +3297,7 @@ public class GistGetServiceTests
 
             var localPackages = new List<WinGetPackage>
             {
-                new WinGetPackage("Old Package", new PackageId(packageId), new Version("1.0.0"), null)
+                new WinGetPackage("Old Package", new PackageId(packageId), new Version("1.0.0"), null, null)
             };
 
             // Package is NOT pinned locally
@@ -3351,8 +3354,8 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             var installedPackages = new List<WinGetPackage>
             {
-                new WinGetPackage("Package A", new PackageId("Test.PackageA"), new Version("1.0.0"), null),
-                new WinGetPackage("Package B", new PackageId("Test.PackageB"), new Version("2.0.0"), null)
+                new WinGetPackage("Package A", new PackageId("Test.PackageA"), new Version("1.0.0"), null, null),
+                new WinGetPackage("Package B", new PackageId("Test.PackageB"), new Version("2.0.0"), null, null)
             };
 
             WinGetServiceMock
@@ -3382,7 +3385,7 @@ public class GistGetServiceTests
             {
                 var installedPackages = new List<WinGetPackage>
                 {
-                    new WinGetPackage("Package A", new PackageId("Test.PackageA"), new Version("1.0.0"), null)
+                    new WinGetPackage("Package A", new PackageId("Test.PackageA"), new Version("1.0.0"), null, null)
                 };
 
                 WinGetServiceMock
@@ -3415,7 +3418,7 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             var installedPackages = new List<WinGetPackage>
             {
-                new WinGetPackage("Package A", new PackageId("Test.PackageA"), new Version("1.0.0"), null)
+                new WinGetPackage("Package A", new PackageId("Test.PackageA"), new Version("1.0.0"), null, null)
             };
 
             WinGetServiceMock
@@ -3692,4 +3695,5 @@ Test.PackageB:
         }
     }
 }
+
 

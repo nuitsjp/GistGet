@@ -96,4 +96,21 @@
   <data name="SyncSummary" xml:space="preserve">
     <value>インストール: {0}, アンインストール: {1}, 失敗: {2}</value>
   </data>
+
+  <!-- Init Messages -->
+  <data name="InitStarting" xml:space="preserve">
+    <value>対話形式の初期化を開始します...</value>
+  </data>
+  <data name="InitConfirmPackage" xml:space="preserve">
+    <value>{0} ({1}) を同期対象に含めますか？</value>
+  </data>
+  <data name="InitFinalConfirm" xml:space="preserve">
+    <value>これら {0} 個のパッケージで Gist を上書きしてもよろしいですか？</value>
+  </data>
+  <data name="InitSuccess" xml:space="preserve">
+    <value>{0} 個のパッケージで Gist を初期化しました。</value>
+  </data>
+  <data name="InitCancelled" xml:space="preserve">
+    <value>初期化をキャンセルしました。</value>
+  </data>
 </root>

@@ -81,11 +81,14 @@ public partial class WinGetService : IWinGetService
         var installedVersion = catalogPackage.InstalledVersion;
         var usableVersion = GetUsableVersion(catalogPackage, installedVersion);
 
+        var source = GetSourceName(catalogPackage);
+
         return new WinGetPackage(
             Name: catalogPackage.Name,
             Id: new PackageId(catalogPackage.Id),
             Version: new Version(installedVersion.Version),
-            UsableVersion: usableVersion
+            UsableVersion: usableVersion,
+            Source: source
         );
     }
 
@@ -124,11 +127,14 @@ public partial class WinGetService : IWinGetService
             var installedVersion = catalogPackage.InstalledVersion;
             var usableVersion = GetUsableVersion(catalogPackage, installedVersion);
 
+            var source = GetSourceName(catalogPackage);
+
             packages.Add(new WinGetPackage(
                 Name: catalogPackage.Name,
                 Id: new PackageId(catalogPackage.Id),
                 Version: new Version(installedVersion.Version),
-                UsableVersion: usableVersion
+                UsableVersion: usableVersion,
+                Source: source
             ));
         }
 
@@ -152,6 +158,23 @@ public partial class WinGetService : IWinGetService
                 return new Version(latestAvailableVersion);
             }
         }
+        return null;
+    }
+
+    /// <summary>
+    /// Gets the source name from the catalog package.
+    /// </summary>
+    private static string? GetSourceName(CatalogPackage catalogPackage)
+    {
+        for (var i = 0; i < catalogPackage.AvailableVersions.Count; i++)
+        {
+            var versionInfo = catalogPackage.GetPackageVersionInfo(catalogPackage.AvailableVersions[i]);
+            if (versionInfo.Id == catalogPackage.Id)
+            {
+                return versionInfo.PackageCatalog.Info.Name;
+            }
+        }
+
         return null;
     }
 

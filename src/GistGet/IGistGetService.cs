@@ -66,4 +66,9 @@ public interface IGistGetService
     /// Imports package definitions from a YAML file.
     /// </summary>
     Task ImportAsync(string filePath);
+
+    /// <summary>
+    /// Initializes the Gist by interactively selecting installed packages.
+    /// </summary>
+    Task InitAsync();
 }

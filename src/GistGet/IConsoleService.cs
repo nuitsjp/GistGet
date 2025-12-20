@@ -54,4 +54,12 @@ public interface IConsoleService
     /// </summary>
     /// <param name="message">Message to display.</param>
     void WriteError(string message);
+
+    /// <summary>
+    /// Prompts the user for a yes/no confirmation.
+    /// </summary>
+    /// <param name="message">The message to display.</param>
+    /// <param name="defaultValue">The default value if the user just presses enter.</param>
+    /// <returns>True if the user confirmed, false otherwise.</returns>
+    bool Confirm(string message, bool defaultValue = false);
 }

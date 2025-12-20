@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Versioning;
 using GistGet.Infrastructure;
+using Sharprompt;
 
 namespace GistGet.Presentation;
 
@@ -87,6 +88,12 @@ public class ConsoleService : IConsoleService
     /// </summary>
     public void WriteError(string message) =>
         Console.Error.WriteLine($"✗ {message}");
+
+    /// <summary>
+    /// Prompts the user for a yes/no confirmation.
+    /// </summary>
+    public bool Confirm(string message, bool defaultValue = false) =>
+        Prompt.Confirm(message, defaultValue);
 
     [ExcludeFromCodeCoverage]
     private sealed class SpinnerProgress : IDisposable

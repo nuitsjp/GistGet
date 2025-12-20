@@ -835,6 +835,74 @@ public class GistGetService(
     }
 
     /// <summary>
+    /// Initializes the Gist by interactively selecting installed packages.
+    /// </summary>
+    public async Task InitAsync()
+    {
+        if (!credentialService.TryGetCredential(out var credential))
+        {
+            await AuthLoginAsync();
+            if (!credentialService.TryGetCredential(out credential))
+            {
+                throw new InvalidOperationException("Failed to retrieve credentials after login.");
+            }
+        }
+
+        consoleService.WriteInfo(Messages.InitStarting);
+
+        IReadOnlyList<WinGetPackage> installedPackages;
+        using (consoleService.WriteProgress(Messages.FetchingInstalledPackages))
+        {
+            installedPackages = winGetService.GetAllInstalledPackages();
+        }
+
+        var packagesWithSource = installedPackages.Where(p => !string.IsNullOrEmpty(p.Source)).ToList();
+        var sortedPackages = packagesWithSource.OrderBy(p => p.Name, StringComparer.Ordinal).ToList();
+
+        var selectedPackages = new List<GistGetPackage>();
+        var totalCount = sortedPackages.Count;
+        var currentIndex = 1;
+        foreach (var pkg in sortedPackages)
+        {
+            var message = string.Format(CultureInfo.CurrentCulture, Messages.InitConfirmPackage, pkg.Name, pkg.Id);
+            var messageWithProgress = $"[{currentIndex}/{totalCount}] {message}";
+            if (consoleService.Confirm(messageWithProgress, defaultValue: false))
+            {
+                selectedPackages.Add(new GistGetPackage
+                {
+                    Id = pkg.Id.AsPrimitive()
+                });
+            }
+            currentIndex++;
+        }
+
+        if (selectedPackages.Count == 0)
+        {
+            consoleService.WriteInfo(Messages.InitCancelled);
+            return;
+        }
+
+        var finalConfirmMessage = string.Format(CultureInfo.CurrentCulture, Messages.InitFinalConfirm, selectedPackages.Count);
+        if (!consoleService.Confirm(finalConfirmMessage, defaultValue: false))
+        {
+            consoleService.WriteInfo(Messages.InitCancelled);
+            return;
+        }
+
+        using (consoleService.WriteProgress(Messages.SavingToGist))
+        {
+            await gitHubService.SavePackagesAsync(
+                credential.Token,
+                "",
+                Constants.DefaultGistFileName,
+                Constants.DefaultGistDescription,
+                selectedPackages);
+        }
+
+        consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.InitSuccess, selectedPackages.Count));
+    }
+
+    /// <summary>
     /// Handles failures during sync operations (install/uninstall).
     /// Defensive: captures process failures, I/O errors, and invalid operations.
     /// </summary>

@@ -18,6 +18,7 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
         var rootCommand = new RootCommand("GistGet - Windows Package Manager Cloud Sync Tool")
         {
             BuildSyncCommand(),
+            BuildInitCommand(),
             BuildExportCommand(),
             BuildImportCommand(),
             BuildAuthCommand(),
@@ -111,6 +112,16 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
             }
         }, urlOption, fileOption);
 
+        return command;
+    }
+
+    private Command BuildInitCommand()
+    {
+        var command = new Command("init", "Initializes Gist by interactively selecting installed packages");
+        command.SetHandler(async () =>
+        {
+            await gistGetService.InitAsync();
+        });
         return command;
     }
 

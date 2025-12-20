@@ -13,6 +13,7 @@
     <PackageVersion Include="Microsoft.WindowsPackageManager.ComInterop" Version="1.12.420" />
     <!-- GitHub, YAML, CLI -->
     <PackageVersion Include="Octokit" Version="14.0.0" />
+    <PackageVersion Include="Sharprompt" Version="3.0.1" />
     <PackageVersion Include="Spectre.Console" Version="0.54.0" />
     <PackageVersion Include="Spectre.Console.Testing" Version="0.54.0" />
     <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />

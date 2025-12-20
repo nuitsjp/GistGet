@@ -128,4 +128,34 @@ internal static class Messages
     /// </summary>
     internal static string SyncSummary =>
         ResourceManager.GetString("SyncSummary", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Starting interactive initialization...
+    /// </summary>
+    internal static string InitStarting =>
+        ResourceManager.GetString("InitStarting", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Include {0} ({1}) in sync?
+    /// </summary>
+    internal static string InitConfirmPackage =>
+        ResourceManager.GetString("InitConfirmPackage", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Are you sure you want to overwrite your Gist with these {0} packages?
+    /// </summary>
+    internal static string InitFinalConfirm =>
+        ResourceManager.GetString("InitFinalConfirm", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Successfully initialized Gist with {0} packages.
+    /// </summary>
+    internal static string InitSuccess =>
+        ResourceManager.GetString("InitSuccess", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Initialization cancelled.
+    /// </summary>
+    internal static string InitCancelled =>
+        ResourceManager.GetString("InitCancelled", null) ?? string.Empty;
 }
