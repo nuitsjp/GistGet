@@ -1,6 +1,8 @@
 // System.CommandLine command definitions for the GistGet CLI.
 
 using System.CommandLine;
+using System.Reflection;
+using GistGet.Resources;
 using Spectre.Console;
 
 namespace GistGet.Presentation;
@@ -10,12 +12,17 @@ namespace GistGet.Presentation;
 /// </summary>
 public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console)
 {
+    static CommandBuilder()
+    {
+        CommandLineLocalizationResources.EnsureRegistered();
+    }
+
     /// <summary>
     /// Builds the root command tree.
     /// </summary>
     public RootCommand Build()
     {
-        var rootCommand = new RootCommand("GistGet - Windows Package Manager Cloud Sync Tool")
+        var rootCommand = new RootCommand(Messages.RootCommandDescription)
         {
             BuildSyncCommand(),
             BuildInitCommand(),
@@ -36,9 +43,9 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
 
     private Command BuildSyncCommand()
     {
-        var command = new Command("sync", "Synchronizes packages with Gist");
-        var urlOption = new Option<string?>("--url", "URL to sync from");
-        var fileOption = new Option<string?>("--file", "Local YAML file path to sync from");
+        var command = new Command("sync", Messages.SyncCommandDescription);
+        var urlOption = new Option<string?>("--url", Messages.SyncUrlOptionDescription);
+        var fileOption = new Option<string?>("--file", Messages.SyncFileOptionDescription);
         fileOption.AddAlias("-f");
         command.Add(urlOption);
         command.Add(fileOption);
@@ -115,7 +122,7 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
 
     private Command BuildInitCommand()
     {
-        var command = new Command("init", "Initializes Gist by interactively selecting installed packages");
+        var command = new Command("init", Messages.InitCommandDescription);
         command.SetHandler(async () =>
         {
             await gistGetService.InitAsync();
@@ -125,17 +132,17 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
 
     private Command BuildAuthCommand()
     {
-        var command = new Command("auth", "Manage GitHub authentication");
+        var command = new Command("auth", Messages.AuthCommandDescription);
 
-        var login = new Command("login", "Authenticate with GitHub");
+        var login = new Command("login", Messages.AuthLoginDescription);
         login.SetHandler(async () => await gistGetService.AuthLoginAsync());
         command.Add(login);
 
-        var logout = new Command("logout", "Log out from GitHub");
+        var logout = new Command("logout", Messages.AuthLogoutDescription);
         logout.SetHandler(gistGetService.AuthLogout);
         command.Add(logout);
 
-        var status = new Command("status", "Shows current authentication status");
+        var status = new Command("status", Messages.AuthStatusDescription);
         status.SetHandler(gistGetService.AuthStatusAsync);
         command.Add(status);
 
@@ -144,26 +151,26 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
 
     private Command BuildInstallCommand()
     {
-        var command = new Command("install", "Installs the given package and saves to Gist");
-        var idOption = new Option<string>("--id", "Filter results by id") { IsRequired = true };
+        var command = new Command("install", Messages.InstallCommandDescription);
+        var idOption = new Option<string>("--id", Messages.OptionDescriptionFilterById) { IsRequired = true };
 
-        var versionOption = new Option<string>("--version", "Use the specified version");
-        var scopeOption = new Option<string>("--scope", "Select install scope (user or machine)");
-        var archOption = new Option<string>("--architecture", "Select the architecture to install");
-        var locationOption = new Option<string>("--location", "Location to install to");
-        var interactiveOption = new Option<bool>("--interactive", "Request interactive installation");
-        var silentOption = new Option<bool>("--silent", "Request silent installation");
-        var logOption = new Option<string>("--log", "Log location");
-        var overrideOption = new Option<string>("--override", "Override arguments to be passed on to the installer");
-        var forceOption = new Option<bool>("--force", "Override the installer hash check");
-        var skipDependenciesOption = new Option<bool>("--skip-dependencies", "Skips processing package dependencies");
-        var headerOption = new Option<string>("--header", "Optional Windows-Package-Manager REST source HTTP header");
-        var installerTypeOption = new Option<string>("--installer-type", "Select the installer type");
-        var customOption = new Option<string>("--custom", "Arguments to be passed on to the installer in addition to the defaults");
-        var localeOption = new Option<string>("--locale", "Locale to use (BCP47 format)");
-        var acceptPackageAgreementsOption = new Option<bool>("--accept-package-agreements", "Accept all license agreements required for the package");
-        var acceptSourceAgreementsOption = new Option<bool>("--accept-source-agreements", "Accept all source agreements required for the source");
-        var ignoreSecurityHashOption = new Option<bool>("--ignore-security-hash", "Ignore the installer hash check failure");
+        var versionOption = new Option<string>("--version", Messages.OptionDescriptionVersion);
+        var scopeOption = new Option<string>("--scope", Messages.OptionDescriptionScope);
+        var archOption = new Option<string>("--architecture", Messages.OptionDescriptionArchitecture);
+        var locationOption = new Option<string>("--location", Messages.OptionDescriptionLocation);
+        var interactiveOption = new Option<bool>("--interactive", Messages.OptionDescriptionInteractiveInstall);
+        var silentOption = new Option<bool>("--silent", Messages.OptionDescriptionSilentInstall);
+        var logOption = new Option<string>("--log", Messages.OptionDescriptionLogLocation);
+        var overrideOption = new Option<string>("--override", Messages.OptionDescriptionOverrideArguments);
+        var forceOption = new Option<bool>("--force", Messages.OptionDescriptionForceOverrideHash);
+        var skipDependenciesOption = new Option<bool>("--skip-dependencies", Messages.OptionDescriptionSkipDependencies);
+        var headerOption = new Option<string>("--header", Messages.OptionDescriptionHeader);
+        var installerTypeOption = new Option<string>("--installer-type", Messages.OptionDescriptionInstallerType);
+        var customOption = new Option<string>("--custom", Messages.OptionDescriptionCustomArguments);
+        var localeOption = new Option<string>("--locale", Messages.OptionDescriptionLocale);
+        var acceptPackageAgreementsOption = new Option<bool>("--accept-package-agreements", Messages.OptionDescriptionAcceptPackageAgreements);
+        var acceptSourceAgreementsOption = new Option<bool>("--accept-source-agreements", Messages.OptionDescriptionAcceptSourceAgreements);
+        var ignoreSecurityHashOption = new Option<bool>("--ignore-security-hash", Messages.OptionDescriptionIgnoreSecurityHash);
 
         command.Add(idOption);
         command.Add(versionOption);
@@ -220,12 +227,12 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
 
     private Command BuildUninstallCommand()
     {
-        var command = new Command("uninstall", "Uninstalls the given package and updates Gist");
-        var idOption = new Option<string>("--id", "Filter results by id") { IsRequired = true };
-        var scopeOption = new Option<string>("--scope", "Select install scope (user or machine)");
-        var interactiveOption = new Option<bool>("--interactive", "Request interactive uninstall");
-        var silentOption = new Option<bool>("--silent", "Request silent uninstall");
-        var forceOption = new Option<bool>("--force", "Direct run the command and continue with non security related issues");
+        var command = new Command("uninstall", Messages.UninstallCommandDescription);
+        var idOption = new Option<string>("--id", Messages.OptionDescriptionFilterById) { IsRequired = true };
+        var scopeOption = new Option<string>("--scope", Messages.OptionDescriptionScope);
+        var interactiveOption = new Option<bool>("--interactive", Messages.OptionDescriptionInteractiveUninstall);
+        var silentOption = new Option<bool>("--silent", Messages.OptionDescriptionSilentUninstall);
+        var forceOption = new Option<bool>("--force", Messages.UninstallForceOptionDescription);
 
         command.Add(idOption);
         command.Add(scopeOption);
@@ -255,26 +262,26 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
 
     private Command BuildUpgradeCommand()
     {
-        var command = new Command("upgrade", "Upgrades the given package and saves to Gist");
-        var idArgument = new Argument<string?>("package", "Package to upgrade") { Arity = ArgumentArity.ZeroOrOne };
-        var idOption = new Option<string>("--id", "Filter results by id");
-        var versionOption = new Option<string>("--version", "Use the specified version");
-        var scopeOption = new Option<string>("--scope", "Select install scope (user or machine)");
-        var archOption = new Option<string>("--architecture", "Select the architecture to install");
-        var locationOption = new Option<string>("--location", "Location to install to");
-        var interactiveOption = new Option<bool>("--interactive", "Request interactive upgrade");
-        var silentOption = new Option<bool>("--silent", "Request silent upgrade");
-        var logOption = new Option<string>("--log", "Log location");
-        var overrideOption = new Option<string>("--override", "Override arguments to be passed on to the installer");
-        var forceOption = new Option<bool>("--force", "Override the installer hash check");
-        var skipDependenciesOption = new Option<bool>("--skip-dependencies", "Skips processing package dependencies");
-        var headerOption = new Option<string>("--header", "Optional Windows-Package-Manager REST source HTTP header");
-        var installerTypeOption = new Option<string>("--installer-type", "Select the installer type");
-        var customOption = new Option<string>("--custom", "Arguments to be passed on to the installer in addition to the defaults");
-        var localeOption = new Option<string>("--locale", "Locale to use (BCP47 format)");
-        var acceptPackageAgreementsOption = new Option<bool>("--accept-package-agreements", "Accept all license agreements required for the package");
-        var acceptSourceAgreementsOption = new Option<bool>("--accept-source-agreements", "Accept all source agreements required for the source");
-        var ignoreSecurityHashOption = new Option<bool>("--ignore-security-hash", "Ignore the installer hash check failure");
+        var command = new Command("upgrade", Messages.UpgradeCommandDescription);
+        var idArgument = new Argument<string?>("package", Messages.UpgradePackageArgumentDescription) { Arity = ArgumentArity.ZeroOrOne };
+        var idOption = new Option<string>("--id", Messages.OptionDescriptionFilterById);
+        var versionOption = new Option<string>("--version", Messages.OptionDescriptionVersion);
+        var scopeOption = new Option<string>("--scope", Messages.OptionDescriptionScope);
+        var archOption = new Option<string>("--architecture", Messages.OptionDescriptionArchitecture);
+        var locationOption = new Option<string>("--location", Messages.OptionDescriptionLocation);
+        var interactiveOption = new Option<bool>("--interactive", Messages.OptionDescriptionInteractiveUpgrade);
+        var silentOption = new Option<bool>("--silent", Messages.OptionDescriptionSilentUpgrade);
+        var logOption = new Option<string>("--log", Messages.OptionDescriptionLogLocation);
+        var overrideOption = new Option<string>("--override", Messages.OptionDescriptionOverrideArguments);
+        var forceOption = new Option<bool>("--force", Messages.OptionDescriptionForceOverrideHash);
+        var skipDependenciesOption = new Option<bool>("--skip-dependencies", Messages.OptionDescriptionSkipDependencies);
+        var headerOption = new Option<string>("--header", Messages.OptionDescriptionHeader);
+        var installerTypeOption = new Option<string>("--installer-type", Messages.OptionDescriptionInstallerType);
+        var customOption = new Option<string>("--custom", Messages.OptionDescriptionCustomArguments);
+        var localeOption = new Option<string>("--locale", Messages.OptionDescriptionLocale);
+        var acceptPackageAgreementsOption = new Option<bool>("--accept-package-agreements", Messages.OptionDescriptionAcceptPackageAgreements);
+        var acceptSourceAgreementsOption = new Option<bool>("--accept-source-agreements", Messages.OptionDescriptionAcceptSourceAgreements);
+        var ignoreSecurityHashOption = new Option<bool>("--ignore-security-hash", Messages.OptionDescriptionIgnoreSecurityHash);
 
         command.Add(idArgument);
         command.Add(idOption);
@@ -340,14 +347,14 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
 
     private Command BuildPinCommand()
     {
-        var command = new Command("pin", "Manage package pins");
+        var command = new Command("pin", Messages.PinCommandDescription);
 
-        var add = new Command("add", "Adds a package pin and saves to Gist");
-        var addId = new Argument<string>("package", "Package to pin");
-        var addVersion = new Option<string>("--version", "The version to pin") { IsRequired = true };
-        var addBlocking = new Option<bool>("--blocking", "Block the given version from being upgraded");
-        var addGating = new Option<bool>("--gating", "The given version is the maximum allowed version");
-        var addForce = new Option<bool>("--force", "Force running the command even if there is an existing pin");
+        var add = new Command("add", Messages.PinAddCommandDescription);
+        var addId = new Argument<string>("package", Messages.PinAddPackageArgumentDescription);
+        var addVersion = new Option<string>("--version", Messages.PinAddVersionOptionDescription) { IsRequired = true };
+        var addBlocking = new Option<bool>("--blocking", Messages.PinAddBlockingOptionDescription);
+        var addGating = new Option<bool>("--gating", Messages.PinAddGatingOptionDescription);
+        var addForce = new Option<bool>("--force", Messages.PinAddForceOptionDescription);
         add.Add(addId);
         add.Add(addVersion);
         add.Add(addBlocking);
@@ -370,8 +377,8 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
         });
         command.Add(add);
 
-        var remove = new Command("remove", "Removes a package pin and updates Gist");
-        var removeId = new Argument<string>("package", "Package to unpin");
+        var remove = new Command("remove", Messages.PinRemoveCommandDescription);
+        var removeId = new Argument<string>("package", Messages.PinRemovePackageArgumentDescription);
         remove.Add(removeId);
         remove.SetHandler(async id =>
         {
@@ -379,7 +386,7 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
         }, removeId);
         command.Add(remove);
 
-        var list = new Command("list", "List current pins [Passthrough]");
+        var list = new Command("list", Messages.PinListCommandDescription);
         var listArgs = new Argument<string[]>("args") { Arity = ArgumentArity.ZeroOrMore };
         list.Add(listArgs);
         list.SetHandler(async args =>
@@ -390,7 +397,7 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
         }, listArgs);
         command.Add(list);
 
-        var reset = new Command("reset", "Resets pins [Passthrough]");
+        var reset = new Command("reset", Messages.PinResetCommandDescription);
         var resetArgs = new Argument<string[]>("args") { Arity = ArgumentArity.ZeroOrMore };
         reset.Add(resetArgs);
         reset.SetHandler(async args =>
@@ -409,19 +416,19 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
         var commands = new List<Command>();
         var wingetCommands = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["list"] = "Displays installed packages [Passthrough]",
-            ["search"] = "Finds and shows basic information of packages [Passthrough]",
-            ["show"] = "Shows information about a package [Passthrough]",
-            ["source"] = "Manage sources of packages [Passthrough]",
-            ["settings"] = "Open settings or set administrator settings [Passthrough]",
-            ["features"] = "Shows the status of experimental features [Passthrough]",
-            ["hash"] = "Helper to hash installer files [Passthrough]",
-            ["validate"] = "Validates a manifest file [Passthrough]",
-            ["configure"] = "Configures the system into a desired state [Passthrough]",
-            ["download"] = "Downloads the installer from a given package [Passthrough]",
-            ["repair"] = "Repairs the selected package [Passthrough]",
-            ["dscv3"] = "DSC v3 command based resource [Passthrough]",
-            ["mcp"] = "Model Context Protocol server [Passthrough]"
+            ["list"] = Messages.WingetListCommandDescription,
+            ["search"] = Messages.WingetSearchCommandDescription,
+            ["show"] = Messages.WingetShowCommandDescription,
+            ["source"] = Messages.WingetSourceCommandDescription,
+            ["settings"] = Messages.WingetSettingsCommandDescription,
+            ["features"] = Messages.WingetFeaturesCommandDescription,
+            ["hash"] = Messages.WingetHashCommandDescription,
+            ["validate"] = Messages.WingetValidateCommandDescription,
+            ["configure"] = Messages.WingetConfigureCommandDescription,
+            ["download"] = Messages.WingetDownloadCommandDescription,
+            ["repair"] = Messages.WingetRepairCommandDescription,
+            ["dscv3"] = Messages.WingetDscv3CommandDescription,
+            ["mcp"] = Messages.WingetMcpCommandDescription
         };
 
         foreach (var (cmd, description) in wingetCommands)
@@ -439,5 +446,40 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
         }
 
         return commands.ToArray();
+    }
+
+    private static class CommandLineLocalizationResources
+    {
+        private static bool s_initialized;
+
+        public static void EnsureRegistered()
+        {
+            if (s_initialized)
+            {
+                return;
+            }
+
+            var instanceField = typeof(LocalizationResources).GetField("_instance", BindingFlags.Static | BindingFlags.NonPublic);
+            instanceField?.SetValue(null, new ResourceLocalizationResources());
+            s_initialized = true;
+        }
+
+        private sealed class ResourceLocalizationResources : LocalizationResources
+        {
+            public override string HelpDescriptionTitle() => Messages.HelpDescriptionTitle;
+            public override string HelpUsageTitle() => Messages.HelpUsageTitle;
+            public override string HelpOptionsTitle() => Messages.HelpOptionsTitle;
+            public override string HelpCommandsTitle() => Messages.HelpCommandsTitle;
+            public override string HelpArgumentsTitle() => Messages.HelpArgumentsTitle;
+            public override string HelpAdditionalArgumentsTitle() => Messages.HelpAdditionalArgumentsTitle;
+            public override string HelpAdditionalArgumentsDescription() => Messages.HelpAdditionalArgumentsDescription;
+            public override string HelpUsageOptions() => Messages.HelpUsageOptions;
+            public override string HelpUsageCommand() => Messages.HelpUsageCommand;
+            public override string HelpUsageAdditionalArguments() => Messages.HelpUsageAdditionalArguments;
+            public override string HelpOptionsRequiredLabel() => Messages.HelpOptionsRequiredLabel;
+            public override string HelpArgumentDefaultValueLabel() => Messages.HelpArgumentDefaultValueLabel;
+            public override string HelpOptionDescription() => Messages.HelpOptionDescription;
+            public override string VersionOptionDescription() => Messages.VersionOptionDescription;
+        }
     }
 }

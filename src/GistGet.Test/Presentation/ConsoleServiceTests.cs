@@ -6,7 +6,7 @@ using Shouldly;
 
 namespace GistGet.Test.Presentation;
 
-[Collection("AnsiConsole collection")]
+[Collection("Console redirection")]
 public class ConsoleServiceTests
 {
     [Fact]

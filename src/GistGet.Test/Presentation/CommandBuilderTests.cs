@@ -1,4 +1,6 @@
+// ReSharper disable MethodHasAsyncOverload
 using System.CommandLine;
+using System.Globalization;
 using GistGet.Presentation;
 using Moq;
 using Shouldly;
@@ -6,6 +8,7 @@ using Spectre.Console.Testing;
 
 namespace GistGet.Test.Presentation;
 
+[Collection("Console redirection")]
 public class CommandBuilderTests : IDisposable
 {
     protected readonly Mock<IGistGetService> GistGetServiceMock = new();
@@ -54,6 +57,54 @@ public class CommandBuilderTests : IDisposable
 
             names.ShouldNotContain("export");
             names.ShouldNotContain("import");
+        }
+
+        [Fact]
+        public async Task JapaneseCulture_ShowsLocalizedHelp()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var originalCulture = CultureInfo.CurrentCulture;
+            var originalUiCulture = CultureInfo.CurrentUICulture;
+            var originalOut = Console.Out;
+            var originalError = Console.Error;
+            var writer = new StringWriter();
+
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("ja-JP");
+            CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("ja-JP");
+            Console.SetOut(writer);
+            Console.SetError(writer);
+
+            var target = CreateTarget();
+            var root = target.Build();
+
+            try
+            {
+                // -------------------------------------------------------------------
+                // Act
+                // -------------------------------------------------------------------
+                var exitCode = await root.InvokeAsync("--help");
+                var output = writer.ToString();
+
+                // -------------------------------------------------------------------
+                // Assert
+                // -------------------------------------------------------------------
+                exitCode.ShouldBe(0);
+                output.ShouldContain("説明:");
+                output.ShouldContain("GistGet - Windows パッケージ マネージャーのクラウド同期ツール");
+                output.ShouldContain("Gist とパッケージを同期します");
+                output.ShouldContain("ヘルプと使用法を表示します");
+                output.ShouldContain("バージョン情報を表示します");
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = originalCulture;
+                CultureInfo.CurrentUICulture = originalUiCulture;
+                Console.SetOut(originalOut);
+                Console.SetError(originalError);
+                writer.Dispose();
+            }
         }
     }
 

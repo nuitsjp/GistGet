@@ -113,4 +113,249 @@
   <data name="InitCancelled" xml:space="preserve">
     <value>Initialization cancelled.</value>
   </data>
+
+  <!-- Help Titles -->
+  <data name="HelpDescriptionTitle" xml:space="preserve">
+    <value>Description:</value>
+  </data>
+  <data name="HelpUsageTitle" xml:space="preserve">
+    <value>Usage:</value>
+  </data>
+  <data name="HelpOptionsTitle" xml:space="preserve">
+    <value>Options:</value>
+  </data>
+  <data name="HelpCommandsTitle" xml:space="preserve">
+    <value>Commands:</value>
+  </data>
+  <data name="HelpArgumentsTitle" xml:space="preserve">
+    <value>Arguments:</value>
+  </data>
+  <data name="HelpAdditionalArgumentsTitle" xml:space="preserve">
+    <value>Additional Arguments:</value>
+  </data>
+  <data name="HelpAdditionalArgumentsDescription" xml:space="preserve">
+    <value>Arguments passed to the application that is being run.</value>
+  </data>
+  <data name="HelpUsageOptions" xml:space="preserve">
+    <value>[options]</value>
+  </data>
+  <data name="HelpUsageCommand" xml:space="preserve">
+    <value>[command]</value>
+  </data>
+  <data name="HelpUsageAdditionalArguments" xml:space="preserve">
+    <value>[[--] &lt;additional arguments&gt;...]]</value>
+  </data>
+  <data name="HelpOptionsRequiredLabel" xml:space="preserve">
+    <value>(REQUIRED)</value>
+  </data>
+  <data name="HelpArgumentDefaultValueLabel" xml:space="preserve">
+    <value>default</value>
+  </data>
+  <data name="HelpOptionDescription" xml:space="preserve">
+    <value>Show help and usage information</value>
+  </data>
+  <data name="VersionOptionDescription" xml:space="preserve">
+    <value>Show version information</value>
+  </data>
+
+  <!-- Command Descriptions -->
+  <data name="RootCommandDescription" xml:space="preserve">
+    <value>GistGet - Windows Package Manager Cloud Sync Tool</value>
+  </data>
+  <data name="SyncCommandDescription" xml:space="preserve">
+    <value>Synchronizes packages with Gist</value>
+  </data>
+  <data name="SyncUrlOptionDescription" xml:space="preserve">
+    <value>URL to sync from</value>
+  </data>
+  <data name="SyncFileOptionDescription" xml:space="preserve">
+    <value>Local YAML file path to sync from</value>
+  </data>
+  <data name="InitCommandDescription" xml:space="preserve">
+    <value>Initializes Gist by interactively selecting installed packages</value>
+  </data>
+  <data name="AuthCommandDescription" xml:space="preserve">
+    <value>Manage GitHub authentication</value>
+  </data>
+  <data name="AuthLoginDescription" xml:space="preserve">
+    <value>Authenticate with GitHub</value>
+  </data>
+  <data name="AuthLogoutDescription" xml:space="preserve">
+    <value>Log out from GitHub</value>
+  </data>
+  <data name="AuthStatusDescription" xml:space="preserve">
+    <value>Shows current authentication status</value>
+  </data>
+  <data name="InstallCommandDescription" xml:space="preserve">
+    <value>Installs the given package and saves to Gist</value>
+  </data>
+  <data name="UninstallCommandDescription" xml:space="preserve">
+    <value>Uninstalls the given package and updates Gist</value>
+  </data>
+  <data name="UpgradeCommandDescription" xml:space="preserve">
+    <value>Upgrades the given package and saves to Gist</value>
+  </data>
+  <data name="UpgradePackageArgumentDescription" xml:space="preserve">
+    <value>Package to upgrade</value>
+  </data>
+  <data name="PinCommandDescription" xml:space="preserve">
+    <value>Manage package pins</value>
+  </data>
+  <data name="PinAddCommandDescription" xml:space="preserve">
+    <value>Adds a package pin and saves to Gist</value>
+  </data>
+  <data name="PinAddPackageArgumentDescription" xml:space="preserve">
+    <value>Package to pin</value>
+  </data>
+  <data name="PinAddVersionOptionDescription" xml:space="preserve">
+    <value>The version to pin</value>
+  </data>
+  <data name="PinAddBlockingOptionDescription" xml:space="preserve">
+    <value>Block the given version from being upgraded</value>
+  </data>
+  <data name="PinAddGatingOptionDescription" xml:space="preserve">
+    <value>The given version is the maximum allowed version</value>
+  </data>
+  <data name="PinAddForceOptionDescription" xml:space="preserve">
+    <value>Force running the command even if there is an existing pin</value>
+  </data>
+  <data name="PinRemoveCommandDescription" xml:space="preserve">
+    <value>Removes a package pin and updates Gist</value>
+  </data>
+  <data name="PinRemovePackageArgumentDescription" xml:space="preserve">
+    <value>Package to unpin</value>
+  </data>
+  <data name="PinListCommandDescription" xml:space="preserve">
+    <value>List current pins [Passthrough]</value>
+  </data>
+  <data name="PinResetCommandDescription" xml:space="preserve">
+    <value>Resets pins [Passthrough]</value>
+  </data>
+
+  <!-- Option Descriptions -->
+  <data name="OptionDescriptionFilterById" xml:space="preserve">
+    <value>Filter results by id</value>
+  </data>
+  <data name="OptionDescriptionVersion" xml:space="preserve">
+    <value>Use the specified version</value>
+  </data>
+  <data name="OptionDescriptionScope" xml:space="preserve">
+    <value>Select install scope (user or machine)</value>
+  </data>
+  <data name="OptionDescriptionArchitecture" xml:space="preserve">
+    <value>Select the architecture to install</value>
+  </data>
+  <data name="OptionDescriptionLocation" xml:space="preserve">
+    <value>Location to install to</value>
+  </data>
+  <data name="OptionDescriptionInteractiveInstall" xml:space="preserve">
+    <value>Request interactive installation</value>
+  </data>
+  <data name="OptionDescriptionSilentInstall" xml:space="preserve">
+    <value>Request silent installation</value>
+  </data>
+  <data name="OptionDescriptionInteractiveUninstall" xml:space="preserve">
+    <value>Request interactive uninstall</value>
+  </data>
+  <data name="OptionDescriptionSilentUninstall" xml:space="preserve">
+    <value>Request silent uninstall</value>
+  </data>
+  <data name="OptionDescriptionInteractiveUpgrade" xml:space="preserve">
+    <value>Request interactive upgrade</value>
+  </data>
+  <data name="OptionDescriptionSilentUpgrade" xml:space="preserve">
+    <value>Request silent upgrade</value>
+  </data>
+  <data name="OptionDescriptionLogLocation" xml:space="preserve">
+    <value>Log location</value>
+  </data>
+  <data name="OptionDescriptionOverrideArguments" xml:space="preserve">
+    <value>Override arguments to be passed on to the installer</value>
+  </data>
+  <data name="OptionDescriptionForceOverrideHash" xml:space="preserve">
+    <value>Override the installer hash check</value>
+  </data>
+  <data name="OptionDescriptionSkipDependencies" xml:space="preserve">
+    <value>Skips processing package dependencies</value>
+  </data>
+  <data name="OptionDescriptionHeader" xml:space="preserve">
+    <value>Optional Windows-Package-Manager REST source HTTP header</value>
+  </data>
+  <data name="OptionDescriptionInstallerType" xml:space="preserve">
+    <value>Select the installer type</value>
+  </data>
+  <data name="OptionDescriptionCustomArguments" xml:space="preserve">
+    <value>Arguments to be passed on to the installer in addition to the defaults</value>
+  </data>
+  <data name="OptionDescriptionLocale" xml:space="preserve">
+    <value>Locale to use (BCP47 format)</value>
+  </data>
+  <data name="OptionDescriptionAcceptPackageAgreements" xml:space="preserve">
+    <value>Accept all license agreements required for the package</value>
+  </data>
+  <data name="OptionDescriptionAcceptSourceAgreements" xml:space="preserve">
+    <value>Accept all source agreements required for the source</value>
+  </data>
+  <data name="OptionDescriptionIgnoreSecurityHash" xml:space="preserve">
+    <value>Ignore the installer hash check failure</value>
+  </data>
+  <data name="UninstallAllOptionDescription" xml:space="preserve">
+    <value>Remove all versions of the package</value>
+  </data>
+  <data name="UninstallPurgeOptionDescription" xml:space="preserve">
+    <value>Delete the package&apos;s directory and other data</value>
+  </data>
+  <data name="UninstallPreserveUserDataOptionDescription" xml:space="preserve">
+    <value>Exclude removing app data during package uninstall</value>
+  </data>
+  <data name="UninstallForceOptionDescription" xml:space="preserve">
+    <value>Run the command ignoring non-security related issues</value>
+  </data>
+  <data name="UninstallExactOptionDescription" xml:space="preserve">
+    <value>Find package using exact match on id</value>
+  </data>
+  <data name="UninstallIgnoreDependenciesOptionDescription" xml:space="preserve">
+    <value>Ignore package dependency failures</value>
+  </data>
+
+  <!-- Winget Passthrough Commands -->
+  <data name="WingetListCommandDescription" xml:space="preserve">
+    <value>Displays installed packages [Passthrough]</value>
+  </data>
+  <data name="WingetSearchCommandDescription" xml:space="preserve">
+    <value>Finds and shows basic information of packages [Passthrough]</value>
+  </data>
+  <data name="WingetShowCommandDescription" xml:space="preserve">
+    <value>Shows information about a package [Passthrough]</value>
+  </data>
+  <data name="WingetSourceCommandDescription" xml:space="preserve">
+    <value>Manage sources of packages [Passthrough]</value>
+  </data>
+  <data name="WingetSettingsCommandDescription" xml:space="preserve">
+    <value>Open settings or set administrator settings [Passthrough]</value>
+  </data>
+  <data name="WingetFeaturesCommandDescription" xml:space="preserve">
+    <value>Shows the status of experimental features [Passthrough]</value>
+  </data>
+  <data name="WingetHashCommandDescription" xml:space="preserve">
+    <value>Helper to hash installer files [Passthrough]</value>
+  </data>
+  <data name="WingetValidateCommandDescription" xml:space="preserve">
+    <value>Validates a manifest file [Passthrough]</value>
+  </data>
+  <data name="WingetConfigureCommandDescription" xml:space="preserve">
+    <value>Configures the system into a desired state [Passthrough]</value>
+  </data>
+  <data name="WingetDownloadCommandDescription" xml:space="preserve">
+    <value>Downloads the installer from a given package [Passthrough]</value>
+  </data>
+  <data name="WingetRepairCommandDescription" xml:space="preserve">
+    <value>Repairs the selected package [Passthrough]</value>
+  </data>
+  <data name="WingetDscv3CommandDescription" xml:space="preserve">
+    <value>DSC v3 command based resource [Passthrough]</value>
+  </data>
+  <data name="WingetMcpCommandDescription" xml:space="preserve">
+    <value>Model Context Protocol server [Passthrough]</value>
+  </data>
 </root>

@@ -87,15 +87,15 @@ public class GistGetPackage
                 : id;
         }
 
-        const string cyan = "\u001b[96m";
-        const string reset = "\u001b[0m";
+        const string Cyan = "\u001b[96m";
+        const string Reset = "\u001b[0m";
 
         if (!hasName)
         {
-            return $"{cyan}{id}{reset}";
+            return $"{Cyan}{id}{Reset}";
         }
 
-        return $"{cyan}{Name}{reset} [{cyan}{id}{reset}]";
+        return $"{Cyan}{Name}{Reset} [{Cyan}{id}{Reset}]";
     }
 
     public override string ToString() => ToDisplayString();

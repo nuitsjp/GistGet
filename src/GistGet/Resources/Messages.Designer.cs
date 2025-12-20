@@ -12,11 +12,13 @@ namespace GistGet.Resources;
 
 #nullable enable
 
+using System.Diagnostics.CodeAnalysis;
 using System.Resources;
 
 /// <summary>
 /// A strongly-typed resource class for looking up localized strings.
 /// </summary>
+[ExcludeFromCodeCoverage]
 internal static class Messages
 {
     private static ResourceManager? _resourceManager;
@@ -136,7 +138,7 @@ internal static class Messages
         ResourceManager.GetString("InitStarting", null) ?? string.Empty;
 
     /// <summary>
-    /// Looks up a localized string similar to: Include {0} ({1}) in sync?
+    /// Looks up a localized string similar to: Include {0} in sync?
     /// </summary>
     internal static string InitConfirmPackage =>
         ResourceManager.GetString("InitConfirmPackage", null) ?? string.Empty;
@@ -158,4 +160,480 @@ internal static class Messages
     /// </summary>
     internal static string InitCancelled =>
         ResourceManager.GetString("InitCancelled", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Description:
+    /// </summary>
+    internal static string HelpDescriptionTitle =>
+        ResourceManager.GetString("HelpDescriptionTitle", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Usage:
+    /// </summary>
+    internal static string HelpUsageTitle =>
+        ResourceManager.GetString("HelpUsageTitle", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Options:
+    /// </summary>
+    internal static string HelpOptionsTitle =>
+        ResourceManager.GetString("HelpOptionsTitle", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Commands:
+    /// </summary>
+    internal static string HelpCommandsTitle =>
+        ResourceManager.GetString("HelpCommandsTitle", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Arguments:
+    /// </summary>
+    internal static string HelpArgumentsTitle =>
+        ResourceManager.GetString("HelpArgumentsTitle", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Additional Arguments:
+    /// </summary>
+    internal static string HelpAdditionalArgumentsTitle =>
+        ResourceManager.GetString("HelpAdditionalArgumentsTitle", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Arguments passed to the application that is being run.
+    /// </summary>
+    internal static string HelpAdditionalArgumentsDescription =>
+        ResourceManager.GetString("HelpAdditionalArgumentsDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: [options]
+    /// </summary>
+    internal static string HelpUsageOptions =>
+        ResourceManager.GetString("HelpUsageOptions", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: [command]
+    /// </summary>
+    internal static string HelpUsageCommand =>
+        ResourceManager.GetString("HelpUsageCommand", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: [[--] <additional arguments>...]]
+    /// </summary>
+    internal static string HelpUsageAdditionalArguments =>
+        ResourceManager.GetString("HelpUsageAdditionalArguments", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: (REQUIRED)
+    /// </summary>
+    internal static string HelpOptionsRequiredLabel =>
+        ResourceManager.GetString("HelpOptionsRequiredLabel", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: default
+    /// </summary>
+    internal static string HelpArgumentDefaultValueLabel =>
+        ResourceManager.GetString("HelpArgumentDefaultValueLabel", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Show help and usage information
+    /// </summary>
+    internal static string HelpOptionDescription =>
+        ResourceManager.GetString("HelpOptionDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Show version information
+    /// </summary>
+    internal static string VersionOptionDescription =>
+        ResourceManager.GetString("VersionOptionDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: GistGet - Windows Package Manager Cloud Sync Tool
+    /// </summary>
+    internal static string RootCommandDescription =>
+        ResourceManager.GetString("RootCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Synchronizes packages with Gist
+    /// </summary>
+    internal static string SyncCommandDescription =>
+        ResourceManager.GetString("SyncCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: URL to sync from
+    /// </summary>
+    internal static string SyncUrlOptionDescription =>
+        ResourceManager.GetString("SyncUrlOptionDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Local YAML file path to sync from
+    /// </summary>
+    internal static string SyncFileOptionDescription =>
+        ResourceManager.GetString("SyncFileOptionDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Initializes Gist by interactively selecting installed packages
+    /// </summary>
+    internal static string InitCommandDescription =>
+        ResourceManager.GetString("InitCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Manage GitHub authentication
+    /// </summary>
+    internal static string AuthCommandDescription =>
+        ResourceManager.GetString("AuthCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Authenticate with GitHub
+    /// </summary>
+    internal static string AuthLoginDescription =>
+        ResourceManager.GetString("AuthLoginDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Log out from GitHub
+    /// </summary>
+    internal static string AuthLogoutDescription =>
+        ResourceManager.GetString("AuthLogoutDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Shows current authentication status
+    /// </summary>
+    internal static string AuthStatusDescription =>
+        ResourceManager.GetString("AuthStatusDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Installs the given package and saves to Gist
+    /// </summary>
+    internal static string InstallCommandDescription =>
+        ResourceManager.GetString("InstallCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Uninstalls the given package and updates Gist
+    /// </summary>
+    internal static string UninstallCommandDescription =>
+        ResourceManager.GetString("UninstallCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Upgrades the given package and saves to Gist
+    /// </summary>
+    internal static string UpgradeCommandDescription =>
+        ResourceManager.GetString("UpgradeCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Package to upgrade
+    /// </summary>
+    internal static string UpgradePackageArgumentDescription =>
+        ResourceManager.GetString("UpgradePackageArgumentDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Manage package pins
+    /// </summary>
+    internal static string PinCommandDescription =>
+        ResourceManager.GetString("PinCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Adds a package pin and saves to Gist
+    /// </summary>
+    internal static string PinAddCommandDescription =>
+        ResourceManager.GetString("PinAddCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Package to pin
+    /// </summary>
+    internal static string PinAddPackageArgumentDescription =>
+        ResourceManager.GetString("PinAddPackageArgumentDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: The version to pin
+    /// </summary>
+    internal static string PinAddVersionOptionDescription =>
+        ResourceManager.GetString("PinAddVersionOptionDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Block the given version from being upgraded
+    /// </summary>
+    internal static string PinAddBlockingOptionDescription =>
+        ResourceManager.GetString("PinAddBlockingOptionDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: The given version is the maximum allowed version
+    /// </summary>
+    internal static string PinAddGatingOptionDescription =>
+        ResourceManager.GetString("PinAddGatingOptionDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Force running the command even if there is an existing pin
+    /// </summary>
+    internal static string PinAddForceOptionDescription =>
+        ResourceManager.GetString("PinAddForceOptionDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Removes a package pin and updates Gist
+    /// </summary>
+    internal static string PinRemoveCommandDescription =>
+        ResourceManager.GetString("PinRemoveCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Package to unpin
+    /// </summary>
+    internal static string PinRemovePackageArgumentDescription =>
+        ResourceManager.GetString("PinRemovePackageArgumentDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: List current pins [Passthrough]
+    /// </summary>
+    internal static string PinListCommandDescription =>
+        ResourceManager.GetString("PinListCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Resets pins [Passthrough]
+    /// </summary>
+    internal static string PinResetCommandDescription =>
+        ResourceManager.GetString("PinResetCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Filter results by id
+    /// </summary>
+    internal static string OptionDescriptionFilterById =>
+        ResourceManager.GetString("OptionDescriptionFilterById", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Use the specified version
+    /// </summary>
+    internal static string OptionDescriptionVersion =>
+        ResourceManager.GetString("OptionDescriptionVersion", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Select install scope (user or machine)
+    /// </summary>
+    internal static string OptionDescriptionScope =>
+        ResourceManager.GetString("OptionDescriptionScope", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Select the architecture to install
+    /// </summary>
+    internal static string OptionDescriptionArchitecture =>
+        ResourceManager.GetString("OptionDescriptionArchitecture", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Location to install to
+    /// </summary>
+    internal static string OptionDescriptionLocation =>
+        ResourceManager.GetString("OptionDescriptionLocation", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Request interactive installation
+    /// </summary>
+    internal static string OptionDescriptionInteractiveInstall =>
+        ResourceManager.GetString("OptionDescriptionInteractiveInstall", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Request silent installation
+    /// </summary>
+    internal static string OptionDescriptionSilentInstall =>
+        ResourceManager.GetString("OptionDescriptionSilentInstall", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Request interactive uninstall
+    /// </summary>
+    internal static string OptionDescriptionInteractiveUninstall =>
+        ResourceManager.GetString("OptionDescriptionInteractiveUninstall", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Request silent uninstall
+    /// </summary>
+    internal static string OptionDescriptionSilentUninstall =>
+        ResourceManager.GetString("OptionDescriptionSilentUninstall", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Request interactive upgrade
+    /// </summary>
+    internal static string OptionDescriptionInteractiveUpgrade =>
+        ResourceManager.GetString("OptionDescriptionInteractiveUpgrade", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Request silent upgrade
+    /// </summary>
+    internal static string OptionDescriptionSilentUpgrade =>
+        ResourceManager.GetString("OptionDescriptionSilentUpgrade", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Log location
+    /// </summary>
+    internal static string OptionDescriptionLogLocation =>
+        ResourceManager.GetString("OptionDescriptionLogLocation", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Override arguments to be passed on to the installer
+    /// </summary>
+    internal static string OptionDescriptionOverrideArguments =>
+        ResourceManager.GetString("OptionDescriptionOverrideArguments", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Override the installer hash check
+    /// </summary>
+    internal static string OptionDescriptionForceOverrideHash =>
+        ResourceManager.GetString("OptionDescriptionForceOverrideHash", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Skips processing package dependencies
+    /// </summary>
+    internal static string OptionDescriptionSkipDependencies =>
+        ResourceManager.GetString("OptionDescriptionSkipDependencies", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Optional Windows-Package-Manager REST source HTTP header
+    /// </summary>
+    internal static string OptionDescriptionHeader =>
+        ResourceManager.GetString("OptionDescriptionHeader", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Select the installer type
+    /// </summary>
+    internal static string OptionDescriptionInstallerType =>
+        ResourceManager.GetString("OptionDescriptionInstallerType", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Arguments to be passed on to the installer in addition to the defaults
+    /// </summary>
+    internal static string OptionDescriptionCustomArguments =>
+        ResourceManager.GetString("OptionDescriptionCustomArguments", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Locale to use (BCP47 format)
+    /// </summary>
+    internal static string OptionDescriptionLocale =>
+        ResourceManager.GetString("OptionDescriptionLocale", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Accept all license agreements required for the package
+    /// </summary>
+    internal static string OptionDescriptionAcceptPackageAgreements =>
+        ResourceManager.GetString("OptionDescriptionAcceptPackageAgreements", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Accept all source agreements required for the source
+    /// </summary>
+    internal static string OptionDescriptionAcceptSourceAgreements =>
+        ResourceManager.GetString("OptionDescriptionAcceptSourceAgreements", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Ignore the installer hash check failure
+    /// </summary>
+    internal static string OptionDescriptionIgnoreSecurityHash =>
+        ResourceManager.GetString("OptionDescriptionIgnoreSecurityHash", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Remove all versions of the package
+    /// </summary>
+    internal static string UninstallAllOptionDescription =>
+        ResourceManager.GetString("UninstallAllOptionDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Delete the package's directory and other data
+    /// </summary>
+    internal static string UninstallPurgeOptionDescription =>
+        ResourceManager.GetString("UninstallPurgeOptionDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Exclude removing app data during package uninstall
+    /// </summary>
+    internal static string UninstallPreserveUserDataOptionDescription =>
+        ResourceManager.GetString("UninstallPreserveUserDataOptionDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Run the command ignoring non-security related issues
+    /// </summary>
+    internal static string UninstallForceOptionDescription =>
+        ResourceManager.GetString("UninstallForceOptionDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Find package using exact match on id
+    /// </summary>
+    internal static string UninstallExactOptionDescription =>
+        ResourceManager.GetString("UninstallExactOptionDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Ignore package dependency failures
+    /// </summary>
+    internal static string UninstallIgnoreDependenciesOptionDescription =>
+        ResourceManager.GetString("UninstallIgnoreDependenciesOptionDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Displays installed packages [Passthrough]
+    /// </summary>
+    internal static string WingetListCommandDescription =>
+        ResourceManager.GetString("WingetListCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Finds and shows basic information of packages [Passthrough]
+    /// </summary>
+    internal static string WingetSearchCommandDescription =>
+        ResourceManager.GetString("WingetSearchCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Shows information about a package [Passthrough]
+    /// </summary>
+    internal static string WingetShowCommandDescription =>
+        ResourceManager.GetString("WingetShowCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Manage sources of packages [Passthrough]
+    /// </summary>
+    internal static string WingetSourceCommandDescription =>
+        ResourceManager.GetString("WingetSourceCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Open settings or set administrator settings [Passthrough]
+    /// </summary>
+    internal static string WingetSettingsCommandDescription =>
+        ResourceManager.GetString("WingetSettingsCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Shows the status of experimental features [Passthrough]
+    /// </summary>
+    internal static string WingetFeaturesCommandDescription =>
+        ResourceManager.GetString("WingetFeaturesCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Helper to hash installer files [Passthrough]
+    /// </summary>
+    internal static string WingetHashCommandDescription =>
+        ResourceManager.GetString("WingetHashCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Validates a manifest file [Passthrough]
+    /// </summary>
+    internal static string WingetValidateCommandDescription =>
+        ResourceManager.GetString("WingetValidateCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Configures the system into a desired state [Passthrough]
+    /// </summary>
+    internal static string WingetConfigureCommandDescription =>
+        ResourceManager.GetString("WingetConfigureCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Downloads the installer from a given package [Passthrough]
+    /// </summary>
+    internal static string WingetDownloadCommandDescription =>
+        ResourceManager.GetString("WingetDownloadCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Repairs the selected package [Passthrough]
+    /// </summary>
+    internal static string WingetRepairCommandDescription =>
+        ResourceManager.GetString("WingetRepairCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: DSC v3 command based resource [Passthrough]
+    /// </summary>
+    internal static string WingetDscv3CommandDescription =>
+        ResourceManager.GetString("WingetDscv3CommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Model Context Protocol server [Passthrough]
+    /// </summary>
+    internal static string WingetMcpCommandDescription =>
+        ResourceManager.GetString("WingetMcpCommandDescription", null) ?? string.Empty;
+
 }
+

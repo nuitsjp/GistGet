@@ -113,4 +113,249 @@
   <data name="InitCancelled" xml:space="preserve">
     <value>初期化をキャンセルしました。</value>
   </data>
+
+  <!-- Help Titles -->
+  <data name="HelpDescriptionTitle" xml:space="preserve">
+    <value>説明:</value>
+  </data>
+  <data name="HelpUsageTitle" xml:space="preserve">
+    <value>使用法:</value>
+  </data>
+  <data name="HelpOptionsTitle" xml:space="preserve">
+    <value>オプション:</value>
+  </data>
+  <data name="HelpCommandsTitle" xml:space="preserve">
+    <value>コマンド:</value>
+  </data>
+  <data name="HelpArgumentsTitle" xml:space="preserve">
+    <value>引数:</value>
+  </data>
+  <data name="HelpAdditionalArgumentsTitle" xml:space="preserve">
+    <value>追加の引数:</value>
+  </data>
+  <data name="HelpAdditionalArgumentsDescription" xml:space="preserve">
+    <value>実行するアプリケーションに渡す追加の引数です。</value>
+  </data>
+  <data name="HelpUsageOptions" xml:space="preserve">
+    <value>[オプション]</value>
+  </data>
+  <data name="HelpUsageCommand" xml:space="preserve">
+    <value>[コマンド]</value>
+  </data>
+  <data name="HelpUsageAdditionalArguments" xml:space="preserve">
+    <value>[[--] &lt;追加の引数&gt;...]]</value>
+  </data>
+  <data name="HelpOptionsRequiredLabel" xml:space="preserve">
+    <value>(必須)</value>
+  </data>
+  <data name="HelpArgumentDefaultValueLabel" xml:space="preserve">
+    <value>既定</value>
+  </data>
+  <data name="HelpOptionDescription" xml:space="preserve">
+    <value>ヘルプと使用法を表示します</value>
+  </data>
+  <data name="VersionOptionDescription" xml:space="preserve">
+    <value>バージョン情報を表示します</value>
+  </data>
+
+  <!-- Command Descriptions -->
+  <data name="RootCommandDescription" xml:space="preserve">
+    <value>GistGet - Windows パッケージ マネージャーのクラウド同期ツール</value>
+  </data>
+  <data name="SyncCommandDescription" xml:space="preserve">
+    <value>Gist とパッケージを同期します</value>
+  </data>
+  <data name="SyncUrlOptionDescription" xml:space="preserve">
+    <value>同期元の URL</value>
+  </data>
+  <data name="SyncFileOptionDescription" xml:space="preserve">
+    <value>同期元のローカル YAML ファイル パス</value>
+  </data>
+  <data name="InitCommandDescription" xml:space="preserve">
+    <value>インストール済みパッケージを選択して Gist を初期化します</value>
+  </data>
+  <data name="AuthCommandDescription" xml:space="preserve">
+    <value>GitHub 認証を管理します</value>
+  </data>
+  <data name="AuthLoginDescription" xml:space="preserve">
+    <value>GitHub にサインインします</value>
+  </data>
+  <data name="AuthLogoutDescription" xml:space="preserve">
+    <value>GitHub からサインアウトします</value>
+  </data>
+  <data name="AuthStatusDescription" xml:space="preserve">
+    <value>現在の認証状態を表示します</value>
+  </data>
+  <data name="InstallCommandDescription" xml:space="preserve">
+    <value>指定したパッケージをインストールし、Gist に保存します</value>
+  </data>
+  <data name="UninstallCommandDescription" xml:space="preserve">
+    <value>指定したパッケージをアンインストールし、Gist を更新します</value>
+  </data>
+  <data name="UpgradeCommandDescription" xml:space="preserve">
+    <value>指定したパッケージをアップグレードし、Gist に保存します</value>
+  </data>
+  <data name="UpgradePackageArgumentDescription" xml:space="preserve">
+    <value>アップグレードするパッケージ</value>
+  </data>
+  <data name="PinCommandDescription" xml:space="preserve">
+    <value>パッケージのピンを管理します</value>
+  </data>
+  <data name="PinAddCommandDescription" xml:space="preserve">
+    <value>パッケージのピンを追加し、Gist に保存します</value>
+  </data>
+  <data name="PinAddPackageArgumentDescription" xml:space="preserve">
+    <value>ピン設定するパッケージ</value>
+  </data>
+  <data name="PinAddVersionOptionDescription" xml:space="preserve">
+    <value>ピン留めするバージョン</value>
+  </data>
+  <data name="PinAddBlockingOptionDescription" xml:space="preserve">
+    <value>指定バージョンへのアップグレードをブロックします</value>
+  </data>
+  <data name="PinAddGatingOptionDescription" xml:space="preserve">
+    <value>指定バージョンを最大許容バージョンとして設定します</value>
+  </data>
+  <data name="PinAddForceOptionDescription" xml:space="preserve">
+    <value>既存のピンがあっても強制的に実行します</value>
+  </data>
+  <data name="PinRemoveCommandDescription" xml:space="preserve">
+    <value>パッケージのピンを削除し、Gist を更新します</value>
+  </data>
+  <data name="PinRemovePackageArgumentDescription" xml:space="preserve">
+    <value>ピン解除するパッケージ</value>
+  </data>
+  <data name="PinListCommandDescription" xml:space="preserve">
+    <value>現在のピンを一覧表示します [パススルー]</value>
+  </data>
+  <data name="PinResetCommandDescription" xml:space="preserve">
+    <value>ピンをリセットします [パススルー]</value>
+  </data>
+
+  <!-- Option Descriptions -->
+  <data name="OptionDescriptionFilterById" xml:space="preserve">
+    <value>ID で絞り込みます</value>
+  </data>
+  <data name="OptionDescriptionVersion" xml:space="preserve">
+    <value>指定したバージョンを使用します</value>
+  </data>
+  <data name="OptionDescriptionScope" xml:space="preserve">
+    <value>インストール スコープ (user または machine) を選択します</value>
+  </data>
+  <data name="OptionDescriptionArchitecture" xml:space="preserve">
+    <value>インストールするアーキテクチャを選択します</value>
+  </data>
+  <data name="OptionDescriptionLocation" xml:space="preserve">
+    <value>インストール先の場所を指定します</value>
+  </data>
+  <data name="OptionDescriptionInteractiveInstall" xml:space="preserve">
+    <value>インタラクティブ インストールを要求します</value>
+  </data>
+  <data name="OptionDescriptionSilentInstall" xml:space="preserve">
+    <value>サイレント インストールを要求します</value>
+  </data>
+  <data name="OptionDescriptionInteractiveUninstall" xml:space="preserve">
+    <value>インタラクティブ アンインストールを要求します</value>
+  </data>
+  <data name="OptionDescriptionSilentUninstall" xml:space="preserve">
+    <value>サイレント アンインストールを要求します</value>
+  </data>
+  <data name="OptionDescriptionInteractiveUpgrade" xml:space="preserve">
+    <value>インタラクティブ アップグレードを要求します</value>
+  </data>
+  <data name="OptionDescriptionSilentUpgrade" xml:space="preserve">
+    <value>サイレント アップグレードを要求します</value>
+  </data>
+  <data name="OptionDescriptionLogLocation" xml:space="preserve">
+    <value>ログの保存先</value>
+  </data>
+  <data name="OptionDescriptionOverrideArguments" xml:space="preserve">
+    <value>インストーラーに渡す引数を上書きします</value>
+  </data>
+  <data name="OptionDescriptionForceOverrideHash" xml:space="preserve">
+    <value>インストーラーのハッシュ チェックを無視します</value>
+  </data>
+  <data name="OptionDescriptionSkipDependencies" xml:space="preserve">
+    <value>パッケージの依存関係処理をスキップします</value>
+  </data>
+  <data name="OptionDescriptionHeader" xml:space="preserve">
+    <value>任意の Windows-Package-Manager REST ソース HTTP ヘッダー</value>
+  </data>
+  <data name="OptionDescriptionInstallerType" xml:space="preserve">
+    <value>使用するインストーラーの種類を選択します</value>
+  </data>
+  <data name="OptionDescriptionCustomArguments" xml:space="preserve">
+    <value>既定に加えてインストーラーに渡す引数</value>
+  </data>
+  <data name="OptionDescriptionLocale" xml:space="preserve">
+    <value>使用するロケール (BCP47 形式)</value>
+  </data>
+  <data name="OptionDescriptionAcceptPackageAgreements" xml:space="preserve">
+    <value>パッケージに必要なライセンス条項をすべて同意します</value>
+  </data>
+  <data name="OptionDescriptionAcceptSourceAgreements" xml:space="preserve">
+    <value>ソースに必要な利用規約をすべて同意します</value>
+  </data>
+  <data name="OptionDescriptionIgnoreSecurityHash" xml:space="preserve">
+    <value>インストーラーのハッシュ チェック失敗を無視します</value>
+  </data>
+  <data name="UninstallAllOptionDescription" xml:space="preserve">
+    <value>パッケージのすべてのバージョンを削除します</value>
+  </data>
+  <data name="UninstallPurgeOptionDescription" xml:space="preserve">
+    <value>パッケージのディレクトリやその他のデータを削除します</value>
+  </data>
+  <data name="UninstallPreserveUserDataOptionDescription" xml:space="preserve">
+    <value>アンインストール時にアプリのデータを削除しません</value>
+  </data>
+  <data name="UninstallForceOptionDescription" xml:space="preserve">
+    <value>セキュリティ以外の問題を無視してコマンドを実行します</value>
+  </data>
+  <data name="UninstallExactOptionDescription" xml:space="preserve">
+    <value>ID の完全一致でパッケージを検索します</value>
+  </data>
+  <data name="UninstallIgnoreDependenciesOptionDescription" xml:space="preserve">
+    <value>依存関係の失敗を無視します</value>
+  </data>
+
+  <!-- Winget Passthrough Commands -->
+  <data name="WingetListCommandDescription" xml:space="preserve">
+    <value>インストール済みパッケージを表示します [パススルー]</value>
+  </data>
+  <data name="WingetSearchCommandDescription" xml:space="preserve">
+    <value>パッケージを検索し基本情報を表示します [パススルー]</value>
+  </data>
+  <data name="WingetShowCommandDescription" xml:space="preserve">
+    <value>パッケージの情報を表示します [パススルー]</value>
+  </data>
+  <data name="WingetSourceCommandDescription" xml:space="preserve">
+    <value>パッケージ ソースを管理します [パススルー]</value>
+  </data>
+  <data name="WingetSettingsCommandDescription" xml:space="preserve">
+    <value>設定を開くか管理者設定を行います [パススルー]</value>
+  </data>
+  <data name="WingetFeaturesCommandDescription" xml:space="preserve">
+    <value>実験的機能の状態を表示します [パススルー]</value>
+  </data>
+  <data name="WingetHashCommandDescription" xml:space="preserve">
+    <value>インストーラー ファイルのハッシュを計算します [パススルー]</value>
+  </data>
+  <data name="WingetValidateCommandDescription" xml:space="preserve">
+    <value>マニフェスト ファイルを検証します [パススルー]</value>
+  </data>
+  <data name="WingetConfigureCommandDescription" xml:space="preserve">
+    <value>システムを目的の状態に構成します [パススルー]</value>
+  </data>
+  <data name="WingetDownloadCommandDescription" xml:space="preserve">
+    <value>指定パッケージのインストーラーをダウンロードします [パススルー]</value>
+  </data>
+  <data name="WingetRepairCommandDescription" xml:space="preserve">
+    <value>選択したパッケージを修復します [パススルー]</value>
+  </data>
+  <data name="WingetDscv3CommandDescription" xml:space="preserve">
+    <value>DSC v3 コマンドベースのリソース [パススルー]</value>
+  </data>
+  <data name="WingetMcpCommandDescription" xml:space="preserve">
+    <value>Model Context Protocol サーバー [パススルー]</value>
+  </data>
 </root>
