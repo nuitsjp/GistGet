@@ -859,7 +859,7 @@ public class GistGetService(
         var packagesWithSource = installedPackages.Where(p => !string.IsNullOrEmpty(p.Source)).ToList();
         var sortedPackages = packagesWithSource.OrderBy(p => p.Name, StringComparer.Ordinal).ToList();
 
-        var selectedPackages = new List<GistGetPackage>();
+        var selectedPackageInfo = new List<(string Id, string Name)>();
         var totalCount = sortedPackages.Count;
         var currentIndex = 1;
         foreach (var pkg in sortedPackages)
@@ -868,26 +868,33 @@ public class GistGetService(
             var messageWithProgress = $"[{currentIndex}/{totalCount}] {message}";
             if (consoleService.Confirm(messageWithProgress, defaultValue: false))
             {
-                selectedPackages.Add(new GistGetPackage
-                {
-                    Id = pkg.Id.AsPrimitive()
-                });
+                selectedPackageInfo.Add((pkg.Id.AsPrimitive(), pkg.Name));
             }
             currentIndex++;
         }
 
-        if (selectedPackages.Count == 0)
+        if (selectedPackageInfo.Count == 0)
         {
             consoleService.WriteInfo(Messages.InitCancelled);
             return;
         }
 
-        var finalConfirmMessage = string.Format(CultureInfo.CurrentCulture, Messages.InitFinalConfirm, selectedPackages.Count);
+        consoleService.WriteInfo("");
+        consoleService.WriteInfo("Selected packages:");
+        foreach (var info in selectedPackageInfo)
+        {
+            consoleService.WriteInfo($"  - {info.Name} ({info.Id})");
+        }
+        consoleService.WriteInfo("");
+
+        var finalConfirmMessage = string.Format(CultureInfo.CurrentCulture, Messages.InitFinalConfirm, selectedPackageInfo.Count);
         if (!consoleService.Confirm(finalConfirmMessage, defaultValue: false))
         {
             consoleService.WriteInfo(Messages.InitCancelled);
             return;
         }
+
+        var selectedPackages = selectedPackageInfo.Select(info => new GistGetPackage { Id = info.Id }).ToList();
 
         using (consoleService.WriteProgress(Messages.SavingToGist))
         {
