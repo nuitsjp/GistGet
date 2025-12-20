@@ -39,7 +39,7 @@ public class CommandBuilderTests : IDisposable
             var names = root.Subcommands.Select(cmd => cmd.Name).ToList();
             var expected = new[]
             {
-                "sync", "export", "import", "auth", "install", "uninstall", "upgrade", "pin",
+                "sync", "auth", "install", "uninstall", "upgrade", "pin",
                 "list", "search", "show", "source", "settings", "features", "hash", "validate",
                 "configure", "download", "repair", "dscv3", "mcp"
             };
@@ -51,6 +51,9 @@ public class CommandBuilderTests : IDisposable
             {
                 names.ShouldContain(command);
             }
+
+            names.ShouldNotContain("export");
+            names.ShouldNotContain("import");
         }
     }
 
@@ -153,54 +156,6 @@ public class CommandBuilderTests : IDisposable
             // -------------------------------------------------------------------
             exitCode.ShouldBe(0);
             output.ShouldContain("Already in sync. No changes needed.");
-        }
-    }
-
-    public class ExportCommand : CommandBuilderTests
-    {
-        [Fact]
-        public async Task WithOutputPath_CallsExportWithPath()
-        {
-            // -------------------------------------------------------------------
-            // Arrange
-            // -------------------------------------------------------------------
-            var target = CreateTarget();
-            var root = target.Build();
-
-            // -------------------------------------------------------------------
-            // Act
-            // -------------------------------------------------------------------
-            var exitCode = await root.InvokeAsync("export --output exported.yaml");
-
-            // -------------------------------------------------------------------
-            // Assert
-            // -------------------------------------------------------------------
-            exitCode.ShouldBe(0);
-            GistGetServiceMock.Verify(x => x.ExportAsync("exported.yaml"), Times.Once);
-        }
-    }
-
-    public class ImportCommand : CommandBuilderTests
-    {
-        [Fact]
-        public async Task WithFileArgument_CallsImport()
-        {
-            // -------------------------------------------------------------------
-            // Arrange
-            // -------------------------------------------------------------------
-            var target = CreateTarget();
-            var root = target.Build();
-
-            // -------------------------------------------------------------------
-            // Act
-            // -------------------------------------------------------------------
-            var exitCode = await root.InvokeAsync("import packages.yaml");
-
-            // -------------------------------------------------------------------
-            // Assert
-            // -------------------------------------------------------------------
-            exitCode.ShouldBe(0);
-            GistGetServiceMock.Verify(x => x.ImportAsync("packages.yaml"), Times.Once);
         }
     }
 

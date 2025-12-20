@@ -58,16 +58,6 @@ public interface IGistGetService
     Task<int> RunPassthroughAsync(string command, string[] args);
 
     /// <summary>
-    /// Exports installed packages to YAML.
-    /// </summary>
-    Task<string> ExportAsync(string? outputPath = null);
-
-    /// <summary>
-    /// Imports package definitions from a YAML file.
-    /// </summary>
-    Task ImportAsync(string filePath);
-
-    /// <summary>
     /// Initializes the Gist by interactively selecting installed packages.
     /// </summary>
     Task InitAsync();

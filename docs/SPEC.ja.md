@@ -135,8 +135,6 @@ DeepL.DeepL:
 | `pin remove` | ❌ | ✅ | ピン留めを解除し、Gistを更新(`pin`を削除)。 |
 | `pin list` | ✅ | ❌ | wingetにパススルー。 |
 | `pin reset` | ✅ | ❌ | wingetにパススルー。 |
-| `export` | ❌ | ❌ | ローカルのインストール済みパッケージをYAML形式で出力。 |
-| `import` | ❌ | ✅ | YAMLファイルをGistにインポート。 |
 | `list` | ✅ | ❌ | wingetにパススルー。 |
 | `search` | ✅ | ❌ | wingetにパススルー。 |
 | `show` | ✅ | ❌ | wingetにパススルー。 |
@@ -195,7 +193,7 @@ gistget sync [--url <yaml-url>]
 | **ローカル: インストール済み + pin あり（一致）** | 何もしない ※1 | アンインストール + pin削除 | pin削除 | 何もしない |
 | **ローカル: インストール済み + pin あり（不一致）** | 何もしない ※1 | アンインストール + pin削除 | pin削除 | pin更新 |
 
-※1: ローカルにのみ存在するパッケージはGistに自動追加されません。明示的に`gistget install`または`gistget export` + `gistget import`を使用してください。
+※1: ローカルにのみ存在するパッケージはGistに自動追加されません。明示的に`gistget install`を実行するか、Gist上の`GistGet.yaml`を直接編集してください。
 
 **pinTypeの同期:**
 
@@ -432,92 +430,6 @@ gistget pin remove <package-id>
 **注意:**
 - エントリ自体は削除されず、pin関連フィールドのみが削除される。
 - `uninstall` 等の他のフィールドは保持される。
-
----
-
-#### export
-
-ローカルにインストールされているパッケージをYAML形式でエクスポートします。
-
-```
-gistget export [--output <file-path>]
-```
-
-| オプション | 必須 | 説明 |
-|-----------|:----:|------|
-| `--output`, `-o` | ❌ | 出力先ファイルパス。省略時は標準出力に出力。 |
-
-**処理フロー:**
-
-1. WinGet COM APIを使用してローカルのインストール済みパッケージを取得
-2. パッケージIDのみを含むYAMLを生成
-3. `--output` 指定時はファイルに保存、未指定時は標準出力に出力
-
-**出力例:**
-
-```yaml
-Microsoft.VisualStudioCode: {}
-7zip.7zip: {}
-Git.Git: {}
-```
-
-**注意:**
-- 認証は不要。ローカルの情報のみを使用する。
-- エクスポートされるのはパッケージIDのみ。pinやインストールオプションは含まれない。
-- Gistとの同期は行われない。
-- 新しい環境でのベースYAMLを作成する際に使用する。
-
-**典型的なワークフロー:**
-
-```powershell
-# 1. 現在のパッケージ一覧をエクスポート
-gistget export --output GistGet.yaml
-
-# 2. 必要に応じて YAML を編集（pin やオプションを追加）
-# 例: VSCode にサイレントインストールを設定
-# Microsoft.VisualStudioCode:
-#   silent: true
-
-# 3. Gist にインポート
-gistget import GistGet.yaml
-```
-
----
-
-#### import
-
-YAMLファイルをGistにインポートします。既存のGist内容は**完全に上書き**されます。
-
-```
-gistget import <file>
-```
-
-| オプション | 必須 | 説明 |
-|-----------|:----:|------|
-| `<file>` | ✅ | インポートする YAML ファイルのパス |
-
-**処理フロー:**
-
-1. 認証状態を確認（未認証の場合はログインを促す）
-2. 指定されたYAMLファイルを読み込み
-3. パース結果をGistの`GistGet.yaml`として**完全に上書き保存**
-
-**注意:**
-- **既存の Gist 内容はマージされず、完全に上書きされる。**
-- インポート前に既存のGistをバックアップすることを推奨。
-- YAMLのフォーマットエラーがある場合は処理を中断する。
-
-**典型的なワークフロー:**
-
-```powershell
-# 方法1: export + 編集 + import
-gistget export --output GistGet.yaml
-# GistGet.yaml を編集
-gistget import GistGet.yaml
-
-# 方法2: 既存の YAML ファイルをインポート
-gistget import my-packages.yaml
-```
 
 ---
 

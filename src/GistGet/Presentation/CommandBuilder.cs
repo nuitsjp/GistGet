@@ -19,8 +19,6 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
         {
             BuildSyncCommand(),
             BuildInitCommand(),
-            BuildExportCommand(),
-            BuildImportCommand(),
             BuildAuthCommand(),
             BuildInstallCommand(),
             BuildUninstallCommand(),
@@ -122,36 +120,6 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
         {
             await gistGetService.InitAsync();
         });
-        return command;
-    }
-
-
-    private Command BuildExportCommand()
-    {
-        var command = new Command("export", "Exports installed packages to Gist");
-        var outputOption = new Option<string?>("--output", "File to write the result to");
-        outputOption.AddAlias("-o");
-        command.Add(outputOption);
-
-        command.SetHandler(async output =>
-        {
-            await gistGetService.ExportAsync(output);
-        }, outputOption);
-
-        return command;
-    }
-
-    private Command BuildImportCommand()
-    {
-        var command = new Command("import", "Imports packages from a file");
-        var fileArgument = new Argument<string>("file") { Description = "Path to the YAML file to import" };
-        command.Add(fileArgument);
-
-        command.SetHandler(async file =>
-        {
-            await gistGetService.ImportAsync(file);
-        }, fileArgument);
-
         return command;
     }
 

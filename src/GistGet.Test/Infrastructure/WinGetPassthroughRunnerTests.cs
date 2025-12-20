@@ -102,4 +102,60 @@ public class WinGetPassthroughRunnerTests
             tempDir.Delete(true);
         }
     }
+
+    [Fact]
+    public async Task RunAsync_EscapesArgumentsWithSpacesQuotesAndEmpty()
+    {
+        // -------------------------------------------------------------------
+        // Arrange
+        // -------------------------------------------------------------------
+        var tempDir = Directory.CreateTempSubdirectory();
+        var wingetPath = Path.Combine(tempDir.FullName, "winget.exe");
+        await File.WriteAllTextAsync(wingetPath, string.Empty);
+
+        var originalPath = Environment.GetEnvironmentVariable("PATH");
+        Environment.SetEnvironmentVariable("PATH", $"{tempDir.FullName}{Path.PathSeparator}{originalPath}");
+
+        var processRunner = new Mock<IProcessRunner>();
+        ProcessStartInfo? captured = null;
+        processRunner
+            .Setup(x => x.RunAsync(It.IsAny<ProcessStartInfo>()))
+            .Callback<ProcessStartInfo>(info => captured = info)
+            .ReturnsAsync(0);
+
+        var target = new WinGetPassthroughRunner(processRunner.Object);
+
+        try
+        {
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var exitCode = await target.RunAsync([
+                "install",
+                "Test.Package",
+                "--override",
+                "with space",
+                "--header",
+                "Quoted\"Value",
+                string.Empty
+            ]);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            exitCode.ShouldBe(0);
+            captured.ShouldNotBeNull();
+            var argsText = captured!.Arguments;
+            argsText.ShouldContain(wingetPath);
+            argsText.ShouldContain("\"with space\"");
+            argsText.ShouldContain("--header");
+            argsText.ShouldContain("Quoted\"\"Value");
+            argsText.ShouldContain("\"\""); // empty argument preserved
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("PATH", originalPath);
+            tempDir.Delete(true);
+        }
+    }
 }
