@@ -94,6 +94,33 @@ public class WinGetServiceTests
             // -------------------------------------------------------------------
             result.ShouldBeNull();
         }
+
+        [Fact]
+        public void MsStorePackageInstalled_ReturnsPackageWithMsStoreSource()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = new PackageId("9NTRHF51WGGB");
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = WinGetService.FindById(packageId);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.ShouldNotBeNull(
+                "Package 'Nani Translate' (ID: 9NTRHF51WGGB) must be installed from Microsoft Store for this test. " +
+                "If it is installed and still not found, WinGetService.FindById failed to detect msstore packages.");
+
+            result.Id.ShouldBe(packageId);
+            result.Name.ShouldNotBeNullOrEmpty();
+            result.Source.ShouldNotBeNull();
+            result.Source.Equals("msstore", StringComparison.OrdinalIgnoreCase).ShouldBeTrue(
+                "Expected source 'msstore'. If this fails, ensure Microsoft Store source is available and the package is installed.");
+        }
     }
 
     public class GetAllInstalledPackages : WinGetServiceTests

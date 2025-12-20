@@ -2,6 +2,7 @@
 
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using GistGet.Infrastructure.WinGet;
 using Microsoft.Management.Deployment;
@@ -11,6 +12,7 @@ namespace GistGet.Infrastructure;
 /// <summary>
 /// Provides access to installed package data via WinGet COM APIs.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public partial class WinGetService : IWinGetService
 {
     private readonly IPackageCatalogConnector _connector;
@@ -50,46 +52,120 @@ public partial class WinGetService : IWinGetService
     /// <returns>The installed package, or <see langword="null"/> if not found.</returns>
     public WinGetPackage? FindById(PackageId id)
     {
-        var catalog = _connector.Connect(CompositeSearchBehavior.AllCatalogs);
+        try
+        {
+            return FindByIdInternal(id);
+        }
+        catch (COMException)
+        {
+            return null;
+        }
+        catch (DllNotFoundException)
+        {
+            return null;
+        }
+        catch (TypeLoadException)
+        {
+            return null;
+        }
+    }
+
+    private WinGetPackage? FindByIdInternal(PackageId id)
+    {
+        var package = FindByIdInCatalog(id, CompositeSearchBehavior.LocalCatalogs);
+        if (package != null)
+        {
+            return package;
+        }
+
+        var installedPackages = GetAllInstalledPackages();
+        package = installedPackages.FirstOrDefault(p =>
+            string.Equals(p.Id.AsPrimitive(), id.AsPrimitive(), StringComparison.OrdinalIgnoreCase));
+        if (package != null)
+        {
+            return package;
+        }
+
+        return FindByIdInCatalog(id, CompositeSearchBehavior.AllCatalogs);
+    }
+
+    private WinGetPackage? FindByIdInCatalog(PackageId id, CompositeSearchBehavior searchBehavior)
+    {
+        var catalog = _connector.Connect(searchBehavior);
         if (catalog == null)
         {
             return null;
         }
 
-        var findPackagesOptions = new FindPackagesOptions();
-        findPackagesOptions.Selectors.Add(new PackageMatchFilter
+        foreach (var filter in CreatePackageFilters(id))
+        {
+            var findPackagesOptions = new FindPackagesOptions();
+            findPackagesOptions.Selectors.Add(filter);
+
+            var findResult = _connector.FindPackages(catalog, findPackagesOptions);
+            var package = ExtractInstalledPackage(findResult);
+            if (package != null)
+            {
+                return package;
+            }
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<PackageMatchFilter> CreatePackageFilters(PackageId id)
+    {
+        yield return new PackageMatchFilter
         {
             Field = PackageMatchField.Id,
             Option = PackageFieldMatchOption.EqualsCaseInsensitive,
             Value = id.AsPrimitive()
-        });
+        };
 
-        var findResult = _connector.FindPackages(catalog, findPackagesOptions);
+        yield return new PackageMatchFilter
+        {
+            Field = PackageMatchField.PackageFamilyName,
+            Option = PackageFieldMatchOption.EqualsCaseInsensitive,
+            Value = id.AsPrimitive()
+        };
 
+        yield return new PackageMatchFilter
+        {
+            Field = PackageMatchField.ProductCode,
+            Option = PackageFieldMatchOption.EqualsCaseInsensitive,
+            Value = id.AsPrimitive()
+        };
+    }
+
+    private static WinGetPackage? ExtractInstalledPackage(FindPackagesResult findResult)
+    {
         if (findResult.Status != FindPackagesResultStatus.Ok || findResult.Matches.Count == 0)
         {
             return null;
         }
 
-        var catalogPackage = findResult.Matches[0].CatalogPackage;
-
-        if (catalogPackage.InstalledVersion == null)
+        for (var i = 0; i < findResult.Matches.Count; i++)
         {
-            return null;
+            var catalogPackage = findResult.Matches[i].CatalogPackage;
+            if (catalogPackage.InstalledVersion == null)
+            {
+                continue;
+            }
+
+            var installedVersion = catalogPackage.InstalledVersion;
+            var usableVersion = GetUsableVersion(catalogPackage, installedVersion);
+            var source = GetSourceName(catalogPackage);
+
+            return new WinGetPackage(
+                Name: catalogPackage.Name,
+                Id: new PackageId(catalogPackage.Id),
+                Version: new Version(installedVersion.Version),
+                UsableVersion: usableVersion,
+                Source: source
+            );
         }
 
-        var installedVersion = catalogPackage.InstalledVersion;
-        var usableVersion = GetUsableVersion(catalogPackage, installedVersion);
-
-        var source = GetSourceName(catalogPackage);
-
-        return new WinGetPackage(
-            Name: catalogPackage.Name,
-            Id: new PackageId(catalogPackage.Id),
-            Version: new Version(installedVersion.Version),
-            UsableVersion: usableVersion,
-            Source: source
-        );
+        return null;
     }
 
     /// <summary>
@@ -97,6 +173,26 @@ public partial class WinGetService : IWinGetService
     /// </summary>
     /// <returns>Installed packages.</returns>
     public IReadOnlyList<WinGetPackage> GetAllInstalledPackages()
+    {
+        try
+        {
+            return GetAllInstalledPackagesInternal();
+        }
+        catch (COMException)
+        {
+            return new List<WinGetPackage>();
+        }
+        catch (DllNotFoundException)
+        {
+            return new List<WinGetPackage>();
+        }
+        catch (TypeLoadException)
+        {
+            return new List<WinGetPackage>();
+        }
+    }
+
+    private IReadOnlyList<WinGetPackage> GetAllInstalledPackagesInternal()
     {
         var packages = new List<WinGetPackage>();
 
