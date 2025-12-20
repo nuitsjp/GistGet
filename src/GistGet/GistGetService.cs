@@ -258,8 +258,14 @@ public class GistGetService(
                 return exitCode;
             }
 
-            // Remove pin only if package was installed locally
-            await passthroughRunner.RunAsync(["pin", "remove", "--id", options.Id]);
+            var pinnedPackages = winGetService.GetPinnedPackages();
+            var isPinnedLocally = pinnedPackages.Any(p =>
+                string.Equals(p.Id.AsPrimitive(), options.Id, StringComparison.OrdinalIgnoreCase));
+
+            if (isPinnedLocally)
+            {
+                await passthroughRunner.RunAsync(["pin", "remove", "--id", options.Id]);
+            }
         }
 
         var newPackages = existingPackages
@@ -527,11 +533,18 @@ public class GistGetService(
         var existingPackage = existingPackages.FirstOrDefault(p =>
             string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase));
 
-        var pinArgs = new[] { "pin", "remove", "--id", packageId };
-        var exitCode = await passthroughRunner.RunAsync(pinArgs);
-        if (exitCode != 0)
+        var pinnedPackages = winGetService.GetPinnedPackages();
+        var isPinnedLocally = pinnedPackages.Any(p =>
+            string.Equals(p.Id.AsPrimitive(), packageId, StringComparison.OrdinalIgnoreCase));
+
+        if (isPinnedLocally)
         {
-            return;
+            var pinArgs = new[] { "pin", "remove", "--id", packageId };
+            var exitCode = await passthroughRunner.RunAsync(pinArgs);
+            if (exitCode != 0)
+            {
+                return;
+            }
         }
 
         var localPackage = winGetService.FindById(new PackageId(packageId));

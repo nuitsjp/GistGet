@@ -1540,18 +1540,13 @@ public class GistGetServiceTests
                 .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == packageId)))
                 .Returns(new WinGetPackage(displayName, new PackageId(packageId), new Version("1.0.0"), null, null));
 
-            var sequence = new MockSequence();
-            PassthroughRunnerMock
-                .InSequence(sequence)
-                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
-                    args[0] == "uninstall" &&
-                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
-                .ReturnsAsync(0);
+            WinGetServiceMock
+                .Setup(x => x.GetPinnedPackages())
+                .Returns(Array.Empty<WinGetPin>());
 
             PassthroughRunnerMock
-                .InSequence(sequence)
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
-                    args[0] == "pin" && args[1] == "remove" &&
+                    args[0] == "uninstall" &&
                     args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(0);
 
@@ -1576,6 +1571,9 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             saved.ShouldNotBeNull();
             saved!.Single().Name.ShouldBe(displayName);
+            PassthroughRunnerMock.Verify(x => x.RunAsync(
+                It.Is<string[]>(args => args[0] == "pin" && args.Contains("remove", StringComparer.Ordinal))
+            ), Times.Never);
         }
 
         [Fact]
@@ -1607,6 +1605,13 @@ public class GistGetServiceTests
             WinGetServiceMock
                 .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == packageId)))
                 .Returns(new WinGetPackage(packageId, new PackageId(packageId), new Version("1.0.0"), null, null));
+
+            WinGetServiceMock
+                .Setup(x => x.GetPinnedPackages())
+                .Returns(new List<WinGetPin>
+                {
+                    new(new PackageId(packageId), "Blocking", new Version("1.0.0"))
+                });
 
             var sequence = new MockSequence();
 
@@ -1793,12 +1798,9 @@ public class GistGetServiceTests
                     args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(0);
 
-            // pin remove は常に呼ばれる（エラーは無視）
-            PassthroughRunnerMock
-                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
-                    args[0] == "pin" && args[1] == "remove" &&
-                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
-                .ReturnsAsync(0);
+            WinGetServiceMock
+                .Setup(x => x.GetPinnedPackages())
+                .Returns(Array.Empty<WinGetPin>());
 
             // -------------------------------------------------------------------
             // Act
@@ -1808,10 +1810,10 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------------
-            // ローカルのpinを確実に削除するため、常に pin remove が呼ばれる
+            // ピンされていないため pin remove は呼ばれない
             PassthroughRunnerMock.Verify(x => x.RunAsync(
                 It.Is<string[]>(args => args[0] == "pin" && args.Contains("remove", StringComparer.Ordinal))
-            ), Times.Once);
+            ), Times.Never);
 
             // 新規エントリが作成され、uninstall: true で保存される
             AuthServiceMock.Verify(x => x.SavePackagesAsync(
@@ -1826,7 +1828,7 @@ public class GistGetServiceTests
         }
 
         [Fact]
-        public async Task WhenNoPinInGist_StillCallsPinRemove()
+        public async Task WhenNoPinInGist_SkipsPinRemove()
         {
             // -------------------------------------------------------------------
             // Arrange
@@ -1863,12 +1865,9 @@ public class GistGetServiceTests
                     args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(0);
 
-            // pin remove は常に呼ばれる（ローカルにpinがある可能性があるため）
-            PassthroughRunnerMock
-                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
-                    args[0] == "pin" && args[1] == "remove" &&
-                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
-                .ReturnsAsync(0);
+            WinGetServiceMock
+                .Setup(x => x.GetPinnedPackages())
+                .Returns(Array.Empty<WinGetPin>());
 
             // -------------------------------------------------------------------
             // Act
@@ -1878,10 +1877,10 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------------
-            // Gist側にPinがなくても、ローカルのpinを確実に削除するため pin remove が呼ばれる
+            // ローカルにピンが存在しないため pin remove は呼ばれない
             PassthroughRunnerMock.Verify(x => x.RunAsync(
                 It.Is<string[]>(args => args[0] == "pin" && args.Contains("remove", StringComparer.Ordinal))
-            ), Times.Once);
+            ), Times.Never);
 
             // 既存のプロパティが保持され、uninstall: true で保存される
             AuthServiceMock.Verify(x => x.SavePackagesAsync(
@@ -2371,6 +2370,13 @@ public class GistGetServiceTests
                 .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(existingPackages);
 
+            WinGetServiceMock
+                .Setup(x => x.GetPinnedPackages())
+                .Returns(new List<WinGetPin>
+                {
+                    new(new PackageId(packageId), "Blocking", new Version("1.0.0"))
+                });
+
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args.Length >= 2 &&
@@ -2430,6 +2436,13 @@ public class GistGetServiceTests
                 .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(existingPackages);
 
+            WinGetServiceMock
+                .Setup(x => x.GetPinnedPackages())
+                .Returns(new List<WinGetPin>
+                {
+                    new(new PackageId(packageId), "Pinning", new Version("1.0.0"))
+                });
+
             PassthroughRunnerMock
                 .Setup(x => x.RunAsync(It.Is<string[]>(args =>
                     args.Length >= 2 &&
@@ -2476,14 +2489,6 @@ public class GistGetServiceTests
                 .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new List<GistGetPackage>());
 
-            PassthroughRunnerMock
-                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
-                    args.Length >= 2 &&
-                    args[0] == "pin" &&
-                    args[1] == "remove" &&
-                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
-                .ReturnsAsync(0);
-
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
@@ -2505,6 +2510,9 @@ public class GistGetServiceTests
                         p.PinType == null &&
                         p.Version == null)
                 )), Times.Once);
+
+            PassthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args =>
+                args[0] == "pin" && args[1] == "remove" && args.Contains(packageId))), Times.Never);
         }
 
         [Fact]
@@ -2534,6 +2542,13 @@ public class GistGetServiceTests
             AuthServiceMock
                 .Setup(x => x.GetPackagesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new List<GistGetPackage>());
+
+            WinGetServiceMock
+                .Setup(x => x.GetPinnedPackages())
+                .Returns(new List<WinGetPin>
+                {
+                    new(new PackageId(packageId), "Pinning", new Version("1.0.0"))
+                });
 
             PassthroughRunnerMock.Setup(x => x.RunAsync(It.IsAny<string[]>())).ReturnsAsync(0);
 
