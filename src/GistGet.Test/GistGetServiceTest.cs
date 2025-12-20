@@ -519,6 +519,66 @@ public class GistGetServiceTests
         }
 
         [Fact]
+        public async Task SavesDisplayNameFromWinGet()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Test.Package";
+            var displayName = "Test Package Display";
+
+            var credential = new Credential("user", "token");
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new List<GistGetPackage>());
+
+            PassthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "install" &&
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
+                .ReturnsAsync(0);
+
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == packageId)))
+                .Returns(new WinGetPackage(
+                    Name: displayName,
+                    Id: new PackageId(packageId),
+                    Version: new Version("1.0.0"),
+                    UsableVersion: null,
+                    Source: null));
+
+            IReadOnlyList<GistGetPackage>? saved = null;
+            AuthServiceMock
+                .Setup(x => x.SavePackagesAsync(
+                    credential.Token,
+                    "",
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<IReadOnlyList<GistGetPackage>>()))
+                .Callback<string, string, string, string, IReadOnlyList<GistGetPackage>>((_, _, _, _, list) => saved = list)
+                .Returns(Task.CompletedTask);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await Target.InstallAndSaveAsync(new InstallOptions { Id = packageId });
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            saved.ShouldNotBeNull();
+            saved!.Single().Name.ShouldBe(displayName);
+        }
+
+        [Fact]
         public async Task PassesWingetOptions_ToInstall()
         {
             // -------------------------------------------------------------------
@@ -768,6 +828,15 @@ public class GistGetServiceTests
                     args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
                 .ReturnsAsync(0);
 
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == packageId)))
+                .Returns(new WinGetPackage(
+                    Name: "Test Package",
+                    Id: new PackageId(packageId),
+                    Version: new Version("1.0.0"),
+                    UsableVersion: null,
+                    Source: null));
+
             AuthServiceMock
                 .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(existingPackages);
@@ -807,7 +876,7 @@ public class GistGetServiceTests
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.Is<IReadOnlyList<GistGetPackage>>(list =>
-                    list.Any(p => p.Id == packageId && p.Pin == installedVersion && p.Version == installedVersion)
+                    list.Any(p => p.Id == packageId && p.Name == "Test Package" && p.Pin == installedVersion && p.Version == installedVersion)
                 )), Times.Once);
         }
 
@@ -1023,7 +1092,7 @@ public class GistGetServiceTests
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.Is<IReadOnlyList<GistGetPackage>>(list =>
-                        list.Any(p => p.Id == packageId && p.Pin == "2.0.0" && p.PinType == "blocking" && p.Version == "2.0.0" && p.Silent)
+                        list.Any(p => p.Id == packageId && p.Name == "Test Package" && p.Pin == "2.0.0" && p.PinType == "blocking" && p.Version == "2.0.0" && p.Silent)
                     )))
                 .Returns(Task.CompletedTask);
 
@@ -1092,7 +1161,7 @@ public class GistGetServiceTests
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<IReadOnlyList<GistGetPackage>>()), Times.Never);
-            WinGetServiceMock.Verify(x => x.FindById(It.IsAny<PackageId>()), Times.Never);
+            WinGetServiceMock.Verify(x => x.FindById(It.IsAny<PackageId>()), Times.Once);
         }
 
         [Fact]
@@ -1104,6 +1173,7 @@ public class GistGetServiceTests
             var packageId = "New.Package";
             var version = "5.1.0";
             var credential = new Credential("user", "token");
+            var displayName = "New Package";
 
             CredentialServiceMock
                 .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
@@ -1124,6 +1194,15 @@ public class GistGetServiceTests
                     args.Contains("--version", StringComparer.Ordinal) && args.Contains(version))))
                 .ReturnsAsync(0);
 
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == packageId)))
+                .Returns(new WinGetPackage(
+                    Name: displayName,
+                    Id: new PackageId(packageId),
+                    Version: new Version(version),
+                    UsableVersion: null,
+                    Source: null));
+
             AuthServiceMock
                 .Setup(x => x.SavePackagesAsync(
                     credential.Token,
@@ -1132,7 +1211,7 @@ public class GistGetServiceTests
                     It.IsAny<string>(),
                     It.Is<IReadOnlyList<GistGetPackage>>(list =>
                         list.Count == 1 &&
-                        list.Any(p => p.Id == packageId && p.Pin == null && p.Version == null && !p.Uninstall)
+                        list.Any(p => p.Id == packageId && p.Name == displayName && p.Pin == null && p.Version == null && !p.Uninstall)
                     )))
                 .Returns(Task.CompletedTask);
 
@@ -1145,7 +1224,7 @@ public class GistGetServiceTests
             // Assert
             // -------------------------------------------------------------------
             PassthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args => args[0] == "pin")), Times.Never);
-            WinGetServiceMock.Verify(x => x.FindById(It.IsAny<PackageId>()), Times.Never);
+            WinGetServiceMock.Verify(x => x.FindById(It.IsAny<PackageId>()), Times.Once);
             AuthServiceMock.Verify(x => x.SavePackagesAsync(
                 credential.Token,
                 "",
@@ -1380,6 +1459,70 @@ public class GistGetServiceTests
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<IReadOnlyList<GistGetPackage>>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task SavesDisplayNameWhenCreatingUninstallEntry()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Test.Package";
+            var displayName = "Test Package Display";
+            var credential = new Credential("user", "token");
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new List<GistGetPackage>());
+
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == packageId)))
+                .Returns(new WinGetPackage(displayName, new PackageId(packageId), new Version("1.0.0"), null, null));
+
+            var sequence = new MockSequence();
+            PassthroughRunnerMock
+                .InSequence(sequence)
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "uninstall" &&
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
+                .ReturnsAsync(0);
+
+            PassthroughRunnerMock
+                .InSequence(sequence)
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "pin" && args[1] == "remove" &&
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId))))
+                .ReturnsAsync(0);
+
+            IReadOnlyList<GistGetPackage>? saved = null;
+            AuthServiceMock
+                .Setup(x => x.SavePackagesAsync(
+                    credential.Token,
+                    "",
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<IReadOnlyList<GistGetPackage>>()))
+                .Callback<string, string, string, string, IReadOnlyList<GistGetPackage>>((_, _, _, _, list) => saved = list)
+                .Returns(Task.CompletedTask);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await Target.UninstallAndSaveAsync(new UninstallOptions { Id = packageId });
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            saved.ShouldNotBeNull();
+            saved!.Single().Name.ShouldBe(displayName);
         }
 
         [Fact]
@@ -1844,6 +1987,65 @@ public class GistGetServiceTests
                         p.Pin == version &&
                         p.PinType == null)
                 )), Times.Once);
+        }
+
+        [Fact]
+        public async Task WhenPinSucceeds_SavesDisplayName()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Test.Package";
+            var version = "1.2.3";
+            var displayName = "Test Package Display";
+            var credential = new Credential("user", "token");
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new List<GistGetPackage>());
+
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == packageId)))
+                .Returns(new WinGetPackage(displayName, new PackageId(packageId), new Version("1.0.0"), null, null));
+
+            PassthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args.Length >= 2 &&
+                    args[0] == "pin" &&
+                    args[1] == "add" &&
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId) &&
+                    args.Contains("--version", StringComparer.Ordinal) && args.Contains(version))))
+                .ReturnsAsync(0);
+
+            IReadOnlyList<GistGetPackage>? saved = null;
+            AuthServiceMock
+                .Setup(x => x.SavePackagesAsync(
+                    credential.Token,
+                    "",
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<IReadOnlyList<GistGetPackage>>()))
+                .Callback<string, string, string, string, IReadOnlyList<GistGetPackage>>((_, _, _, _, list) => saved = list)
+                .Returns(Task.CompletedTask);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await Target.PinAddAndSaveAsync(packageId, version);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            saved.ShouldNotBeNull();
+            saved!.Single().Name.ShouldBe(displayName);
         }
 
         [Fact]
@@ -3341,6 +3543,70 @@ public class GistGetServiceTests
             // Verify pin remove was never called (since package was not pinned)
             PassthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args =>
                 args[0] == "pin" && args[1] == "remove")), Times.Never);
+        }
+    }
+
+    public class InitAsync : GistGetServiceTests
+    {
+        [Fact]
+        public async Task SavesSelectedPackagesWithDisplayName()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var credential = new Credential("user", "token");
+            var packageId = "Sample.Package";
+            var displayName = "Sample Package";
+
+            var disposable = Mock.Of<IDisposable>();
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            ConsoleServiceMock
+                .Setup(x => x.WriteProgress(It.IsAny<string>()))
+                .Returns(disposable);
+
+            // 1回目: パッケージ選択、2回目: 最終確認
+            ConsoleServiceMock
+                .SetupSequence(x => x.Confirm(It.IsAny<string>(), It.IsAny<bool>()))
+                .Returns(true)
+                .Returns(true);
+
+            WinGetServiceMock
+                .Setup(x => x.GetAllInstalledPackages())
+                .Returns(new List<WinGetPackage>
+                {
+                    new(displayName, new PackageId(packageId), new Version("1.0.0"), null, "winget")
+                });
+
+            IReadOnlyList<GistGetPackage>? saved = null;
+            AuthServiceMock
+                .Setup(x => x.SavePackagesAsync(
+                    credential.Token,
+                    "",
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<IReadOnlyList<GistGetPackage>>()))
+                .Callback<string, string, string, string, IReadOnlyList<GistGetPackage>>((_, _, _, _, list) => saved = list)
+                .Returns(Task.CompletedTask);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await Target.InitAsync();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            saved.ShouldNotBeNull();
+            saved!.Single().Name.ShouldBe(displayName);
+            saved!.Single().Id.ShouldBe(packageId);
         }
     }
 }

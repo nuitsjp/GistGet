@@ -12,6 +12,9 @@ public class GistGetPackage
     [YamlIgnore]
     public string Id { get; set; } = "";
 
+    [YamlMember(Alias = "name", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
+    public string? Name { get; set; }
+
     [YamlMember(Alias = "version", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public string? Version { get; set; }
 
@@ -63,14 +66,8 @@ public class GistGetPackage
     [YamlMember(Alias = "log", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public string? Log { get; set; }
 
-
-
     [YamlMember(Alias = "override", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public string? Override { get; set; }
-
-
-
-
 
     [YamlMember(Alias = "interactive", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
     public bool Interactive { get; set; }
@@ -78,3 +75,4 @@ public class GistGetPackage
     [YamlMember(Alias = "silent", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
     public bool Silent { get; set; }
 }
+

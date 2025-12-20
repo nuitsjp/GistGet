@@ -174,6 +174,7 @@ public class GistGetService(
         var packageToSave = new GistGetPackage
         {
             Id = options.Id,
+            Name = localPackage.Name,
             Version = versionToSave,
             Pin = pinVersionToSet,
             PinType = pinTypeToSet,
@@ -266,6 +267,7 @@ public class GistGetService(
             .ToList();
 
         var packageToSave = targetPackage ?? new GistGetPackage { Id = options.Id };
+        packageToSave.Name = localPackage?.Name ?? packageToSave.Name;
         packageToSave.Uninstall = true;
         packageToSave.Pin = null;
         packageToSave.PinType = null;
@@ -330,10 +332,10 @@ public class GistGetService(
         var hasPin = !string.IsNullOrEmpty(existingPackage?.Pin);
         var pinTypeToSet = existingPackage?.PinType;
         string? pinVersionToSet = null;
+        var packageInfo = winGetService.FindById(new PackageId(options.Id));
 
         if (hasPin && resolvedVersion == null)
         {
-            var packageInfo = winGetService.FindById(new PackageId(options.Id));
             resolvedVersion = packageInfo?.Version.ToString();
         }
 
@@ -361,6 +363,7 @@ public class GistGetService(
 
         var packageToSave = existingPackage ?? new GistGetPackage { Id = options.Id };
         packageToSave.Uninstall = false;
+        packageToSave.Name = packageInfo?.Name ?? packageToSave.Name;
 
         if (hasPin && !string.IsNullOrEmpty(pinVersionToSet))
         {
@@ -464,11 +467,14 @@ public class GistGetService(
             return;
         }
 
+        var localPackage = winGetService.FindById(new PackageId(packageId));
+
         var newPackages = existingPackages
             .Where(p => !string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         var packageToSave = existingPackage ?? new GistGetPackage { Id = packageId };
+        packageToSave.Name = localPackage?.Name ?? packageToSave.Name;
         packageToSave.Uninstall = false;
         packageToSave.Pin = version;
         packageToSave.PinType = pinTypeToSet;
@@ -522,11 +528,14 @@ public class GistGetService(
             return;
         }
 
+        var localPackage = winGetService.FindById(new PackageId(packageId));
+
         var newPackages = existingPackages
             .Where(p => !string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         var packageToSave = existingPackage ?? new GistGetPackage { Id = packageId };
+        packageToSave.Name = localPackage?.Name ?? packageToSave.Name;
         packageToSave.Pin = null;
         packageToSave.PinType = null;
         packageToSave.Version = null;
@@ -825,7 +834,9 @@ public class GistGetService(
             return;
         }
 
-        var selectedPackages = selectedPackageInfo.Select(info => new GistGetPackage { Id = info.Id }).ToList();
+        var selectedPackages = selectedPackageInfo
+            .Select(info => new GistGetPackage { Id = info.Id, Name = info.Name })
+            .ToList();
 
         using (consoleService.WriteProgress(Messages.SavingToGist))
         {

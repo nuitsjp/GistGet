@@ -4,7 +4,7 @@ namespace GistGet.Test;
 
 public class GistGetServiceInitTests : GistGetServiceTests
 {
-    public class InitAsync : GistGetServiceInitTests
+    public new class InitAsync : GistGetServiceInitTests
     {
         [Fact]
         public async Task NotAuthenticated_TriggersLogin()

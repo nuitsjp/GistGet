@@ -22,6 +22,7 @@ GistGetは、Windows Package Manager(winget)のパッケージ管理状態をGit
 
 ```yaml
 <PackageId>:
+  name: <string>                   # winget の表示名（自動設定）
   pin: <string>                   # ピン留めバージョン（省略でピン留めなし）
   pinType: <pinning | blocking | gating>  # ピンの種類（省略時はpinning）
   uninstall: <boolean>            # trueでアンインストール対象
@@ -50,6 +51,7 @@ GistGetは、Windows Package Manager(winget)のパッケージ管理状態をGit
 
 | パラメーター | 型 | 説明 |
 |-----------|-----|------|
+| `name` | string | winget が表示するパッケージ名。`install` / `upgrade` / `uninstall` / `pin add` / `init` で自動設定される。手動編集時も必須。 |
 | `pin` | string | ピン留めするバージョン。省略でピン留めなし（常に最新版）。ワイルドカード `*` 使用可（例: `1.7.*`）。 |
 | `pinType` | enum | ピンの種類。`pin` が指定されている場合のみ有効。省略時は `pinning`。 |
 | `uninstall` | boolean | `true` の場合、sync 時にアンインストールされる。 |
@@ -91,27 +93,32 @@ GistGetは、Windows Package Manager(winget)のパッケージ管理状態をGit
 ```yaml
 # 最新版をインストール、アップグレード可能（ピン留めなし）
 Microsoft.VisualStudioCode:
+  name: Visual Studio Code
   scope: user
   silent: true
   override: /VERYSILENT /MERGETASKS=!runcode
 
 # バージョン 23.01 に固定（upgrade --all から除外）
 7zip.7zip:
+  name: 7-Zip
   pin: "23.01"
   architecture: x64
 
 # バージョン 1.7.x の範囲に制限（gating）
 jqlang.jq:
+  name: jq
   pin: "1.7.*"
   pinType: gating
 
 # 完全固定（blocking）
 CriticalApp.App:
+  name: CriticalApp
   pin: "2.0.0"
   pinType: blocking
 
 # アンインストール対象
 DeepL.DeepL:
+  name: DeepL
   uninstall: true
 ```
 
@@ -275,6 +282,7 @@ gistget install --id <package-id> [--version <version>] [options]
 3. 失敗時はエラー終了
 4. 成功時:
    - Gistに既存の`pin`がある場合は`winget pin add --id <id> --version <pin> [--blocking | --gating]`でローカルに同期
+   - `winget show`/`list` の結果から表示名を取得し、`name` を保存
    - `GistGet.yaml`にエントリを追加/更新（インストールオプションを保存、`pin`が存在する場合のみ`version`も保存）
 5. Gistに`GistGet.yaml`を保存
 
@@ -304,6 +312,7 @@ gistget uninstall --id <package-id>
 3. 失敗時はエラー終了
 4. 成功時:
    - `GistGet.yaml`の該当エントリに`uninstall: true`を設定
+   - `winget show`/`list` の結果から表示名を取得し、`name` を保存（既存エントリに名前がある場合は維持）
    - `winget pin remove <id>`を実行（pinが存在すれば）
 5. Gistに`GistGet.yaml`を保存
 

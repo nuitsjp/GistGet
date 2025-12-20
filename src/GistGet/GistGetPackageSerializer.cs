@@ -25,6 +25,7 @@ public static class GistGetPackageSerializer
 
             var copy = new GistGetPackage
             {
+                Name = package.Name,
                 Version = package.Version,
                 Pin = package.Pin,
                 PinType = package.PinType,
@@ -61,26 +62,27 @@ public static class GistGetPackageSerializer
 
         static bool HasValues(GistGetPackage package)
         {
-            return !string.IsNullOrWhiteSpace(package.Version)
-                   || !string.IsNullOrWhiteSpace(package.Pin)
-                   || !string.IsNullOrWhiteSpace(package.PinType)
-                   || !string.IsNullOrWhiteSpace(package.Custom)
-                   || package.Uninstall
-                   || !string.IsNullOrWhiteSpace(package.Scope)
-                   || !string.IsNullOrWhiteSpace(package.Architecture)
-                   || !string.IsNullOrWhiteSpace(package.Location)
-                   || !string.IsNullOrWhiteSpace(package.Locale)
-                   || package.AllowHashMismatch
-                   || package.Force
-                   || package.AcceptPackageAgreements
-                   || package.AcceptSourceAgreements
-                   || package.SkipDependencies
-                   || !string.IsNullOrWhiteSpace(package.Header)
-                   || !string.IsNullOrWhiteSpace(package.InstallerType)
-                   || !string.IsNullOrWhiteSpace(package.Log)
-                   || !string.IsNullOrWhiteSpace(package.Override)
-                   || package.Interactive
-                   || package.Silent;
+            return !string.IsNullOrWhiteSpace(package.Name)
+                || !string.IsNullOrWhiteSpace(package.Version)
+                || !string.IsNullOrWhiteSpace(package.Pin)
+                || !string.IsNullOrWhiteSpace(package.PinType)
+                || !string.IsNullOrWhiteSpace(package.Custom)
+                || package.Uninstall
+                || !string.IsNullOrWhiteSpace(package.Scope)
+                || !string.IsNullOrWhiteSpace(package.Architecture)
+                || !string.IsNullOrWhiteSpace(package.Location)
+                || !string.IsNullOrWhiteSpace(package.Locale)
+                || package.AllowHashMismatch
+                || package.Force
+                || package.AcceptPackageAgreements
+                || package.AcceptSourceAgreements
+                || package.SkipDependencies
+                || !string.IsNullOrWhiteSpace(package.Header)
+                || !string.IsNullOrWhiteSpace(package.InstallerType)
+                || !string.IsNullOrWhiteSpace(package.Log)
+                || !string.IsNullOrWhiteSpace(package.Override)
+                || package.Interactive
+                || package.Silent;
         }
     }
 

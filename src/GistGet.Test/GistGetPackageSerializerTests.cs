@@ -15,7 +15,7 @@ public class GistGetPackageSerializerTests
             // -------------------------------------------------------------------
             var packages = new List<GistGetPackage>
             {
-                new() { Id = "Test.Package", Silent = true }
+                new() { Id = "Test.Package", Name = "Test Package", Silent = true }
             };
 
             // -------------------------------------------------------------------
@@ -28,6 +28,7 @@ public class GistGetPackageSerializerTests
             // -------------------------------------------------------------------
             yaml.ShouldContain("Test.Package:");
             yaml.ShouldContain("silent: true");
+            yaml.ShouldContain("name: Test Package");
         }
 
         [Fact]
@@ -38,8 +39,8 @@ public class GistGetPackageSerializerTests
             // -------------------------------------------------------------------
             var packages = new List<GistGetPackage>
             {
-                new() { Id = "Package.A", Scope = "user" },
-                new() { Id = "Package.B", Scope = "machine" }
+                new() { Id = "Package.A", Name = "Package A", Scope = "user" },
+                new() { Id = "Package.B", Name = "Package B", Scope = "machine" }
             };
 
             // -------------------------------------------------------------------
@@ -65,6 +66,7 @@ public class GistGetPackageSerializerTests
                 new()
                 {
                     Id = "Full.Package",
+                    Name = "Full Package",
                     Version = "1.0.0",
                     Pin = "1.0.0",
                     PinType = "blocking",
@@ -97,6 +99,7 @@ public class GistGetPackageSerializerTests
             // Assert
             // -------------------------------------------------------------------
             yaml.ShouldContain("version: 1.0.0");
+            yaml.ShouldContain("name: Full Package");
             yaml.ShouldContain("pin: 1.0.0");
             yaml.ShouldContain("pinType: blocking");
             yaml.ShouldContain("custom: /CUSTOM");
@@ -109,6 +112,29 @@ public class GistGetPackageSerializerTests
             yaml.ShouldContain("skipDependencies: true");
             yaml.ShouldContain("installerType: msi");
             yaml.ShouldContain("silent: true");
+        }
+
+        [Fact]
+        public void WithNameOnly_WritesNameMapping()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packages = new List<GistGetPackage>
+            {
+                new() { Id = "NameOnly.Package", Name = "Name Only" }
+            };
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var yaml = GistGetPackageSerializer.Serialize(packages);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            yaml.ShouldContain("NameOnly.Package:");
+            yaml.ShouldContain("name: Name Only");
         }
 
         [Fact]
@@ -211,8 +237,9 @@ public class GistGetPackageSerializerTests
             // -------------------------------------------------------------------
             var yaml = """
                        Test.Package:
-                         silent: true
-                         scope: user
+                                                 name: Test Package
+                                                 silent: true
+                                                 scope: user
                        """;
 
             // -------------------------------------------------------------------
@@ -225,6 +252,7 @@ public class GistGetPackageSerializerTests
             // -------------------------------------------------------------------
             packages.Count.ShouldBe(1);
             packages[0].Id.ShouldBe("Test.Package");
+            packages[0].Name.ShouldBe("Test Package");
             packages[0].Silent.ShouldBeTrue();
             packages[0].Scope.ShouldBe("user");
         }
@@ -263,26 +291,27 @@ public class GistGetPackageSerializerTests
             // -------------------------------------------------------------------
             var yaml = """
                        Full.Package:
-                         version: "2.0.0"
-                         pin: "2.0.0"
-                         pinType: gating
-                         custom: /ARG
-                         uninstall: true
-                         scope: user
-                         architecture: arm64
-                         location: D:\Apps
-                         locale: en-US
-                         allowHashMismatch: true
-                         force: true
-                         acceptPackageAgreements: true
-                         acceptSourceAgreements: true
-                         skipDependencies: true
-                         header: X-Test
-                         installerType: exe
-                         log: D:\log.txt
-                         override: /VERYSILENT
-                         interactive: true
-                         silent: false
+                                                 name: "Full Package"
+                                                 version: "2.0.0"
+                                                 pin: "2.0.0"
+                                                 pinType: gating
+                                                 custom: /ARG
+                                                 uninstall: true
+                                                 scope: user
+                                                 architecture: arm64
+                                                 location: D:\Apps
+                                                 locale: en-US
+                                                 allowHashMismatch: true
+                                                 force: true
+                                                 acceptPackageAgreements: true
+                                                 acceptSourceAgreements: true
+                                                 skipDependencies: true
+                                                 header: X-Test
+                                                 installerType: exe
+                                                 log: D:\log.txt
+                                                 override: /VERYSILENT
+                                                 interactive: true
+                                                 silent: false
                        """;
 
             // -------------------------------------------------------------------
@@ -295,6 +324,7 @@ public class GistGetPackageSerializerTests
             // -------------------------------------------------------------------
             var pkg = packages[0];
             pkg.Id.ShouldBe("Full.Package");
+            pkg.Name.ShouldBe("Full Package");
             pkg.Version.ShouldBe("2.0.0");
             pkg.Pin.ShouldBe("2.0.0");
             pkg.PinType.ShouldBe("gating");
@@ -353,6 +383,7 @@ public class GistGetPackageSerializerTests
                 new()
                 {
                     Id = "RoundTrip.Package",
+                    Name = "RoundTrip Package",
                     Version = "3.0.0",
                     Pin = "3.0.0",
                     PinType = "blocking",
@@ -374,6 +405,7 @@ public class GistGetPackageSerializerTests
             result.Count.ShouldBe(1);
             var pkg = result[0];
             pkg.Id.ShouldBe("RoundTrip.Package");
+            pkg.Name.ShouldBe("RoundTrip Package");
             pkg.Version.ShouldBe("3.0.0");
             pkg.Pin.ShouldBe("3.0.0");
             pkg.PinType.ShouldBe("blocking");
