@@ -401,6 +401,59 @@ public class GistGetServiceTests
         }
 
         [Fact]
+        public async Task WritesSuccessLog_WithNameAndId()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Test.Package";
+            var packageName = "Test Package";
+            var credential = new Credential("user", "token");
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new List<GistGetPackage>());
+
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.IsAny<PackageId>()))
+                .Returns(new WinGetPackage(packageName, new PackageId(packageId), new Version("1.0.0"), null, "winget"));
+
+            PassthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "install" &&
+                    args.Contains("--id", StringComparer.Ordinal) && args.Contains(packageId, StringComparer.Ordinal))))
+                .ReturnsAsync(0);
+
+            AuthServiceMock
+                .Setup(x => x.SavePackagesAsync(
+                    credential.Token,
+                    "",
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<IReadOnlyList<GistGetPackage>>()))
+                .Returns(Task.CompletedTask);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await Target.InstallAndSaveAsync(new InstallOptions { Id = packageId });
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            ConsoleServiceMock.Verify(x => x.WriteSuccess(It.Is<string>(s =>
+                s.Contains($"{packageName} ({packageId})", StringComparison.Ordinal))), Times.Once);
+        }
+
+        [Fact]
         public async Task WithExplicitVersion_UpdatesPin()
         {
             // -------------------------------------------------------------------

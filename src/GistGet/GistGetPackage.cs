@@ -74,5 +74,16 @@ public class GistGetPackage
 
     [YamlMember(Alias = "silent", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
     public bool Silent { get; set; }
+
+    public override string ToString()
+    {
+        var id = string.IsNullOrEmpty(Id) ? string.Empty : Id;
+        if (string.IsNullOrWhiteSpace(Name))
+        {
+            return id;
+        }
+
+        return $"{Name} ({id})";
+    }
 }
 
