@@ -226,21 +226,7 @@ jobs:
 
             $localeYaml = "PackageIdentifier: NuitsJp.GistGet`nPackageVersion: $version`nPackageLocale: en-US`nPublisher: nuitsjp`nPublisherUrl: https://github.com/nuitsjp`nPackageName: GistGet`nLicense: MIT`nLicenseUrl: https://github.com/nuitsjp/GistGet/blob/main/LICENSE`nShortDescription: Windows Package Manager Cloud Sync Tool`nMoniker: gistget`nManifestType: defaultLocale`nManifestVersion: 1.6.0"
 
-            $installerYaml = @"
-PackageIdentifier: NuitsJp.GistGet
-PackageVersion: $version
-InstallerType: zip
-NestedInstallerType: portable
-NestedInstallerFiles:
-  - RelativeFilePath: GistGet.exe
-    PortableCommandAlias: gistget
-Installers:
-  - Architecture: x64
-    InstallerUrl: $x64Url
-    InstallerSha256: $hash
-ManifestType: installer
-ManifestVersion: 1.6.0
-"@
+            $installerYaml = "PackageIdentifier: NuitsJp.GistGet`nPackageVersion: $version`nInstallerType: zip`nNestedInstallerType: portable`nNestedInstallerFiles:`n  - RelativeFilePath: GistGet.exe`n    PortableCommandAlias: gistget`nInstallers:`n  - Architecture: x64`n    InstallerUrl: $x64Url`n    InstallerSha256: $hash`nManifestType: installer`nManifestVersion: 1.6.0"
 
             Set-Content -Path (Join-Path $manifestDir "NuitsJp.GistGet.yaml") -Value $versionYaml -Encoding utf8
             Set-Content -Path (Join-Path $manifestDir "NuitsJp.GistGet.locale.en-US.yaml") -Value $localeYaml -Encoding utf8
