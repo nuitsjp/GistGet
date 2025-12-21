@@ -51,18 +51,32 @@ jobs:
           }
 
           $requiredPackages = @(
-            'jqlang.jq',
-            'Microsoft.VisualStudioCode'
+            @{ Id = 'jqlang.jq'; Source = $null },
+            @{ Id = 'Microsoft.VisualStudioCode'; Source = $null },
+            @{ Id = '9NTRHF51WGGB'; Source = 'msstore' }
           )
 
-          foreach ($id in $requiredPackages) {
-            $installed = winget list --id $id --exact --accept-source-agreements --accept-package-agreements 2>$null | Select-String $id
+          foreach ($package in $requiredPackages) {
+            $id = $package.Id
+            $source = $package.Source
+
+            $listArgs = @('list', '--id', $id, '--exact', '--accept-source-agreements', '--accept-package-agreements')
+            if ($source) {
+              $listArgs += @('--source', $source)
+            }
+
+            $installed = & winget @listArgs 2>$null | Select-String $id
             if ($installed) {
               Write-Host "$id is already installed."
               continue
             }
 
-            winget install --id $id --exact --scope user --silent --disable-interactivity --accept-source-agreements --accept-package-agreements
+            $installArgs = @('install', '--id', $id, '--exact', '--scope', 'user', '--silent', '--disable-interactivity', '--accept-source-agreements', '--accept-package-agreements')
+            if ($source) {
+              $installArgs += @('--source', $source)
+            }
+
+            & winget @installArgs
           }
 
       - name: Restore
