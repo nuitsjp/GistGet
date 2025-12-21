@@ -103,7 +103,7 @@ $env:COMPlus_DefaultThreadCurrentUICulture = "en-US"
 #region Common Utilities
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Split-Path -Parent $scriptPath
-$runSettingsPath = Join-Path $repoRoot "coverlet.runsettings"
+$runSettingsPath = Join-Path $repoRoot "scripts\settings\coverlet.runsettings"
 $platform = "x64"
 $solutionPath = Join-Path $repoRoot "src\GistGet.slnx"
 $testProjectPath = Join-Path $repoRoot "src\GistGet.Test\GistGet.Test.csproj"
