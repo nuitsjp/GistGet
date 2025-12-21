@@ -5,6 +5,8 @@
 [![GitHub issues](https://img.shields.io/github/issues/nuitsjp/GistGet)](https://github.com/nuitsjp/GistGet/issues)
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/nuitsjp/GistGet)](https://github.com/nuitsjp/GistGet/pulls)
 
+[英語](README.md)
+
 **GistGet**は、GitHub Gistを使用して複数のデバイス間でWindows Package Manager(`winget`)パッケージを同期するために設計されたCLIツールです。
 プライベートまたはパブリックGistに保存されたシンプルなYAML設定ファイルを利用して、インストールされているアプリケーションやツールの一貫性を保つことができます。
 
