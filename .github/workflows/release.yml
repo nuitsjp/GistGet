@@ -7,8 +7,6 @@ on:
   push:
     tags:
       - 'v*.*.*'  # v0.1.0, v1.0.0 など
-    branches-ignore:
-      - '**'
   workflow_dispatch:
     inputs:
       tag:
