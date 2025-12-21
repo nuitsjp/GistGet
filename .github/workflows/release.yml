@@ -22,14 +22,9 @@ jobs:
     secrets: inherit
 
   build:
-    name: Build (${{ matrix.rid }})
+    name: Build (win-x64)
     needs: ci
     runs-on: windows-latest
-    strategy:
-      matrix:
-        include:
-          - rid: win-x64
-            arch: x64
 
     steps:
       - name: Checkout
@@ -57,10 +52,10 @@ jobs:
       - name: Build and Publish
         shell: pwsh
         run: |
-          $publishPath = "artifacts/publish/${{ matrix.rid }}"
+          $publishPath = "artifacts/publish/win-x64"
           dotnet publish ${{ env.PROJECT_PATH }} `
             -c Release `
-            -r ${{ matrix.rid }} `
+            -r win-x64 `
             -o $publishPath `
             -p:Version=${{ steps.version.outputs.VERSION }} `
             --self-contained true
@@ -68,14 +63,14 @@ jobs:
       - name: Create ZIP archive
         shell: pwsh
         run: |
-          $zipName = "GistGet-${{ matrix.rid }}.zip"
-          Compress-Archive -Path "artifacts/publish/${{ matrix.rid }}/*" -DestinationPath "artifacts/$zipName" -Force
-          
+          $zipName = "GistGet-win-x64.zip"
+          Compress-Archive -Path "artifacts/publish/win-x64/*" -DestinationPath "artifacts/$zipName" -Force
+
           # SHA256 ハッシュを計算
           $hash = (Get-FileHash -Path "artifacts/$zipName" -Algorithm SHA256).Hash
           echo "SHA256=$hash" >> $env:GITHUB_OUTPUT
           echo "$hash  $zipName" | Out-File -FilePath "artifacts/$zipName.sha256" -Encoding UTF8
-          
+
           echo "Created: $zipName"
           echo "SHA256: $hash"
         id: zip
@@ -83,10 +78,10 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: GistGet-${{ matrix.rid }}
+          name: GistGet-win-x64
           path: |
-            artifacts/GistGet-${{ matrix.rid }}.zip
-            artifacts/GistGet-${{ matrix.rid }}.zip.sha256
+            artifacts/GistGet-win-x64.zip
+            artifacts/GistGet-win-x64.zip.sha256
 
   release:
     name: Create Release
@@ -137,26 +132,26 @@ jobs:
           name: GistGet v${{ steps.version.outputs.VERSION }}
           body: |
             ## GistGet v${{ steps.version.outputs.VERSION }}
-            
+
             Windows Package Manager Cloud Sync Tool
-            
+
             ### インストール方法
-            
+
             #### WinGet (推奨)
             ```powershell
-            winget install nuitsjp.GistGet
+            winget install NuitsJp.GistGet
             ```
-            
+
             #### 手動インストール
             1. お使いのアーキテクチャに対応した ZIP ファイルをダウンロード
             2. 任意のフォルダに展開
             3. 展開したフォルダを PATH 環境変数に追加
-            
+
             ### ダウンロード
             | アーキテクチャ | ファイル | SHA256 |
             |---------------|----------|--------|
             | x64 | GistGet-win-x64.zip | `${{ steps.hashes.outputs.X64_SHA256 }}` |
-            
+
             ### 変更点
             詳細は [CHANGELOG](https://github.com/nuitsjp/GistGet/blob/main/CHANGELOG.md) を参照してください。
           files: |
@@ -193,16 +188,31 @@ jobs:
           $version = "${{ needs.release.outputs.version }}"
           $x64Url = "https://github.com/nuitsjp/GistGet/releases/download/v$version/GistGet-win-x64.zip"
 
-          # wingetcreate の update は PortableCommandAlias を引数で指定できないため、
-          # ローカルに生成したマニフェストを PowerShell で補正してから submit します。
+          # マニフェスト生成: 既存が無い場合でも publish できるよう update → new フォールバック
           $outDir = Join-Path $PWD "winget-manifest"
           if (Test-Path $outDir) { Remove-Item -Recurse -Force $outDir }
           New-Item -ItemType Directory -Path $outDir | Out-Null
 
-          ./wingetcreate.exe update nuitsjp.GistGet `
+          $updateSucceeded = $false
+          $updateOutput = ./wingetcreate.exe update NuitsJp.GistGet `
             --version $version `
             --urls $x64Url `
-            --out $outDir 2>&1 | Out-String | Write-Host
+            --out $outDir 2>&1
+          Write-Host $updateOutput
+
+          if ($LASTEXITCODE -eq 0) {
+            $updateSucceeded = $true
+          } else {
+            Write-Host "wingetcreate update failed; falling back to new" -ForegroundColor Yellow
+            $newOutput = ./wingetcreate.exe new `
+              $x64Url `
+              --out $outDir 2>&1
+            Write-Host $newOutput
+
+            if ($LASTEXITCODE -ne 0) {
+              throw "wingetcreate new failed with exit code $LASTEXITCODE"
+            }
+          }
 
           # YAML を安全に編集するため powershell-yaml を使用
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
@@ -233,7 +243,7 @@ jobs:
 
           # wingetcreate submit で PR を作成し、出力をキャプチャ
           # 注意: WINGET_GITHUB_TOKEN は winget-pkgs リポジトリへの書き込み権限を持つ PAT
-          $prTitle = "Update nuitsjp.GistGet to $version"
+          $prTitle = "Update NuitsJp.GistGet to $version"
           $output = ./wingetcreate.exe submit `
             --prtitle $prTitle `
             --token $env:WINGET_GITHUB_TOKEN `
@@ -266,14 +276,14 @@ jobs:
           WINGET_RESULT: ${{ needs.winget-publish.result }}
         run: |
           RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
-          
+
           echo "## 🚀 リリース完了" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### GitHub Release" >> $GITHUB_STEP_SUMMARY
           echo "- **バージョン**: v${VERSION}" >> $GITHUB_STEP_SUMMARY
           echo "- **リリースページ**: [GistGet v${VERSION}](${RELEASE_URL})" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "$WINGET_RESULT" = "success" ] && [ -n "$PR_URL" ]; then
             echo "### WinGet" >> $GITHUB_STEP_SUMMARY
             echo "- **ステータス**: ✅ PR 作成済み" >> $GITHUB_STEP_SUMMARY

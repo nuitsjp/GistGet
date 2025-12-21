@@ -30,10 +30,10 @@
 2.  zipファイルを解凍します。
 3.  解凍したフォルダーをシステムの`PATH`に追加します。
 
-### Winget から
+### Winget から (x64 ポータブル)
 
 ```powershell
-winget install nuitsjp.GistGet
+winget install NuitsJp.GistGet
 ```
 
 インストール後は以下で起動できます:
@@ -41,6 +41,8 @@ winget install nuitsjp.GistGet
 ```powershell
 gistget --help
 ```
+
+> メモ: 現在公開しているアーティファクトは x64 のみです。ARM64 版の配布は未対応です。
 
 ## 使用方法
 

@@ -30,10 +30,10 @@ It uses a simple YAML configuration file stored in a private or public Gist to k
 2.  Extract the zip file.
 3.  Add the extracted folder to your system's `PATH`.
 
-### From Winget
+### From Winget (x64 portable)
 
 ```powershell
-winget install nuitsjp.GistGet
+winget install NuitsJp.GistGet
 ```
 
 After installation, you can launch it with:
@@ -41,6 +41,8 @@ After installation, you can launch it with:
 ```powershell
 gistget --help
 ```
+
+> Note: The published artifact is currently x64-only. ARM64 builds are not shipped yet.
 
 ## Usage
 
