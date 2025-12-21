@@ -241,6 +241,31 @@ GitHub認証を実行し、認証情報をWindows Credential Managerに保存す
 .\scripts\Run-CodeQuality.ps1 -CoverageThreshold 95
 ```
 
+### リリース
+
+リリースはGitHub Actionsで自動化されています。タグをプッシュすると、ビルド、GitHub Releasesへのアップロード、WinGetへのPR作成が自動実行されます。
+
+#### 正式リリース
+
+```powershell
+# 1. csproj のバージョンを更新してコミット
+git add .
+git commit -m "chore: bump version to 0.2.0"
+
+# 2. タグを作成してプッシュ
+git tag v0.2.0
+git push origin main --tags
+```
+
+#### プレリリース
+
+プレリリースタグ（`-alpha`、`-beta`、`-rc`など）を使用すると、WinGetへのPR作成がスキップされます:
+
+```powershell
+git tag v0.2.0-beta.1
+git push origin --tags
+```
+
 ## ライセンス
 
 MIT License
