@@ -222,28 +222,9 @@ jobs:
             $manifestDir = Join-Path $outDir "manifests/n/NuitsJp/GistGet/$version"
             New-Item -ItemType Directory -Path $manifestDir -Force | Out-Null
 
-            $versionYaml = @"
-PackageIdentifier: NuitsJp.GistGet
-PackageVersion: $version
-DefaultLocale: en-US
-ManifestType: version
-ManifestVersion: 1.6.0
-"@
+            $versionYaml = "PackageIdentifier: NuitsJp.GistGet`nPackageVersion: $version`nDefaultLocale: en-US`nManifestType: version`nManifestVersion: 1.6.0"
 
-            $localeYaml = @"
-PackageIdentifier: NuitsJp.GistGet
-PackageVersion: $version
-PackageLocale: en-US
-Publisher: nuitsjp
-PublisherUrl: https://github.com/nuitsjp
-PackageName: GistGet
-License: MIT
-LicenseUrl: https://github.com/nuitsjp/GistGet/blob/main/LICENSE
-ShortDescription: Windows Package Manager Cloud Sync Tool
-Moniker: gistget
-ManifestType: defaultLocale
-ManifestVersion: 1.6.0
-"@
+            $localeYaml = "PackageIdentifier: NuitsJp.GistGet`nPackageVersion: $version`nPackageLocale: en-US`nPublisher: nuitsjp`nPublisherUrl: https://github.com/nuitsjp`nPackageName: GistGet`nLicense: MIT`nLicenseUrl: https://github.com/nuitsjp/GistGet/blob/main/LICENSE`nShortDescription: Windows Package Manager Cloud Sync Tool`nMoniker: gistget`nManifestType: defaultLocale`nManifestVersion: 1.6.0"
 
             $installerYaml = @"
 PackageIdentifier: NuitsJp.GistGet
