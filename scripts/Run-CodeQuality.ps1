@@ -68,7 +68,7 @@ param(
     [switch]$Build,
     [switch]$Tests,
     [switch]$ReSharper,
-    
+
     # 設定値パラメータ
     [string]$Configuration = "Debug",
     [double]$CoverageThreshold = 98,
@@ -195,7 +195,13 @@ function Get-CoverageSummary {
             }
         }
 
-        foreach ($line in $cls.lines.line) {
+        # StrictMode 対応: lines または line が存在しない場合をスキップ
+        $lines = $cls.lines
+        if (-not $lines) { continue }
+        $lineElements = $lines.line
+        if (-not $lineElements) { continue }
+
+        foreach ($line in $lineElements) {
             $fileMap[$file].Total++
             if ([int]$line.hits -gt 0) {
                 $fileMap[$file].Covered++
@@ -683,7 +689,7 @@ if ($runBuild) {
     Write-Host ""
     Write-Host "ROSLYN DIAGNOSTICS" -ForegroundColor Yellow
     Write-Host "----------------------------------------"
-    
+
     $diagnostics = Get-DiagnosticsSummary -LogPath $diagnosticsLogPath
     Write-DiagnosticsReport -Diagnostics $diagnostics -TopRules 10 -TopFiles 5
 
@@ -717,7 +723,7 @@ if ($runBuild) {
             $roslynDetails += ", $warningCount warnings"
         }
     }
-    
+
     $script:pipelineResults.Build = @{ Status = "Passed"; Details = $roslynDetails }
 
     # Cleanup diagnostics log

@@ -1,3 +1,6 @@
 [submodule "external/winget-cli"]
 	path = external/winget-cli
 	url = https://github.com/microsoft/winget-cli.git
+[submodule "external/winget-pkgs"]
+	path = external/winget-pkgs
+	url = https://github.com/nuitsjp/winget-pkgs
