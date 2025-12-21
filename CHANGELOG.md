@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2025-12-21
+
+### Fixed
+
+- Release workflow: Added artifact download step in winget-publish job
+- Release workflow: Fixed duplicate workflow triggers on tag push
+
 ## [1.0.0] - 2025-12-20
 
 ### Added
@@ -21,5 +28,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - YAML-based configuration management (`GistGet.yaml`)
 - Secure credential storage using Windows Credential Manager
 
-[Unreleased]: https://github.com/nuitsjp/GistGet/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/nuitsjp/GistGet/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/nuitsjp/GistGet/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/nuitsjp/GistGet/releases/tag/v1.0.0
