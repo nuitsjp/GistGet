@@ -1,18 +1,12 @@
 # GistGet リリースワークフロー
 # タグプッシュ時に自動で GitHub Releases を作成し、winget-pkgs への PR を自動生成
 
-name: Release Workflow
+name: Release
 
 on:
   push:
     tags:
       - 'v*.*.*'  # v0.1.0, v1.0.0 など
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Tag to release (e.g., v1.0.0)'
-        required: true
-        type: string
 
 permissions:
   contents: write
@@ -200,18 +194,35 @@ jobs:
           $version = "${{ needs.release.outputs.version }}"
           $x64Url = "https://github.com/nuitsjp/GistGet/releases/download/v$version/GistGet-win-x64.zip"
           $zipPath = Join-Path $PWD "artifacts/GistGet-win-x64.zip"
-          
+
           if (-not (Test-Path $zipPath)) {
             throw "Artifact not found: $zipPath"
           }
-          
+
           $hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash
 
           $outDir = Join-Path $PWD "winget-manifest"
           if (Test-Path $outDir) { Remove-Item -Recurse -Force $outDir }
           New-Item -ItemType Directory -Path $outDir | Out-Null
 
-          $versionYaml = @"
+          # wingetcreate update を試行（既存パッケージの更新）
+          Write-Host "Attempting wingetcreate update..."
+          $updateResult = ./wingetcreate.exe update NuitsJp.GistGet `
+            --version $version `
+            --urls $x64Url `
+            --out $outDir 2>&1 | Out-String
+          Write-Host $updateResult
+
+          $updateSucceeded = $LASTEXITCODE -eq 0
+
+          if (-not $updateSucceeded) {
+            Write-Host "wingetcreate update failed (package may not exist yet). Creating manifest manually..."
+
+            # 手動でマニフェストを作成（新規パッケージ用）
+            $manifestDir = Join-Path $outDir "manifests/n/NuitsJp/GistGet/$version"
+            New-Item -ItemType Directory -Path $manifestDir -Force | Out-Null
+
+            $versionYaml = @"
 PackageIdentifier: NuitsJp.GistGet
 PackageVersion: $version
 DefaultLocale: en-US
@@ -219,7 +230,7 @@ ManifestType: version
 ManifestVersion: 1.6.0
 "@
 
-          $localeYaml = @"
+            $localeYaml = @"
 PackageIdentifier: NuitsJp.GistGet
 PackageVersion: $version
 PackageLocale: en-US
@@ -234,24 +245,65 @@ ManifestType: defaultLocale
 ManifestVersion: 1.6.0
 "@
 
-          $installerYaml = @"
+            $installerYaml = @"
 PackageIdentifier: NuitsJp.GistGet
 PackageVersion: $version
-InstallerType: portable
+InstallerType: zip
+NestedInstallerType: portable
+NestedInstallerFiles:
+  - RelativeFilePath: GistGet.exe
+    PortableCommandAlias: gistget
 Installers:
   - Architecture: x64
     InstallerUrl: $x64Url
     InstallerSha256: $hash
-    PortableCommandAlias: gistget
 ManifestType: installer
 ManifestVersion: 1.6.0
 "@
 
-          Set-Content -Path (Join-Path $outDir "NuitsJp.GistGet.yaml") -Value $versionYaml -Encoding utf8
-          Set-Content -Path (Join-Path $outDir "NuitsJp.GistGet.locale.en-US.yaml") -Value $localeYaml -Encoding utf8
-          Set-Content -Path (Join-Path $outDir "NuitsJp.GistGet.installer.yaml") -Value $installerYaml -Encoding utf8
+            Set-Content -Path (Join-Path $manifestDir "NuitsJp.GistGet.yaml") -Value $versionYaml -Encoding utf8
+            Set-Content -Path (Join-Path $manifestDir "NuitsJp.GistGet.locale.en-US.yaml") -Value $localeYaml -Encoding utf8
+            Set-Content -Path (Join-Path $manifestDir "NuitsJp.GistGet.installer.yaml") -Value $installerYaml -Encoding utf8
 
-          $prTitle = "Update NuitsJp.GistGet to $version"
+            $outDir = $manifestDir
+          } else {
+            # YAML を安全に編集するため powershell-yaml を使用
+            Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+            Install-Module powershell-yaml -Scope CurrentUser -Force -Repository PSGallery
+
+            $installerManifest = Get-ChildItem -Path $outDir -Recurse -Filter "*.installer.yaml" | Select-Object -First 1
+            if ($null -eq $installerManifest) {
+              throw "Installer manifest (*.installer.yaml) not found under '$outDir'."
+            }
+
+            $yamlObject = Get-Content -Path $installerManifest.FullName -Raw | ConvertFrom-Yaml -Ordered
+            if ($null -eq $yamlObject.Installers) {
+              throw "Installers section not found in '$($installerManifest.FullName)'."
+            }
+
+            foreach ($installer in $yamlObject.Installers) {
+              $installer.NestedInstallerType = "portable"
+              $installer.NestedInstallerFiles = @(
+                [ordered]@{
+                  RelativeFilePath = "GistGet.exe"
+                  PortableCommandAlias = "gistget"
+                }
+              )
+            }
+
+            $patchedYaml = $yamlObject | ConvertTo-Yaml
+            Set-Content -Path $installerManifest.FullName -Value $patchedYaml -Encoding utf8
+
+            $outDir = Split-Path $installerManifest.FullName -Parent
+          }
+
+          # wingetcreate submit で PR を作成
+          $prTitle = "New package: NuitsJp.GistGet version $version"
+          if ($updateSucceeded) {
+            $prTitle = "Update NuitsJp.GistGet to $version"
+          }
+
+          Write-Host "Submitting to winget-pkgs..."
           $output = ./wingetcreate.exe submit `
             --prtitle $prTitle `
             --token $env:WINGET_GITHUB_TOKEN `
@@ -259,6 +311,7 @@ ManifestVersion: 1.6.0
 
           Write-Host $output
 
+          # PR URL を抽出
           if ($output -match 'https://github\.com/microsoft/winget-pkgs/pull/\d+') {
             $prUrl = $Matches[0]
             echo "PR_URL=$prUrl" >> $env:GITHUB_OUTPUT
