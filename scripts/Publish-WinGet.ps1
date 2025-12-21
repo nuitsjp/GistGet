@@ -22,7 +22,10 @@
     GitHub Release の作成をスキップする場合に指定。
 
 .PARAMETER SkipWinGetPR
-    WinGet PR の作成をスキップする場合に指定。
+    WinGet マニフェスト作成と PR の作成をスキップする場合に指定。
+
+.PARAMETER SkipPRCreation
+    WinGet マニフェストは作成するが、PR の作成だけをスキップする場合に指定。
 
 .PARAMETER DryRun
     実際の変更を行わず、プレビューのみ行う場合に指定。
@@ -60,6 +63,9 @@ param(
 
     [Parameter()]
     [switch]$SkipWinGetPR,
+
+    [Parameter()]
+    [switch]$SkipPRCreation,
 
     [Parameter()]
     [switch]$DryRun,
@@ -523,7 +529,7 @@ if (-not $SkipWinGetPR) {
 #endregion
 
 #region Step 8: Create WinGet PR
-if (-not $SkipWinGetPR) {
+if (-not $SkipWinGetPR -and -not $SkipPRCreation) {
     Write-Banner "Step 8: Create WinGet PR"
 
     $prTitle = "New version: $PackageIdentifier version $Version"
