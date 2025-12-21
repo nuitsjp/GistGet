@@ -187,62 +187,53 @@ jobs:
         run: |
           $version = "${{ needs.release.outputs.version }}"
           $x64Url = "https://github.com/nuitsjp/GistGet/releases/download/v$version/GistGet-win-x64.zip"
+          $zipPath = Join-Path $PWD "artifacts/GistGet-win-x64.zip"
+          $hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash
 
-          # マニフェスト生成: 既存が無い場合でも publish できるよう update → new フォールバック
           $outDir = Join-Path $PWD "winget-manifest"
           if (Test-Path $outDir) { Remove-Item -Recurse -Force $outDir }
           New-Item -ItemType Directory -Path $outDir | Out-Null
 
-          $updateSucceeded = $false
-          $updateOutput = ./wingetcreate.exe update NuitsJp.GistGet `
-            --version $version `
-            --urls $x64Url `
-            --out $outDir 2>&1
-          Write-Host $updateOutput
+          $versionYaml = @"
+PackageIdentifier: NuitsJp.GistGet
+PackageVersion: $version
+DefaultLocale: en-US
+ManifestType: version
+ManifestVersion: 1.6.0
+"@
 
-          if ($LASTEXITCODE -eq 0) {
-            $updateSucceeded = $true
-          } else {
-            Write-Host "wingetcreate update failed; falling back to new" -ForegroundColor Yellow
-            $newOutput = ./wingetcreate.exe new `
-              $x64Url `
-              --out $outDir 2>&1
-            Write-Host $newOutput
+          $localeYaml = @"
+PackageIdentifier: NuitsJp.GistGet
+PackageVersion: $version
+PackageLocale: en-US
+Publisher: nuitsjp
+PublisherUrl: https://github.com/nuitsjp
+PackageName: GistGet
+License: MIT
+LicenseUrl: https://github.com/nuitsjp/GistGet/blob/main/LICENSE
+ShortDescription: Windows Package Manager Cloud Sync Tool
+Moniker: gistget
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0
+"@
 
-            if ($LASTEXITCODE -ne 0) {
-              throw "wingetcreate new failed with exit code $LASTEXITCODE"
-            }
-          }
+          $installerYaml = @"
+PackageIdentifier: NuitsJp.GistGet
+PackageVersion: $version
+InstallerType: portable
+Installers:
+  - Architecture: x64
+    InstallerUrl: $x64Url
+    InstallerSha256: $hash
+    PortableCommandAlias: gistget
+ManifestType: installer
+ManifestVersion: 1.6.0
+"@
 
-          # YAML を安全に編集するため powershell-yaml を使用
-          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-          Install-Module powershell-yaml -Scope CurrentUser -Force -Repository PSGallery
+          Set-Content -Path (Join-Path $outDir "NuitsJp.GistGet.yaml") -Value $versionYaml -Encoding utf8
+          Set-Content -Path (Join-Path $outDir "NuitsJp.GistGet.locale.en-US.yaml") -Value $localeYaml -Encoding utf8
+          Set-Content -Path (Join-Path $outDir "NuitsJp.GistGet.installer.yaml") -Value $installerYaml -Encoding utf8
 
-          $installerManifest = Get-ChildItem -Path $outDir -Recurse -Filter "*.installer.yaml" | Select-Object -First 1
-          if ($null -eq $installerManifest) {
-            throw "Installer manifest (*.installer.yaml) not found under '$outDir'."
-          }
-
-          $yamlObject = Get-Content -Path $installerManifest.FullName -Raw | ConvertFrom-Yaml -Ordered
-          if ($null -eq $yamlObject.Installers) {
-            throw "Installers section not found in '$($installerManifest.FullName)'."
-          }
-
-          foreach ($installer in $yamlObject.Installers) {
-            $installer.NestedInstallerType = "portable"
-            $installer.NestedInstallerFiles = @(
-              [ordered]@{
-                RelativeFilePath = "GistGet.exe"
-                PortableCommandAlias = "gistget"
-              }
-            )
-          }
-
-          $patchedYaml = $yamlObject | ConvertTo-Yaml
-          Set-Content -Path $installerManifest.FullName -Value $patchedYaml -Encoding utf8
-
-          # wingetcreate submit で PR を作成し、出力をキャプチャ
-          # 注意: WINGET_GITHUB_TOKEN は winget-pkgs リポジトリへの書き込み権限を持つ PAT
           $prTitle = "Update NuitsJp.GistGet to $version"
           $output = ./wingetcreate.exe submit `
             --prtitle $prTitle `
@@ -251,7 +242,6 @@ jobs:
 
           Write-Host $output
 
-          # PR URL を抽出 (wingetcreate は "Pull request can be found at: <URL>" 形式で出力)
           if ($output -match 'https://github\.com/microsoft/winget-pkgs/pull/\d+') {
             $prUrl = $Matches[0]
             echo "PR_URL=$prUrl" >> $env:GITHUB_OUTPUT
