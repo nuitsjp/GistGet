@@ -562,6 +562,15 @@ if (-not $SkipWinGetPR) {
             Write-Host "  https://github.com/$WinGetUpstreamOwner/$WinGetUpstreamRepo/compare/master...${Publisher}:${WinGetUpstreamRepo}:${branchName}" -ForegroundColor Cyan
         } else {
             Write-Host "WinGet PR を作成しました: $prUrl" -ForegroundColor Green
+
+            # GitHub Release に WinGet PR リンクを追記
+            if (-not $SkipGitHubRelease) {
+                Write-Host "GitHub Release に WinGet PR リンクを追記中..." -ForegroundColor Yellow
+                $currentBody = gh release view $tagName --repo "$GitHubOwner/$GitHubRepo" --json body --jq '.body'
+                $updatedBody = $currentBody + "`n`n### WinGet`n- [WinGet PR]($prUrl)"
+                gh release edit $tagName --repo "$GitHubOwner/$GitHubRepo" --notes "$updatedBody"
+                Write-Host "GitHub Release を更新しました。" -ForegroundColor Green
+            }
         }
     } else {
         Write-Host "[DryRun] WinGet PR を作成" -ForegroundColor Gray
