@@ -12,10 +12,10 @@ It uses a simple YAML configuration file stored in a private or public Gist to k
 
 ## Features
 
--   **☁️ Cloud Sync**: Synchronize installed packages via GitHub Gist.
--   **🚀 Full Winget Compatibility**: Use standard `winget` commands directly, with integrated cloud sync capabilities (e.g., `gistget search`, `gistget install`).
--   **💻 Cross-Device**: Keep your work and home computers in sync.
--   **📄 Configuration as Code**: Manage your software list in a readable `GistGet.yaml` format.
+-   **Cloud Sync**: Synchronize installed packages via GitHub Gist.
+-   **Full Winget Compatibility**: Use standard `winget` commands directly, with integrated cloud sync capabilities (e.g., `gistget search`, `gistget install`).
+-   **Cross-Device**: Keep your work and home computers in sync.
+-   **Configuration as Code**: Manage your software list in a readable `GistGet.yaml` format.
 
 ## Requirements
 
@@ -30,7 +30,7 @@ It uses a simple YAML configuration file stored in a private or public Gist to k
 2.  Extract the zip file.
 3.  Add the extracted folder to your system's `PATH`.
 
-### From Winget (Coming Soon)
+### From Winget
 
 ```powershell
 winget install nuitsjp.GistGet
@@ -134,9 +134,9 @@ GistGet uses a `GistGet.yaml` file in the Gist. It's a map where the package ID 
 
 | Value | Description | `upgrade --all` | `upgrade <pkg>` |
 |-------|-------------|-----------------|-----------------|
-| None | No pin. Eligible for all upgrades. | ✅ Allowed | ✅ Allowed |
-| `pinning` | Default. Excluded from `upgrade --all`, but explicit upgrade is possible. | ❌ Skipped | ✅ Allowed |
-| `blocking` | Excluded from `upgrade --all`. Explicit upgrade is also possible. | ❌ Skipped | ✅ Allowed |
+| None | No pin. Eligible for all upgrades. | Allowed | Allowed |
+| `pinning` | Default. Excluded from `upgrade --all`, but explicit upgrade is possible. | Skipped | Allowed |
+| `blocking` | Excluded from `upgrade --all`. Explicit upgrade is also possible. | Skipped | Allowed |
 | `gating` | Upgrade only within specified version range (e.g., `1.7.*`). | Within range only | Within range only |
 
 ### Installation Options (winget passthrough)
@@ -228,7 +228,7 @@ Integrated script to run the code quality pipeline:
 
 ```powershell
 # Run all steps (default)
-# FormatCheck → Build → Tests → ReSharper
+# FormatCheck -> Build -> Tests -> ReSharper
 .\scripts\Run-CodeQuality.ps1
 
 # Run specific steps only

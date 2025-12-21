@@ -12,10 +12,10 @@
 
 ## 機能
 
--   **☁️ クラウド同期**: GitHub Gist経由でインストール済みパッケージを同期します。
--   **🚀 Winget 完全互換**: 標準の `winget` コマンドをそのまま利用でき、さらにクラウド同期機能が統合されています (例: `gistget search`, `gistget install`)。
--   **💻 クロスデバイス**: 職場や自宅のコンピューターを同期状態に保ちます。
--   **📄 Configuration as Code**: 読みやすい `GistGet.yaml` 形式でソフトウェアリストを管理します。
+-   **クラウド同期**: GitHub Gist経由でインストール済みパッケージを同期します。
+-   **Winget 完全互換**: 標準の `winget` コマンドをそのまま利用でき、さらにクラウド同期機能が統合されています (例: `gistget search`, `gistget install`)。
+-   **クロスデバイス**: 職場や自宅のコンピューターを同期状態に保ちます。
+-   **Configuration as Code**: 読みやすい `GistGet.yaml` 形式でソフトウェアリストを管理します。
 
 ## 要件
 
@@ -30,7 +30,7 @@
 2.  zipファイルを解凍します。
 3.  解凍したフォルダーをシステムの`PATH`に追加します。
 
-### Winget から (近日公開予定)
+### Winget から
 
 ```powershell
 winget install nuitsjp.GistGet
@@ -134,9 +134,9 @@ GistGetはGist内の `GistGet.yaml` ファイルを使用します。パッケ�
 
 | 値 | 説明 | `upgrade --all` | `upgrade <pkg>` |
 |----|------|-----------------|-----------------|
-| なし | pin なし。すべての upgrade 対象。 | ✅ 可能 | ✅ 可能 |
-| `pinning` | デフォルト。`upgrade --all` から除外されるが、明示的 upgrade は可能。 | ❌ スキップ | ✅ 可能 |
-| `blocking` | `upgrade --all` から除外。明示的 upgrade も可能。 | ❌ スキップ | ✅ 可能 |
+| なし | pin なし。すべての upgrade 対象。 | 可能 | 可能 |
+| `pinning` | デフォルト。`upgrade --all` から除外されるが、明示的 upgrade は可能。 | スキップ | 可能 |
+| `blocking` | `upgrade --all` から除外。明示的 upgrade も可能。 | スキップ | 可能 |
 | `gating` | 指定バージョン範囲内のみ upgrade 可能（例: `1.7.*`）。 | 範囲内のみ | 範囲内のみ |
 
 ### インストールオプション (winget パススルー)

@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     このスクリプトは以下の処理を行います:
-    1. x64 および ARM64 向けに Self-Contained ビルドを実行
+    1. x64 向けに Self-Contained ビルドを実行
     2. 各アーキテクチャ用の ZIP アーカイブを作成
     3. SHA256 ハッシュを計算し、ハッシュファイルを生成
 
@@ -73,8 +73,7 @@ New-Item -ItemType Directory -Path $artifactsPath -Force | Out-Null
 
 # ビルド対象のアーキテクチャ
 $architectures = @(
-    @{ Rid = 'win-x64'; Name = 'x64' },
-    @{ Rid = 'win-arm64'; Name = 'arm64' }
+    @{ Rid = 'win-x64'; Name = 'x64' }
 )
 
 $hashEntries = @()

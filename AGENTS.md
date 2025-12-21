@@ -22,7 +22,6 @@
 - `src/GistGet`: CLI entry point (`Program.cs`) plus layered folders: `Application/Services` for auth, Gist sync, and package orchestration; `Infrastructure/{OS,Security,WinGet}` for process execution, credential storage, and WinGet access; `Presentation/CliCommandBuilder` for System.CommandLine setup; `Models` and `Utils` for shared types (e.g., `GistGetPackage`, `YamlHelper`).
 - `src/GistGet.Tests`: xUnit test suites organized by feature (`Presentation/`, `Services/`, `Utils/`); coverage output lands in `TestResults/`.
 - `scripts`: helper PowerShell tools such as `Run-Tests.ps1` (build + test + coverage) and `Run-AuthLogin.ps1` for GitHub device-flow login.
-- `docs`: design/spec references (`docs/SPEC.ja.md`, `DESIGN.ja.md`, `YAML_SPEC.ja.md`) to keep behavior aligned with the contract.
 
 ## Build, Test, and Development Commands
 - Restore/build: `dotnet build src/GistGet.slnx -c Debug` (or `Release`) to compile all projects.
