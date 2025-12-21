@@ -11,7 +11,11 @@
             **/UnitGenerator/**/*.g.cs;
             **\\UnitGenerator\\**\\*.g.cs;
             **/*.g.cs;
-            **\\*.g.cs
+            **\\*.g.cs;
+            **/Program.cs;
+            **\\Program.cs;
+            **/GitHubClientFactory.cs;
+            **\\GitHubClientFactory.cs
           </ExcludeByFile>
         </Configuration>
       </DataCollector>

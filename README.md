@@ -2,8 +2,8 @@
 
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/nuitsjp/GistGet)](https://github.com/nuitsjp/GistGet/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub issues](https://img.shields.io/github/issues/nuitsjp/GistGet)](https://github.com/nuitsjp/GistGet/issues)
-[![GitHub pull requests](https://img.shields.io/github/issues-pr/nuitsjp/GistGet)](https://github.com/nuitsjp/GistGet/pulls)
+[![CI](https://github.com/nuitsjp/GistGet/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/nuitsjp/GistGet/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/nuitsjp/GistGet/coverage/.github/badges/coverage.json)](https://github.com/nuitsjp/GistGet/actions/workflows/ci.yml)
 
 [Japanese](README.ja.md)
 

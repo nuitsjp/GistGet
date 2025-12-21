@@ -7,19 +7,25 @@ on:
       - main
     paths:
       - 'src/**'
+      - 'scripts/**'
       - '.github/workflows/**'
   pull_request:
     branches:
       - main
     paths:
       - 'src/**'
+      - 'scripts/**'
       - '.github/workflows/**'
+
+permissions:
+  contents: write
 
 env:
   DOTNET_VERSION: '10.0.x'
   SOLUTION_FILE: 'src/GistGet.slnx'
   TEST_PROJECT: 'src/GistGet.Test/GistGet.Test.csproj'
   BUILD_PLATFORM: 'x64'
+  COVERAGE_RUNSETTINGS: 'scripts/settings/coverlet.runsettings'
 
 jobs:
   build-and-test:
@@ -69,7 +75,30 @@ jobs:
         run: dotnet format ${{ env.SOLUTION_FILE }} --verify-no-changes --verbosity diagnostic
 
       - name: Test
-        run: dotnet test ${{ env.TEST_PROJECT }} -c Debug -p:Platform=${{ env.BUILD_PLATFORM }} --no-build --collect:"XPlat Code Coverage" --results-directory TestResults
+        run: dotnet test ${{ env.TEST_PROJECT }} -c Debug -p:Platform=${{ env.BUILD_PLATFORM }} --no-build --collect:"XPlat Code Coverage" --results-directory TestResults --settings ${{ env.COVERAGE_RUNSETTINGS }}
+
+      - name: Generate Coverage Badge
+        run: |
+          $coverageFile = Get-ChildItem -Path TestResults -Recurse -Filter "coverage.cobertura.xml" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (-not $coverageFile) {
+            throw "coverage.cobertura.xml not found."
+          }
+
+          [xml]$xml = Get-Content -Path $coverageFile.FullName
+          $lineRate = [double]$xml.coverage.'line-rate'
+          $coverage = [Math]::Round($lineRate * 100, 2)
+          Write-Host ("Line coverage: {0:N2}%" -f $coverage)
+
+          $color = if ($coverage -ge 98) { "brightgreen" } elseif ($coverage -ge 95) { "green" } elseif ($coverage -ge 90) { "yellowgreen" } elseif ($coverage -ge 80) { "yellow" } else { "red" }
+          $badge = @{
+            schemaVersion = 1
+            label = "coverage"
+            message = ("{0:N2}%" -f $coverage)
+            color = $color
+          } | ConvertTo-Json -Compress
+
+          $badgePath = Join-Path $env:RUNNER_TEMP "coverage.json"
+          $badge | Out-File -FilePath $badgePath -Encoding utf8
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
@@ -77,3 +106,27 @@ jobs:
         with:
           name: test-results
           path: TestResults
+
+      - name: Publish Coverage Badge
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          $badgePath = Join-Path $env:RUNNER_TEMP "coverage.json"
+          if (-not (Test-Path $badgePath)) {
+            throw "coverage.json not found."
+          }
+
+          git fetch origin coverage
+          if ($LASTEXITCODE -ne 0) {
+            git checkout --orphan coverage
+            git reset --hard
+          } else {
+            git checkout coverage
+            git reset --hard origin/coverage
+          }
+
+          New-Item -ItemType Directory -Force -Path ".github/badges" | Out-Null
+          Copy-Item -Path $badgePath -Destination ".github/badges/coverage.json" -Force
+
+          git add .github/badges/coverage.json
+          git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" commit -m "chore: update coverage badge" || exit 0
+          git push origin coverage
