@@ -45,11 +45,17 @@ jobs:
         id: version
         shell: pwsh
         run: |
-          $version = "${{ github.ref_name }}" -replace '^v\.?', ''
+          # workflow_dispatch の場合は inputs.tag を使用、それ以外は github.ref_name
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $tagName = "${{ inputs.tag }}"
+          } else {
+            $tagName = "${{ github.ref_name }}"
+          }
+          $version = $tagName -replace '^v\.?', ''
           $version = $version.TrimStart('.')
 
           if ([string]::IsNullOrWhiteSpace($version)) {
-            throw "Failed to parse version from tag '${{ github.ref_name }}'."
+            throw "Failed to parse version from tag '$tagName'."
           }
 
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
