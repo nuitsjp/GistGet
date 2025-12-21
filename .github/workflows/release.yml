@@ -7,7 +7,14 @@ on:
   push:
     tags:
       - 'v*.*.*'  # v0.1.0, v1.0.0 など
+    branches-ignore:
+      - '**'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g., v1.0.0)'
+        required: true
+        type: string
 
 permissions:
   contents: write
