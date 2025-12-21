@@ -1,16 +1,28 @@
 <#
 .SYNOPSIS
-    GistGet プロジェクトのテスト、カバレッジ分析、静的解析、メトリクス収集、ReSharper インスペクションを実行します。
+    GistGet プロジェクトのコード品質パイプラインを実行します。
 
 .DESCRIPTION
-    このスクリプトは以下を順番に実行します:
-    1. ソリューションのビルド（Roslyn アナライザー診断収集込み）
-    2. テスト実行（カバレッジ収集込み）
-    3. カバレッジ分析と閾値チェック
-    4. コードメトリクス収集とレポート生成
-    5. フォーマットチェック
-    6. Roslyn 診断レポートとリファクタリング候補
-    7. ReSharper InspectCode（インストール済みの場合）
+    このスクリプトは以下の4ステップを順番に実行します:
+    1. FormatCheck - コードフォーマットの検証
+    2. Build - ソリューションのビルド（Roslyn 診断レポート込み）
+    3. Tests - テスト実行（カバレッジ分析込み）
+    4. ReSharper - ReSharper InspectCode（インストール済みの場合）
+
+    ステップ制御パラメータを指定しない場合は全ステップを実行します。
+    1つ以上指定した場合は、指定したステップのみを実行します。
+
+.PARAMETER FormatCheck
+    FormatCheck ステップを実行します。
+
+.PARAMETER Build
+    Build ステップを実行します。
+
+.PARAMETER Tests
+    Tests ステップを実行します。
+
+.PARAMETER ReSharper
+    ReSharper ステップを実行します。
 
 .PARAMETER Configuration
     ビルド構成 (Debug または Release)。既定値は Debug。
@@ -19,19 +31,10 @@
     最低限必要なラインカバレッジ率 (%)。既定値は 98。0 を指定すると閾値チェックをスキップ。
 
 .PARAMETER BranchCoverageThreshold
-    最低限必要なブランチカバレッジ率 (%)。既定値は 81。0 を指定すると閾値チェックをスキップ。
+    最低限必要なブランチカバレッジ率 (%)。既定値は 85。0 を指定すると閾値チェックをスキップ。
 
 .PARAMETER Top
     カバレッジが低いファイルの表示数。既定値は 5。
-
-.PARAMETER MetricsOutputPath
-    メトリクスレポートの出力パス。既定値は .reports/metrics-report.txt。
-
-.PARAMETER MetricsFormat
-    メトリクスレポートの出力形式 (Text または Json)。既定値は Text。
-
-.PARAMETER SkipTests
-    テスト実行をスキップします。静的解析のみ実行したい場合に使用。
 
 .PARAMETER TreatWarningsAsErrors
     ビルド警告をエラーとして扱います。
@@ -44,23 +47,33 @@
 
 .EXAMPLE
     .\Run-CodeQuality.ps1
-    テスト、カバレッジ分析、静的解析、ReSharper インスペクションを実行
+    全ステップを実行（FormatCheck → Build → Tests → ReSharper）
 
 .EXAMPLE
-    .\Run-CodeQuality.ps1 -SkipTests
-    テストをスキップしてビルドと静的解析のみ実行
+    .\Run-CodeQuality.ps1 -Build
+    Build ステップのみ実行
 
 .EXAMPLE
-    .\Run-CodeQuality.ps1 -ReSharperSeverity SUGGESTION
-    SUGGESTION 以上の問題を検出
+    .\Run-CodeQuality.ps1 -Build -Tests
+    Build と Tests ステップのみ実行
+
+.EXAMPLE
+    .\Run-CodeQuality.ps1 -Tests -CoverageThreshold 95
+    Tests ステップをカバレッジ閾値 95% で実行
 #>
 
 param(
+    # ステップ制御パラメータ（未指定時は全ステップ実行、指定時は指定ステップのみ実行）
+    [switch]$FormatCheck,
+    [switch]$Build,
+    [switch]$Tests,
+    [switch]$ReSharper,
+    
+    # 設定値パラメータ
     [string]$Configuration = "Debug",
     [double]$CoverageThreshold = 98,
     [double]$BranchCoverageThreshold = 85,
     [int]$Top = 5,
-    [switch]$SkipTests,
     [switch]$TreatWarningsAsErrors,
     [ValidateSet('HINT', 'SUGGESTION', 'WARNING', 'ERROR')]
     [string]$ReSharperSeverity = "SUGGESTION",
@@ -97,15 +110,20 @@ $testProjectPath = Join-Path $repoRoot "src\GistGet.Test\GistGet.Test.csproj"
 $reportsDir = Join-Path $repoRoot ".reports"
 $diagnosticsLogPath = Join-Path $reportsDir "build-diagnostics.log"
 
-# サマリー用の結果を格納する変数
+# サマリー用の結果を格納する変数（FormatCheck → Build → Tests → ReSharper の順）
 $script:pipelineResults = @{
+    FormatCheck = @{ Status = "Skipped"; Details = "" }
     Build = @{ Status = "Skipped"; Details = "" }
     Tests = @{ Status = "Skipped"; Details = "" }
-    Coverage = @{ Status = "Skipped"; Details = "" }
-    FormatCheck = @{ Status = "Skipped"; Details = "" }
-    RoslynDiagnostics = @{ Status = "Skipped"; Details = "" }
     ReSharper = @{ Status = "Skipped"; Details = "" }
 }
+
+# 実行するステップを決定（未指定時は全ステップ実行）
+$runAll = -not ($FormatCheck -or $Build -or $Tests -or $ReSharper)
+$runFormatCheck = $runAll -or $FormatCheck
+$runBuild = $runAll -or $Build
+$runTests = $runAll -or $Tests
+$runReSharper = $runAll -or $ReSharper
 
 function Write-Banner {
     param([string]$Title)
@@ -526,11 +544,9 @@ function Write-PipelineSummary {
     Write-Host "----------------------------------------"
 
     $steps = @(
+        @{ Name = "Format Check"; Key = "FormatCheck" },
         @{ Name = "Build"; Key = "Build" },
         @{ Name = "Tests"; Key = "Tests" },
-        @{ Name = "Coverage"; Key = "Coverage" },
-        @{ Name = "Format Check"; Key = "FormatCheck" },
-        @{ Name = "Roslyn Diagnostics"; Key = "RoslynDiagnostics" },
         @{ Name = "ReSharper InspectCode"; Key = "ReSharper" }
     )
 
@@ -575,33 +591,28 @@ Write-Host "Configuration: $Configuration" -ForegroundColor Yellow
 Write-Host "Line Coverage Threshold: $CoverageThreshold%" -ForegroundColor Yellow
 Write-Host "Branch Coverage Threshold: $BranchCoverageThreshold%" -ForegroundColor Yellow
 Write-Host "Platform: $platform" -ForegroundColor Yellow
-if ($SkipTests) {
-    Write-Host "Tests: SKIPPED" -ForegroundColor Yellow
-}
 
-# Check ReSharper availability upfront
-$resharperAvailable = Test-ReSharperInstalled
-if ($resharperAvailable) {
-    Write-Host "ReSharper: Available" -ForegroundColor Green
+# 実行するステップを表示
+if ($runAll) {
+    Write-Host "Steps: All" -ForegroundColor Yellow
 } else {
-    Write-Host "ReSharper: Not installed (will be skipped)" -ForegroundColor Yellow
+    $selectedSteps = @()
+    if ($runFormatCheck) { $selectedSteps += "FormatCheck" }
+    if ($runBuild) { $selectedSteps += "Build" }
+    if ($runTests) { $selectedSteps += "Tests" }
+    if ($runReSharper) { $selectedSteps += "ReSharper" }
+    Write-Host "Steps: $($selectedSteps -join ', ')" -ForegroundColor Yellow
 }
 
-$stepNumber = 1
-
-# Step 1: Build
-Write-Banner "Step $stepNumber`: Building Solution"
-$stepNumber++
-
-$buildArgs = @(
-    "build",
-    $solutionPath,
-    "-c", $Configuration,
-    "-p:Platform=$platform"
-)
-
-if ($TreatWarningsAsErrors) {
-    $buildArgs += "-p:TreatWarningsAsErrors=true"
+# Check ReSharper availability upfront (only if needed)
+$resharperAvailable = $false
+if ($runReSharper) {
+    $resharperAvailable = Test-ReSharperInstalled
+    if ($resharperAvailable) {
+        Write-Host "ReSharper: Available" -ForegroundColor Green
+    } else {
+        Write-Host "ReSharper: Not installed (will be skipped)" -ForegroundColor Yellow
+    }
 }
 
 # Ensure reports directory exists
@@ -609,27 +620,117 @@ if (-not (Test-Path $reportsDir)) {
     New-Item -ItemType Directory -Path $reportsDir -Force | Out-Null
 }
 
-# Capture diagnostics to a log file for later analysis
-Write-Host "Capturing diagnostics for analysis..." -ForegroundColor Gray
-$buildOutput = & dotnet $buildArgs 2>&1 | Tee-Object -FilePath $diagnosticsLogPath
-$buildExitCode = $LASTEXITCODE
+# ============================================
+# Step 1: Format Check
+# ============================================
+if ($runFormatCheck) {
+    Write-Banner "Step: Format Check"
 
-# Output build result
-$buildOutput | ForEach-Object { Write-Host $_ }
+    Write-Host "Running dotnet format --verify-no-changes..." -ForegroundColor Gray
+    $formatOutput = & dotnet format $solutionPath --verify-no-changes --verbosity quiet 2>&1
+    $formatExitCode = $LASTEXITCODE
 
-if ($buildExitCode -ne 0) {
-    Write-Host ""
-    Write-Host "Build failed!" -ForegroundColor Red
-    $script:pipelineResults.Build = @{ Status = "Failed"; Details = "Exit code: $buildExitCode" }
-    Write-PipelineSummary
-    exit $buildExitCode
+    if ($formatExitCode -eq 0) {
+        Write-Host "FORMAT CHECK: PASSED" -ForegroundColor Green
+        $script:pipelineResults.FormatCheck = @{ Status = "Passed"; Details = "" }
+    } else {
+        Write-Host "FORMAT CHECK: FAILED" -ForegroundColor Red
+        Write-Host ""
+        Write-Host "The following files need formatting:" -ForegroundColor Yellow
+        $formatOutput | ForEach-Object { Write-Host "  $_" }
+        Write-Host ""
+        Write-Host "Run 'dotnet format $solutionPath' to fix formatting issues." -ForegroundColor Cyan
+        $script:pipelineResults.FormatCheck = @{ Status = "Failed"; Details = "Files need formatting" }
+        Write-PipelineSummary
+        exit 1
+    }
 }
-$script:pipelineResults.Build = @{ Status = "Passed"; Details = "Configuration: $Configuration" }
 
-# Step 2: Test (unless skipped)
-if (-not $SkipTests) {
-    Write-Banner "Step $stepNumber`: Running Tests"
-    $stepNumber++
+# ============================================
+# Step 2: Build (includes Roslyn Diagnostics)
+# ============================================
+if ($runBuild) {
+    Write-Banner "Step: Build"
+
+    $buildArgs = @(
+        "build",
+        $solutionPath,
+        "-c", $Configuration,
+        "-p:Platform=$platform"
+    )
+
+    if ($TreatWarningsAsErrors) {
+        $buildArgs += "-p:TreatWarningsAsErrors=true"
+    }
+
+    # Capture diagnostics to a log file for analysis
+    Write-Host "Building solution with diagnostics capture..." -ForegroundColor Gray
+    $buildOutput = & dotnet $buildArgs 2>&1 | Tee-Object -FilePath $diagnosticsLogPath
+    $buildExitCode = $LASTEXITCODE
+
+    # Output build result
+    $buildOutput | ForEach-Object { Write-Host $_ }
+
+    if ($buildExitCode -ne 0) {
+        Write-Host ""
+        Write-Host "Build failed!" -ForegroundColor Red
+        $script:pipelineResults.Build = @{ Status = "Failed"; Details = "Exit code: $buildExitCode" }
+        Write-PipelineSummary
+        exit $buildExitCode
+    }
+
+    # Roslyn Diagnostics Report (integrated into Build step)
+    Write-Host ""
+    Write-Host "ROSLYN DIAGNOSTICS" -ForegroundColor Yellow
+    Write-Host "----------------------------------------"
+    
+    $diagnostics = Get-DiagnosticsSummary -LogPath $diagnosticsLogPath
+    Write-DiagnosticsReport -Diagnostics $diagnostics -TopRules 10 -TopFiles 5
+
+    # Extract and display CA1502 (cyclomatic complexity) violations
+    if ($diagnostics -and $diagnostics.Warnings) {
+        $complexityIssues = $diagnostics.Warnings | Where-Object { $_.Code -eq "CA1502" }
+        if ($complexityIssues.Count -gt 0) {
+            Write-Host ""
+            Write-Host "HIGH COMPLEXITY METHODS (CA1502)" -ForegroundColor Yellow
+            Write-Host "----------------------------------------"
+            Write-Host "Methods exceeding cyclomatic complexity threshold (15):" -ForegroundColor Gray
+            $complexityIssues | ForEach-Object {
+                $fileName = Split-Path -Leaf $_.File
+                Write-Host ("  {0}:{1} - {2}" -f $fileName, $_.Line, $_.Message) -ForegroundColor Yellow
+            }
+            Write-Host ""
+            Write-Host "TIP: Consider refactoring methods with high complexity." -ForegroundColor Cyan
+        }
+    }
+
+    # Determine Build status based on diagnostics
+    $roslynDetails = "Configuration: $Configuration"
+    if ($diagnostics) {
+        $errorCount = $diagnostics.Errors.Count
+        $warningCount = $diagnostics.Warnings.Count
+        if ($errorCount -gt 0) {
+            $script:pipelineResults.Build = @{ Status = "Failed"; Details = "$roslynDetails, $errorCount errors" }
+            Write-PipelineSummary
+            exit 1
+        } elseif ($warningCount -gt 0) {
+            $roslynDetails += ", $warningCount warnings"
+        }
+    }
+    
+    $script:pipelineResults.Build = @{ Status = "Passed"; Details = $roslynDetails }
+
+    # Cleanup diagnostics log
+    if (Test-Path $diagnosticsLogPath) {
+        Remove-Item $diagnosticsLogPath -Force
+    }
+}
+
+# ============================================
+# Step 3: Tests (includes Coverage Analysis)
+# ============================================
+if ($runTests) {
+    Write-Banner "Step: Tests"
 
     $testArgs = @(
         "test",
@@ -649,11 +750,11 @@ if (-not $SkipTests) {
         Write-PipelineSummary
         exit $LASTEXITCODE
     }
-    $script:pipelineResults.Tests = @{ Status = "Passed"; Details = "" }
 
-    # Step 3: Coverage Analysis
-    Write-Banner "Step $stepNumber`: Analyzing Coverage"
-    $stepNumber++
+    # Coverage Analysis (integrated into Tests step)
+    Write-Host ""
+    Write-Host "COVERAGE ANALYSIS" -ForegroundColor Yellow
+    Write-Host "----------------------------------------"
 
     $coverageFile = Get-LatestCoverageFile -Root "$repoRoot\TestResults"
     $summary = Get-CoverageSummary -FilePath $coverageFile.FullName -ExcludePatterns $ExcludePatterns
@@ -687,7 +788,7 @@ if (-not $SkipTests) {
             $lowCoverageFiles | Sort-Object Coverage | ForEach-Object {
                 Write-Host ("  {0,-70} {1,6:N2}% ({2}/{3})" -f $_.File, $_.Coverage, $_.Covered, $_.Total) -ForegroundColor Red
             }
-            $script:pipelineResults.Coverage = @{ Status = "Failed"; Details = "{0} files below {1}%" -f $lowCoverageFiles.Count, $fileThreshold }
+            $script:pipelineResults.Tests = @{ Status = "Failed"; Details = "{0} files below {1}%" -f $lowCoverageFiles.Count, $fileThreshold }
             Write-PipelineSummary
             exit 1
         }
@@ -695,7 +796,7 @@ if (-not $SkipTests) {
         # Check overall threshold (98%)
         if ($summary.LineCoverage -lt $CoverageThreshold) {
             Write-Host ("Coverage threshold not met: {0:N2}% < {1:N2}%" -f $summary.LineCoverage, $CoverageThreshold) -ForegroundColor Red
-            $script:pipelineResults.Coverage = @{ Status = "Failed"; Details = "{0:N2}% < {1:N2}%" -f $summary.LineCoverage, $CoverageThreshold }
+            $script:pipelineResults.Tests = @{ Status = "Failed"; Details = "Line: {0:N2}% < {1:N2}%" -f $summary.LineCoverage, $CoverageThreshold }
             Write-PipelineSummary
             exit 1
         }
@@ -707,86 +808,23 @@ if (-not $SkipTests) {
     if ($BranchCoverageThreshold -gt 0) {
         if ($summary.BranchCoverage -lt $BranchCoverageThreshold) {
             Write-Host ("Branch coverage threshold not met: {0:N2}% < {1:N2}%" -f $summary.BranchCoverage, $BranchCoverageThreshold) -ForegroundColor Red
-            $script:pipelineResults.Coverage = @{ Status = "Failed"; Details = "Branch: {0:N2}% < {1:N2}%" -f $summary.BranchCoverage, $BranchCoverageThreshold }
+            $script:pipelineResults.Tests = @{ Status = "Failed"; Details = "Branch: {0:N2}% < {1:N2}%" -f $summary.BranchCoverage, $BranchCoverageThreshold }
             Write-PipelineSummary
             exit 1
         }
         Write-Host ("Branch coverage threshold met: {0:N2}% >= {1:N2}%" -f $summary.BranchCoverage, $BranchCoverageThreshold) -ForegroundColor Green
     }
 
-    $script:pipelineResults.Coverage = @{ Status = "Passed"; Details = "Line: {0:N2}%, Branch: {1:N2}%" -f $summary.LineCoverage, $summary.BranchCoverage }
+    $script:pipelineResults.Tests = @{ Status = "Passed"; Details = "Line: {0:N2}%, Branch: {1:N2}%" -f $summary.LineCoverage, $summary.BranchCoverage }
 }
 
-# Step 4: Format Check
-Write-Banner "Step $stepNumber`: Format Check"
-    $stepNumber++
+# ============================================
+# Step 4: ReSharper InspectCode
+# ============================================
+if ($runReSharper) {
+    Write-Banner "Step: ReSharper InspectCode"
 
-    Write-Host "Running dotnet format --verify-no-changes..." -ForegroundColor Gray
-    $formatOutput = & dotnet format $solutionPath --verify-no-changes --verbosity quiet 2>&1
-    $formatExitCode = $LASTEXITCODE
-
-    if ($formatExitCode -eq 0) {
-        Write-Host "FORMAT CHECK: PASSED" -ForegroundColor Green
-        $script:pipelineResults.FormatCheck = @{ Status = "Passed"; Details = "" }
-    } else {
-        Write-Host "FORMAT CHECK: FAILED" -ForegroundColor Red
-        Write-Host ""
-        Write-Host "The following files need formatting:" -ForegroundColor Yellow
-        $formatOutput | ForEach-Object { Write-Host "  $_" }
-        Write-Host ""
-        Write-Host "Run 'dotnet format $solutionPath' to fix formatting issues." -ForegroundColor Cyan
-        $script:pipelineResults.FormatCheck = @{ Status = "Warning"; Details = "Files need formatting" }
-        # Don't exit - continue to show diagnostics
-    }
-
-    # Step 5: Static Analysis Report
-Write-Banner "Step $stepNumber`: Roslyn Diagnostics Report"
-    $stepNumber++
-
-    $diagnostics = Get-DiagnosticsSummary -LogPath $diagnosticsLogPath
-    Write-DiagnosticsReport -Diagnostics $diagnostics -TopRules 10 -TopFiles 5
-
-    # Extract and display CA1502 (cyclomatic complexity) violations
-    if ($diagnostics -and $diagnostics.Warnings) {
-        $complexityIssues = $diagnostics.Warnings | Where-Object { $_.Code -eq "CA1502" }
-        if ($complexityIssues.Count -gt 0) {
-            Write-Host ""
-            Write-Host "HIGH COMPLEXITY METHODS (CA1502)" -ForegroundColor Yellow
-            Write-Host "----------------------------------------"
-            Write-Host "Methods exceeding cyclomatic complexity threshold (15):" -ForegroundColor Gray
-            $complexityIssues | ForEach-Object {
-                $fileName = Split-Path -Leaf $_.File
-                Write-Host ("  {0}:{1} - {2}" -f $fileName, $_.Line, $_.Message) -ForegroundColor Yellow
-            }
-            Write-Host ""
-            Write-Host "TIP: Consider refactoring methods with high complexity." -ForegroundColor Cyan
-        }
-    }
-
-    if ($diagnostics) {
-        $errorCount = $diagnostics.Errors.Count
-        $warningCount = $diagnostics.Warnings.Count
-        if ($errorCount -gt 0) {
-            $script:pipelineResults.RoslynDiagnostics = @{ Status = "Failed"; Details = "$errorCount errors, $warningCount warnings" }
-        } elseif ($warningCount -gt 0) {
-            $script:pipelineResults.RoslynDiagnostics = @{ Status = "Warning"; Details = "$warningCount warnings" }
-        } else {
-            $script:pipelineResults.RoslynDiagnostics = @{ Status = "Passed"; Details = "No issues" }
-        }
-    } else {
-        $script:pipelineResults.RoslynDiagnostics = @{ Status = "Passed"; Details = "No issues" }
-    }
-
-    # Cleanup diagnostics log
-    if (Test-Path $diagnosticsLogPath) {
-        Remove-Item $diagnosticsLogPath -Force
-    }
-
-    # Step 6: ReSharper InspectCode (if available)
     if ($resharperAvailable) {
-        Write-Banner "Step $stepNumber`: ReSharper InspectCode"
-        $stepNumber++
-
         $resharperSummary = Invoke-ReSharperInspectCode -OutputPath $ReSharperOutputPath -Severity $ReSharperSeverity
         Write-ReSharperReport -Summary $resharperSummary
 
@@ -803,15 +841,12 @@ Write-Banner "Step $stepNumber`: Roslyn Diagnostics Report"
             $script:pipelineResults.ReSharper = @{ Status = "Passed"; Details = "No issues" }
         }
     } else {
-        Write-Banner "Step $stepNumber`: ReSharper InspectCode"
-        $stepNumber++
-
         Write-Host "ReSharper CLI tools are not installed. Skipping..." -ForegroundColor Yellow
         Write-Host ""
         Write-Host "To install ReSharper CLI tools, run:" -ForegroundColor Cyan
         Write-Host "  .\scripts\Setup-ReSharperCLT.ps1" -ForegroundColor White
-
-    $script:pipelineResults.ReSharper = @{ Status = "Skipped"; Details = "Not installed" }
+        $script:pipelineResults.ReSharper = @{ Status = "Skipped"; Details = "Not installed" }
+    }
 }
 
 #endregion
