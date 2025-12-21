@@ -7,6 +7,12 @@ on:
   push:
     tags:
       - 'v*.*.*'  # v0.1.0, v1.0.0 など
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g., v1.0.3)'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -99,11 +105,17 @@ jobs:
       - name: Get version from tag
         id: version
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          # workflow_dispatch の場合は inputs.tag を使用、それ以外は GITHUB_REF_NAME
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG_NAME="${{ inputs.tag }}"
+          else
+            TAG_NAME="${GITHUB_REF_NAME}"
+          fi
+          VERSION="${TAG_NAME#v}"
           VERSION="${VERSION#.}"
 
           if [ -z "$VERSION" ]; then
-            echo "Failed to parse version from tag '${GITHUB_REF_NAME}'." >&2
+            echo "Failed to parse version from tag '${TAG_NAME}'." >&2
             exit 1
           fi
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
