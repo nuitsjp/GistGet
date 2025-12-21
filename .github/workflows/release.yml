@@ -1,7 +1,7 @@
 # GistGet リリースワークフロー
 # タグプッシュ時に自動で GitHub Releases を作成し、winget-pkgs への PR を自動生成
 
-name: Release
+name: Release Workflow
 
 on:
   push:
