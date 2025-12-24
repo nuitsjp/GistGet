@@ -56,15 +56,21 @@ gistget auth login
 
 Follow the on-screen instructions to authenticate using the Device Flow.
 
-### Initial Setup (init)
+### Initial Setup
 
-When setting up a new PC or starting cloud sync for an existing environment, first use the `init` command to select the packages to sync:
+When you install a package, it is automatically synced to Gist. Even if a package is already installed, running the `install` command will add it to Gist:
 
 ```powershell
-gistget init
+# Install a new package and sync
+gistget install --id Microsoft.PowerToys
+
+# Add an already installed package to Gist
+gistget install --id 7zip.7zip
 ```
 
-This will display a list of locally installed packages, allowing you to interactively select which ones to sync to the cloud. Once selection is complete, `GistGet.yaml` will be created (or overwritten) in the Gist.
+By adding frequently used packages with `install`, you naturally build a synced package list in Gist.
+
+> **Tip:** If you want to select all installed packages at once, you can use the `gistget init` command to interactively choose them.
 
 ### Sync
 
@@ -79,19 +85,69 @@ This performs the following operations:
 2.  Compares it with locally installed packages.
 3.  Installs missing packages and uninstalls packages marked for removal.
 
-To sync from an external YAML file:
+### Help
+
+You can view the command list and options using the `--help` option:
 
 ```powershell
-gistget sync --url https://gist.githubusercontent.com/user/id/raw/GistGet.yaml
+# Display all commands
+gistget --help
+
+# Display help for a specific command
+gistget install --help
+gistget sync --help
 ```
 
-### Winget Compatible Commands
+### Command List
 
-GistGet fully supports `winget`'s command system. You can manage packages using familiar commands while benefiting from cloud sync.
+GistGet supports both its own cloud sync features and all winget commands.
+
+#### GistGet Native Commands
+
+| Command | Description |
+|---------|-------------|
+| `auth login` | Authenticate with GitHub |
+| `auth logout` | Log out from GitHub |
+| `auth status` | Display current authentication status |
+| `sync` | Synchronize packages with Gist |
+| `init` | Interactively select installed packages to initialize Gist |
+| `install` | Install a package and save to Gist |
+| `uninstall` | Uninstall a package and update Gist |
+| `upgrade` | Upgrade a package and save to Gist |
+| `pin add` | Pin a package and save to Gist |
+| `pin remove` | Unpin a package and update Gist |
+
+#### WinGet Compatible Commands (Passthrough)
+
+The following commands are passed directly to winget. You can use them just like regular winget commands:
+
+| Command | Description |
+|---------|-------------|
+| `list` | Display installed packages |
+| `search` | Find and show basic package information |
+| `show` | Show detailed package information |
+| `source` | Manage package sources |
+| `settings` | Open settings or modify administrator settings |
+| `features` | Show status of experimental features |
+| `hash` | Helper to hash installer files |
+| `validate` | Validate a manifest file |
+| `configure` | Configure the system into a desired state |
+| `download` | Download installer from a package |
+| `repair` | Repair the selected package |
+| `pin list` | List current pins |
+| `pin reset` | Reset pins |
+
+**Usage Examples:**
 
 ```powershell
+# Search for packages (same as winget)
 gistget search vscode
+
+# Show package information (same as winget)
 gistget show Microsoft.PowerToys
+
+# List installed packages (same as winget)
+gistget list
 ```
 
 ## Configuration

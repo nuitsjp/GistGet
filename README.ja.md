@@ -56,15 +56,21 @@ gistget auth login
 
 画面の指示にしたがって、Device Flowを使用して認証を行います。
 
-### 初期設定 (init)
+### 初期設定
 
-新しいPCのセットアップや、既存環境のクラウド同期を始める場合は、まず `init` コマンドで同期対象のパッケージを選択します:
+パッケージをインストールすると、自動的にGistに同期されます。すでにインストール済みのパッケージでも、`install`コマンドを実行すればGistに追加されます:
 
 ```powershell
-gistget init
+# 新しいパッケージをインストールして同期
+gistget install --id Microsoft.PowerToys
+
+# 既にインストール済みのパッケージをGistに追加
+gistget install --id 7zip.7zip
 ```
 
-これにより、ローカルにインストールされているパッケージの一覧が表示され、対話的にクラウド同期対象を選択できます。選択が完了すると、Gistに `GistGet.yaml` が作成（または上書き）されます。
+よく使うパッケージを`install`で追加していくことで、自然とGistに同期されたパッケージリストが構築されます。
+
+> **ヒント:** すべてのインストール済みパッケージを一度に選択したい場合は、`gistget init`コマンドで対話的に選択できます。
 
 ### 同期
 
@@ -79,19 +85,69 @@ gistget sync
 2.  ローカルにインストールされているパッケージと比較します。
 3.  不足しているパッケージをインストールし、削除対象としてマークされたパッケージをアンインストールします。
 
-外部のYAMLファイルから同期するには:
+### ヘルプ
+
+GistGetのコマンド一覧とオプションは、`--help`オプションで確認できます:
 
 ```powershell
-gistget sync --url https://gist.githubusercontent.com/user/id/raw/GistGet.yaml
+# 全コマンド一覧を表示
+gistget --help
+
+# 特定のコマンドのヘルプを表示
+gistget install --help
+gistget sync --help
 ```
 
-### Winget 互換コマンド
+### コマンド一覧
 
-GistGetは`winget`のコマンド体系を完全にサポートしています。いつものコマンドでパッケージ管理を行いながら、クラウド同期の恩恵を受けることができます。
+GistGetは独自のクラウド同期機能と、wingetの全コマンドをサポートしています。
+
+#### GistGet独自コマンド
+
+| コマンド | 説明 |
+|---------|------|
+| `auth login` | GitHub認証を実行 |
+| `auth logout` | GitHubからログアウト |
+| `auth status` | 現在の認証状態を表示 |
+| `sync` | Gistとパッケージを同期 |
+| `init` | 対話的にインストール済みパッケージを選択してGistを初期化 |
+| `install` | パッケージをインストールしてGistに保存 |
+| `uninstall` | パッケージをアンインストールしてGistを更新 |
+| `upgrade` | パッケージをアップグレードしてGistに保存 |
+| `pin add` | パッケージをピン留めしてGistに保存 |
+| `pin remove` | パッケージのピン留めを解除してGistを更新 |
+
+#### WinGet互換コマンド（パススルー）
+
+以下のコマンドは、wingetに直接転送されます。通常のwingetコマンドと同じように使用できます:
+
+| コマンド | 説明 |
+|---------|------|
+| `list` | インストール済みパッケージを表示 |
+| `search` | パッケージを検索して基本情報を表示 |
+| `show` | パッケージの詳細情報を表示 |
+| `source` | パッケージソースを管理 |
+| `settings` | 設定を開く、または管理者設定を変更 |
+| `features` | 実験的機能の状態を表示 |
+| `hash` | インストーラーファイルのハッシュを計算 |
+| `validate` | マニフェストファイルを検証 |
+| `configure` | システムを望ましい状態に設定 |
+| `download` | パッケージからインストーラーをダウンロード |
+| `repair` | 選択したパッケージを修復 |
+| `pin list` | 現在のピン留めを一覧表示 |
+| `pin reset` | ピン留めをリセット |
+
+**使用例:**
 
 ```powershell
+# パッケージ検索（wingetと同じ）
 gistget search vscode
+
+# パッケージ情報表示（wingetと同じ）
 gistget show Microsoft.PowerToys
+
+# インストール済みパッケージ一覧（wingetと同じ）
+gistget list
 ```
 
 ## 設定
