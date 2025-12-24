@@ -87,7 +87,7 @@ $WinGetUpstreamOwner = 'microsoft'
 $WinGetUpstreamRepo = 'winget-pkgs'
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$repoRoot = (Resolve-Path (Join-Path $scriptRoot '..\..\..')).Path
+$repoRoot = (Resolve-Path (Join-Path $scriptRoot '..\..\..\..')).Path
 $projectPath = Join-Path $repoRoot 'src/GistGet/GistGet.csproj'
 $wingetPkgsPath = Join-Path $repoRoot 'external/winget-pkgs'
 $artifactsPath = Join-Path $repoRoot 'artifacts'
