@@ -17,8 +17,10 @@ GistGet/
 ├── src/
 │   └── GistGet/
 │       └── GistGet.csproj      # Version定義
-├── scripts/
-│   └── Publish-WinGet.ps1      # リリースパイプライン
+├── skills/
+│   └── winget-release/
+│       └── scripts/
+│           └── Publish-WinGet.ps1  # リリースパイプライン
 ├── .github/workflows/
 │   ├── ci.yml                   # CI/テスト
 │   └── release.yml              # リリース自動化
@@ -49,16 +51,16 @@ GistGet/
 
 ```powershell
 # フルリリース
-.\scripts\Publish-WinGet.ps1 -Version 1.0.5
+.\skills\winget-release\scripts\Publish-WinGet.ps1 -Version 1.0.5
 
 # プレビュー実行
-.\scripts\Publish-WinGet.ps1 -Version 1.0.5 -DryRun
+.\skills\winget-release\scripts\Publish-WinGet.ps1 -Version 1.0.5 -DryRun
 
 # 品質チェックをスキップ
-.\scripts\Publish-WinGet.ps1 -Version 1.0.5 -SkipQualityCheck
+.\skills\winget-release\scripts\Publish-WinGet.ps1 -Version 1.0.5 -SkipQualityCheck
 
 # WinGet PRのみ作成
-.\scripts\Publish-WinGet.ps1 -Version 1.0.5 -SkipQualityCheck -SkipGitHubRelease
+.\skills\winget-release\scripts\Publish-WinGet.ps1 -Version 1.0.5 -SkipQualityCheck -SkipGitHubRelease
 ```
 
 **パラメータ**:
@@ -83,24 +85,3 @@ GistGet/
 4. `winget-publish` - WinGet PR自動作成
 5. `summary` - リリースサマリー出力
 
-## winget-pkgs サブモジュール
-
-```powershell
-# 初期化
-git submodule update --init external/winget-pkgs
-
-# upstreamと同期
-cd external/winget-pkgs
-git fetch upstream master
-git checkout master
-git reset --hard upstream/master
-```
-
-## マニフェスト配置先
-
-```
-external/winget-pkgs/manifests/n/NuitsJp/GistGet/{VERSION}/
-├── NuitsJp.GistGet.yaml
-├── NuitsJp.GistGet.installer.yaml
-└── NuitsJp.GistGet.locale.en-US.yaml
-```

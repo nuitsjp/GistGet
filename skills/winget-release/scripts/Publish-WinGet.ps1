@@ -34,19 +34,19 @@
     確認プロンプトをスキップして実行する場合に指定。
 
 .EXAMPLE
-    .\Publish-WinGet.ps1
+    .\skills\winget-release\scripts\Publish-WinGet.ps1
     csproj のバージョンで完全なリリースパイプラインを実行
 
 .EXAMPLE
-    .\Publish-WinGet.ps1 -Version 1.0.4
+    .\skills\winget-release\scripts\Publish-WinGet.ps1 -Version 1.0.4
     バージョン 1.0.4 でリリースを実行
 
 .EXAMPLE
-    .\Publish-WinGet.ps1 -DryRun
+    .\skills\winget-release\scripts\Publish-WinGet.ps1 -DryRun
     プレビューのみ（実際のリリースは行わない）
 
 .EXAMPLE
-    .\Publish-WinGet.ps1 -SkipQualityCheck -SkipGitHubRelease
+    .\skills\winget-release\scripts\Publish-WinGet.ps1 -SkipQualityCheck -SkipGitHubRelease
     品質チェックと GitHub Release をスキップして WinGet PR のみ作成
 #>
 
@@ -87,7 +87,7 @@ $WinGetUpstreamOwner = 'microsoft'
 $WinGetUpstreamRepo = 'winget-pkgs'
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$repoRoot = Split-Path -Parent $scriptRoot
+$repoRoot = (Resolve-Path (Join-Path $scriptRoot '..\..\..')).Path
 $projectPath = Join-Path $repoRoot 'src/GistGet/GistGet.csproj'
 $wingetPkgsPath = Join-Path $repoRoot 'external/winget-pkgs'
 $artifactsPath = Join-Path $repoRoot 'artifacts'
@@ -184,7 +184,7 @@ if (-not $Force -and -not $DryRun) {
 if (-not $SkipQualityCheck) {
     Write-Banner "Step 1: Quality Check"
 
-    $qualityScript = Join-Path $scriptRoot 'Run-CodeQuality.ps1'
+    $qualityScript = Join-Path $repoRoot 'scripts/Run-CodeQuality.ps1'
     if (-not (Test-Path $qualityScript)) {
         Write-Error "Run-CodeQuality.ps1 が見つかりません: $qualityScript"
         exit 1
