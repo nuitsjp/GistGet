@@ -454,13 +454,14 @@ public class GistGetServiceTests
         }
 
         [Fact]
-        public async Task WithExplicitVersion_UpdatesPin()
+        public async Task WithExplicitVersion_UpdatesPinAndPersistsInstalledVersion()
         {
             // -------------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------------
             var packageId = "Test.Package";
             var explicitVersion = "2.0.0";
+            var installedVersion = "2.0";
             var installOptions = new InstallOptions { Id = packageId, Version = explicitVersion };
             var existingPackages = new List<GistGetPackage>
             {
@@ -481,6 +482,15 @@ public class GistGetServiceTests
             AuthServiceMock
                 .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(existingPackages);
+
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.IsAny<PackageId>()))
+                .Returns(new WinGetPackage(
+                    Name: "Test Package",
+                    Id: new PackageId(packageId),
+                    Version: new Version(installedVersion),
+                    UsableVersion: null,
+                    Source: null));
 
             // Runner setup
             // Expect Install command with explicit version 2.0.0
@@ -515,18 +525,19 @@ public class GistGetServiceTests
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.Is<IReadOnlyList<GistGetPackage>>(list =>
-                    list.Any(p => p.Id == packageId && p.Pin == explicitVersion && p.Version == explicitVersion)
+                    list.Any(p => p.Id == packageId && p.Pin == explicitVersion && p.Version == installedVersion)
                 )), Times.Once);
         }
 
         [Fact]
-        public async Task WithExplicitVersionWithoutPin_DoesNotPersistVersionOrPin()
+        public async Task WithExplicitVersionWithoutPin_PersistsInstalledVersion()
         {
             // -------------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------------
             var packageId = "Test.Package";
-            var explicitVersion = "2.1.0";
+            var explicitVersion = "1.7.0";
+            var installedVersion = "1.7";
             var installOptions = new InstallOptions { Id = packageId, Version = explicitVersion };
 
             // Credential setup
@@ -543,6 +554,15 @@ public class GistGetServiceTests
             AuthServiceMock
                 .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new List<GistGetPackage>());
+
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.IsAny<PackageId>()))
+                .Returns(new WinGetPackage(
+                    Name: "Test Package",
+                    Id: new PackageId(packageId),
+                    Version: new Version(installedVersion),
+                    UsableVersion: null,
+                    Source: null));
 
             // Runner setup: only install should be called
             PassthroughRunnerMock
@@ -567,7 +587,7 @@ public class GistGetServiceTests
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.Is<IReadOnlyList<GistGetPackage>>(list =>
-                    list.Any(p => p.Id == packageId && p.Pin == null && p.Version == null)
+                    list.Any(p => p.Id == packageId && p.Pin == null && p.Version == installedVersion)
                 )), Times.Once);
         }
 
