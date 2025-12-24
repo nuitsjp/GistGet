@@ -12,17 +12,30 @@ GistGetをWinGetパッケージとしてリリースするためのスキル。
 ### リリース手順
 
 **手順**
-1. `src/GistGet/GistGet.csproj` の `<Version>` と `CHANGELOG.md` を更新
-2. プレビュー実行（任意）
-3. `skills/winget-release/scripts/Publish-WinGet.ps1` でリリース実行
+1. `src/GistGet/GistGet.csproj` の `<Version>` を更新
+2. `CHANGELOG.md` を更新（新バージョンのエントリを追加）
+3. 変更をコミット・プッシュ
+4. プレビュー実行（任意）
+5. `skills/winget-release/scripts/Publish-WinGet.ps1` でリリース実行
 
 ```powershell
-# プレビュー実行（変更なし）
-.\skills\winget-release\scripts\Publish-WinGet.ps1 -Version 1.0.6 -DryRun
+# 1. バージョン更新
+# src/GistGet/GistGet.csproj の <Version> を編集
+# CHANGELOG.md にエントリを追加
 
-# フルリリースパイプライン
-.\skills\winget-release\scripts\Publish-WinGet.ps1 -Version 1.0.6
+# 2. コミット・プッシュ
+git add .
+git commit -m "chore: bump version to 1.0.7"
+git push origin main
+
+# 3. プレビュー実行（任意）
+.\skills\winget-release\scripts\Publish-WinGet.ps1 -Version 1.0.7 -DryRun
+
+# 4. フルリリースパイプライン
+.\skills\winget-release\scripts\Publish-WinGet.ps1 -Version 1.0.7
 ```
+
+**重要**: 必ずバージョン更新とCHANGELOGの変更をコミット・プッシュしてからリリーススクリプトを実行してください。そうしないとタグが正しく付与されません。
 
 ## リリースの流れ
 
