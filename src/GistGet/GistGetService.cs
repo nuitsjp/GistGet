@@ -170,12 +170,12 @@ public class GistGetService(
             .Where(p => !string.Equals(p.Id, options.Id, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        var versionToSave = pinVersionToSet;
+        var installedVersion = localPackage.Version.ToString();
         var packageToSave = new GistGetPackage
         {
             Id = options.Id,
             Name = localPackage.Name,
-            Version = versionToSave,
+            Version = installedVersion,
             Pin = pinVersionToSet,
             PinType = pinTypeToSet,
             Silent = options.Silent,
