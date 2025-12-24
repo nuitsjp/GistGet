@@ -315,9 +315,6 @@ winget install NuitsJp.GistGet
 詳細は [CHANGELOG](https://github.com/$GitHubOwner/$GitHubRepo/blob/main/CHANGELOG.md) を参照してください。
 "@
 
-    $releaseNotesFile = Join-Path $artifactsPath "release-notes.md"
-    $releaseNotes | Set-Content -Path $releaseNotesFile -Encoding UTF8
-
     if (-not $DryRun) {
         Write-Host "GitHub Release を作成中..." -ForegroundColor Yellow
 
@@ -331,7 +328,7 @@ winget install NuitsJp.GistGet
         gh release create $tagName `
             --repo "$GitHubOwner/$GitHubRepo" `
             --title "GistGet $tagName" `
-            --notes-file $releaseNotesFile `
+            --notes $releaseNotes `
             $zipPath `
             $hashFilePath
 
