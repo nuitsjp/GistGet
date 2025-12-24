@@ -44,6 +44,25 @@ gistget --help
 
 > Note: The published artifact is currently x64-only. ARM64 builds are not shipped yet.
 
+### Troubleshooting
+
+#### `gistget` command not found after installation
+
+After installing via WinGet, existing terminal sessions may not recognize the `gistget` command because the PATH environment variable is not updated in running sessions. To resolve this:
+
+1. **Restart your terminal** (Recommended)
+   - Close the current terminal and open a new one
+
+2. **Refresh PATH in PowerShell**
+   ```powershell
+   $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+   ```
+
+3. **Use the full path temporarily**
+   ```powershell
+   & "$env:LOCALAPPDATA\Microsoft\WinGet\Links\gistget.exe" --help
+   ```
+
 ## Usage
 
 ### Authentication

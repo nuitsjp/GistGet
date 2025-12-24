@@ -9,46 +9,36 @@ GistGetをWinGetパッケージとしてリリースするためのスキル。
 
 ## クイックスタート
 
-### 自動リリース（推奨）
+### リリース手順
 
 **手順**
 1. `src/GistGet/GistGet.csproj` の `<Version>` と `CHANGELOG.md` を更新
 2. プレビュー実行（任意）
 3. `skills/winget-release/scripts/Publish-WinGet.ps1` でリリース実行
-4. タグプッシュでActionsが動く場合は完了まで待機
 
 ```powershell
 # プレビュー実行（変更なし）
-.\skills\winget-release\scripts\Publish-WinGet.ps1 -Version 1.0.5 -DryRun
+.\skills\winget-release\scripts\Publish-WinGet.ps1 -Version 1.0.6 -DryRun
 
 # フルリリースパイプライン
-.\skills\winget-release\scripts\Publish-WinGet.ps1 -Version 1.0.5
-
-# Actions完了待ち（必要な場合）
-gh run watch --repo nuitsjp/GistGet --workflow release.yml --exit-status
+.\skills\winget-release\scripts\Publish-WinGet.ps1 -Version 1.0.6
 ```
 
 ## リリースの流れ
 
-### Publish-WinGet.ps1（ローカルで完結）
+### Publish-WinGet.ps1（唯一のリリースフロー）
 
 ```
 品質チェック → ビルド/ZIP/SHA256 → タグ作成/プッシュ → GitHub Release → winget-pkgs同期 → マニフェスト生成 → PR作成
 ```
 
-### GitHub Actions（release.yml）
-
-```
-タグプッシュ or workflow_dispatch → CI → ビルド → GitHub Release → WinGet PR → Summary
-```
-
-**補足**: `Publish-WinGet.ps1` はタグをプッシュするため `release.yml` が起動する。必要なら `gh run watch --repo nuitsjp/GistGet --workflow release.yml --exit-status` で完了待ち。
+**重要**: Publish-WinGet.ps1が唯一のリリースフローです。GitHub Actionsのrelease.ymlは削除されました（ハッシュ不一致の問題を防ぐため）。
 
 ## PR作成
 
-### 自動（Publish-WinGet.ps1 / release.yml）
+### 自動（Publish-WinGet.ps1）
 
-どちらも自動でPRを作成。
+スクリプトが自動でwinget-pkgsへPRを作成します。
 
 ## 参照ファイル
 

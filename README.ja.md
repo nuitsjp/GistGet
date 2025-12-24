@@ -44,6 +44,25 @@ gistget --help
 
 > メモ: 現在公開しているアーティファクトは x64 のみです。ARM64 版の配布は未対応です。
 
+### トラブルシューティング
+
+#### インストール後に `gistget` コマンドが見つからない
+
+WinGetでインストール後、既存のターミナルセッションでは `gistget` コマンドが認識されない場合があります。これは、実行中のセッションでPATH環境変数が更新されないためです。以下のいずれかの方法で解決できます:
+
+1. **ターミナルを再起動する**（推奨）
+   - 現在のターミナルを閉じて新しく開く
+
+2. **PowerShellでPATHをリフレッシュする**
+   ```powershell
+   $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+   ```
+
+3. **フルパスで一時的に実行する**
+   ```powershell
+   & "$env:LOCALAPPDATA\Microsoft\WinGet\Links\gistget.exe" --help
+   ```
+
 ## 使用方法
 
 ### 認証
