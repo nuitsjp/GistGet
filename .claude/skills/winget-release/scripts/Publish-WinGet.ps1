@@ -325,12 +325,19 @@ winget install NuitsJp.GistGet
             gh release delete $tagName --repo "$GitHubOwner/$GitHubRepo" --yes
         }
 
+        # リリースノートをUTF-8ファイルに書き出し（文字化け防止）
+        $notesFile = Join-Path $artifactsPath "release-notes.md"
+        $releaseNotes | Out-File -FilePath $notesFile -Encoding UTF8 -NoNewline
+
         gh release create $tagName `
             --repo "$GitHubOwner/$GitHubRepo" `
             --title "GistGet $tagName" `
-            --notes $releaseNotes `
+            --notes-file $notesFile `
             $zipPath `
             $hashFilePath
+
+        # 一時ファイル削除
+        Remove-Item $notesFile -ErrorAction SilentlyContinue
 
         if ($LASTEXITCODE -ne 0) {
             Write-Error "GitHub Release の作成に失敗しました。"
@@ -571,7 +578,13 @@ if (-not $SkipWinGetPR -and -not $SkipPRCreation) {
                 Write-Host "GitHub Release に WinGet PR リンクを追記中..." -ForegroundColor Yellow
                 $currentBody = gh release view $tagName --repo "$GitHubOwner/$GitHubRepo" --json body --jq '.body'
                 $updatedBody = $currentBody + "`n`n### WinGet`n- [WinGet PR]($prUrl)"
-                gh release edit $tagName --repo "$GitHubOwner/$GitHubRepo" --notes "$updatedBody"
+
+                # UTF-8ファイル経由で更新（文字化け防止）
+                $updateNotesFile = Join-Path $artifactsPath "release-notes-update.md"
+                $updatedBody | Out-File -FilePath $updateNotesFile -Encoding UTF8 -NoNewline
+                gh release edit $tagName --repo "$GitHubOwner/$GitHubRepo" --notes-file $updateNotesFile
+                Remove-Item $updateNotesFile -ErrorAction SilentlyContinue
+
                 Write-Host "GitHub Release を更新しました。" -ForegroundColor Green
             }
         }
