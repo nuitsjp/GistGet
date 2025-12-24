@@ -58,7 +58,7 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
                 console.MarkupLine($"[green]Installed {result.Installed.Count} package(s):[/]");
                 foreach (var pkg in result.Installed)
                 {
-                    console.MarkupLine($"  - {pkg.Id}");
+                    console.MarkupLine($"  - {EscapeMarkup(pkg.Id)}");
                 }
             }
 
@@ -67,7 +67,7 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
                 console.MarkupLine($"[yellow]Uninstalled {result.Uninstalled.Count} package(s):[/]");
                 foreach (var pkg in result.Uninstalled)
                 {
-                    console.MarkupLine($"  - {pkg.Id}");
+                    console.MarkupLine($"  - {EscapeMarkup(pkg.Id)}");
                 }
             }
 
@@ -76,7 +76,7 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
                 console.MarkupLine($"[blue]Updated pin for {result.PinUpdated.Count} package(s):[/]");
                 foreach (var pkg in result.PinUpdated)
                 {
-                    console.MarkupLine($"  - {pkg.Id}: {pkg.Pin}");
+                    console.MarkupLine($"  - {EscapeMarkup(pkg.Id)}: {EscapeMarkup(pkg.Pin)}");
                 }
             }
 
@@ -85,7 +85,7 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
                 console.MarkupLine($"[blue]Removed pin for {result.PinRemoved.Count} package(s):[/]");
                 foreach (var pkg in result.PinRemoved)
                 {
-                    console.MarkupLine($"  - {pkg.Id}");
+                    console.MarkupLine($"  - {EscapeMarkup(pkg.Id)}");
                 }
             }
 
@@ -94,7 +94,7 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
                 console.MarkupLine($"[red]Failed {result.Failed.Count} package(s):[/]");
                 foreach (var pkg in result.Failed)
                 {
-                    console.MarkupLine($"  - {pkg.Id}");
+                    console.MarkupLine($"  - {EscapeMarkup(pkg.Id)}");
                 }
             }
 
@@ -103,7 +103,7 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
                 console.MarkupLine("[red]Errors:[/]");
                 foreach (var error in result.Errors)
                 {
-                    console.MarkupLine($"  - {error}");
+                    console.MarkupLine($"  - {EscapeMarkup(error)}");
                 }
             }
 
@@ -118,6 +118,11 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
         }, urlOption, fileOption);
 
         return command;
+    }
+
+    private static string EscapeMarkup(string? value)
+    {
+        return Markup.Escape(value ?? string.Empty);
     }
 
     private Command BuildInitCommand()

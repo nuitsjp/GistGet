@@ -183,6 +183,36 @@ public class CommandBuilderTests : IDisposable
         }
 
         [Fact]
+        public async Task WithMarkupInErrors_PrintsRawMessage()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var target = CreateTarget();
+            var root = target.Build();
+            var result = new SyncResult
+            {
+                Errors = { "winget error: [not-a-tag]" }
+            };
+
+            GistGetServiceMock
+                .Setup(x => x.SyncAsync(null, null))
+                .ReturnsAsync(result);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var exitCode = await root.InvokeAsync("sync");
+            var output = TestConsole.Output;
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            exitCode.ShouldBe(0);
+            output.ShouldContain("winget error: [not-a-tag]");
+        }
+
+        [Fact]
         public async Task AlreadyInSync_PrintsNoChangesMessage()
         {
             // -------------------------------------------------------------------
