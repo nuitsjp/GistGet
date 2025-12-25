@@ -75,7 +75,7 @@ public class ConsoleService : IConsoleService
 
         if (_console.IsOutputRedirected || _console.IsErrorRedirected)
         {
-            _console.WriteLine($"? {message}");
+            _console.WriteLine($"... {message}");
             return new SimpleProgress();
         }
 
@@ -85,17 +85,17 @@ public class ConsoleService : IConsoleService
         }
         catch (IOException)
         {
-            _console.WriteLine($"? {message}");
+            _console.WriteLine($"... {message}");
             return new SimpleProgress();
         }
         catch (PlatformNotSupportedException)
         {
-            _console.WriteLine($"? {message}");
+            _console.WriteLine($"... {message}");
             return new SimpleProgress();
         }
         catch (UnauthorizedAccessException)
         {
-            _console.WriteLine($"? {message}");
+            _console.WriteLine($"... {message}");
             return new SimpleProgress();
         }
     }
@@ -110,13 +110,13 @@ public class ConsoleService : IConsoleService
     /// Writes a success message.
     /// </summary>
     public void WriteSuccess(string message) =>
-        _console.WriteLine($"? {message}");
+        _console.WriteLine($"✓ {message}");
 
     /// <summary>
     /// Writes an error message.
     /// </summary>
     public void WriteError(string message) =>
-        _console.WriteErrorLine($"? {message}");
+        _console.WriteErrorLine($"✗ {message}");
 
     /// <summary>
     /// Prompts the user for a yes/no confirmation.

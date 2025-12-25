@@ -52,6 +52,27 @@ public class ConsoleServiceTests
     }
 
     [Fact]
+    public void WriteSuccess_PrefixesMessageWithCheckMark()
+    {
+        // -------------------------------------------------------------------
+        // Arrange
+        // -------------------------------------------------------------------
+        var console = new FakeConsoleProxy();
+        var processRunner = new Mock<IProcessRunner>();
+        IConsoleService target = new ConsoleService(processRunner.Object, console);
+
+        // -------------------------------------------------------------------
+        // Act
+        // -------------------------------------------------------------------
+        target.WriteSuccess("done");
+
+        // -------------------------------------------------------------------
+        // Assert
+        // -------------------------------------------------------------------
+        console.Out.ToString().ShouldContain("✓ done");
+    }
+
+    [Fact]
     public void ReadLine_ReturnsInputFromConsole()
     {
         // -------------------------------------------------------------------
@@ -146,7 +167,7 @@ public class ConsoleServiceTests
         // -------------------------------------------------------------------
         // Assert
         // -------------------------------------------------------------------
-        console.Error.ToString().ShouldContain("? Something went wrong");
+        console.Error.ToString().ShouldContain("✗ Something went wrong");
     }
 
     [Fact]
@@ -174,7 +195,7 @@ public class ConsoleServiceTests
         // Assert
         // -------------------------------------------------------------------
         exception.ShouldBeNull();
-        console.Out.ToString().ShouldContain("? Loading...");
+        console.Out.ToString().ShouldContain("... Loading...");
     }
 
     [Fact]
@@ -199,7 +220,7 @@ public class ConsoleServiceTests
         // Assert
         // -------------------------------------------------------------------
         console.CursorVisibleTouched.ShouldBeFalse();
-        console.Out.ToString().ShouldContain("? Fetching...");
+        console.Out.ToString().ShouldContain("... Fetching...");
     }
 
     private sealed class FakeConsoleProxy : IConsoleProxy
