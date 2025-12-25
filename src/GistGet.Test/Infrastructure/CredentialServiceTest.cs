@@ -1,3 +1,5 @@
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable MemberCanBeProtected.Global
 using GistGet.Infrastructure;
 using Shouldly;
 
@@ -10,7 +12,7 @@ public class CredentialServiceTests : IDisposable
     protected readonly string TestTargetName = $"GistGet.Test.Credential.{Guid.NewGuid()}";
     protected readonly CredentialService Sut;
 
-    public CredentialServiceTests()
+    protected CredentialServiceTests()
     {
         Sut = new CredentialService(TestTargetName);
     }

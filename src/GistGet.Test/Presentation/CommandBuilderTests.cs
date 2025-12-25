@@ -1,4 +1,5 @@
 // ReSharper disable MethodHasAsyncOverload
+// ReSharper disable MemberCanBePrivate.Global
 using System.CommandLine;
 using System.Globalization;
 using GistGet.Presentation;

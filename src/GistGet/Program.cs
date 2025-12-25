@@ -16,6 +16,7 @@ services.AddTransient<IGistGetService, GistGetService>();
 
 services.AddSingleton(AnsiConsole.Console);
 services.AddTransient<CommandBuilder>();
+services.AddSingleton<IConsoleProxy, SystemConsoleProxy>();
 services.AddTransient<IConsoleService, ConsoleService>();
 
 services.AddTransient<ICredentialService, CredentialService>();

@@ -42,7 +42,7 @@ public class GitHubService(
         return new Credential(user.Login, token.AccessToken);
     }
 
-    protected virtual OauthDeviceFlowRequest CreateDeviceFlowRequest()
+    protected OauthDeviceFlowRequest CreateDeviceFlowRequest()
     {
         var request = new OauthDeviceFlowRequest(Constants.ClientId);
         request.Scopes.Add("gist");
@@ -54,16 +54,15 @@ public class GitHubService(
     /// Defensive: handles browser launch failures gracefully.
     /// </summary>
     [ExcludeFromCodeCoverage]
-    protected virtual bool OpenBrowser(string verificationUri)
+    protected virtual void OpenBrowser(string verificationUri)
     {
         try
         {
             Process.Start(new ProcessStartInfo(verificationUri) { UseShellExecute = true });
-            return true;
         }
         catch
         {
-            return false;
+            // Ignore failures so login flow can continue even in restricted environments.
         }
     }
 
@@ -200,7 +199,7 @@ public class GitHubService(
         }
     }
 
-    protected virtual HttpClient CreateHttpClient()
+    private HttpClient CreateHttpClient()
     {
         return _httpClient;
     }

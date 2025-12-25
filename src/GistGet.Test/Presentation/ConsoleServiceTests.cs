@@ -15,28 +15,19 @@ public class ConsoleServiceTests
         // -------------------------------------------------------------------
         // Arrange
         // -------------------------------------------------------------------
-        var writer = new StringWriter();
-        var originalOut = Console.Out;
-        Console.SetOut(writer);
+        var console = new FakeConsoleProxy();
         var processRunner = new Mock<IProcessRunner>();
-        IConsoleService target = new ConsoleService(processRunner.Object);
+        IConsoleService target = new ConsoleService(processRunner.Object, console);
 
-        try
-        {
-            // -------------------------------------------------------------------
-            // Act
-            // -------------------------------------------------------------------
-            target.WriteInfo("hello");
+        // -------------------------------------------------------------------
+        // Act
+        // -------------------------------------------------------------------
+        target.WriteInfo("hello");
 
-            // -------------------------------------------------------------------
-            // Assert
-            // -------------------------------------------------------------------
-            writer.ToString().ShouldContain("hello");
-        }
-        finally
-        {
-            Console.SetOut(originalOut);
-        }
+        // -------------------------------------------------------------------
+        // Assert
+        // -------------------------------------------------------------------
+        console.Out.ToString().ShouldContain("hello");
     }
 
     [Fact]
@@ -45,28 +36,40 @@ public class ConsoleServiceTests
         // -------------------------------------------------------------------
         // Arrange
         // -------------------------------------------------------------------
-        var writer = new StringWriter();
-        var originalOut = Console.Out;
-        Console.SetOut(writer);
+        var console = new FakeConsoleProxy();
         var processRunner = new Mock<IProcessRunner>();
-        IConsoleService target = new ConsoleService(processRunner.Object);
+        IConsoleService target = new ConsoleService(processRunner.Object, console);
 
-        try
-        {
-            // -------------------------------------------------------------------
-            // Act
-            // -------------------------------------------------------------------
-            target.WriteWarning("be careful");
+        // -------------------------------------------------------------------
+        // Act
+        // -------------------------------------------------------------------
+        target.WriteWarning("be careful");
 
-            // -------------------------------------------------------------------
-            // Assert
-            // -------------------------------------------------------------------
-            writer.ToString().ShouldContain("! be careful");
-        }
-        finally
-        {
-            Console.SetOut(originalOut);
-        }
+        // -------------------------------------------------------------------
+        // Assert
+        // -------------------------------------------------------------------
+        console.Out.ToString().ShouldContain("! be careful");
+    }
+
+    [Fact]
+    public void WriteSuccess_PrefixesMessageWithCheckMark()
+    {
+        // -------------------------------------------------------------------
+        // Arrange
+        // -------------------------------------------------------------------
+        var console = new FakeConsoleProxy();
+        var processRunner = new Mock<IProcessRunner>();
+        IConsoleService target = new ConsoleService(processRunner.Object, console);
+
+        // -------------------------------------------------------------------
+        // Act
+        // -------------------------------------------------------------------
+        target.WriteSuccess("done");
+
+        // -------------------------------------------------------------------
+        // Assert
+        // -------------------------------------------------------------------
+        console.Out.ToString().ShouldContain("✓ done");
     }
 
     [Fact]
@@ -75,28 +78,22 @@ public class ConsoleServiceTests
         // -------------------------------------------------------------------
         // Arrange
         // -------------------------------------------------------------------
-        var input = new StringReader("user input\n");
-        var originalIn = Console.In;
-        Console.SetIn(input);
+        var console = new FakeConsoleProxy
+        {
+            In = new StringReader("user input\n")
+        };
         var processRunner = new Mock<IProcessRunner>();
-        IConsoleService target = new ConsoleService(processRunner.Object);
+        IConsoleService target = new ConsoleService(processRunner.Object, console);
 
-        try
-        {
-            // -------------------------------------------------------------------
-            // Act
-            // -------------------------------------------------------------------
-            var result = target.ReadLine();
+        // -------------------------------------------------------------------
+        // Act
+        // -------------------------------------------------------------------
+        var result = target.ReadLine();
 
-            // -------------------------------------------------------------------
-            // Assert
-            // -------------------------------------------------------------------
-            result.ShouldBe("user input");
-        }
-        finally
-        {
-            Console.SetIn(originalIn);
-        }
+        // -------------------------------------------------------------------
+        // Assert
+        // -------------------------------------------------------------------
+        result.ShouldBe("user input");
     }
 
     [Fact]
@@ -112,7 +109,7 @@ public class ConsoleServiceTests
             .Callback<ProcessStartInfo>(info => captured = info)
             .ReturnsAsync(0);
 
-        IConsoleService target = new ConsoleService(processRunner.Object);
+        IConsoleService target = new ConsoleService(processRunner.Object, new FakeConsoleProxy());
 
         // -------------------------------------------------------------------
         // Act
@@ -137,28 +134,19 @@ public class ConsoleServiceTests
         // -------------------------------------------------------------------
         // Arrange
         // -------------------------------------------------------------------
-        var writer = new StringWriter();
-        var originalOut = Console.Out;
-        Console.SetOut(writer);
+        var console = new FakeConsoleProxy();
         var processRunner = new Mock<IProcessRunner>();
-        IConsoleService target = new ConsoleService(processRunner.Object);
+        IConsoleService target = new ConsoleService(processRunner.Object, console);
 
-        try
-        {
-            // -------------------------------------------------------------------
-            // Act
-            // -------------------------------------------------------------------
-            target.WriteStep(3, 10, "Installing package");
+        // -------------------------------------------------------------------
+        // Act
+        // -------------------------------------------------------------------
+        target.WriteStep(3, 10, "Installing package");
 
-            // -------------------------------------------------------------------
-            // Assert
-            // -------------------------------------------------------------------
-            writer.ToString().ShouldContain("[3/10] Installing package");
-        }
-        finally
-        {
-            Console.SetOut(originalOut);
-        }
+        // -------------------------------------------------------------------
+        // Assert
+        // -------------------------------------------------------------------
+        console.Out.ToString().ShouldContain("[3/10] Installing package");
     }
 
     [Fact]
@@ -167,27 +155,106 @@ public class ConsoleServiceTests
         // -------------------------------------------------------------------
         // Arrange
         // -------------------------------------------------------------------
-        var writer = new StringWriter();
-        var originalError = Console.Error;
-        Console.SetError(writer);
+        var console = new FakeConsoleProxy();
         var processRunner = new Mock<IProcessRunner>();
-        IConsoleService target = new ConsoleService(processRunner.Object);
+        IConsoleService target = new ConsoleService(processRunner.Object, console);
 
-        try
-        {
-            // -------------------------------------------------------------------
-            // Act
-            // -------------------------------------------------------------------
-            target.WriteError("Something went wrong");
+        // -------------------------------------------------------------------
+        // Act
+        // -------------------------------------------------------------------
+        target.WriteError("Something went wrong");
 
-            // -------------------------------------------------------------------
-            // Assert
-            // -------------------------------------------------------------------
-            writer.ToString().ShouldContain("✗ Something went wrong");
-        }
-        finally
+        // -------------------------------------------------------------------
+        // Assert
+        // -------------------------------------------------------------------
+        console.Error.ToString().ShouldContain("✗ Something went wrong");
+    }
+
+    [Fact]
+    public void WriteProgress_WhenCursorVisibilityCannotBeSet_FallsBackToOneShotMessage()
+    {
+        // -------------------------------------------------------------------
+        // Arrange
+        // -------------------------------------------------------------------
+        var console = new FakeConsoleProxy
         {
-            Console.SetError(originalError);
+            ThrowOnCursorVisible = true
+        };
+        var processRunner = new Mock<IProcessRunner>();
+        IConsoleService target = new ConsoleService(processRunner.Object, console);
+
+        // -------------------------------------------------------------------
+        // Act
+        // -------------------------------------------------------------------
+        var exception = Record.Exception(() =>
+        {
+            using var _ = target.WriteProgress("Loading...");
+        });
+
+        // -------------------------------------------------------------------
+        // Assert
+        // -------------------------------------------------------------------
+        exception.ShouldBeNull();
+        console.Out.ToString().ShouldContain("... Loading...");
+    }
+
+    [Fact]
+    public void WriteProgress_WhenOutputRedirected_DoesNotTrySpinner()
+    {
+        // -------------------------------------------------------------------
+        // Arrange
+        // -------------------------------------------------------------------
+        var console = new FakeConsoleProxy
+        {
+            IsOutputRedirected = true
+        };
+        var processRunner = new Mock<IProcessRunner>();
+        IConsoleService target = new ConsoleService(processRunner.Object, console);
+
+        // -------------------------------------------------------------------
+        // Act
+        // -------------------------------------------------------------------
+        using var _ = target.WriteProgress("Fetching...");
+
+        // -------------------------------------------------------------------
+        // Assert
+        // -------------------------------------------------------------------
+        console.CursorVisibleTouched.ShouldBeFalse();
+        console.Out.ToString().ShouldContain("... Fetching...");
+    }
+
+    private sealed class FakeConsoleProxy : IConsoleProxy
+    {
+        public StringWriter Out { get; } = new();
+        public StringWriter Error { get; } = new();
+        public StringReader In { get; init; } = new(string.Empty);
+        public bool IsOutputRedirected { get; init; }
+        public bool IsErrorRedirected => false;
+        public bool ThrowOnCursorVisible { get; init; }
+        public bool CursorVisibleTouched { get; private set; }
+        public int BufferWidth { get; } = 80;
+
+        public bool CursorVisible
+        {
+            get;
+            set
+            {
+                CursorVisibleTouched = true;
+                if (ThrowOnCursorVisible)
+                {
+                    throw new IOException("Invalid handle");
+                }
+
+                field = value;
+            }
         }
+
+        public void Write(string value) => Out.Write(value);
+
+        public void WriteLine(string value) => Out.WriteLine(value);
+
+        public void WriteErrorLine(string value) => Error.WriteLine(value);
+
+        public string? ReadLine() => In.ReadLine();
     }
 }

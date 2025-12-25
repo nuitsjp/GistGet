@@ -30,6 +30,13 @@ public partial class WinGetService : IWinGetService
     private static partial Regex PinLineRegex();
 
     /// <summary>
+    /// Regex pattern for parsing winget list output data lines.
+    /// Matches: Name (may contain spaces)  Id  Version  [Available]  [Source]
+    /// </summary>
+    [GeneratedRegex(@"^(?<Name>.+?)\s+(?<Id>\S+\.\S+)\s+(?<Version>\S+)(?:\s+\S+)?(?:\s+(?<Source>\S+))?$", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex ListLineRegex();
+
+    /// <summary>
     /// Initializes a new instance with the default connector.
     /// </summary>
     public WinGetService() : this(new PackageCatalogConnector())
@@ -54,20 +61,23 @@ public partial class WinGetService : IWinGetService
     {
         try
         {
-            return FindByIdInternal(id);
+            var package = FindByIdInternal(id);
+            if (package != null)
+            {
+                return package;
+            }
         }
         catch (COMException)
         {
-            return null;
         }
         catch (DllNotFoundException)
         {
-            return null;
         }
         catch (TypeLoadException)
         {
-            return null;
         }
+
+        return FindByIdViaCli(id);
     }
 
     private WinGetPackage? FindByIdInternal(PackageId id)
@@ -163,6 +173,58 @@ public partial class WinGetService : IWinGetService
                 UsableVersion: usableVersion,
                 Source: source
             );
+        }
+
+        return null;
+    }
+
+    [ExcludeFromCodeCoverage]
+    private WinGetPackage? FindByIdViaCli(PackageId id)
+    {
+        var output = RunWingetList(id);
+        if (string.IsNullOrEmpty(output))
+        {
+            return null;
+        }
+
+        var lines = output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+        var separatorIndex = Array.FindIndex(lines, static line => line.StartsWith("---", StringComparison.Ordinal));
+        if (separatorIndex < 0)
+        {
+            return null;
+        }
+
+        for (var i = separatorIndex + 1; i < lines.Length; i++)
+        {
+            var line = lines[i].Trim();
+            if (string.IsNullOrEmpty(line))
+            {
+                continue;
+            }
+
+            var match = ListLineRegex().Match(line);
+            if (!match.Success)
+            {
+                continue;
+            }
+
+            var candidateId = match.Groups["Id"].Value;
+            if (!string.Equals(candidateId, id.AsPrimitive(), StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var name = match.Groups["Name"].Value.Trim();
+            var versionText = match.Groups["Version"].Value;
+            var source = match.Groups["Source"].Success ? match.Groups["Source"].Value.Trim() : null;
+            var version = CreateVersionOrDefault(versionText);
+
+            return new WinGetPackage(
+                Name: name,
+                Id: id,
+                Version: version,
+                UsableVersion: null,
+                Source: source);
         }
 
         return null;
@@ -370,6 +432,51 @@ public partial class WinGetService : IWinGetService
         {
             // Process execution can fail in certain environments (e.g., restricted contexts)
             return string.Empty;
+        }
+    }
+
+    [ExcludeFromCodeCoverage]
+    private static string RunWingetList(PackageId id)
+    {
+        try
+        {
+            var wingetPath = ResolveWinGetPath();
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = wingetPath,
+                Arguments = $"list --id {id.AsPrimitive()} --exact --accept-source-agreements",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(startInfo);
+            if (process == null)
+            {
+                return string.Empty;
+            }
+
+            var output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit();
+
+            return output;
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
+
+    private static Version CreateVersionOrDefault(string versionText)
+    {
+        try
+        {
+            return new Version(versionText);
+        }
+        catch
+        {
+            return new Version("0.0.0");
         }
     }
 

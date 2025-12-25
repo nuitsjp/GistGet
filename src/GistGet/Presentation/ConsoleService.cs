@@ -15,28 +15,30 @@ namespace GistGet.Presentation;
 public class ConsoleService : IConsoleService
 {
     private readonly IProcessRunner _processRunner;
+    private readonly IConsoleProxy _console;
 
-    public ConsoleService(IProcessRunner processRunner)
+    public ConsoleService(IProcessRunner processRunner, IConsoleProxy console)
     {
         _processRunner = processRunner;
+        _console = console;
     }
 
     /// <summary>
     /// Writes an informational message.
     /// </summary>
     public void WriteInfo(string message) =>
-        Console.WriteLine(message ?? throw new ArgumentNullException(nameof(message)));
+        _console.WriteLine(message ?? throw new ArgumentNullException(nameof(message)));
 
     /// <summary>
     /// Writes a warning message.
     /// </summary>
     public void WriteWarning(string message) =>
-        Console.WriteLine($"! {message ?? throw new ArgumentNullException(nameof(message))}");
+        _console.WriteLine($"! {message ?? throw new ArgumentNullException(nameof(message))}");
 
     /// <summary>
     /// Reads a single line from standard input.
     /// </summary>
-    public string? ReadLine() => Console.ReadLine();
+    public string? ReadLine() => _console.ReadLine();
 
     [SupportedOSPlatform("windows")]
     public void SetClipboard(string text)
@@ -65,29 +67,56 @@ public class ConsoleService : IConsoleService
 
     /// <summary>
     /// Starts a spinner progress display.
+    /// Falls back to one-shot output when spinner is not available.
     /// </summary>
     public IDisposable WriteProgress(string message)
     {
-        return new SpinnerProgress(message);
+        ArgumentNullException.ThrowIfNull(message);
+
+        if (_console.IsOutputRedirected || _console.IsErrorRedirected)
+        {
+            _console.WriteLine($"... {message}");
+            return new SimpleProgress();
+        }
+
+        try
+        {
+            return new SpinnerProgress(_console, message);
+        }
+        catch (IOException)
+        {
+            _console.WriteLine($"... {message}");
+            return new SimpleProgress();
+        }
+        catch (PlatformNotSupportedException)
+        {
+            _console.WriteLine($"... {message}");
+            return new SimpleProgress();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            _console.WriteLine($"... {message}");
+            return new SimpleProgress();
+        }
     }
 
     /// <summary>
     /// Writes a step progress message (simple one-line output).
     /// </summary>
     public void WriteStep(int current, int total, string message) =>
-        Console.WriteLine($"[{current}/{total}] {message}");
+        _console.WriteLine($"[{current}/{total}] {message}");
 
     /// <summary>
     /// Writes a success message.
     /// </summary>
     public void WriteSuccess(string message) =>
-        Console.WriteLine($"✓ {message}");
+        _console.WriteLine($"✓ {message}");
 
     /// <summary>
     /// Writes an error message.
     /// </summary>
     public void WriteError(string message) =>
-        Console.Error.WriteLine($"✗ {message}");
+        _console.WriteErrorLine($"✗ {message}");
 
     /// <summary>
     /// Prompts the user for a yes/no confirmation.
@@ -98,16 +127,20 @@ public class ConsoleService : IConsoleService
     [ExcludeFromCodeCoverage]
     private sealed class SpinnerProgress : IDisposable
     {
-        private static readonly string[] s_spinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+        private static readonly string[] s_spinnerFrames = ["-", "\\", "|", "/", "-", "\\", "|", "/", "-", "\\"];
+        private readonly IConsoleProxy _console;
         private readonly CancellationTokenSource _cts = new();
         private readonly Task _spinnerTask;
         private readonly string _message;
+        private readonly bool _originalCursorVisible;
         private int _frameIndex;
 
-        public SpinnerProgress(string message)
+        public SpinnerProgress(IConsoleProxy console, string message)
         {
+            _console = console;
             _message = message;
-            Console.CursorVisible = false;
+            _originalCursorVisible = console.CursorVisible;
+            _console.CursorVisible = false;
             _spinnerTask = RunSpinnerAsync(_cts.Token);
         }
 
@@ -115,7 +148,7 @@ public class ConsoleService : IConsoleService
         {
             while (!token.IsCancellationRequested)
             {
-                Console.Write($"\r{s_spinnerFrames[_frameIndex]} {_message}");
+                _console.Write($"\r{s_spinnerFrames[_frameIndex]} {_message}");
                 _frameIndex = (_frameIndex + 1) % s_spinnerFrames.Length;
                 try
                 {
@@ -133,10 +166,17 @@ public class ConsoleService : IConsoleService
             _cts.Cancel();
             try { _spinnerTask.Wait(); } catch (AggregateException) { /* Expected on cancellation */ }
             // Clear the entire line using console buffer width
-            var clearLength = Math.Max(Console.BufferWidth - 1, _message.Length + 2);
-            Console.Write($"\r{new string(' ', clearLength)}\r");
-            Console.CursorVisible = true;
+            var clearLength = Math.Max(_console.BufferWidth - 1, _message.Length + 2);
+            _console.Write($"\r{new string(' ', clearLength)}\r");
+            _console.CursorVisible = _originalCursorVisible;
             _cts.Dispose();
+        }
+    }
+
+    private sealed class SimpleProgress : IDisposable
+    {
+        public void Dispose()
+        {
         }
     }
 }
