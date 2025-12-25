@@ -14,7 +14,7 @@ public class ProjectFileTests
         var projectPath = Path.GetFullPath(
             Path.Combine(
                 AppContext.BaseDirectory,
-                "..", "..", "..", "..", "..", "..",
+                "..", "..", "..", "..", "..", "..", "..",
                 "src", "GistGet", "GistGet.csproj"));
 
         // -------------------------------------------------------------------
@@ -30,6 +30,6 @@ public class ProjectFileTests
         // Assert
         // -------------------------------------------------------------------
         propertyValue.ShouldNotBeNull();
-        propertyValue!.ShouldBe("true", StringCompareShould.IgnoreCase);
+        propertyValue.ShouldBe("true", StringCompareShould.IgnoreCase);
     }
 }

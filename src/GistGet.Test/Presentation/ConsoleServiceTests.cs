@@ -204,20 +204,18 @@ public class ConsoleServiceTests
 
     private sealed class FakeConsoleProxy : IConsoleProxy
     {
-        private bool _cursorVisible;
-
         public StringWriter Out { get; } = new();
         public StringWriter Error { get; } = new();
-        public StringReader In { get; set; } = new(String.Empty);
-        public bool IsOutputRedirected { get; set; }
-        public bool IsErrorRedirected { get; set; }
-        public bool ThrowOnCursorVisible { get; set; }
+        public StringReader In { get; init; } = new(string.Empty);
+        public bool IsOutputRedirected { get; init; }
+        public bool IsErrorRedirected => false;
+        public bool ThrowOnCursorVisible { get; init; }
         public bool CursorVisibleTouched { get; private set; }
-        public int BufferWidth { get; set; } = 80;
+        public int BufferWidth { get; } = 80;
 
         public bool CursorVisible
         {
-            get => _cursorVisible;
+            get;
             set
             {
                 CursorVisibleTouched = true;
@@ -226,7 +224,7 @@ public class ConsoleServiceTests
                     throw new IOException("Invalid handle");
                 }
 
-                _cursorVisible = value;
+                field = value;
             }
         }
 

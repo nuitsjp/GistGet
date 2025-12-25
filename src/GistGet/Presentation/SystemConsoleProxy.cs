@@ -1,7 +1,10 @@
 // Default implementation that delegates to System.Console.
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace GistGet.Presentation;
 
+[ExcludeFromCodeCoverage]
 public class SystemConsoleProxy : IConsoleProxy
 {
     public bool CursorVisible

@@ -1,3 +1,4 @@
+// ReSharper disable MemberCanBePrivate.Global
 using GistGet.Infrastructure;
 using Shouldly;
 

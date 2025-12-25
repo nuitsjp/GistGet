@@ -2,7 +2,6 @@
 
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Runtime.Versioning;
 using GistGet.Infrastructure;
 using Sharprompt;
@@ -133,12 +132,14 @@ public class ConsoleService : IConsoleService
         private readonly CancellationTokenSource _cts = new();
         private readonly Task _spinnerTask;
         private readonly string _message;
+        private readonly bool _originalCursorVisible;
         private int _frameIndex;
 
         public SpinnerProgress(IConsoleProxy console, string message)
         {
             _console = console;
             _message = message;
+            _originalCursorVisible = console.CursorVisible;
             _console.CursorVisible = false;
             _spinnerTask = RunSpinnerAsync(_cts.Token);
         }
@@ -167,7 +168,7 @@ public class ConsoleService : IConsoleService
             // Clear the entire line using console buffer width
             var clearLength = Math.Max(_console.BufferWidth - 1, _message.Length + 2);
             _console.Write($"\r{new string(' ', clearLength)}\r");
-            _console.CursorVisible = true;
+            _console.CursorVisible = _originalCursorVisible;
             _cts.Dispose();
         }
     }

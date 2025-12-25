@@ -64,15 +64,18 @@ public class GistGetPackage
     public string? InstallerType { get; set; }
 
     [YamlMember(Alias = "log", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
+    // ReSharper disable once PropertyCanBeMadeInitOnly.Global
     public string? Log { get; set; }
 
     [YamlMember(Alias = "override", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public string? Override { get; set; }
 
     [YamlMember(Alias = "interactive", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
+    // ReSharper disable once PropertyCanBeMadeInitOnly.Global
     public bool Interactive { get; set; }
 
     [YamlMember(Alias = "silent", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
+    // ReSharper disable once PropertyCanBeMadeInitOnly.Global
     public bool Silent { get; set; }
 
     public string ToDisplayString(bool colorize = false)

@@ -1,3 +1,4 @@
+// ReSharper disable MemberCanBePrivate.Global
 using System.Net;
 using System.Reflection;
 using GistGet.Infrastructure;
@@ -135,8 +136,9 @@ public class GitHubServiceTests
                 // -------------------------------------------------------------------
                 var updated = await client.Gist.Get(gist.Id);
                 updated.Files.ContainsKey(fileName).ShouldBeTrue();
-                updated.Files[fileName].Content.ShouldContain("Foo.Bar");
-                updated.Files[fileName].Content.ShouldContain("Baz.Qux");
+                var content = updated.Files[fileName].Content;
+                content.Contains("Foo.Bar", StringComparison.OrdinalIgnoreCase).ShouldBeTrue();
+                content.Contains("Baz.Qux", StringComparison.OrdinalIgnoreCase).ShouldBeTrue();
             }
             finally
             {
@@ -427,10 +429,9 @@ public class GitHubServiceTests
             {
             }
 
-            protected override bool OpenBrowser(string verificationUri)
+            protected override void OpenBrowser(string verificationUri)
             {
                 OpenedUrls.Add(verificationUri);
-                return true;
             }
         }
     }
@@ -875,9 +876,8 @@ public class GitHubServiceTests
             {
             }
 
-            protected override bool OpenBrowser(string verificationUri)
+            protected override void OpenBrowser(string verificationUri)
             {
-                return true;
             }
         }
     }
