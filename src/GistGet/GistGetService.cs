@@ -633,6 +633,22 @@ public class GistGetService(
             p => p,
             StringComparer.OrdinalIgnoreCase);
 
+        WinGetPackage? EnsureLocalPackage(string packageId)
+        {
+            if (localPackageDict.TryGetValue(packageId, out var cached))
+            {
+                return cached;
+            }
+
+            var found = winGetService.FindById(new PackageId(packageId));
+            if (found != null)
+            {
+                localPackageDict[packageId] = found;
+            }
+
+            return found;
+        }
+
         // Get current pinned packages to avoid unnecessary pin operations
         var pinnedPackages = winGetService.GetPinnedPackages();
         var pinnedPackageDict = pinnedPackages.ToDictionary(
@@ -642,7 +658,8 @@ public class GistGetService(
 
         foreach (var gistPkg in gistPackages.Where(p => p.Uninstall))
         {
-            if (!localPackageDict.ContainsKey(gistPkg.Id))
+            var localPackage = EnsureLocalPackage(gistPkg.Id);
+            if (localPackage == null)
             {
                 continue;
             }
@@ -677,7 +694,8 @@ public class GistGetService(
 
         foreach (var gistPkg in gistPackages.Where(p => !p.Uninstall))
         {
-            if (localPackageDict.ContainsKey(gistPkg.Id))
+            var localPackage = EnsureLocalPackage(gistPkg.Id);
+            if (localPackage != null)
             {
                 continue;
             }
@@ -720,7 +738,8 @@ public class GistGetService(
 
         foreach (var gistPkg in gistPackages.Where(p => !p.Uninstall))
         {
-            if (!localPackageDict.ContainsKey(gistPkg.Id))
+            var localPackage = EnsureLocalPackage(gistPkg.Id);
+            if (localPackage == null)
             {
                 continue;
             }
