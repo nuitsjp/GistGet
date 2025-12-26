@@ -157,10 +157,10 @@ public class CommandBuilderTests : IDisposable
             // -------------------------------------------------------------------
             var target = CreateTarget();
             var root = target.Build();
+            var package = new GistGetPackage { Id = "Broken.Package", Name = "Broken Package" };
             var result = new SyncResult
             {
-                Failed = { new GistGetPackage { Id = "Broken.Package" } },
-                Errors = { "network issue" }
+                Failed = { [package] = -1978335189 }
             };
 
             GistGetServiceMock
@@ -178,8 +178,8 @@ public class CommandBuilderTests : IDisposable
             // -------------------------------------------------------------------
             exitCode.ShouldBe(0);
             output.ShouldContain("Failed 1 package");
-            output.ShouldContain("Errors:");
-            output.ShouldContain("network issue");
+            output.ShouldContain("Broken Package [Broken.Package]: exit code -1978335189");
+            output.ShouldNotContain("Errors:");
             output.ShouldNotContain("Sync completed successfully.");
         }
 
@@ -191,9 +191,10 @@ public class CommandBuilderTests : IDisposable
             // -------------------------------------------------------------------
             var target = CreateTarget();
             var root = target.Build();
+            var package = new GistGetPackage { Id = "Tag.Package", Name = "[not-a-tag] Package" };
             var result = new SyncResult
             {
-                Errors = { "winget error: [not-a-tag]" }
+                Failed = { [package] = -1 }
             };
 
             GistGetServiceMock
@@ -210,7 +211,7 @@ public class CommandBuilderTests : IDisposable
             // Assert
             // -------------------------------------------------------------------
             exitCode.ShouldBe(0);
-            output.ShouldContain("winget error: [not-a-tag]");
+            output.ShouldContain("[not-a-tag] Package");
         }
 
         [Fact]

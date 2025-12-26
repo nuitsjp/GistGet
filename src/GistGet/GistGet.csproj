@@ -14,11 +14,8 @@
 		<RepositoryType>git</RepositoryType>
 
 		<!-- 発行設定 -->
-		<PublishSingleFile>true</PublishSingleFile>
+		<PublishSingleFile>false</PublishSingleFile>
 		<SelfContained>true</SelfContained>
-		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
-		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-		<IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
 	</PropertyGroup>
 
 	<ItemGroup>
