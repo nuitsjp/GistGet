@@ -596,6 +596,158 @@ public class GistGetService(
 
         consoleService.WriteInfo(Messages.SyncStarting);
 
+        var gistPackages = await GistGetPackagesAsync(url, filePath);
+
+        var localPackages = winGetService.GetAllInstalledPackages();
+
+        var localPackageDict = localPackages.ToDictionary(
+            p => p.Id.AsPrimitive(),
+            p => p,
+            StringComparer.OrdinalIgnoreCase);
+
+        // Get current pinned packages to avoid unnecessary pin operations
+        var pinnedPackages = winGetService.GetPinnedPackages();
+        var pinnedPackageDict = pinnedPackages.ToDictionary(
+            p => p.Id.AsPrimitive(),
+            p => p,
+            StringComparer.OrdinalIgnoreCase);
+
+        foreach (var gistPkg in gistPackages.Where(p => p.Uninstall))
+        {
+            if (localPackageDict.TryGetValue(gistPkg.Id, out _))
+            {
+                try
+                {
+                    consoleService.WriteInfo($"[sync] Uninstalling {gistPkg.ToDisplayString(colorize: true)}...");
+                    var uninstallArgs = new[] { "uninstall", "--id", gistPkg.Id };
+                    var exitCode = await passthroughRunner.RunAsync(uninstallArgs);
+                    if (exitCode == 0)
+                    {
+                        result.Uninstalled.Add(gistPkg);
+
+                        // Only remove pin if the package is actually pinned
+                        if (pinnedPackageDict.ContainsKey(gistPkg.Id))
+                        {
+                            consoleService.WriteInfo($"[sync] Removing pin for {gistPkg.ToDisplayString(colorize: true)}...");
+                            await passthroughRunner.RunAsync(["pin", "remove", "--id", gistPkg.Id]);
+                        }
+                    }
+                    else
+                    {
+                        result.Failed[gistPkg] = exitCode;
+                    }
+                }
+                catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or IOException)
+                {
+                    // Use exit code -1 for exceptions (no exit code available)
+                    result.Failed[gistPkg] = -1;
+                }
+            }
+        }
+
+        foreach (var gistPkg in gistPackages.Where(p => !p.Uninstall))
+        {
+            if (!localPackageDict.TryGetValue(gistPkg.Id, out _))
+            {
+                try
+                {
+                    var installArgs = argumentBuilder.BuildInstallArgs(gistPkg);
+
+                    consoleService.WriteInfo($"[sync] Installing {gistPkg.ToDisplayString(colorize: true)}...");
+                    var exitCode = await passthroughRunner.RunAsync(installArgs.ToArray());
+
+                    // Check if the package is installed locally after winget install attempt.
+                    // This handles cases where winget returns non-zero exit code but the package
+                    // is already installed (e.g., "no upgrade available" scenario).
+                    var installedPackage = winGetService.FindById(new PackageId(gistPkg.Id));
+                    var isInstalled = s_alreadyInstalledExitCodes.Contains(exitCode) || installedPackage != null;
+
+                    if (isInstalled)
+                    {
+                        result.Installed.Add(gistPkg);
+
+                        if (!string.IsNullOrEmpty(gistPkg.Pin))
+                        {
+                            var pinArgs = argumentBuilder.BuildPinAddArgs(gistPkg.Id, gistPkg.Pin, gistPkg.PinType);
+                            consoleService.WriteInfo($"[sync] Pinning {gistPkg.ToDisplayString(colorize: true)} to {gistPkg.Pin}...");
+                            await passthroughRunner.RunAsync(pinArgs);
+                        }
+                    }
+                    else
+                    {
+                        result.Failed[gistPkg] = exitCode;
+                    }
+                }
+                catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or IOException)
+                {
+                    // Use exit code -1 for exceptions (no exit code available)
+                    result.Failed[gistPkg] = -1;
+                }
+            }
+        }
+
+        foreach (var gistPkg in gistPackages.Where(p => !p.Uninstall))
+        {
+            if (localPackageDict.TryGetValue(gistPkg.Id, out _))
+            {
+                try
+                {
+                    if (!string.IsNullOrEmpty(gistPkg.Pin))
+                    {
+                        // Check if pin is already in the desired state
+                        var existingPin = pinnedPackageDict.GetValueOrDefault(gistPkg.Id);
+                        var desiredVersion = new Version(gistPkg.Pin);
+                        var isAlreadyPinned = existingPin?.PinnedVersion?.Equals(desiredVersion) == true;
+
+                        if (!isAlreadyPinned)
+                        {
+                            var pinArgs = argumentBuilder.BuildPinAddArgs(gistPkg.Id, gistPkg.Pin, gistPkg.PinType, true);
+                            consoleService.WriteInfo($"[sync] Pinning {gistPkg.ToDisplayString(colorize: true)} to {gistPkg.Pin}...");
+                            var exitCode = await passthroughRunner.RunAsync(pinArgs);
+                            if (exitCode == 0)
+                            {
+                                result.PinUpdated.Add(gistPkg);
+                            }
+                        }
+                        else
+                        {
+                            consoleService.WriteInfo($"[sync] {gistPkg.ToDisplayString(colorize: true)} is already installed and pinned to {gistPkg.Pin}.");
+                        }
+                    }
+                    else
+                    {
+                        // Only remove pin if the package is actually pinned
+                        if (pinnedPackageDict.ContainsKey(gistPkg.Id))
+                        {
+                            var pinRemoveArgs = new[] { "pin", "remove", "--id", gistPkg.Id };
+                            consoleService.WriteInfo($"[sync] Removing pin for {gistPkg.ToDisplayString(colorize: true)}...");
+                            var exitCode = await passthroughRunner.RunAsync(pinRemoveArgs);
+                            if (exitCode == 0)
+                            {
+                                result.PinRemoved.Add(gistPkg);
+                            }
+                        }
+                        else
+                        {
+                            consoleService.WriteInfo($"[sync] {gistPkg.ToDisplayString(colorize: true)} is already installed.");
+                        }
+                    }
+                }
+                catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or IOException)
+                {
+                    // Pin failures are not fatal, do nothing
+                }
+            }
+        }
+
+        consoleService.WriteSuccess(Messages.SyncCompleted);
+        consoleService.WriteInfo(string.Format(CultureInfo.CurrentCulture, Messages.SyncSummary, result.Installed.Count, result.Uninstalled.Count, result.Failed.Count));
+
+        return result;
+    }
+
+    private async Task<IReadOnlyList<GistGetPackage>> GistGetPackagesAsync(string? url, string? filePath)
+    {
         IReadOnlyList<GistGetPackage> gistPackages;
         if (!string.IsNullOrEmpty(filePath))
         {
@@ -637,176 +789,7 @@ public class GistGetService(
             }
         }
 
-        var localPackages = winGetService.GetAllInstalledPackages();
-        var localPackageDict = localPackages.ToDictionary(
-            p => p.Id.AsPrimitive(),
-            p => p,
-            StringComparer.OrdinalIgnoreCase);
-
-        WinGetPackage? EnsureLocalPackage(string packageId)
-        {
-            if (localPackageDict.TryGetValue(packageId, out var cached))
-            {
-                return cached;
-            }
-
-            var found = winGetService.FindById(new PackageId(packageId));
-            if (found != null)
-            {
-                localPackageDict[packageId] = found;
-            }
-
-            return found;
-        }
-
-        // Get current pinned packages to avoid unnecessary pin operations
-        var pinnedPackages = winGetService.GetPinnedPackages();
-        var pinnedPackageDict = pinnedPackages.ToDictionary(
-            p => p.Id.AsPrimitive(),
-            p => p,
-            StringComparer.OrdinalIgnoreCase);
-
-        foreach (var gistPkg in gistPackages.Where(p => p.Uninstall))
-        {
-            var localPackage = EnsureLocalPackage(gistPkg.Id);
-            if (localPackage == null)
-            {
-                continue;
-            }
-
-            try
-            {
-                consoleService.WriteInfo($"[sync] Uninstalling {gistPkg.ToDisplayString(colorize: true)}...");
-                var uninstallArgs = new[] { "uninstall", "--id", gistPkg.Id };
-                var exitCode = await passthroughRunner.RunAsync(uninstallArgs);
-                if (exitCode == 0)
-                {
-                    result.Uninstalled.Add(gistPkg);
-
-                    // Only remove pin if the package is actually pinned
-                    if (pinnedPackageDict.ContainsKey(gistPkg.Id))
-                    {
-                        consoleService.WriteInfo($"[sync] Removing pin for {gistPkg.ToDisplayString(colorize: true)}...");
-                        await passthroughRunner.RunAsync(["pin", "remove", "--id", gistPkg.Id]);
-                    }
-                }
-                else
-                {
-                    result.Failed[gistPkg] = exitCode;
-                }
-            }
-            catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or IOException)
-            {
-                // Use exit code -1 for exceptions (no exit code available)
-                result.Failed[gistPkg] = -1;
-            }
-        }
-
-        foreach (var gistPkg in gistPackages.Where(p => !p.Uninstall))
-        {
-            var localPackage = EnsureLocalPackage(gistPkg.Id);
-            if (localPackage != null)
-            {
-                continue;
-            }
-
-            try
-            {
-                var installArgs = argumentBuilder.BuildInstallArgs(gistPkg);
-
-                consoleService.WriteInfo($"[sync] Installing {gistPkg.ToDisplayString(colorize: true)}...");
-                var exitCode = await passthroughRunner.RunAsync(installArgs.ToArray());
-
-                // Check if the package is installed locally after winget install attempt.
-                // This handles cases where winget returns non-zero exit code but the package
-                // is already installed (e.g., "no upgrade available" scenario).
-                var installedPackage = winGetService.FindById(new PackageId(gistPkg.Id));
-                var isInstalled = s_alreadyInstalledExitCodes.Contains(exitCode) || installedPackage != null;
-
-                if (isInstalled)
-                {
-                    result.Installed.Add(gistPkg);
-
-                    if (!string.IsNullOrEmpty(gistPkg.Pin))
-                    {
-                        var pinArgs = argumentBuilder.BuildPinAddArgs(gistPkg.Id, gistPkg.Pin, gistPkg.PinType);
-                        consoleService.WriteInfo($"[sync] Pinning {gistPkg.ToDisplayString(colorize: true)} to {gistPkg.Pin}...");
-                        await passthroughRunner.RunAsync(pinArgs);
-                    }
-                }
-                else
-                {
-                    result.Failed[gistPkg] = exitCode;
-                }
-            }
-            catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or IOException)
-            {
-                // Use exit code -1 for exceptions (no exit code available)
-                result.Failed[gistPkg] = -1;
-            }
-        }
-
-        foreach (var gistPkg in gistPackages.Where(p => !p.Uninstall))
-        {
-            var localPackage = EnsureLocalPackage(gistPkg.Id);
-            if (localPackage == null)
-            {
-                continue;
-            }
-
-            try
-            {
-                if (!string.IsNullOrEmpty(gistPkg.Pin))
-                {
-                    // Check if pin is already in the desired state
-                    var existingPin = pinnedPackageDict.GetValueOrDefault(gistPkg.Id);
-                    var desiredVersion = new Version(gistPkg.Pin);
-                    var isAlreadyPinned = existingPin?.PinnedVersion?.Equals(desiredVersion) == true;
-
-                    if (!isAlreadyPinned)
-                    {
-                        var pinArgs = argumentBuilder.BuildPinAddArgs(gistPkg.Id, gistPkg.Pin, gistPkg.PinType, true);
-                        consoleService.WriteInfo($"[sync] Pinning {gistPkg.ToDisplayString(colorize: true)} to {gistPkg.Pin}...");
-                        var exitCode = await passthroughRunner.RunAsync(pinArgs);
-                        if (exitCode == 0)
-                        {
-                            result.PinUpdated.Add(gistPkg);
-                        }
-                    }
-                    else
-                    {
-                        consoleService.WriteInfo($"[sync] {gistPkg.ToDisplayString(colorize: true)} is already installed and pinned to {gistPkg.Pin}.");
-                    }
-                }
-                else
-                {
-                    // Only remove pin if the package is actually pinned
-                    if (pinnedPackageDict.ContainsKey(gistPkg.Id))
-                    {
-                        var pinRemoveArgs = new[] { "pin", "remove", "--id", gistPkg.Id };
-                        consoleService.WriteInfo($"[sync] Removing pin for {gistPkg.ToDisplayString(colorize: true)}...");
-                        var exitCode = await passthroughRunner.RunAsync(pinRemoveArgs);
-                        if (exitCode == 0)
-                        {
-                            result.PinRemoved.Add(gistPkg);
-                        }
-                    }
-                    else
-                    {
-                        consoleService.WriteInfo($"[sync] {gistPkg.ToDisplayString(colorize: true)} is already installed.");
-                    }
-                }
-            }
-            catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or IOException)
-            {
-                // Pin failures are not fatal, do nothing
-            }
-        }
-
-        consoleService.WriteSuccess(Messages.SyncCompleted);
-        consoleService.WriteInfo(string.Format(CultureInfo.CurrentCulture, Messages.SyncSummary, result.Installed.Count, result.Uninstalled.Count, result.Failed.Count));
-
-        return result;
+        return gistPackages;
     }
 
     /// <summary>
