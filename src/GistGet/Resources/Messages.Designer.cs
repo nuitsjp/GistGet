@@ -522,6 +522,12 @@ internal static class Messages
         ResourceManager.GetString("OptionDescriptionIgnoreSecurityHash", null) ?? string.Empty;
 
     /// <summary>
+    /// Looks up a localized string similar to: Upgrade all available packages
+    /// </summary>
+    internal static string OptionDescriptionUpgradeAll =>
+        ResourceManager.GetString("OptionDescriptionUpgradeAll", null) ?? string.Empty;
+
+    /// <summary>
     /// Looks up a localized string similar to: Remove all versions of the package
     /// </summary>
     internal static string UninstallAllOptionDescription =>
