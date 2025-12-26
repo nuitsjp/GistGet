@@ -12,6 +12,8 @@ public interface IConsoleProxy
 
     bool IsErrorRedirected { get; }
 
+    ConsoleColor ForegroundColor { get; set; }
+
     string? ReadLine();
 
     void Write(string value);

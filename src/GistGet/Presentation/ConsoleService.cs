@@ -110,13 +110,52 @@ public class ConsoleService : IConsoleService
     /// Writes a success message.
     /// </summary>
     public void WriteSuccess(string message) =>
-        _console.WriteLine($"✓ {message}");
+        WriteStatusMessage(message, "[OK]", ConsoleColor.Green, isError: false);
 
     /// <summary>
     /// Writes an error message.
     /// </summary>
     public void WriteError(string message) =>
-        _console.WriteErrorLine($"✗ {message}");
+        WriteStatusMessage(message, "[ERR]", ConsoleColor.Red, isError: true);
+
+    private void WriteStatusMessage(string message, string prefix, ConsoleColor color, bool isError)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+
+        var formatted = $"{prefix} {message}";
+        var isRedirected = isError ? _console.IsErrorRedirected : _console.IsOutputRedirected;
+        if (isRedirected)
+        {
+            if (isError)
+            {
+                _console.WriteErrorLine(formatted);
+            }
+            else
+            {
+                _console.WriteLine(formatted);
+            }
+
+            return;
+        }
+
+        var originalColor = _console.ForegroundColor;
+        try
+        {
+            _console.ForegroundColor = color;
+            if (isError)
+            {
+                _console.WriteErrorLine(formatted);
+            }
+            else
+            {
+                _console.WriteLine(formatted);
+            }
+        }
+        finally
+        {
+            _console.ForegroundColor = originalColor;
+        }
+    }
 
     /// <summary>
     /// Prompts the user for a yes/no confirmation.
