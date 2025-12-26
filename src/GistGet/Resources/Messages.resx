@@ -53,6 +53,9 @@
   <data name="FetchingInstalledPackages" xml:space="preserve">
     <value>Fetching installed packages...</value>
   </data>
+  <data name="FetchingPinnedPackages" xml:space="preserve">
+    <value>Fetching pinned packages...</value>
+  </data>
   <data name="LoadingFromFile" xml:space="preserve">
     <value>Loading package information from file...</value>
   </data>

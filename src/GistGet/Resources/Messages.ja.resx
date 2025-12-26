@@ -53,6 +53,9 @@
   <data name="FetchingInstalledPackages" xml:space="preserve">
     <value>インストール済みパッケージを取得中...</value>
   </data>
+  <data name="FetchingPinnedPackages" xml:space="preserve">
+    <value>ピン留め済みパッケージを取得中...</value>
+  </data>
   <data name="LoadingFromFile" xml:space="preserve">
     <value>ファイルからパッケージ情報を読み込み中...</value>
   </data>

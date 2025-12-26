@@ -26,6 +26,10 @@ public class GistGetServiceTests
         CredentialServiceMock = new Mock<ICredentialService>();
         PassthroughRunnerMock = new Mock<IWinGetPassthroughRunner>();
         WinGetServiceMock = new Mock<IWinGetService>();
+        var progressDisposable = Mock.Of<IDisposable>();
+        ConsoleServiceMock
+            .Setup(x => x.WriteProgress(It.IsAny<string>()))
+            .Returns(progressDisposable);
         // Default setup: GetPinnedPackages returns empty list
         WinGetServiceMock.Setup(x => x.GetPinnedPackages()).Returns(new List<WinGetPin>());
         ArgumentBuilder = new WinGetArgumentBuilder(); // Real instance
@@ -2646,6 +2650,46 @@ public class GistGetServiceTests
 
     public class SyncAsync : GistGetServiceTests
     {
+        [Fact]
+        public async Task WhenSyncing_WritesProgressForLocalPackageQueries()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var credential = new Credential("user", "token");
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new List<GistGetPackage>());
+
+            WinGetServiceMock
+                .Setup(x => x.GetAllInstalledPackages())
+                .Returns(new List<WinGetPackage>());
+
+            WinGetServiceMock
+                .Setup(x => x.GetPinnedPackages())
+                .Returns(new List<WinGetPin>());
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await Target.SyncAsync();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            ConsoleServiceMock.Verify(x => x.WriteProgress("Fetching installed packages..."), Times.Once);
+            ConsoleServiceMock.Verify(x => x.WriteProgress("Fetching pinned packages..."), Times.Once);
+        }
+
         [Fact]
         public async Task WhenGistHasPackage_AndNotInstalled_InstallsPackage()
         {
