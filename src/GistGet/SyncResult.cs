@@ -11,8 +11,7 @@ public class SyncResult
     public IList<GistGetPackage> Uninstalled { get; } = new List<GistGetPackage>();
     public IList<GistGetPackage> PinUpdated { get; } = new List<GistGetPackage>();
     public IList<GistGetPackage> PinRemoved { get; } = new List<GistGetPackage>();
-    public IList<GistGetPackage> Failed { get; } = new List<GistGetPackage>();
-    public IList<string> Errors { get; } = new List<string>();
-    public bool Success => Errors.Count == 0 && Failed.Count == 0;
+    public IDictionary<GistGetPackage, int> Failed { get; } = new Dictionary<GistGetPackage, int>();
+    public bool Success => Failed.Count == 0;
 }
 

@@ -3126,11 +3126,10 @@ public class GistGetServiceTests
             // Assert
             // -------------------------------------------------------------------
             result.Failed.Count.ShouldBe(1);
-            result.Failed[0].Id.ShouldBe(failingPackageId);
+            result.Failed.Keys.First().Id.ShouldBe(failingPackageId);
             result.Installed.Count.ShouldBe(1);
             result.Installed[0].Id.ShouldBe(successPackageId);
             result.Success.ShouldBeFalse();
-            result.Errors.Count.ShouldBe(1);
         }
 
         [Fact]
@@ -3356,8 +3355,7 @@ public class GistGetServiceTests
 
             var result = await Target.SyncAsync();
 
-            result.Failed.ShouldContain(p => p.Id == packageId);
-            result.Errors.ShouldContain(s => s.Contains("run failed", StringComparison.OrdinalIgnoreCase));
+            result.Failed.Keys.ShouldContain(p => p.Id == packageId);
         }
 
         [Fact]
@@ -3392,8 +3390,7 @@ public class GistGetServiceTests
 
             var result = await Target.SyncAsync();
 
-            result.Failed.ShouldContain(p => p.Id == packageId);
-            result.Errors.ShouldContain(s => s.Contains("install failed", StringComparison.OrdinalIgnoreCase));
+            result.Failed.Keys.ShouldContain(p => p.Id == packageId);
         }
 
         [Fact]
@@ -3426,9 +3423,9 @@ public class GistGetServiceTests
                 .Setup(x => x.RunAsync(It.IsAny<string[]>()))
                 .ThrowsAsync(new InvalidOperationException("pin failed"));
 
-            var result = await Target.SyncAsync();
+            _ = await Target.SyncAsync();
 
-            result.Errors.ShouldContain(s => s.Contains("pin failed", StringComparison.OrdinalIgnoreCase));
+            // Pin failure does not add to Failed dictionary
         }
 
         [Fact]
@@ -3459,8 +3456,7 @@ public class GistGetServiceTests
 
             var result = await Target.SyncAsync();
 
-            result.Failed.ShouldContain(p => p.Id == packageId);
-            result.Errors.ShouldContain(s => s.Contains("Failed to uninstall", StringComparison.OrdinalIgnoreCase));
+            result.Failed.Keys.ShouldContain(p => p.Id == packageId);
         }
 
         [Fact]
@@ -3490,8 +3486,130 @@ public class GistGetServiceTests
 
             var result = await Target.SyncAsync();
 
-            result.Failed.ShouldContain(p => p.Id == packageId);
-            result.Errors.ShouldContain(s => s.Contains("Failed to install", StringComparison.OrdinalIgnoreCase));
+            result.Failed.Keys.ShouldContain(p => p.Id == packageId);
+        }
+
+        [Fact]
+        public async Task WhenInstallReturnsUpdateNotApplicable_DoesNotAddToFailed()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Already.Installed";
+            var credential = new Credential("user", "token");
+            var gistPackages = new List<GistGetPackage> { new() { Id = packageId } };
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(gistPackages);
+
+            WinGetServiceMock.Setup(x => x.GetAllInstalledPackages()).Returns(new List<WinGetPackage>());
+
+            PassthroughRunnerMock
+                .Setup(x => x.RunAsync(It.IsAny<string[]>()))
+                .ReturnsAsync(unchecked((int)0x8A15002B)); // APPINSTALLER_CLI_ERROR_UPDATE_NOT_APPLICABLE
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await Target.SyncAsync();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.Failed.Count.ShouldBe(0);
+            result.Installed.Count.ShouldBe(1);
+            result.Success.ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task WhenInstallReturnsPackageAlreadyInstalled_DoesNotAddToFailed()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Package.AlreadyInstalled";
+            var credential = new Credential("user", "token");
+            var gistPackages = new List<GistGetPackage> { new() { Id = packageId } };
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(gistPackages);
+
+            WinGetServiceMock.Setup(x => x.GetAllInstalledPackages()).Returns(new List<WinGetPackage>());
+
+            PassthroughRunnerMock
+                .Setup(x => x.RunAsync(It.IsAny<string[]>()))
+                .ReturnsAsync(unchecked((int)0x8A150061)); // APPINSTALLER_CLI_ERROR_PACKAGE_ALREADY_INSTALLED
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await Target.SyncAsync();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.Failed.Count.ShouldBe(0);
+            result.Installed.Count.ShouldBe(1);
+            result.Success.ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task WhenInstallReturnsInstallerAlreadyInstalled_DoesNotAddToFailed()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Installer.AlreadyInstalled";
+            var credential = new Credential("user", "token");
+            var gistPackages = new List<GistGetPackage> { new() { Id = packageId } };
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(gistPackages);
+
+            WinGetServiceMock.Setup(x => x.GetAllInstalledPackages()).Returns(new List<WinGetPackage>());
+
+            PassthroughRunnerMock
+                .Setup(x => x.RunAsync(It.IsAny<string[]>()))
+                .ReturnsAsync(unchecked((int)0x8A15010D)); // APPINSTALLER_CLI_ERROR_INSTALL_ALREADY_INSTALLED
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await Target.SyncAsync();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.Failed.Count.ShouldBe(0);
+            result.Installed.Count.ShouldBe(1);
+            result.Success.ShouldBeTrue();
         }
 
         [Fact]

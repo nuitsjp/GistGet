@@ -92,18 +92,9 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
             if (result.Failed.Count > 0)
             {
                 console.MarkupLine($"[red]Failed {result.Failed.Count} package(s):[/]");
-                foreach (var pkg in result.Failed)
+                foreach (var (pkg, exitCode) in result.Failed)
                 {
-                    console.MarkupLine($"  - {EscapeMarkup(pkg.Id)}");
-                }
-            }
-
-            if (result.Errors.Count > 0)
-            {
-                console.MarkupLine("[red]Errors:[/]");
-                foreach (var error in result.Errors)
-                {
-                    console.MarkupLine($"  - {EscapeMarkup(error)}");
+                    console.MarkupLine($"  - {EscapeMarkup(pkg.ToDisplayString())}: exit code {exitCode}");
                 }
             }
 

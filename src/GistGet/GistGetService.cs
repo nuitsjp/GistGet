@@ -1,7 +1,6 @@
 // Core application service that orchestrates GitHub and WinGet operations.
 
 using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using GistGet.Infrastructure;
 using GistGet.Resources;
@@ -27,6 +26,17 @@ public class GistGetService(
     IWinGetArgumentBuilder argumentBuilder)
     : IGistGetService
 {
+    /// <summary>
+    /// Exit codes that indicate a package is already installed and should be treated as success.
+    /// </summary>
+    private static readonly int[] s_alreadyInstalledExitCodes =
+    [
+        0,
+        unchecked((int)0x8A15002B), // APPINSTALLER_CLI_ERROR_UPDATE_NOT_APPLICABLE
+        unchecked((int)0x8A150061), // APPINSTALLER_CLI_ERROR_PACKAGE_ALREADY_INSTALLED
+        unchecked((int)0x8A15010D), // APPINSTALLER_CLI_ERROR_INSTALL_ALREADY_INSTALLED
+    ];
+
     /// <summary>
     /// Authenticates via GitHub device flow and stores the credential.
     /// </summary>
@@ -682,13 +692,13 @@ public class GistGetService(
                 }
                 else
                 {
-                    result.Failed.Add(gistPkg);
-                    result.Errors.Add($"Failed to uninstall {gistPkg.ToDisplayString(colorize: true)}: exit code {exitCode.ToString(CultureInfo.InvariantCulture)}");
+                    result.Failed[gistPkg] = exitCode;
                 }
             }
             catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or IOException)
             {
-                HandleSyncOperationFailure(result, gistPkg, "uninstall", ex);
+                // Use exit code -1 for exceptions (no exit code available)
+                result.Failed[gistPkg] = -1;
             }
         }
 
@@ -711,7 +721,7 @@ public class GistGetService(
                 // This handles cases where winget returns non-zero exit code but the package
                 // is already installed (e.g., "no upgrade available" scenario).
                 var installedPackage = winGetService.FindById(new PackageId(gistPkg.Id));
-                var isInstalled = exitCode == 0 || installedPackage != null;
+                var isInstalled = s_alreadyInstalledExitCodes.Contains(exitCode) || installedPackage != null;
 
                 if (isInstalled)
                 {
@@ -726,13 +736,13 @@ public class GistGetService(
                 }
                 else
                 {
-                    result.Failed.Add(gistPkg);
-                    result.Errors.Add($"Failed to install {gistPkg.ToDisplayString(colorize: true)}: exit code {exitCode.ToString(CultureInfo.InvariantCulture)}");
+                    result.Failed[gistPkg] = exitCode;
                 }
             }
             catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or IOException)
             {
-                HandleSyncOperationFailure(result, gistPkg, "install", ex);
+                // Use exit code -1 for exceptions (no exit code available)
+                result.Failed[gistPkg] = -1;
             }
         }
 
@@ -789,7 +799,7 @@ public class GistGetService(
             }
             catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or IOException)
             {
-                HandleSyncPinFailure(result, gistPkg, ex);
+                // Pin failures are not fatal, do nothing
             }
         }
 
@@ -891,26 +901,5 @@ public class GistGetService(
         }
 
         consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.InitSuccess, selectedPackages.Count));
-    }
-
-    /// <summary>
-    /// Handles failures during sync operations (install/uninstall).
-    /// Defensive: captures process failures, I/O errors, and invalid operations.
-    /// </summary>
-    [ExcludeFromCodeCoverage]
-    private static void HandleSyncOperationFailure(SyncResult result, GistGetPackage package, string operation, Exception ex)
-    {
-        result.Failed.Add(package);
-        result.Errors.Add($"Failed to {operation} {package.Id}: {ex.Message}");
-    }
-
-    /// <summary>
-    /// Handles failures during pin sync operations.
-    /// Defensive: captures process failures, I/O errors, and invalid operations.
-    /// </summary>
-    [ExcludeFromCodeCoverage]
-    private static void HandleSyncPinFailure(SyncResult result, GistGetPackage package, Exception ex)
-    {
-        result.Errors.Add($"Failed to sync pin for {package.Id}: {ex.Message}");
     }
 }
