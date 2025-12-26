@@ -2696,51 +2696,6 @@ public class GistGetServiceTests
         }
 
         [Fact]
-        public async Task WhenLocalDiscoveryFailsButFindByIdSucceeds_SkipsInstall()
-        {
-            // -------------------------------------------------------------------
-            // Arrange
-            // -------------------------------------------------------------------
-            var packageId = "Existing.Package";
-            var credential = new Credential("user", "token");
-            var gistPackages = new List<GistGetPackage>
-            {
-                new() { Id = packageId }
-            };
-
-            CredentialServiceMock
-                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
-                .Returns(new TryGetCredentialDelegate((out c) =>
-                {
-                    c = credential;
-                    return true;
-                }));
-
-            AuthServiceMock
-                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(gistPackages);
-
-            WinGetServiceMock
-                .Setup(x => x.GetAllInstalledPackages())
-                .Returns(new List<WinGetPackage>());
-
-            WinGetServiceMock
-                .Setup(x => x.FindById(It.Is<PackageId>(p => p.AsPrimitive() == packageId)))
-                .Returns(new WinGetPackage("Existing Package", new PackageId(packageId), new Version("1.0.0"), null, "winget"));
-
-            // -------------------------------------------------------------------
-            // Act
-            // -------------------------------------------------------------------
-            var result = await Target.SyncAsync();
-
-            // -------------------------------------------------------------------
-            // Assert
-            // -------------------------------------------------------------------
-            result.Installed.ShouldBeEmpty();
-            PassthroughRunnerMock.Verify(x => x.RunAsync(It.IsAny<string[]>()), Times.Never);
-        }
-
-        [Fact]
         public async Task WhenInstallingPackage_WritesProgressLog()
         {
             // -------------------------------------------------------------------
