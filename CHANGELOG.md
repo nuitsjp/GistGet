@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-12-26
+
+### Added
+
+- `upgrade`コマンドに`--all`オプションを追加（全パッケージの一括アップグレードが可能に）
+
+### Fixed
+
+- 同期時の進捗表示を改善
+
+### Changed
+
+- `EnsureLocalPackage`の`FindById`フォールバックを削除（リファクタリング）
+
 ## [1.0.8] - 2025-12-25
 
 ### Fixed
@@ -46,7 +60,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - YAML-based configuration management (`GistGet.yaml`)
 - Secure credential storage using Windows Credential Manager
 
-[Unreleased]: https://github.com/nuitsjp/GistGet/compare/v1.0.8...HEAD
+[Unreleased]: https://github.com/nuitsjp/GistGet/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/nuitsjp/GistGet/compare/v1.0.8...v1.1.0
 [1.0.8]: https://github.com/nuitsjp/GistGet/compare/v1.0.7...v1.0.8
 [1.0.7]: https://github.com/nuitsjp/GistGet/compare/v1.0.5...v1.0.7
 [1.0.5]: https://github.com/nuitsjp/GistGet/compare/v1.0.4...v1.0.5

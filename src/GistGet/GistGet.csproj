@@ -4,7 +4,7 @@
 		<OutputType>Exe</OutputType>
 
 		<!-- パッケージ情報 -->
-		<Version>1.0.8</Version>
+		<Version>1.1.0</Version>
 		<Authors>nuitsjp</Authors>
 		<Company>nuitsjp</Company>
 		<Product>GistGet</Product>
