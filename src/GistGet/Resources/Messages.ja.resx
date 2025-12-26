@@ -299,6 +299,9 @@
   <data name="OptionDescriptionIgnoreSecurityHash" xml:space="preserve">
     <value>インストーラーのハッシュ チェック失敗を無視します</value>
   </data>
+  <data name="OptionDescriptionUpgradeAll" xml:space="preserve">
+    <value>利用可能なすべてのパッケージをアップグレードします</value>
+  </data>
   <data name="UninstallAllOptionDescription" xml:space="preserve">
     <value>パッケージのすべてのバージョンを削除します</value>
   </data>
