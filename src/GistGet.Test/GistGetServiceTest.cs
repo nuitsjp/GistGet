@@ -142,7 +142,7 @@ public class GistGetServiceTests
             // Assert
             // -------------------------------------------------------------------
             ConsoleServiceMock.Verify(x => x.WriteInfo("github.com"), Times.Once);
-            ConsoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("✓ Logged in to github.com account testuser (keyring)"))), Times.Once);
+            ConsoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("OK Logged in to github.com account testuser (keyring)"))), Times.Once);
             ConsoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("- Active account: true"))), Times.Once);
             ConsoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("- Git operations protocol: https"))), Times.Once);
             ConsoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s => s.Contains("- Token: gho_**********"))), Times.Once);

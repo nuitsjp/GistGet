@@ -19,6 +19,12 @@ public class SystemConsoleProxy : IConsoleProxy
 
     public bool IsErrorRedirected => Console.IsErrorRedirected;
 
+    public ConsoleColor ForegroundColor
+    {
+        get => Console.ForegroundColor;
+        set => Console.ForegroundColor = value;
+    }
+
     public string? ReadLine() => Console.ReadLine();
 
     public void Write(string value) => Console.Write(value);

@@ -76,7 +76,7 @@ public class GistGetService(
             var scopesStr = string.Join(", ", status.Scopes.Select(s => $"'{s}'"));
 
             consoleService.WriteInfo("github.com");
-            consoleService.WriteInfo($"  ✓ Logged in to github.com account {status.Username} (keyring)");
+            consoleService.WriteInfo($"  OK Logged in to github.com account {status.Username} (keyring)");
             consoleService.WriteInfo("  - Active account: true");
             consoleService.WriteInfo("  - Git operations protocol: https");
             consoleService.WriteInfo($"  - Token: {tokenSafeDisplay}");

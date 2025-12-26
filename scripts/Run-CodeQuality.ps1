@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     GistGet プロジェクトのコード品質パイプラインを実行します。
 
@@ -776,10 +776,10 @@ if ($runTests) {
     if ($Top -gt 0) {
         Write-Host ""
         Write-Host "Coverage (lowest $Top files):" -ForegroundColor Yellow
-        $summary.Files
-            | Sort-Object Coverage
-            | Select-Object -First $Top
-            | ForEach-Object {
+        $summary.Files |
+            Sort-Object Coverage |
+            Select-Object -First $Top |
+            ForEach-Object {
                 Write-Host ("  {0,-70} {1,6:N2}% ({2}/{3})" -f $_.File, $_.Coverage, $_.Covered, $_.Total)
             }
     }

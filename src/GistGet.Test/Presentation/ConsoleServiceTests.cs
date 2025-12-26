@@ -52,7 +52,7 @@ public class ConsoleServiceTests
     }
 
     [Fact]
-    public void WriteSuccess_PrefixesMessageWithCheckMark()
+    public void WriteSuccess_PrefixesMessageWithIndicator()
     {
         // -------------------------------------------------------------------
         // Arrange
@@ -69,7 +69,28 @@ public class ConsoleServiceTests
         // -------------------------------------------------------------------
         // Assert
         // -------------------------------------------------------------------
-        console.Out.ToString().ShouldContain("✓ done");
+        console.Out.ToString().ShouldContain("[OK] done");
+    }
+
+    [Fact]
+    public void WriteSuccess_SetsForegroundColorToGreen()
+    {
+        // -------------------------------------------------------------------
+        // Arrange
+        // -------------------------------------------------------------------
+        var console = new FakeConsoleProxy();
+        var processRunner = new Mock<IProcessRunner>();
+        IConsoleService target = new ConsoleService(processRunner.Object, console);
+
+        // -------------------------------------------------------------------
+        // Act
+        // -------------------------------------------------------------------
+        target.WriteSuccess("done");
+
+        // -------------------------------------------------------------------
+        // Assert
+        // -------------------------------------------------------------------
+        console.ForegroundColorChanges.ShouldBe([ConsoleColor.Green, ConsoleColor.Gray]);
     }
 
     [Fact]
@@ -167,7 +188,28 @@ public class ConsoleServiceTests
         // -------------------------------------------------------------------
         // Assert
         // -------------------------------------------------------------------
-        console.Error.ToString().ShouldContain("✗ Something went wrong");
+        console.Error.ToString().ShouldContain("[ERR] Something went wrong");
+    }
+
+    [Fact]
+    public void WriteError_SetsForegroundColorToRed()
+    {
+        // -------------------------------------------------------------------
+        // Arrange
+        // -------------------------------------------------------------------
+        var console = new FakeConsoleProxy();
+        var processRunner = new Mock<IProcessRunner>();
+        IConsoleService target = new ConsoleService(processRunner.Object, console);
+
+        // -------------------------------------------------------------------
+        // Act
+        // -------------------------------------------------------------------
+        target.WriteError("Something went wrong");
+
+        // -------------------------------------------------------------------
+        // Assert
+        // -------------------------------------------------------------------
+        console.ForegroundColorChanges.ShouldBe([ConsoleColor.Red, ConsoleColor.Gray]);
     }
 
     [Fact]
@@ -249,6 +291,16 @@ public class ConsoleServiceTests
             }
         }
 
+        public ConsoleColor ForegroundColor
+        {
+            get;
+            set
+            {
+                ForegroundColorChanges.Add(value);
+                field = value;
+            }
+        } = ConsoleColor.Gray;
+
         public void Write(string value) => Out.Write(value);
 
         public void WriteLine(string value) => Out.WriteLine(value);
@@ -256,5 +308,8 @@ public class ConsoleServiceTests
         public void WriteErrorLine(string value) => Error.WriteLine(value);
 
         public string? ReadLine() => In.ReadLine();
+
+        public List<ConsoleColor> ForegroundColorChanges { get; } = new();
+
     }
 }
