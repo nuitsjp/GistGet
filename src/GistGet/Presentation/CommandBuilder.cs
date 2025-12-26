@@ -278,6 +278,7 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
         var acceptPackageAgreementsOption = new Option<bool>("--accept-package-agreements", Messages.OptionDescriptionAcceptPackageAgreements);
         var acceptSourceAgreementsOption = new Option<bool>("--accept-source-agreements", Messages.OptionDescriptionAcceptSourceAgreements);
         var ignoreSecurityHashOption = new Option<bool>("--ignore-security-hash", Messages.OptionDescriptionIgnoreSecurityHash);
+        var allOption = new Option<bool>("--all", Messages.OptionDescriptionUpgradeAll);
 
         command.Add(idArgument);
         command.Add(idOption);
@@ -298,13 +299,16 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
         command.Add(acceptPackageAgreementsOption);
         command.Add(acceptSourceAgreementsOption);
         command.Add(ignoreSecurityHashOption);
+        command.Add(allOption);
         command.TreatUnmatchedTokensAsErrors = false;
 
         command.SetHandler(async context =>
         {
             var parseResult = context.ParseResult;
             var id = parseResult.GetValueForOption(idOption) ?? parseResult.GetValueForArgument(idArgument);
-            if (!string.IsNullOrWhiteSpace(id))
+            var all = parseResult.GetValueForOption(allOption);
+
+            if (!string.IsNullOrWhiteSpace(id) && !all)
             {
                 var options = new UpgradeOptions
                 {
@@ -332,8 +336,53 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
             }
             else
             {
-                var argsToPass = parseResult.UnmatchedTokens.ToArray();
-                context.ExitCode = await gistGetService.RunPassthroughAsync("upgrade", argsToPass);
+                var argsToPass = parseResult.UnmatchedTokens.ToList();
+                if (all)
+                {
+                    argsToPass.Insert(0, "--all");
+
+                    // Add recognized options when --all is specified
+                    var version = parseResult.GetValueForOption(versionOption);
+                    if (!string.IsNullOrEmpty(version)) { argsToPass.Add("--version"); argsToPass.Add(version); }
+
+                    var scope = parseResult.GetValueForOption(scopeOption);
+                    if (!string.IsNullOrEmpty(scope)) { argsToPass.Add("--scope"); argsToPass.Add(scope); }
+
+                    var arch = parseResult.GetValueForOption(archOption);
+                    if (!string.IsNullOrEmpty(arch)) { argsToPass.Add("--architecture"); argsToPass.Add(arch); }
+
+                    var location = parseResult.GetValueForOption(locationOption);
+                    if (!string.IsNullOrEmpty(location)) { argsToPass.Add("--location"); argsToPass.Add(location); }
+
+                    if (parseResult.GetValueForOption(interactiveOption)) { argsToPass.Add("--interactive"); }
+                    if (parseResult.GetValueForOption(silentOption)) { argsToPass.Add("--silent"); }
+
+                    var log = parseResult.GetValueForOption(logOption);
+                    if (!string.IsNullOrEmpty(log)) { argsToPass.Add("--log"); argsToPass.Add(log); }
+
+                    var overrideArg = parseResult.GetValueForOption(overrideOption);
+                    if (!string.IsNullOrEmpty(overrideArg)) { argsToPass.Add("--override"); argsToPass.Add(overrideArg); }
+
+                    if (parseResult.GetValueForOption(forceOption)) { argsToPass.Add("--force"); }
+                    if (parseResult.GetValueForOption(skipDependenciesOption)) { argsToPass.Add("--skip-dependencies"); }
+
+                    var header = parseResult.GetValueForOption(headerOption);
+                    if (!string.IsNullOrEmpty(header)) { argsToPass.Add("--header"); argsToPass.Add(header); }
+
+                    var installerType = parseResult.GetValueForOption(installerTypeOption);
+                    if (!string.IsNullOrEmpty(installerType)) { argsToPass.Add("--installer-type"); argsToPass.Add(installerType); }
+
+                    var custom = parseResult.GetValueForOption(customOption);
+                    if (!string.IsNullOrEmpty(custom)) { argsToPass.Add("--custom"); argsToPass.Add(custom); }
+
+                    var locale = parseResult.GetValueForOption(localeOption);
+                    if (!string.IsNullOrEmpty(locale)) { argsToPass.Add("--locale"); argsToPass.Add(locale); }
+
+                    if (parseResult.GetValueForOption(acceptPackageAgreementsOption)) { argsToPass.Add("--accept-package-agreements"); }
+                    if (parseResult.GetValueForOption(acceptSourceAgreementsOption)) { argsToPass.Add("--accept-source-agreements"); }
+                    if (parseResult.GetValueForOption(ignoreSecurityHashOption)) { argsToPass.Add("--ignore-security-hash"); }
+                }
+                context.ExitCode = await gistGetService.RunPassthroughAsync("upgrade", argsToPass.ToArray());
             }
         });
 

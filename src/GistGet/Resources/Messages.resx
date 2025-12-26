@@ -302,6 +302,9 @@
   <data name="OptionDescriptionIgnoreSecurityHash" xml:space="preserve">
     <value>Ignore the installer hash check failure</value>
   </data>
+  <data name="OptionDescriptionUpgradeAll" xml:space="preserve">
+    <value>Upgrade all available packages</value>
+  </data>
   <data name="UninstallAllOptionDescription" xml:space="preserve">
     <value>Remove all versions of the package</value>
   </data>

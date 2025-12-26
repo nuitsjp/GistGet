@@ -464,6 +464,65 @@ public class CommandBuilderTests : IDisposable
             )), Times.Once);
             GistGetServiceMock.Verify(x => x.UpgradeAndSaveAsync(It.IsAny<UpgradeOptions>()), Times.Never);
         }
+
+        [Fact]
+        public async Task WithAll_PassesThroughToWinget()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var target = CreateTarget();
+            var root = target.Build();
+
+            GistGetServiceMock
+                .Setup(x => x.RunPassthroughAsync("upgrade", It.IsAny<string[]>()))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var exitCode = await root.InvokeAsync("upgrade --all");
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            exitCode.ShouldBe(0);
+            GistGetServiceMock.Verify(x => x.RunPassthroughAsync("upgrade", It.Is<string[]>(args =>
+                args.Length == 1 && args[0] == "--all"
+            )), Times.Once);
+            GistGetServiceMock.Verify(x => x.UpgradeAndSaveAsync(It.IsAny<UpgradeOptions>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task WithAllAndOtherOptions_PassesThroughToWinget()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var target = CreateTarget();
+            var root = target.Build();
+
+            GistGetServiceMock
+                .Setup(x => x.RunPassthroughAsync("upgrade", It.IsAny<string[]>()))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var exitCode = await root.InvokeAsync("upgrade --all --silent --accept-package-agreements");
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            exitCode.ShouldBe(0);
+            GistGetServiceMock.Verify(x => x.RunPassthroughAsync("upgrade", It.Is<string[]>(args =>
+                args.Length == 3 &&
+                args[0] == "--all" &&
+                args[1] == "--silent" &&
+                args[2] == "--accept-package-agreements"
+            )), Times.Once);
+            GistGetServiceMock.Verify(x => x.UpgradeAndSaveAsync(It.IsAny<UpgradeOptions>()), Times.Never);
+        }
     }
 
     public class PinCommand : CommandBuilderTests
