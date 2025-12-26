@@ -598,7 +598,11 @@ public class GistGetService(
 
         var gistPackages = await GistGetPackagesAsync(url, filePath);
 
-        var localPackages = winGetService.GetAllInstalledPackages();
+        IReadOnlyList<WinGetPackage> localPackages;
+        using (consoleService.WriteProgress(Messages.FetchingInstalledPackages))
+        {
+            localPackages = winGetService.GetAllInstalledPackages();
+        }
 
         var localPackageDict = localPackages.ToDictionary(
             p => p.Id.AsPrimitive(),
@@ -606,7 +610,11 @@ public class GistGetService(
             StringComparer.OrdinalIgnoreCase);
 
         // Get current pinned packages to avoid unnecessary pin operations
-        var pinnedPackages = winGetService.GetPinnedPackages();
+        IReadOnlyList<WinGetPin> pinnedPackages;
+        using (consoleService.WriteProgress(Messages.FetchingPinnedPackages))
+        {
+            pinnedPackages = winGetService.GetPinnedPackages();
+        }
         var pinnedPackageDict = pinnedPackages.ToDictionary(
             p => p.Id.AsPrimitive(),
             p => p,

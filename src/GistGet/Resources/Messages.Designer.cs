@@ -54,6 +54,12 @@ internal static class Messages
         ResourceManager.GetString("FetchingInstalledPackages", null) ?? string.Empty;
 
     /// <summary>
+    /// Looks up a localized string similar to: Fetching pinned packages...
+    /// </summary>
+    internal static string FetchingPinnedPackages =>
+        ResourceManager.GetString("FetchingPinnedPackages", null) ?? string.Empty;
+
+    /// <summary>
     /// Looks up a localized string similar to: Loading package information from file...
     /// </summary>
     internal static string LoadingFromFile =>
