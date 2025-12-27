@@ -42,7 +42,7 @@ $ErrorActionPreference = 'Stop'
 
 #region Constants and Paths
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$repoRoot = (Resolve-Path (Join-Path $scriptRoot '..\..\..\..')).Path
+$repoRoot = (Resolve-Path (Join-Path $scriptRoot '..')).Path
 $wingetPkgsPath = Join-Path $repoRoot 'external/winget-pkgs'
 #endregion
 
