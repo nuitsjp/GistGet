@@ -50,4 +50,4 @@ Custom message:
 
 ### scripts/
 
-- `Retry-WinGetPR.ps1` - PowerShell Core script for retrying WinGet PRs
+- `skills/winget-pr-retry/scripts/Retry-WinGetPR.ps1` - PowerShell Core script for retrying WinGet PRs

@@ -16,15 +16,15 @@
     空コミットのメッセージ。省略時はデフォルトメッセージを使用します。
 
 .EXAMPLE
-    .\scripts\Retry-WinGetPR.ps1
+    ./skills/winget-pr-retry/scripts/Retry-WinGetPR.ps1
     現在のブランチで空プッシュを実行
 
 .EXAMPLE
-    .\scripts\Retry-WinGetPR.ps1 -BranchName NuitsJp.GistGet-1.2.0
+    ./skills/winget-pr-retry/scripts/Retry-WinGetPR.ps1 -BranchName NuitsJp.GistGet-1.2.0
     指定したブランチで空プッシュを実行
 
 .EXAMPLE
-    .\scripts\Retry-WinGetPR.ps1 -Message "Retry: Fix validation error"
+    ./skills/winget-pr-retry/scripts/Retry-WinGetPR.ps1 -Message "Retry: Fix validation error"
     カスタムメッセージで空プッシュを実行
 #>
 
