@@ -14,7 +14,7 @@ WinGet PR（microsoft/winget-pkgs）の自動実行（CI/CD）がエラーにな
 Run the PowerShell script to retry a WinGet PR:
 
 ```powershell
-.\scripts\Retry-WinGetPR.ps1
+./skills/winget-pr-retry/scripts/Retry-WinGetPR.ps1
 ```
 
 ### Parameters
