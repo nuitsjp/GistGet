@@ -130,6 +130,7 @@ GistGet supports both its own cloud sync features and all winget commands.
 | `auth status` | Display current authentication status |
 | `sync` | Synchronize packages with Gist |
 | `init` | Interactively select installed packages to initialize Gist |
+| `gist` | List packages from Gist |
 | `install` | Install a package and save to Gist |
 | `uninstall` | Uninstall a package and update Gist |
 | `upgrade` | Upgrade a package and save to Gist |

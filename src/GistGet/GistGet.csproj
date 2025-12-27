@@ -19,6 +19,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="FluentTextTable" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" />
 		<PackageReference Include="Microsoft.Windows.CsWinRT" />
 		<PackageReference Include="Microsoft.WindowsPackageManager.ComInterop" />

@@ -2,6 +2,7 @@
 
 using System.ComponentModel;
 using System.Globalization;
+using FluentTextTable;
 using GistGet.Infrastructure;
 using GistGet.Resources;
 using Octokit;
@@ -892,5 +893,38 @@ public class GistGetService(
         }
 
         consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.InitSuccess, selectedPackages.Count));
+    }
+
+    /// <inheritdoc/>
+    public async Task ListGistPackagesAsync()
+    {
+        if (!credentialService.TryGetCredential(out var credential))
+        {
+            consoleService.WriteInfo("You are not logged in.");
+            return;
+        }
+
+        IReadOnlyList<GistGetPackage> packages;
+        using (consoleService.WriteProgress(Messages.FetchingFromGist))
+        {
+            packages = await gitHubService.GetPackagesAsync(
+                credential.Token,
+                Constants.DefaultGistFileName,
+                Constants.DefaultGistDescription);
+        }
+
+        var rows = packages
+            .Where(p => !p.Uninstall)
+            .Select(p => new GistPackageRow
+            {
+                Id = p.Id,
+                Name = p.Name ?? " ",
+                Pin = p.Pin ?? " "
+            })
+            .ToList();
+
+        Build
+            .MarkdownTable<GistPackageRow>()
+            .WriteLine(rows);
     }
 }

@@ -3860,6 +3860,73 @@ public class GistGetServiceTests
             saved!.Single().Id.ShouldBe(packageId);
         }
     }
+
+    public class ListGistPackagesAsync : GistGetServiceTests
+    {
+        [Fact]
+        public async Task WhenNotAuthenticated_WritesError()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = null;
+                    return false;
+                }));
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await Target.ListGistPackagesAsync();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            ConsoleServiceMock.Verify(x => x.WriteInfo(It.IsAny<string>()), Times.Once);
+            AuthServiceMock.Verify(x => x.GetPackagesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task WhenAuthenticated_FetchesAndDisplaysPackages()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var credential = new Credential("user", "token");
+            var packages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = "Package.One", Name = "Package One", Pin = "1.0.0" },
+                new GistGetPackage { Id = "Package.Two", Name = "Package Two", Pin = null },
+                new GistGetPackage { Id = "Package.Uninstall", Name = "Package Uninstall", Uninstall = true }
+            };
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(packages);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await Target.ListGistPackagesAsync();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            AuthServiceMock.Verify(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+            ConsoleServiceMock.Verify(x => x.WriteError(It.IsAny<string>()), Times.Never);
+        }
+    }
 }
 
 

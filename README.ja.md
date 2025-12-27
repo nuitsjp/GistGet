@@ -130,6 +130,7 @@ GistGetは独自のクラウド同期機能と、wingetの全コマンドをサ�
 | `auth status` | 現在の認証状態を表示 |
 | `sync` | Gistとパッケージを同期 |
 | `init` | 対話的にインストール済みパッケージを選択してGistを初期化 |
+| `gist` | Gistのパッケージを一覧表示 |
 | `install` | パッケージをインストールしてGistに保存 |
 | `uninstall` | パッケージをアンインストールしてGistを更新 |
 | `upgrade` | パッケージをアップグレードしてGistに保存 |

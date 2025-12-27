@@ -177,6 +177,9 @@
   <data name="InitCommandDescription" xml:space="preserve">
     <value>Initializes Gist by interactively selecting installed packages</value>
   </data>
+  <data name="GistCommandDescription" xml:space="preserve">
+    <value>Lists packages from Gist</value>
+  </data>
   <data name="AuthCommandDescription" xml:space="preserve">
     <value>Manage GitHub authentication</value>
   </data>

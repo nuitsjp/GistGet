@@ -30,7 +30,8 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
             BuildInstallCommand(),
             BuildUninstallCommand(),
             BuildUpgradeCommand(),
-            BuildPinCommand()
+            BuildPinCommand(),
+            BuildGistCommand()
         };
 
         foreach (var cmd in BuildWingetPassthroughCommands())
@@ -453,6 +454,16 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
         }, resetArgs);
         command.Add(reset);
 
+        return command;
+    }
+
+    private Command BuildGistCommand()
+    {
+        var command = new Command("gist", Messages.GistCommandDescription);
+        command.SetHandler(async () =>
+        {
+            await gistGetService.ListGistPackagesAsync();
+        });
         return command;
     }
 
