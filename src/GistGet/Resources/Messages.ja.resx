@@ -364,4 +364,7 @@
   <data name="WingetMcpCommandDescription" xml:space="preserve">
     <value>Model Context Protocol サーバー [パススルー]</value>
   </data>
+  <data name="GistCommandDescription" xml:space="preserve">
+    <value>Gistのパッケージを一覧表示します</value>
+  </data>
 </root>

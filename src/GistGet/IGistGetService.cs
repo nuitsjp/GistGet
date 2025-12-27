@@ -61,4 +61,9 @@ public interface IGistGetService
     /// Initializes the Gist by interactively selecting installed packages.
     /// </summary>
     Task InitAsync();
+
+    /// <summary>
+    /// Lists packages from Gist.
+    /// </summary>
+    Task ListGistPackagesAsync();
 }

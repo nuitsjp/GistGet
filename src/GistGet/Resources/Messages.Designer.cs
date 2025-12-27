@@ -282,6 +282,12 @@ internal static class Messages
         ResourceManager.GetString("InitCommandDescription", null) ?? string.Empty;
 
     /// <summary>
+    /// Looks up a localized string similar to: Lists packages from Gist
+    /// </summary>
+    internal static string GistCommandDescription =>
+        ResourceManager.GetString("GistCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
     /// Looks up a localized string similar to: Manage GitHub authentication
     /// </summary>
     internal static string AuthCommandDescription =>
