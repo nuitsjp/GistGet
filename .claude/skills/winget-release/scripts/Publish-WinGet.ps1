@@ -1,3 +1,4 @@
+#requires -Version 7.0
 <#
 .SYNOPSIS
     GistGet の完全なリリースパイプラインを実行します。

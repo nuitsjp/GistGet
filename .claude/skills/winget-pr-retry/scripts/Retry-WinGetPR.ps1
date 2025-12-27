@@ -1,3 +1,4 @@
+#requires -Version 7.0
 <#
 .SYNOPSIS
     WinGet PR の自動実行を空プッシュで再トリガーします。

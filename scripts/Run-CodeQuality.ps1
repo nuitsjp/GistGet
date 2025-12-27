@@ -1,4 +1,5 @@
-﻿<#
+﻿#requires -Version 7.0
+<#
 .SYNOPSIS
     GistGet プロジェクトのコード品質パイプラインを実行します。
 
