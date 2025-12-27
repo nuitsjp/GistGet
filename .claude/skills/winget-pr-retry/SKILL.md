@@ -26,17 +26,17 @@ Run the PowerShell script to retry a WinGet PR:
 
 Current branch:
 ```powershell
-.\scripts\Retry-WinGetPR.ps1
+./skills/winget-pr-retry/scripts/Retry-WinGetPR.ps1
 ```
 
 Specific branch:
 ```powershell
-.\scripts\Retry-WinGetPR.ps1 -BranchName NuitsJp.GistGet-1.2.0
+./skills/winget-pr-retry/scripts/Retry-WinGetPR.ps1 -BranchName NuitsJp.GistGet-1.2.0
 ```
 
 Custom message:
 ```powershell
-.\scripts\Retry-WinGetPR.ps1 -Message "Retry: Fix validation error"
+./skills/winget-pr-retry/scripts/Retry-WinGetPR.ps1 -Message "Retry: Fix validation error"
 ```
 
 ## How It Works
