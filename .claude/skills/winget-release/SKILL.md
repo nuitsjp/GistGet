@@ -43,8 +43,14 @@ git push origin main
 
 ### Publish-WinGet.ps1（唯一のリリースフロー）
 
+PowerShell Coreスクリプト `Publish-WinGet.ps1` が以下のステップを実行します:
+
 ```
 品質チェック → ビルド/ZIP/SHA256 → タグ作成/プッシュ → GitHub Release → winget-pkgs同期 → マニフェスト生成 → PR作成
+```
+
+```pwsh
+.\Publish-WinGet.ps1 -Version 1.0.4
 ```
 
 **重要**: Publish-WinGet.ps1が唯一のリリースフローです。GitHub Actionsのrelease.ymlは削除されました（ハッシュ不一致の問題を防ぐため）。
