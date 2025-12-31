@@ -326,9 +326,9 @@ winget install NuitsJp.GistGet
             gh release delete $tagName --repo "$GitHubOwner/$GitHubRepo" --yes
         }
 
-        # リリースノートをUTF-8ファイルに書き出し（文字化け防止）
+        # リリースノートをUTF-8 BOMなしで書き出し（文字化け防止）
         $notesFile = Join-Path $artifactsPath "release-notes.md"
-        $releaseNotes | Out-File -FilePath $notesFile -Encoding UTF8 -NoNewline
+        [System.IO.File]::WriteAllText($notesFile, $releaseNotes, [System.Text.UTF8Encoding]::new($false))
 
         gh release create $tagName `
             --repo "$GitHubOwner/$GitHubRepo" `
@@ -592,9 +592,9 @@ if (-not $SkipWinGetPR -and -not $SkipPRCreation) {
                 $currentBody = gh release view $tagName --repo "$GitHubOwner/$GitHubRepo" --json body --jq '.body'
                 $updatedBody = $currentBody + "`n`n### WinGet`n- [WinGet PR]($prUrl)"
 
-                # UTF-8ファイル経由で更新（文字化け防止）
+                # UTF-8 BOMなしで更新（文字化け防止）
                 $updateNotesFile = Join-Path $artifactsPath "release-notes-update.md"
-                $updatedBody | Out-File -FilePath $updateNotesFile -Encoding UTF8 -NoNewline
+                [System.IO.File]::WriteAllText($updateNotesFile, $updatedBody, [System.Text.UTF8Encoding]::new($false))
                 gh release edit $tagName --repo "$GitHubOwner/$GitHubRepo" --notes-file $updateNotesFile
                 Remove-Item $updateNotesFile -ErrorAction SilentlyContinue
 
