@@ -418,7 +418,7 @@ PackageVersion: $Version
 InstallerType: zip
 NestedInstallerType: portable
 NestedInstallerFiles:
-- RelativeFilePath: GistGet.exe
+- RelativeFilePath: gistget.bat
   PortableCommandAlias: gistget
 UpgradeBehavior: install
 Commands:

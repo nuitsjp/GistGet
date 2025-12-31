@@ -4,7 +4,7 @@
 		<OutputType>Exe</OutputType>
 
 		<!-- パッケージ情報 -->
-		<Version>1.2.1</Version>
+		<Version>1.2.2</Version>
 		<Authors>nuitsjp</Authors>
 		<Company>nuitsjp</Company>
 		<Product>GistGet</Product>
@@ -46,6 +46,12 @@
 	  <Folder Include="Properties\" />
 	</ItemGroup>
 
+	<ItemGroup>
+		<None Include="gistget.bat.template">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
 	<Target Name="ExcludeWinGetFromSingleFile" AfterTargets="ComputeFilesToPublish">
 		<ItemGroup>
 			<ResolvedFileToPublish Update="@(ResolvedFileToPublish)"
@@ -79,6 +85,10 @@
 
 	<Target Name="CopyWinGetInteropFiles" AfterTargets="Publish" DependsOnTargets="CollectWinGetInteropFiles">
 		<Copy SourceFiles="@(WinGetInteropFile)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
+	</Target>
+
+	<Target Name="CreateLauncherBatch" AfterTargets="Publish">
+		<Copy SourceFiles="gistget.bat.template" DestinationFiles="$(PublishDir)gistget.bat" />
 	</Target>
 
 </Project>
