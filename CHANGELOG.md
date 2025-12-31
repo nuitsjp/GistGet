@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2025-12-31
+
+### Fixed
+
+- WinGetマニフェストに`InstallationMetadata`セクションを追加し、インストール済みパッケージ情報が正しく取得できるように修正
+
 ## [1.2.0] - 2025-12-27
 
 ### Added
@@ -75,7 +81,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - YAML-based configuration management (`GistGet.yaml`)
 - Secure credential storage using Windows Credential Manager
 
-[Unreleased]: https://github.com/nuitsjp/GistGet/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/nuitsjp/GistGet/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/nuitsjp/GistGet/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/nuitsjp/GistGet/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/nuitsjp/GistGet/compare/v1.0.8...v1.1.0
 [1.0.8]: https://github.com/nuitsjp/GistGet/compare/v1.0.7...v1.0.8

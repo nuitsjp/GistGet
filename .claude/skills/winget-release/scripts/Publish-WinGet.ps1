@@ -424,6 +424,18 @@ UpgradeBehavior: install
 Commands:
 - gistget
 ReleaseDate: $releaseDate
+InstallationMetadata:
+  Files:
+  - RelativeFilePath: GistGet.exe
+    FileType: launch
+  - RelativeFilePath: Microsoft.Management.Deployment.CsWinRTProjection.dll
+    FileType: other
+  - RelativeFilePath: Microsoft.Management.Deployment.dll
+    FileType: other
+  - RelativeFilePath: Microsoft.Management.Deployment.winmd
+    FileType: other
+  - RelativeFilePath: WinRT.Runtime.dll
+    FileType: other
 Installers:
 - Architecture: x64
   InstallerUrl: $installerUrl
