@@ -426,8 +426,10 @@ Commands:
 ReleaseDate: $releaseDate
 InstallationMetadata:
   Files:
-  - RelativeFilePath: GistGet.exe
+  - RelativeFilePath: gistget.bat
     FileType: launch
+  - RelativeFilePath: GistGet.exe
+    FileType: other
   - RelativeFilePath: Microsoft.Management.Deployment.CsWinRTProjection.dll
     FileType: other
   - RelativeFilePath: Microsoft.Management.Deployment.dll
