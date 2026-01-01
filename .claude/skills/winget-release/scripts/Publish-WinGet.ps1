@@ -591,13 +591,23 @@ if (-not $SkipWinGetPR -and -not $SkipPRCreation) {
             # GitHub Release に WinGet PR リンクを追記
             if (-not $SkipGitHubRelease) {
                 Write-Host "GitHub Release に WinGet PR リンクを追記中..." -ForegroundColor Yellow
-                $currentBody = gh release view $tagName --repo "$GitHubOwner/$GitHubRepo" --json body --jq '.body'
+
+                # 既存のリリースノートをUTF-8で取得
+                $currentNotesFile = Join-Path $artifactsPath "release-notes-current.md"
+                gh release view $tagName --repo "$GitHubOwner/$GitHubRepo" --json body --jq '.body' | `
+                    Out-File -FilePath $currentNotesFile -Encoding UTF8 -NoNewline
+
+                # ファイルから読み込んで追記
+                $currentBody = [System.IO.File]::ReadAllText($currentNotesFile, [System.Text.UTF8Encoding]::new($false))
                 $updatedBody = $currentBody + "`n`n### WinGet`n- [WinGet PR]($prUrl)"
 
-                # UTF-8 BOMなしで更新（文字化け防止）
+                # UTF-8 BOMなしで書き出し（文字化け防止）
                 $updateNotesFile = Join-Path $artifactsPath "release-notes-update.md"
                 [System.IO.File]::WriteAllText($updateNotesFile, $updatedBody, [System.Text.UTF8Encoding]::new($false))
                 gh release edit $tagName --repo "$GitHubOwner/$GitHubRepo" --notes-file $updateNotesFile
+
+                # 一時ファイル削除
+                Remove-Item $currentNotesFile -ErrorAction SilentlyContinue
                 Remove-Item $updateNotesFile -ErrorAction SilentlyContinue
 
                 Write-Host "GitHub Release を更新しました。" -ForegroundColor Green
