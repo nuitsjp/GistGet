@@ -139,9 +139,47 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host ""
 Write-Host "ビルド完了: $OutputPath" -ForegroundColor Green
 
-# Step 4: ZIPアーカイブの作成（オプション）
+# Step 4: ビルド結果の検証
+Write-Step "4" "ビルド結果を検証中..."
+
+$requiredFiles = @(
+    @{ Name = 'GistGet.exe'; Description = 'ランチャー実行ファイル' },
+    @{ Name = 'NuitsJp.GistGet.exe'; Description = 'メイン実行ファイル' },
+    @{ Name = 'Microsoft.Management.Deployment.CsWinRTProjection.dll'; Description = 'WinGet COM相互運用DLL' },
+    @{ Name = 'Microsoft.Management.Deployment.dll'; Description = 'WinGet COM相互運用DLL' },
+    @{ Name = 'Microsoft.Management.Deployment.winmd'; Description = 'WinGet メタデータ' },
+    @{ Name = 'WinRT.Runtime.dll'; Description = 'WinRT ランタイムDLL' }
+)
+
+$missingFiles = @()
+foreach ($file in $requiredFiles) {
+    $filePath = Join-Path $OutputPath $file.Name
+    if (Test-Path $filePath) {
+        $size = (Get-Item $filePath).Length
+        $sizeStr = if ($size -gt 1MB) { "{0:N1} MB" -f ($size / 1MB) } else { "{0:N0} KB" -f ($size / 1KB) }
+        Write-Host "  ✓ $($file.Name) ($sizeStr)" -ForegroundColor Green
+    } else {
+        Write-Host "  ✗ $($file.Name) - 見つかりません ($($file.Description))" -ForegroundColor Red
+        $missingFiles += $file.Name
+    }
+}
+
+if ($missingFiles.Count -gt 0) {
+    Write-Error @"
+ビルド結果の検証に失敗しました。
+以下の必須ファイルが見つかりません:
+$($missingFiles -join "`n")
+
+ビルドプロセスを確認してください。
+"@
+    exit 1
+}
+
+Write-Host "すべての必須ファイルが存在します。" -ForegroundColor Green
+
+# Step 5: ZIPアーカイブの作成（オプション）
 if ($CreateZip) {
-    Write-Step "4" "ZIPアーカイブを作成中..."
+    Write-Step "5" "ZIPアーカイブを作成中..."
     $zipName = "GistGet-win-x64.zip"
     $zipPath = Join-Path $artifactsPath $zipName
 
