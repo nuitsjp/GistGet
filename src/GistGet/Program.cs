@@ -1,38 +1,38 @@
-// GistGet CLI entry point and dependency injection bootstrap.
+// GistGet launcher - launches NuitsJp.GistGet.exe as a separate process
+using System.Diagnostics;
 
-using System.CommandLine;
-using GistGet;
-using GistGet.Infrastructure;
-using GistGet.Infrastructure.Diagnostics;
-using GistGet.Presentation;
-using Microsoft.Extensions.DependencyInjection;
-using Spectre.Console;
+// Get the directory where GistGet.exe actually resides (following symlinks)
+// Use Environment.ProcessPath for single-file app compatibility
+var processPath = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName
+    ?? throw new InvalidOperationException("Could not determine process path");
 
-ServiceCollection services = new();
+// Resolve symlink to get the actual file location
+var fileInfo = new FileInfo(processPath);
+var actualPath = fileInfo.LinkTarget != null
+    ? Path.GetFullPath(fileInfo.LinkTarget, Path.GetDirectoryName(processPath)!)
+    : processPath;
 
-services.AddSingleton<IGitHubClientFactory, GitHubClientFactory>();
-services.AddTransient<IGitHubService, GitHubService>();
-services.AddTransient<IGistGetService, GistGetService>();
+var assemblyDirectory = Path.GetDirectoryName(actualPath) ?? AppContext.BaseDirectory;
+var exePath = Path.Combine(assemblyDirectory, "NuitsJp.GistGet.exe");
 
-services.AddSingleton(AnsiConsole.Console);
-services.AddTransient<CommandBuilder>();
-services.AddSingleton<IConsoleProxy, SystemConsoleProxy>();
-services.AddTransient<IConsoleService, ConsoleService>();
+var startInfo = new ProcessStartInfo
+{
+    FileName = exePath,
+    UseShellExecute = false,
+    WorkingDirectory = assemblyDirectory,
+};
 
-services.AddTransient<ICredentialService, CredentialService>();
-services.AddSingleton<IProcessRunner, ProcessRunner>();
-services.AddTransient<IWinGetPassthroughRunner, WinGetPassthroughRunner>();
-services.AddTransient<IWinGetService, WinGetService>();
-services.AddTransient<IWinGetArgumentBuilder, WinGetArgumentBuilder>();
+foreach (var arg in args)
+{
+    startInfo.ArgumentList.Add(arg);
+}
 
-await services
-    .BuildServiceProvider()
-    .GetRequiredService<CommandBuilder>()
-    .Build()
-    .InvokeAsync(args);
+using var process = Process.Start(startInfo);
+if (process == null)
+{
+    await Console.Error.WriteLineAsync("Failed to start NuitsJp.GistGet.exe");
+    return 1;
+}
 
-/// <summary>
-/// Entry point type for the top-level program.
-/// </summary>
-// ReSharper disable once ClassNeverInstantiated.Global
-internal partial class Program;
+await process.WaitForExitAsync();
+return process.ExitCode;

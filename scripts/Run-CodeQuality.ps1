@@ -107,7 +107,7 @@ $repoRoot = Split-Path -Parent $scriptPath
 $runSettingsPath = Join-Path $repoRoot "scripts\settings\coverlet.runsettings"
 $platform = "x64"
 $solutionPath = Join-Path $repoRoot "src\GistGet.slnx"
-$testProjectPath = Join-Path $repoRoot "src\GistGet.Test\GistGet.Test.csproj"
+$testProjectPath = Join-Path $repoRoot "src\NuitsJp.GistGet.Test\NuitsJp.GistGet.Test.csproj"
 $reportsDir = Join-Path $repoRoot ".reports"
 $diagnosticsLogPath = Join-Path $reportsDir "build-diagnostics.log"
 
