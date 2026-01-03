@@ -8,10 +8,13 @@
     <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />
   </Folder>
-  <Project Path="GistGet.Test/GistGet.Test.csproj">
+  <Project Path="GistGet/GistGet.csproj">
     <Platform Project="x64" />
   </Project>
-  <Project Path="GistGet/GistGet.csproj">
+  <Project Path="NuitsJp.GistGet.Test/NuitsJp.GistGet.Test.csproj">
+    <Platform Project="x64" />
+  </Project>
+  <Project Path="NuitsJp.GistGet/NuitsJp.GistGet.csproj">
     <Platform Project="x64" />
   </Project>
 </Solution>

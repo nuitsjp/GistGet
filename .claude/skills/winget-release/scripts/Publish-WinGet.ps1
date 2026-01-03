@@ -418,7 +418,7 @@ PackageVersion: $Version
 InstallerType: zip
 NestedInstallerType: portable
 NestedInstallerFiles:
-- RelativeFilePath: gistget.bat
+- RelativeFilePath: GistGet.exe
   PortableCommandAlias: gistget
 UpgradeBehavior: install
 Commands:
@@ -426,10 +426,8 @@ Commands:
 ReleaseDate: $releaseDate
 InstallationMetadata:
   Files:
-  - RelativeFilePath: gistget.bat
-    FileType: launch
   - RelativeFilePath: GistGet.exe
-    FileType: other
+    FileType: launch
   - RelativeFilePath: Microsoft.Management.Deployment.CsWinRTProjection.dll
     FileType: other
   - RelativeFilePath: Microsoft.Management.Deployment.dll

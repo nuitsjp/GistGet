@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.4] - 2026-01-03
+
+### Changed
+
+- プロジェクト構造の大規模リファクタリング
+  - `GistGet`プロジェクトを`NuitsJp.GistGet`にリネーム（コアライブラリとして分離）
+  - `GistGet.Test`プロジェクトを`NuitsJp.GistGet.Test`にリネーム
+  - 新規C#コンソールアプリ`GistGet`を薄いラッパーとして作成（`NuitsJp.GistGet.dll`を内包するシングルファイルアプリ）
+  - `gistget.bat`を廃止し、`GistGet.exe`を直接エントリーポイントとして使用
+  - WinGet COM DLLsのみ外部ファイルとして配置し、リンク経由での実行を確実にサポート
+  - WinGetポータブルパッケージで`.exe`ファイルのみを使用し、`.bat`制約を回避
+
 ## [1.2.3] - 2026-01-01
 
 ### Fixed

@@ -25,7 +25,7 @@ permissions:
 env:
   DOTNET_VERSION: '10.0.x'
   SOLUTION_FILE: 'src/GistGet.slnx'
-  TEST_PROJECT: 'src/GistGet.Test/GistGet.Test.csproj'
+  TEST_PROJECT: 'src/NuitsJp.GistGet.Test/NuitsJp.GistGet.Test.csproj'
   BUILD_PLATFORM: 'x64'
   COVERAGE_RUNSETTINGS: 'scripts/settings/coverlet.runsettings'
 

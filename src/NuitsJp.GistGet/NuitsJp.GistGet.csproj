@@ -1,0 +1,88 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+		<Platforms>x64</Platforms>
+		<AssemblyName>NuitsJp.GistGet</AssemblyName>
+		<RootNamespace>NuitsJp.GistGet</RootNamespace>
+
+		<!-- パッケージ情報 -->
+		<Version>1.2.4</Version>
+		<Authors>nuitsjp</Authors>
+		<Company>nuitsjp</Company>
+		<Product>GistGet</Product>
+		<Description>Windows Package Manager Cloud Sync Tool</Description>
+		<Copyright>Copyright (c) nuitsjp. All rights reserved.</Copyright>
+		<RepositoryUrl>https://github.com/nuitsjp/GistGet</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+
+		<!-- 発行設定 -->
+		<PublishSingleFile>true</PublishSingleFile>
+		<SelfContained>true</SelfContained>
+		<UseAppHost>true</UseAppHost>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="FluentTextTable" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" />
+		<PackageReference Include="Microsoft.Windows.CsWinRT" />
+		<PackageReference Include="Microsoft.WindowsPackageManager.ComInterop" />
+		<PackageReference Include="Octokit" />
+		<PackageReference Include="Sharprompt" />
+		<PackageReference Include="Spectre.Console" />
+		<PackageReference Include="System.CommandLine" />
+		<PackageReference Include="UnitGenerator">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="YamlDotNet" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Update="Resources\Messages.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>Messages.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Properties\" />
+	</ItemGroup>
+
+	<Target Name="ExcludeWinGetFromSingleFile" AfterTargets="ComputeFilesToPublish">
+		<ItemGroup>
+			<ResolvedFileToPublish Update="@(ResolvedFileToPublish)"
+				Condition="
+					$([System.String]::Copy('%(ResolvedFileToPublish.Identity)').EndsWith('Microsoft.Management.Deployment.dll'))
+					Or $([System.String]::Copy('%(ResolvedFileToPublish.Identity)').EndsWith('Microsoft.Management.Deployment.CsWinRTProjection.dll'))
+					Or $([System.String]::Copy('%(ResolvedFileToPublish.Identity)').EndsWith('Microsoft.WindowsPackageManager.ComInterop.dll'))
+					Or $([System.String]::Copy('%(ResolvedFileToPublish.Identity)').EndsWith('Microsoft.Windows.CsWinRT.dll'))
+					Or $([System.String]::Copy('%(ResolvedFileToPublish.Identity)').EndsWith('WinRT.Runtime.dll'))
+					Or $([System.String]::Copy('%(ResolvedFileToPublish.Identity)').EndsWith('.winmd'))
+				">
+				<ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+				<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+			</ResolvedFileToPublish>
+		</ItemGroup>
+	</Target>
+
+	<Target Name="CollectWinGetInteropFiles" AfterTargets="ResolveReferences">
+		<ItemGroup>
+			<WinGetInteropFile Include="@(ReferenceCopyLocalPaths)"
+				Condition="
+					$([System.String]::Copy('%(ReferenceCopyLocalPaths.Filename)').Equals('Microsoft.Management.Deployment'))
+					Or $([System.String]::Copy('%(ReferenceCopyLocalPaths.Filename)').Equals('Microsoft.Management.Deployment.CsWinRTProjection'))
+					Or $([System.String]::Copy('%(ReferenceCopyLocalPaths.Filename)').Equals('Microsoft.WindowsPackageManager.ComInterop'))
+					Or $([System.String]::Copy('%(ReferenceCopyLocalPaths.Filename)').Equals('Microsoft.Windows.CsWinRT'))
+					Or $([System.String]::Copy('%(ReferenceCopyLocalPaths.Filename)').Equals('WinRT.Runtime'))
+					Or $([System.String]::Copy('%(ReferenceCopyLocalPaths.Extension)').Equals('.winmd'))
+				" />
+		</ItemGroup>
+	</Target>
+
+	<Target Name="CopyWinGetInteropFiles" AfterTargets="Publish" DependsOnTargets="CollectWinGetInteropFiles">
+		<Copy SourceFiles="@(WinGetInteropFile)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
+	</Target>
+
+</Project>

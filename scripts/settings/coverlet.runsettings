@@ -5,6 +5,7 @@
       <DataCollector friendlyName="XPlat code coverage">
         <Configuration>
           <Format>cobertura</Format>
+          <Exclude>[NuitsJp.GistGet.Test]*,[GistGet.Test]*,[GistGet]*</Exclude>
           <ExcludeByFile>
             **/obj/**/*.cs;
             **\\obj\\**\\*.cs;
@@ -16,6 +17,8 @@
             **\\Program.cs;
             **/GitHubClientFactory.cs;
             **\\GitHubClientFactory.cs
+            **/GistGet.Test/**/*.cs;
+            **\\GistGet.Test\\**\\*.cs
           </ExcludeByFile>
         </Configuration>
       </DataCollector>
