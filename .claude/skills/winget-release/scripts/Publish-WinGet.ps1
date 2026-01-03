@@ -217,35 +217,22 @@ New-Item -ItemType Directory -Path $artifactsPath -Force | Out-Null
 $publishPath = Join-Path $artifactsPath "publish/win-x64"
 $zipPath = Join-Path $artifactsPath $zipName
 
-# dotnet publish
-Write-Step "2.1" "dotnet publish 実行中..."
-$publishArgs = @(
-    'publish'
-    $projectPath
-    '-c', 'Release'
-    '-r', 'win-x64'
-    '-o', $publishPath
-    "-p:Version=$Version"
-    '--self-contained', 'true'
-)
+# Build-Release.ps1 を呼び出し
+$buildReleaseScript = Join-Path $scriptRoot 'Build-Release.ps1'
+Write-Host "Build-Release.ps1 を実行中..." -ForegroundColor Yellow
+& $buildReleaseScript -Version $Version -OutputPath $publishPath -CreateZip
 
-& dotnet @publishArgs
 if ($LASTEXITCODE -ne 0) {
     Write-Error "ビルドに失敗しました。"
     exit $LASTEXITCODE
 }
 
-# ZIP 作成
-Write-Step "2.2" "ZIP アーカイブを作成中..."
-Compress-Archive -Path "$publishPath/*" -DestinationPath $zipPath -Force
-
-# SHA256 計算
+# SHA256 計算（Build-Release.ps1で作成されたZIPから）
 $sha256 = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash
 Write-Host "SHA256: $sha256" -ForegroundColor Cyan
 
-# SHA256SUMS.txt 作成
+# SHA256SUMS.txt は Build-Release.ps1 で作成済み
 $hashFilePath = Join-Path $artifactsPath "SHA256SUMS.txt"
-"$sha256  $zipName" | Set-Content -Path $hashFilePath -Encoding UTF8
 
 Write-Host "ビルド完了: $zipPath" -ForegroundColor Green
 #endregion
