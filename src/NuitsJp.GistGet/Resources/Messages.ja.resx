@@ -239,8 +239,17 @@
   <data name="OptionDescriptionFilterById" xml:space="preserve">
     <value>ID で絞り込みます</value>
   </data>
+  <data name="OptionDescriptionFilterByName" xml:space="preserve">
+    <value>名前で絞り込みます</value>
+  </data>
+  <data name="OptionDescriptionMoniker" xml:space="preserve">
+    <value>モニカーで絞り込みます</value>
+  </data>
   <data name="OptionDescriptionVersion" xml:space="preserve">
     <value>指定したバージョンを使用します</value>
+  </data>
+  <data name="OptionDescriptionManifest" xml:space="preserve">
+    <value>パッケージ マニフェストのパス</value>
   </data>
   <data name="OptionDescriptionScope" xml:space="preserve">
     <value>インストール スコープ (user または machine) を選択します</value>
@@ -325,6 +334,36 @@
   </data>
   <data name="OptionDescriptionAllowReboot" xml:space="preserve">
     <value>必要に応じてインストーラーがマシンを再起動することを許可します</value>
+  </data>
+  <data name="OptionDescriptionAuthenticationMode" xml:space="preserve">
+    <value>認証ウィンドウの設定 (silent、silentPreferred、または interactive) を指定します</value>
+  </data>
+  <data name="OptionDescriptionAuthenticationAccount" xml:space="preserve">
+    <value>認証に使用するアカウントを指定します</value>
+  </data>
+  <data name="OptionDescriptionIgnoreLocalArchiveMalwareScan" xml:space="preserve">
+    <value>ローカル マニフェストからのアーカイブ パッケージのマルウェア スキャンを無視します</value>
+  </data>
+  <data name="OptionDescriptionWait" xml:space="preserve">
+    <value>終了する前にキー押下を促します</value>
+  </data>
+  <data name="OptionDescriptionOpenLogs" xml:space="preserve">
+    <value>既定のログの場所を開きます</value>
+  </data>
+  <data name="OptionDescriptionVerboseLogs" xml:space="preserve">
+    <value>WinGet の詳細ログを有効にします</value>
+  </data>
+  <data name="OptionDescriptionIgnoreWarnings" xml:space="preserve">
+    <value>警告出力を抑制します</value>
+  </data>
+  <data name="OptionDescriptionDisableInteractivity" xml:space="preserve">
+    <value>対話型のプロンプトを無効にします</value>
+  </data>
+  <data name="OptionDescriptionProxy" xml:space="preserve">
+    <value>この実行に使用するプロキシを設定します</value>
+  </data>
+  <data name="OptionDescriptionNoProxy" xml:space="preserve">
+    <value>この実行でプロキシを使用しないようにします</value>
   </data>
   <data name="UninstallAllOptionDescription" xml:space="preserve">
     <value>パッケージのすべてのバージョンを削除します</value>
