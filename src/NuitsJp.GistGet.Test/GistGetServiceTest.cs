@@ -2687,8 +2687,12 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------------
-            ConsoleServiceMock.Verify(x => x.WriteProgress("Fetching installed packages..."), Times.Once);
-            ConsoleServiceMock.Verify(x => x.WriteProgress("Fetching pinned packages..."), Times.Once);
+            ConsoleServiceMock.Verify(x => x.WriteProgress(It.Is<string>(s =>
+                s == "Fetching installed packages..." ||
+                s == "インストール済みパッケージを取得中...")), Times.Once);
+            ConsoleServiceMock.Verify(x => x.WriteProgress(It.Is<string>(s =>
+                s == "Fetching pinned packages..." ||
+                s == "ピン留め済みパッケージを取得中...")), Times.Once);
         }
 
         [Fact]
