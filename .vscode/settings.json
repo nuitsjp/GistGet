@@ -1,5 +1,4 @@
 {
-  "chat.useClaudeSkills": true,
   "cSpell.words": [
     "accessibilities",
     "ackages",
@@ -142,5 +141,6 @@
     "**/*.psd1",
     "**/*.psm1",
     "**/*.DotSettings"
-  ]
+  ],
+  "chat.useAgentSkills": true
 }
