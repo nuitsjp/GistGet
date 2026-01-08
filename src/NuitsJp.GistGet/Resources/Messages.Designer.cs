@@ -701,6 +701,12 @@ internal static class Messages
     internal static string WingetExportCommandDescription =>
         ResourceManager.GetString("WingetExportCommandDescription", null) ?? string.Empty;
 
+    /// <summary>
+    /// Looks up a localized string similar to: Installs all packages in a file [Passthrough]
+    /// </summary>
+    internal static string WingetImportCommandDescription =>
+        ResourceManager.GetString("WingetImportCommandDescription", null) ?? string.Empty;
+
 }
 
 

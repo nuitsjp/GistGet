@@ -391,4 +391,7 @@
   <data name="WingetExportCommandDescription" xml:space="preserve">
     <value>Exports a list of the installed packages [Passthrough]</value>
   </data>
+  <data name="WingetImportCommandDescription" xml:space="preserve">
+    <value>Installs all packages in a file [Passthrough]</value>
+  </data>
 </root>
