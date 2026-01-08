@@ -385,6 +385,12 @@
   <data name="WingetMcpCommandDescription" xml:space="preserve">
     <value>Model Context Protocol サーバー [パススルー]</value>
   </data>
+  <data name="WingetExportCommandDescription" xml:space="preserve">
+    <value>インストール済みパッケージの一覧をエクスポートします [パススルー]</value>
+  </data>
+  <data name="WingetImportCommandDescription" xml:space="preserve">
+    <value>ファイルに一覧表示されているすべてのパッケージをインストールします [パススルー]</value>
+  </data>
   <data name="GistCommandDescription" xml:space="preserve">
     <value>Gistのパッケージを一覧表示します</value>
   </data>
