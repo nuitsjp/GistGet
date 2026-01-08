@@ -45,7 +45,7 @@ public class CommandBuilderTests : IDisposable
             {
                 "sync", "auth", "install", "uninstall", "upgrade", "pin",
                 "list", "search", "show", "source", "settings", "features", "hash", "validate",
-                "configure", "download", "repair", "dscv3", "mcp", "export"
+                "configure", "download", "repair", "dscv3", "mcp", "export", "import"
             };
 
             // -------------------------------------------------------------------
@@ -55,8 +55,6 @@ public class CommandBuilderTests : IDisposable
             {
                 names.ShouldContain(command);
             }
-
-            names.ShouldNotContain("import");
         }
 
         [Fact]
