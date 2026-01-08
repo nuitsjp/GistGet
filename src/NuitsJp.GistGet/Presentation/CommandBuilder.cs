@@ -263,11 +263,16 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
         var idArgument = new Argument<string?>("package", Messages.UpgradePackageArgumentDescription) { Arity = ArgumentArity.ZeroOrOne };
         var idOption = new Option<string>("--id", Messages.OptionDescriptionFilterById);
         var versionOption = new Option<string>("--version", Messages.OptionDescriptionVersion);
+        var sourceOption = new Option<string>("--source", Messages.OptionDescriptionSource);
+        sourceOption.AddAlias("-s");
         var scopeOption = new Option<string>("--scope", Messages.OptionDescriptionScope);
         var archOption = new Option<string>("--architecture", Messages.OptionDescriptionArchitecture);
         var locationOption = new Option<string>("--location", Messages.OptionDescriptionLocation);
+        var exactOption = new Option<bool>("--exact", Messages.OptionDescriptionExact);
+        exactOption.AddAlias("-e");
         var interactiveOption = new Option<bool>("--interactive", Messages.OptionDescriptionInteractiveUpgrade);
         var silentOption = new Option<bool>("--silent", Messages.OptionDescriptionSilentUpgrade);
+        var purgeOption = new Option<bool>("--purge", Messages.OptionDescriptionPurge);
         var logOption = new Option<string>("--log", Messages.OptionDescriptionLogLocation);
         var overrideOption = new Option<string>("--override", Messages.OptionDescriptionOverrideArguments);
         var forceOption = new Option<bool>("--force", Messages.OptionDescriptionForceOverrideHash);
@@ -279,16 +284,25 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
         var acceptPackageAgreementsOption = new Option<bool>("--accept-package-agreements", Messages.OptionDescriptionAcceptPackageAgreements);
         var acceptSourceAgreementsOption = new Option<bool>("--accept-source-agreements", Messages.OptionDescriptionAcceptSourceAgreements);
         var ignoreSecurityHashOption = new Option<bool>("--ignore-security-hash", Messages.OptionDescriptionIgnoreSecurityHash);
+        var includeUnknownOption = new Option<bool>("--include-unknown", Messages.OptionDescriptionIncludeUnknown);
+        includeUnknownOption.AddAlias("-u");
+        var includePinnedOption = new Option<bool>("--pinned", Messages.OptionDescriptionIncludePinned);
+        var uninstallPreviousOption = new Option<bool>("--uninstall-previous", Messages.OptionDescriptionUninstallPrevious);
+        var allowRebootOption = new Option<bool>("--allow-reboot", Messages.OptionDescriptionAllowReboot);
         var allOption = new Option<bool>("--all", Messages.OptionDescriptionUpgradeAll);
+        allOption.AddAlias("-r");
 
         command.Add(idArgument);
         command.Add(idOption);
         command.Add(versionOption);
+        command.Add(sourceOption);
         command.Add(scopeOption);
         command.Add(archOption);
         command.Add(locationOption);
+        command.Add(exactOption);
         command.Add(interactiveOption);
         command.Add(silentOption);
+        command.Add(purgeOption);
         command.Add(logOption);
         command.Add(overrideOption);
         command.Add(forceOption);
@@ -300,6 +314,10 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
         command.Add(acceptPackageAgreementsOption);
         command.Add(acceptSourceAgreementsOption);
         command.Add(ignoreSecurityHashOption);
+        command.Add(includeUnknownOption);
+        command.Add(includePinnedOption);
+        command.Add(uninstallPreviousOption);
+        command.Add(allowRebootOption);
         command.Add(allOption);
         command.TreatUnmatchedTokensAsErrors = false;
 
@@ -315,11 +333,14 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
                 {
                     Id = id,
                     Version = parseResult.GetValueForOption(versionOption),
+                    Source = parseResult.GetValueForOption(sourceOption),
                     Scope = parseResult.GetValueForOption(scopeOption),
                     Architecture = parseResult.GetValueForOption(archOption),
                     Location = parseResult.GetValueForOption(locationOption),
+                    Exact = parseResult.GetValueForOption(exactOption),
                     Interactive = parseResult.GetValueForOption(interactiveOption),
                     Silent = parseResult.GetValueForOption(silentOption),
+                    Purge = parseResult.GetValueForOption(purgeOption),
                     Log = parseResult.GetValueForOption(logOption),
                     Override = parseResult.GetValueForOption(overrideOption),
                     Force = parseResult.GetValueForOption(forceOption),
@@ -330,7 +351,11 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
                     Locale = parseResult.GetValueForOption(localeOption),
                     AcceptPackageAgreements = parseResult.GetValueForOption(acceptPackageAgreementsOption),
                     AcceptSourceAgreements = parseResult.GetValueForOption(acceptSourceAgreementsOption),
-                    AllowHashMismatch = parseResult.GetValueForOption(ignoreSecurityHashOption)
+                    AllowHashMismatch = parseResult.GetValueForOption(ignoreSecurityHashOption),
+                    IncludeUnknown = parseResult.GetValueForOption(includeUnknownOption),
+                    IncludePinned = parseResult.GetValueForOption(includePinnedOption),
+                    UninstallPrevious = parseResult.GetValueForOption(uninstallPreviousOption),
+                    AllowReboot = parseResult.GetValueForOption(allowRebootOption)
                 };
 
                 context.ExitCode = await gistGetService.UpgradeAndSaveAsync(options);
@@ -346,6 +371,9 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
                     var version = parseResult.GetValueForOption(versionOption);
                     if (!string.IsNullOrEmpty(version)) { argsToPass.Add("--version"); argsToPass.Add(version); }
 
+                    var source = parseResult.GetValueForOption(sourceOption);
+                    if (!string.IsNullOrEmpty(source)) { argsToPass.Add("--source"); argsToPass.Add(source); }
+
                     var scope = parseResult.GetValueForOption(scopeOption);
                     if (!string.IsNullOrEmpty(scope)) { argsToPass.Add("--scope"); argsToPass.Add(scope); }
 
@@ -355,8 +383,10 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
                     var location = parseResult.GetValueForOption(locationOption);
                     if (!string.IsNullOrEmpty(location)) { argsToPass.Add("--location"); argsToPass.Add(location); }
 
+                    if (parseResult.GetValueForOption(exactOption)) { argsToPass.Add("--exact"); }
                     if (parseResult.GetValueForOption(interactiveOption)) { argsToPass.Add("--interactive"); }
                     if (parseResult.GetValueForOption(silentOption)) { argsToPass.Add("--silent"); }
+                    if (parseResult.GetValueForOption(purgeOption)) { argsToPass.Add("--purge"); }
 
                     var log = parseResult.GetValueForOption(logOption);
                     if (!string.IsNullOrEmpty(log)) { argsToPass.Add("--log"); argsToPass.Add(log); }
@@ -382,6 +412,10 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
                     if (parseResult.GetValueForOption(acceptPackageAgreementsOption)) { argsToPass.Add("--accept-package-agreements"); }
                     if (parseResult.GetValueForOption(acceptSourceAgreementsOption)) { argsToPass.Add("--accept-source-agreements"); }
                     if (parseResult.GetValueForOption(ignoreSecurityHashOption)) { argsToPass.Add("--ignore-security-hash"); }
+                    if (parseResult.GetValueForOption(includeUnknownOption)) { argsToPass.Add("--include-unknown"); }
+                    if (parseResult.GetValueForOption(includePinnedOption)) { argsToPass.Add("--pinned"); }
+                    if (parseResult.GetValueForOption(uninstallPreviousOption)) { argsToPass.Add("--uninstall-previous"); }
+                    if (parseResult.GetValueForOption(allowRebootOption)) { argsToPass.Add("--allow-reboot"); }
                 }
                 context.ExitCode = await gistGetService.RunPassthroughAsync("upgrade", argsToPass.ToArray());
             }
@@ -484,7 +518,9 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
             ["download"] = Messages.WingetDownloadCommandDescription,
             ["repair"] = Messages.WingetRepairCommandDescription,
             ["dscv3"] = Messages.WingetDscv3CommandDescription,
-            ["mcp"] = Messages.WingetMcpCommandDescription
+            ["mcp"] = Messages.WingetMcpCommandDescription,
+            ["export"] = Messages.WingetExportCommandDescription,
+            ["import"] = Messages.WingetImportCommandDescription
         };
 
         foreach (var (cmd, description) in wingetCommands)

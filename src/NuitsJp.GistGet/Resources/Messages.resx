@@ -308,6 +308,27 @@
   <data name="OptionDescriptionUpgradeAll" xml:space="preserve">
     <value>Upgrade all available packages</value>
   </data>
+  <data name="OptionDescriptionSource" xml:space="preserve">
+    <value>Find package using the specified source</value>
+  </data>
+  <data name="OptionDescriptionExact" xml:space="preserve">
+    <value>Find package using exact match</value>
+  </data>
+  <data name="OptionDescriptionPurge" xml:space="preserve">
+    <value>Deletes all files and directories in the package directory (portable)</value>
+  </data>
+  <data name="OptionDescriptionIncludeUnknown" xml:space="preserve">
+    <value>Upgrade packages even if their current version cannot be determined</value>
+  </data>
+  <data name="OptionDescriptionIncludePinned" xml:space="preserve">
+    <value>Upgrade packages even if they have a non-blocking pin</value>
+  </data>
+  <data name="OptionDescriptionUninstallPrevious" xml:space="preserve">
+    <value>Uninstall the previous version of the package during upgrade</value>
+  </data>
+  <data name="OptionDescriptionAllowReboot" xml:space="preserve">
+    <value>Allows the installer to reboot the machine if required</value>
+  </data>
   <data name="UninstallAllOptionDescription" xml:space="preserve">
     <value>Remove all versions of the package</value>
   </data>
@@ -366,5 +387,11 @@
   </data>
   <data name="WingetMcpCommandDescription" xml:space="preserve">
     <value>Model Context Protocol server [Passthrough]</value>
+  </data>
+  <data name="WingetExportCommandDescription" xml:space="preserve">
+    <value>Exports a list of the installed packages [Passthrough]</value>
+  </data>
+  <data name="WingetImportCommandDescription" xml:space="preserve">
+    <value>Installs all packages in a file [Passthrough]</value>
   </data>
 </root>

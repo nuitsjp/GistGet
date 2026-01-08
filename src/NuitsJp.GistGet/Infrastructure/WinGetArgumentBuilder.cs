@@ -54,6 +54,14 @@ public class WinGetArgumentBuilder : IWinGetArgumentBuilder
         var args = new List<string> { "upgrade", "--id", options.Id };
 
         if (!string.IsNullOrEmpty(options.Version)) { args.Add("--version"); args.Add(options.Version); }
+        if (!string.IsNullOrEmpty(options.Source)) { args.Add("--source"); args.Add(options.Source); }
+        if (options.Exact) args.Add("--exact");
+        if (options.Purge) args.Add("--purge");
+        if (options.IncludeUnknown) args.Add("--include-unknown");
+        if (options.IncludePinned) args.Add("--include-pinned");
+        if (options.UninstallPrevious) args.Add("--uninstall-previous");
+        if (options.AllowReboot) args.Add("--allow-reboot");
+
         args.AddRange(BuildCommonInstallOptions(
             options.Scope, options.Architecture, options.Location,
             options.Interactive, options.Silent, options.Log,

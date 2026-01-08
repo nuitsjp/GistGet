@@ -305,6 +305,27 @@
   <data name="OptionDescriptionUpgradeAll" xml:space="preserve">
     <value>利用可能なすべてのパッケージをアップグレードします</value>
   </data>
+  <data name="OptionDescriptionSource" xml:space="preserve">
+    <value>指定したソースを使用してパッケージを検索します</value>
+  </data>
+  <data name="OptionDescriptionExact" xml:space="preserve">
+    <value>完全一致でパッケージを検索します</value>
+  </data>
+  <data name="OptionDescriptionPurge" xml:space="preserve">
+    <value>パッケージ ディレクトリ内のすべてのファイルとディレクトリを削除します (ポータブル)</value>
+  </data>
+  <data name="OptionDescriptionIncludeUnknown" xml:space="preserve">
+    <value>現在のバージョンを特定できないパッケージもアップグレードします</value>
+  </data>
+  <data name="OptionDescriptionIncludePinned" xml:space="preserve">
+    <value>ブロッキング以外のピンがあるパッケージもアップグレードします</value>
+  </data>
+  <data name="OptionDescriptionUninstallPrevious" xml:space="preserve">
+    <value>アップグレード時に以前のバージョンをアンインストールします</value>
+  </data>
+  <data name="OptionDescriptionAllowReboot" xml:space="preserve">
+    <value>必要に応じてインストーラーがマシンを再起動することを許可します</value>
+  </data>
   <data name="UninstallAllOptionDescription" xml:space="preserve">
     <value>パッケージのすべてのバージョンを削除します</value>
   </data>
@@ -363,6 +384,12 @@
   </data>
   <data name="WingetMcpCommandDescription" xml:space="preserve">
     <value>Model Context Protocol サーバー [パススルー]</value>
+  </data>
+  <data name="WingetExportCommandDescription" xml:space="preserve">
+    <value>インストール済みパッケージの一覧をエクスポートします [パススルー]</value>
+  </data>
+  <data name="WingetImportCommandDescription" xml:space="preserve">
+    <value>ファイルに一覧表示されているすべてのパッケージをインストールします [パススルー]</value>
   </data>
   <data name="GistCommandDescription" xml:space="preserve">
     <value>Gistのパッケージを一覧表示します</value>

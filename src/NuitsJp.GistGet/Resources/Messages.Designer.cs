@@ -540,6 +540,48 @@ internal static class Messages
         ResourceManager.GetString("OptionDescriptionUpgradeAll", null) ?? string.Empty;
 
     /// <summary>
+    /// Looks up a localized string similar to: Find package using the specified source
+    /// </summary>
+    internal static string OptionDescriptionSource =>
+        ResourceManager.GetString("OptionDescriptionSource", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Find package using exact match
+    /// </summary>
+    internal static string OptionDescriptionExact =>
+        ResourceManager.GetString("OptionDescriptionExact", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Deletes all files and directories in the package directory (portable)
+    /// </summary>
+    internal static string OptionDescriptionPurge =>
+        ResourceManager.GetString("OptionDescriptionPurge", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Upgrade packages even if their current version cannot be determined
+    /// </summary>
+    internal static string OptionDescriptionIncludeUnknown =>
+        ResourceManager.GetString("OptionDescriptionIncludeUnknown", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Upgrade packages even if they have a non-blocking pin
+    /// </summary>
+    internal static string OptionDescriptionIncludePinned =>
+        ResourceManager.GetString("OptionDescriptionIncludePinned", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Uninstall the previous version of the package during upgrade
+    /// </summary>
+    internal static string OptionDescriptionUninstallPrevious =>
+        ResourceManager.GetString("OptionDescriptionUninstallPrevious", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Allows the installer to reboot the machine if required
+    /// </summary>
+    internal static string OptionDescriptionAllowReboot =>
+        ResourceManager.GetString("OptionDescriptionAllowReboot", null) ?? string.Empty;
+
+    /// <summary>
     /// Looks up a localized string similar to: Remove all versions of the package
     /// </summary>
     internal static string UninstallAllOptionDescription =>
@@ -652,6 +694,18 @@ internal static class Messages
     /// </summary>
     internal static string WingetMcpCommandDescription =>
         ResourceManager.GetString("WingetMcpCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Exports a list of the installed packages [Passthrough]
+    /// </summary>
+    internal static string WingetExportCommandDescription =>
+        ResourceManager.GetString("WingetExportCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Installs all packages in a file [Passthrough]
+    /// </summary>
+    internal static string WingetImportCommandDescription =>
+        ResourceManager.GetString("WingetImportCommandDescription", null) ?? string.Empty;
 
 }
 
