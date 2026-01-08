@@ -367,4 +367,7 @@
   <data name="WingetMcpCommandDescription" xml:space="preserve">
     <value>Model Context Protocol server [Passthrough]</value>
   </data>
+  <data name="WingetExportCommandDescription" xml:space="preserve">
+    <value>Exports a list of the installed packages [Passthrough]</value>
+  </data>
 </root>

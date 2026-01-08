@@ -484,7 +484,8 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
             ["download"] = Messages.WingetDownloadCommandDescription,
             ["repair"] = Messages.WingetRepairCommandDescription,
             ["dscv3"] = Messages.WingetDscv3CommandDescription,
-            ["mcp"] = Messages.WingetMcpCommandDescription
+            ["mcp"] = Messages.WingetMcpCommandDescription,
+            ["export"] = Messages.WingetExportCommandDescription
         };
 
         foreach (var (cmd, description) in wingetCommands)
