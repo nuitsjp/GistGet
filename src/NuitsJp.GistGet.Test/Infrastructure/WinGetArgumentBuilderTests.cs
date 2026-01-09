@@ -113,6 +113,59 @@ public class WinGetArgumentBuilderTests
             args.ShouldBeSubsetOf(expectedArgs);
             args.Length.ShouldBe(expectedArgs.Length);
         }
+
+        [Fact]
+        public void WithExtendedOptions_IncludesNewFlags()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var options = new UpgradeOptions
+            {
+                Id = "Test.Package",
+                Manifest = "C:\\manifests\\app.yaml",
+                Name = "Sample App",
+                Moniker = "sample-app",
+                AuthenticationMode = "silentPreferred",
+                AuthenticationAccount = "user@example.com",
+                IgnoreLocalArchiveMalwareScan = true,
+                Wait = true,
+                OpenLogs = true,
+                VerboseLogs = true,
+                IgnoreWarnings = true,
+                DisableInteractivity = true,
+                Proxy = "http://proxy:8080",
+                NoProxy = true
+            };
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var args = _builder.BuildUpgradeArgs(options);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            args.ShouldContain("--manifest");
+            args.ShouldContain("C:\\manifests\\app.yaml");
+            args.ShouldContain("--name");
+            args.ShouldContain("Sample App");
+            args.ShouldContain("--moniker");
+            args.ShouldContain("sample-app");
+            args.ShouldContain("--authentication-mode");
+            args.ShouldContain("silentPreferred");
+            args.ShouldContain("--authentication-account");
+            args.ShouldContain("user@example.com");
+            args.ShouldContain("--ignore-local-archive-malware-scan");
+            args.ShouldContain("--wait");
+            args.ShouldContain("--logs");
+            args.ShouldContain("--verbose");
+            args.ShouldContain("--nowarn");
+            args.ShouldContain("--disable-interactivity");
+            args.ShouldContain("--proxy");
+            args.ShouldContain("http://proxy:8080");
+            args.ShouldContain("--no-proxy");
+        }
     }
 
     public class BuildUninstallArgsFromOptions : WinGetArgumentBuilderTests
@@ -423,7 +476,6 @@ public class WinGetArgumentBuilderTests
         }
     }
 }
-
 
 
 

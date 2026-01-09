@@ -258,42 +258,71 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
     }
 
     private Command BuildUpgradeCommand()
-    {
-        var command = new Command("upgrade", Messages.UpgradeCommandDescription);
-        var idArgument = new Argument<string?>("package", Messages.UpgradePackageArgumentDescription) { Arity = ArgumentArity.ZeroOrOne };
-        var idOption = new Option<string>("--id", Messages.OptionDescriptionFilterById);
-        var versionOption = new Option<string>("--version", Messages.OptionDescriptionVersion);
-        var sourceOption = new Option<string>("--source", Messages.OptionDescriptionSource);
-        sourceOption.AddAlias("-s");
-        var scopeOption = new Option<string>("--scope", Messages.OptionDescriptionScope);
-        var archOption = new Option<string>("--architecture", Messages.OptionDescriptionArchitecture);
-        var locationOption = new Option<string>("--location", Messages.OptionDescriptionLocation);
-        var exactOption = new Option<bool>("--exact", Messages.OptionDescriptionExact);
-        exactOption.AddAlias("-e");
-        var interactiveOption = new Option<bool>("--interactive", Messages.OptionDescriptionInteractiveUpgrade);
-        var silentOption = new Option<bool>("--silent", Messages.OptionDescriptionSilentUpgrade);
-        var purgeOption = new Option<bool>("--purge", Messages.OptionDescriptionPurge);
-        var logOption = new Option<string>("--log", Messages.OptionDescriptionLogLocation);
-        var overrideOption = new Option<string>("--override", Messages.OptionDescriptionOverrideArguments);
-        var forceOption = new Option<bool>("--force", Messages.OptionDescriptionForceOverrideHash);
-        var skipDependenciesOption = new Option<bool>("--skip-dependencies", Messages.OptionDescriptionSkipDependencies);
-        var headerOption = new Option<string>("--header", Messages.OptionDescriptionHeader);
-        var installerTypeOption = new Option<string>("--installer-type", Messages.OptionDescriptionInstallerType);
-        var customOption = new Option<string>("--custom", Messages.OptionDescriptionCustomArguments);
-        var localeOption = new Option<string>("--locale", Messages.OptionDescriptionLocale);
-        var acceptPackageAgreementsOption = new Option<bool>("--accept-package-agreements", Messages.OptionDescriptionAcceptPackageAgreements);
-        var acceptSourceAgreementsOption = new Option<bool>("--accept-source-agreements", Messages.OptionDescriptionAcceptSourceAgreements);
-        var ignoreSecurityHashOption = new Option<bool>("--ignore-security-hash", Messages.OptionDescriptionIgnoreSecurityHash);
-        var includeUnknownOption = new Option<bool>("--include-unknown", Messages.OptionDescriptionIncludeUnknown);
-        includeUnknownOption.AddAlias("-u");
-        var includePinnedOption = new Option<bool>("--pinned", Messages.OptionDescriptionIncludePinned);
-        var uninstallPreviousOption = new Option<bool>("--uninstall-previous", Messages.OptionDescriptionUninstallPrevious);
-        var allowRebootOption = new Option<bool>("--allow-reboot", Messages.OptionDescriptionAllowReboot);
-        var allOption = new Option<bool>("--all", Messages.OptionDescriptionUpgradeAll);
-        allOption.AddAlias("-r");
+        {
+            var command = new Command("upgrade", Messages.UpgradeCommandDescription);
+            var idArgument = new Argument<string?>("package", Messages.UpgradePackageArgumentDescription) { Arity = ArgumentArity.ZeroOrOne };
+            var idOption = new Option<string>("--id", Messages.OptionDescriptionFilterById);
+            var versionOption = new Option<string>("--version", Messages.OptionDescriptionVersion);
+            versionOption.AddAlias("-v");
+            var manifestOption = new Option<string>("--manifest", Messages.OptionDescriptionManifest);
+            manifestOption.AddAlias("-m");
+            var nameOption = new Option<string>("--name", Messages.OptionDescriptionFilterByName);
+            var monikerOption = new Option<string>("--moniker", Messages.OptionDescriptionMoniker);
+            var sourceOption = new Option<string>("--source", Messages.OptionDescriptionSource);
+            sourceOption.AddAlias("-s");
+            var scopeOption = new Option<string>("--scope", Messages.OptionDescriptionScope);
+            var archOption = new Option<string>("--architecture", Messages.OptionDescriptionArchitecture);
+            archOption.AddAlias("-a");
+            var locationOption = new Option<string>("--location", Messages.OptionDescriptionLocation);
+            locationOption.AddAlias("-l");
+            var exactOption = new Option<bool>("--exact", Messages.OptionDescriptionExact);
+            exactOption.AddAlias("-e");
+            var interactiveOption = new Option<bool>("--interactive", Messages.OptionDescriptionInteractiveUpgrade);
+            interactiveOption.AddAlias("-i");
+            var silentOption = new Option<bool>("--silent", Messages.OptionDescriptionSilentUpgrade);
+            silentOption.AddAlias("-h");
+            var purgeOption = new Option<bool>("--purge", Messages.OptionDescriptionPurge);
+            var logOption = new Option<string>("--log", Messages.OptionDescriptionLogLocation);
+            logOption.AddAlias("-o");
+            var overrideOption = new Option<string>("--override", Messages.OptionDescriptionOverrideArguments);
+            var forceOption = new Option<bool>("--force", Messages.OptionDescriptionForceOverrideHash);
+            var skipDependenciesOption = new Option<bool>("--skip-dependencies", Messages.OptionDescriptionSkipDependencies);
+            var headerOption = new Option<string>("--header", Messages.OptionDescriptionHeader);
+            var installerTypeOption = new Option<string>("--installer-type", Messages.OptionDescriptionInstallerType);
+            var customOption = new Option<string>("--custom", Messages.OptionDescriptionCustomArguments);
+            var localeOption = new Option<string>("--locale", Messages.OptionDescriptionLocale);
+            var acceptPackageAgreementsOption = new Option<bool>("--accept-package-agreements", Messages.OptionDescriptionAcceptPackageAgreements);
+            var acceptSourceAgreementsOption = new Option<bool>("--accept-source-agreements", Messages.OptionDescriptionAcceptSourceAgreements);
+            var ignoreSecurityHashOption = new Option<bool>("--ignore-security-hash", Messages.OptionDescriptionIgnoreSecurityHash);
+            var includeUnknownOption = new Option<bool>("--include-unknown", Messages.OptionDescriptionIncludeUnknown);
+            includeUnknownOption.AddAlias("-u");
+            includeUnknownOption.AddAlias("--unknown");
+            var includePinnedOption = new Option<bool>("--include-pinned", Messages.OptionDescriptionIncludePinned);
+            includePinnedOption.AddAlias("--pinned");
+            var uninstallPreviousOption = new Option<bool>("--uninstall-previous", Messages.OptionDescriptionUninstallPrevious);
+            var allowRebootOption = new Option<bool>("--allow-reboot", Messages.OptionDescriptionAllowReboot);
+            var allOption = new Option<bool>("--all", Messages.OptionDescriptionUpgradeAll);
+            allOption.AddAlias("-r");
+            allOption.AddAlias("--recurse");
+            var authenticationModeOption = new Option<string>("--authentication-mode", Messages.OptionDescriptionAuthenticationMode);
+            var authenticationAccountOption = new Option<string>("--authentication-account", Messages.OptionDescriptionAuthenticationAccount);
+            var ignoreLocalArchiveMalwareScanOption = new Option<bool>("--ignore-local-archive-malware-scan", Messages.OptionDescriptionIgnoreLocalArchiveMalwareScan);
+            var waitOption = new Option<bool>("--wait", Messages.OptionDescriptionWait);
+            var openLogsOption = new Option<bool>("--logs", Messages.OptionDescriptionOpenLogs);
+            openLogsOption.AddAlias("--open-logs");
+            var verboseLogsOption = new Option<bool>("--verbose", Messages.OptionDescriptionVerboseLogs);
+            verboseLogsOption.AddAlias("--verbose-logs");
+            var ignoreWarningsOption = new Option<bool>("--nowarn", Messages.OptionDescriptionIgnoreWarnings);
+            ignoreWarningsOption.AddAlias("--ignore-warnings");
+            var disableInteractivityOption = new Option<bool>("--disable-interactivity", Messages.OptionDescriptionDisableInteractivity);
+            var proxyOption = new Option<string>("--proxy", Messages.OptionDescriptionProxy);
+            var noProxyOption = new Option<bool>("--no-proxy", Messages.OptionDescriptionNoProxy);
 
         command.Add(idArgument);
         command.Add(idOption);
+        command.Add(manifestOption);
+        command.Add(nameOption);
+        command.Add(monikerOption);
         command.Add(versionOption);
         command.Add(sourceOption);
         command.Add(scopeOption);
@@ -319,6 +348,16 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
         command.Add(uninstallPreviousOption);
         command.Add(allowRebootOption);
         command.Add(allOption);
+        command.Add(authenticationModeOption);
+        command.Add(authenticationAccountOption);
+        command.Add(ignoreLocalArchiveMalwareScanOption);
+        command.Add(waitOption);
+        command.Add(openLogsOption);
+        command.Add(verboseLogsOption);
+        command.Add(ignoreWarningsOption);
+        command.Add(disableInteractivityOption);
+        command.Add(proxyOption);
+        command.Add(noProxyOption);
         command.TreatUnmatchedTokensAsErrors = false;
 
         command.SetHandler(async context =>
@@ -326,12 +365,16 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
             var parseResult = context.ParseResult;
             var id = parseResult.GetValueForOption(idOption) ?? parseResult.GetValueForArgument(idArgument);
             var all = parseResult.GetValueForOption(allOption);
+            var recognizedArgs = BuildRecognizedArgs();
 
             if (!string.IsNullOrWhiteSpace(id) && !all)
             {
                 var options = new UpgradeOptions
                 {
                     Id = id,
+                    Manifest = parseResult.GetValueForOption(manifestOption),
+                    Name = parseResult.GetValueForOption(nameOption),
+                    Moniker = parseResult.GetValueForOption(monikerOption),
                     Version = parseResult.GetValueForOption(versionOption),
                     Source = parseResult.GetValueForOption(sourceOption),
                     Scope = parseResult.GetValueForOption(scopeOption),
@@ -355,7 +398,17 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
                     IncludeUnknown = parseResult.GetValueForOption(includeUnknownOption),
                     IncludePinned = parseResult.GetValueForOption(includePinnedOption),
                     UninstallPrevious = parseResult.GetValueForOption(uninstallPreviousOption),
-                    AllowReboot = parseResult.GetValueForOption(allowRebootOption)
+                    AllowReboot = parseResult.GetValueForOption(allowRebootOption),
+                    AuthenticationMode = parseResult.GetValueForOption(authenticationModeOption),
+                    AuthenticationAccount = parseResult.GetValueForOption(authenticationAccountOption),
+                    IgnoreLocalArchiveMalwareScan = parseResult.GetValueForOption(ignoreLocalArchiveMalwareScanOption),
+                    Wait = parseResult.GetValueForOption(waitOption),
+                    OpenLogs = parseResult.GetValueForOption(openLogsOption),
+                    VerboseLogs = parseResult.GetValueForOption(verboseLogsOption),
+                    IgnoreWarnings = parseResult.GetValueForOption(ignoreWarningsOption),
+                    DisableInteractivity = parseResult.GetValueForOption(disableInteractivityOption),
+                    Proxy = parseResult.GetValueForOption(proxyOption),
+                    NoProxy = parseResult.GetValueForOption(noProxyOption)
                 };
 
                 context.ExitCode = await gistGetService.UpgradeAndSaveAsync(options);
@@ -366,58 +419,92 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
                 if (all)
                 {
                     argsToPass.Insert(0, "--all");
-
-                    // Add recognized options when --all is specified
-                    var version = parseResult.GetValueForOption(versionOption);
-                    if (!string.IsNullOrEmpty(version)) { argsToPass.Add("--version"); argsToPass.Add(version); }
-
-                    var source = parseResult.GetValueForOption(sourceOption);
-                    if (!string.IsNullOrEmpty(source)) { argsToPass.Add("--source"); argsToPass.Add(source); }
-
-                    var scope = parseResult.GetValueForOption(scopeOption);
-                    if (!string.IsNullOrEmpty(scope)) { argsToPass.Add("--scope"); argsToPass.Add(scope); }
-
-                    var arch = parseResult.GetValueForOption(archOption);
-                    if (!string.IsNullOrEmpty(arch)) { argsToPass.Add("--architecture"); argsToPass.Add(arch); }
-
-                    var location = parseResult.GetValueForOption(locationOption);
-                    if (!string.IsNullOrEmpty(location)) { argsToPass.Add("--location"); argsToPass.Add(location); }
-
-                    if (parseResult.GetValueForOption(exactOption)) { argsToPass.Add("--exact"); }
-                    if (parseResult.GetValueForOption(interactiveOption)) { argsToPass.Add("--interactive"); }
-                    if (parseResult.GetValueForOption(silentOption)) { argsToPass.Add("--silent"); }
-                    if (parseResult.GetValueForOption(purgeOption)) { argsToPass.Add("--purge"); }
-
-                    var log = parseResult.GetValueForOption(logOption);
-                    if (!string.IsNullOrEmpty(log)) { argsToPass.Add("--log"); argsToPass.Add(log); }
-
-                    var overrideArg = parseResult.GetValueForOption(overrideOption);
-                    if (!string.IsNullOrEmpty(overrideArg)) { argsToPass.Add("--override"); argsToPass.Add(overrideArg); }
-
-                    if (parseResult.GetValueForOption(forceOption)) { argsToPass.Add("--force"); }
-                    if (parseResult.GetValueForOption(skipDependenciesOption)) { argsToPass.Add("--skip-dependencies"); }
-
-                    var header = parseResult.GetValueForOption(headerOption);
-                    if (!string.IsNullOrEmpty(header)) { argsToPass.Add("--header"); argsToPass.Add(header); }
-
-                    var installerType = parseResult.GetValueForOption(installerTypeOption);
-                    if (!string.IsNullOrEmpty(installerType)) { argsToPass.Add("--installer-type"); argsToPass.Add(installerType); }
-
-                    var custom = parseResult.GetValueForOption(customOption);
-                    if (!string.IsNullOrEmpty(custom)) { argsToPass.Add("--custom"); argsToPass.Add(custom); }
-
-                    var locale = parseResult.GetValueForOption(localeOption);
-                    if (!string.IsNullOrEmpty(locale)) { argsToPass.Add("--locale"); argsToPass.Add(locale); }
-
-                    if (parseResult.GetValueForOption(acceptPackageAgreementsOption)) { argsToPass.Add("--accept-package-agreements"); }
-                    if (parseResult.GetValueForOption(acceptSourceAgreementsOption)) { argsToPass.Add("--accept-source-agreements"); }
-                    if (parseResult.GetValueForOption(ignoreSecurityHashOption)) { argsToPass.Add("--ignore-security-hash"); }
-                    if (parseResult.GetValueForOption(includeUnknownOption)) { argsToPass.Add("--include-unknown"); }
-                    if (parseResult.GetValueForOption(includePinnedOption)) { argsToPass.Add("--pinned"); }
-                    if (parseResult.GetValueForOption(uninstallPreviousOption)) { argsToPass.Add("--uninstall-previous"); }
-                    if (parseResult.GetValueForOption(allowRebootOption)) { argsToPass.Add("--allow-reboot"); }
                 }
+                argsToPass.AddRange(recognizedArgs);
                 context.ExitCode = await gistGetService.RunPassthroughAsync("upgrade", argsToPass.ToArray());
+            }
+
+            List<string> BuildRecognizedArgs()
+            {
+                var args = new List<string>();
+
+                var manifest = parseResult.GetValueForOption(manifestOption);
+                if (!string.IsNullOrEmpty(manifest)) { args.Add("--manifest"); args.Add(manifest); }
+
+                var name = parseResult.GetValueForOption(nameOption);
+                if (!string.IsNullOrEmpty(name)) { args.Add("--name"); args.Add(name); }
+
+                var moniker = parseResult.GetValueForOption(monikerOption);
+                if (!string.IsNullOrEmpty(moniker)) { args.Add("--moniker"); args.Add(moniker); }
+
+                var version = parseResult.GetValueForOption(versionOption);
+                if (!string.IsNullOrEmpty(version)) { args.Add("--version"); args.Add(version); }
+
+                var source = parseResult.GetValueForOption(sourceOption);
+                if (!string.IsNullOrEmpty(source)) { args.Add("--source"); args.Add(source); }
+
+                var scope = parseResult.GetValueForOption(scopeOption);
+                if (!string.IsNullOrEmpty(scope)) { args.Add("--scope"); args.Add(scope); }
+
+                var arch = parseResult.GetValueForOption(archOption);
+                if (!string.IsNullOrEmpty(arch)) { args.Add("--architecture"); args.Add(arch); }
+
+                var location = parseResult.GetValueForOption(locationOption);
+                if (!string.IsNullOrEmpty(location)) { args.Add("--location"); args.Add(location); }
+
+                if (parseResult.GetValueForOption(exactOption)) { args.Add("--exact"); }
+                if (parseResult.GetValueForOption(interactiveOption)) { args.Add("--interactive"); }
+                if (parseResult.GetValueForOption(silentOption)) { args.Add("--silent"); }
+                if (parseResult.GetValueForOption(purgeOption)) { args.Add("--purge"); }
+
+                var log = parseResult.GetValueForOption(logOption);
+                if (!string.IsNullOrEmpty(log)) { args.Add("--log"); args.Add(log); }
+
+                var overrideArg = parseResult.GetValueForOption(overrideOption);
+                if (!string.IsNullOrEmpty(overrideArg)) { args.Add("--override"); args.Add(overrideArg); }
+
+                if (parseResult.GetValueForOption(forceOption)) { args.Add("--force"); }
+                if (parseResult.GetValueForOption(skipDependenciesOption)) { args.Add("--skip-dependencies"); }
+
+                var header = parseResult.GetValueForOption(headerOption);
+                if (!string.IsNullOrEmpty(header)) { args.Add("--header"); args.Add(header); }
+
+                var installerType = parseResult.GetValueForOption(installerTypeOption);
+                if (!string.IsNullOrEmpty(installerType)) { args.Add("--installer-type"); args.Add(installerType); }
+
+                var custom = parseResult.GetValueForOption(customOption);
+                if (!string.IsNullOrEmpty(custom)) { args.Add("--custom"); args.Add(custom); }
+
+                var locale = parseResult.GetValueForOption(localeOption);
+                if (!string.IsNullOrEmpty(locale)) { args.Add("--locale"); args.Add(locale); }
+
+                if (parseResult.GetValueForOption(acceptPackageAgreementsOption)) { args.Add("--accept-package-agreements"); }
+                if (parseResult.GetValueForOption(acceptSourceAgreementsOption)) { args.Add("--accept-source-agreements"); }
+                if (parseResult.GetValueForOption(ignoreSecurityHashOption)) { args.Add("--ignore-security-hash"); }
+                if (parseResult.GetValueForOption(includeUnknownOption)) { args.Add("--include-unknown"); }
+                if (parseResult.GetValueForOption(includePinnedOption)) { args.Add("--include-pinned"); }
+                if (parseResult.GetValueForOption(uninstallPreviousOption)) { args.Add("--uninstall-previous"); }
+                if (parseResult.GetValueForOption(allowRebootOption)) { args.Add("--allow-reboot"); }
+
+                var authenticationMode = parseResult.GetValueForOption(authenticationModeOption);
+                if (!string.IsNullOrEmpty(authenticationMode)) { args.Add("--authentication-mode"); args.Add(authenticationMode); }
+
+                var authenticationAccount = parseResult.GetValueForOption(authenticationAccountOption);
+                if (!string.IsNullOrEmpty(authenticationAccount)) { args.Add("--authentication-account"); args.Add(authenticationAccount); }
+
+                if (parseResult.GetValueForOption(ignoreLocalArchiveMalwareScanOption)) { args.Add("--ignore-local-archive-malware-scan"); }
+                if (parseResult.GetValueForOption(waitOption)) { args.Add("--wait"); }
+                if (parseResult.GetValueForOption(openLogsOption)) { args.Add("--logs"); }
+                if (parseResult.GetValueForOption(verboseLogsOption)) { args.Add("--verbose"); }
+                if (parseResult.GetValueForOption(ignoreWarningsOption)) { args.Add("--nowarn"); }
+                if (parseResult.GetValueForOption(disableInteractivityOption)) { args.Add("--disable-interactivity"); }
+
+                var proxy = parseResult.GetValueForOption(proxyOption);
+                if (!string.IsNullOrEmpty(proxy)) { args.Add("--proxy"); args.Add(proxy); }
+
+                if (parseResult.GetValueForOption(noProxyOption)) { args.Add("--no-proxy"); }
+
+                return args;
             }
         });
 
@@ -575,7 +662,3 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
         }
     }
 }
-
-
-
-

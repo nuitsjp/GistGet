@@ -408,10 +408,28 @@ internal static class Messages
         ResourceManager.GetString("OptionDescriptionFilterById", null) ?? string.Empty;
 
     /// <summary>
+    /// Looks up a localized string similar to: Filter results by name
+    /// </summary>
+    internal static string OptionDescriptionFilterByName =>
+        ResourceManager.GetString("OptionDescriptionFilterByName", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Filter results by moniker
+    /// </summary>
+    internal static string OptionDescriptionMoniker =>
+        ResourceManager.GetString("OptionDescriptionMoniker", null) ?? string.Empty;
+
+    /// <summary>
     /// Looks up a localized string similar to: Use the specified version
     /// </summary>
     internal static string OptionDescriptionVersion =>
         ResourceManager.GetString("OptionDescriptionVersion", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Path to the package manifest
+    /// </summary>
+    internal static string OptionDescriptionManifest =>
+        ResourceManager.GetString("OptionDescriptionManifest", null) ?? string.Empty;
 
     /// <summary>
     /// Looks up a localized string similar to: Select install scope (user or machine)
@@ -582,6 +600,66 @@ internal static class Messages
         ResourceManager.GetString("OptionDescriptionAllowReboot", null) ?? string.Empty;
 
     /// <summary>
+    /// Looks up a localized string similar to: Authentication prompt mode (silent, silentPreferred, or interactive)
+    /// </summary>
+    internal static string OptionDescriptionAuthenticationMode =>
+        ResourceManager.GetString("OptionDescriptionAuthenticationMode", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Account to use for authentication
+    /// </summary>
+    internal static string OptionDescriptionAuthenticationAccount =>
+        ResourceManager.GetString("OptionDescriptionAuthenticationAccount", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Ignore malware scan for archive packages from local manifests
+    /// </summary>
+    internal static string OptionDescriptionIgnoreLocalArchiveMalwareScan =>
+        ResourceManager.GetString("OptionDescriptionIgnoreLocalArchiveMalwareScan", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Prompt before exiting
+    /// </summary>
+    internal static string OptionDescriptionWait =>
+        ResourceManager.GetString("OptionDescriptionWait", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Open the default log location
+    /// </summary>
+    internal static string OptionDescriptionOpenLogs =>
+        ResourceManager.GetString("OptionDescriptionOpenLogs", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Enable verbose WinGet logs
+    /// </summary>
+    internal static string OptionDescriptionVerboseLogs =>
+        ResourceManager.GetString("OptionDescriptionVerboseLogs", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Suppress warning output
+    /// </summary>
+    internal static string OptionDescriptionIgnoreWarnings =>
+        ResourceManager.GetString("OptionDescriptionIgnoreWarnings", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Disable interactive prompts
+    /// </summary>
+    internal static string OptionDescriptionDisableInteractivity =>
+        ResourceManager.GetString("OptionDescriptionDisableInteractivity", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Proxy to use for this execution
+    /// </summary>
+    internal static string OptionDescriptionProxy =>
+        ResourceManager.GetString("OptionDescriptionProxy", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Disable proxy for this execution
+    /// </summary>
+    internal static string OptionDescriptionNoProxy =>
+        ResourceManager.GetString("OptionDescriptionNoProxy", null) ?? string.Empty;
+
+    /// <summary>
     /// Looks up a localized string similar to: Remove all versions of the package
     /// </summary>
     internal static string UninstallAllOptionDescription =>
@@ -708,8 +786,6 @@ internal static class Messages
         ResourceManager.GetString("WingetImportCommandDescription", null) ?? string.Empty;
 
 }
-
-
 
 
 

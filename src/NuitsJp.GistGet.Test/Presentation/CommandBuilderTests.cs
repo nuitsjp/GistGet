@@ -384,13 +384,16 @@ public class CommandBuilderTests : IDisposable
             var command = string.Join(" ", new[]
             {
                 "upgrade --id Test.Package",
-                "--version 2.0.0",
+                "-v 2.0.0",
+                "-m \"D:/manifests/app.yaml\"",
+                "--name \"Sample App\"",
+                "--moniker sample-app",
                 "--scope machine",
                 "--architecture arm64",
-                "--location \"D:/Apps\"",
-                "--interactive",
+                "-l \"D:/Apps\"",
+                "-i",
                 "--silent",
-                "--log \"D:/logs/app.log\"",
+                "-o \"D:/logs/app.log\"",
                 "--override \"--ovr\"",
                 "--force",
                 "--skip-dependencies",
@@ -400,7 +403,19 @@ public class CommandBuilderTests : IDisposable
                 "--locale en-US",
                 "--accept-package-agreements",
                 "--accept-source-agreements",
-                "--ignore-security-hash"
+                "--ignore-security-hash",
+                "--authentication-mode silentPreferred",
+                "--authentication-account user@example.com",
+                "--ignore-local-archive-malware-scan",
+                "--include-pinned",
+                "--unknown",
+                "--wait",
+                "--logs",
+                "--verbose",
+                "--nowarn",
+                "--disable-interactivity",
+                "--proxy \"http://proxy:8080\"",
+                "--no-proxy"
             });
 
             // -------------------------------------------------------------------
@@ -430,7 +445,22 @@ public class CommandBuilderTests : IDisposable
                 o.Locale == "en-US" &&
                 o.AcceptPackageAgreements &&
                 o.AcceptSourceAgreements &&
-                o.AllowHashMismatch
+                o.AllowHashMismatch &&
+                o.Manifest == "D:/manifests/app.yaml" &&
+                o.Name == "Sample App" &&
+                o.Moniker == "sample-app" &&
+                o.AuthenticationMode == "silentPreferred" &&
+                o.AuthenticationAccount == "user@example.com" &&
+                o.IgnoreLocalArchiveMalwareScan &&
+                o.IncludePinned &&
+                o.IncludeUnknown &&
+                o.Wait &&
+                o.OpenLogs &&
+                o.VerboseLogs &&
+                o.IgnoreWarnings &&
+                o.DisableInteractivity &&
+                o.Proxy == "http://proxy:8080" &&
+                o.NoProxy
             )), Times.Once);
         }
 
@@ -660,7 +690,6 @@ public class CommandBuilderTests : IDisposable
         }
     }
 }
-
 
 
 
