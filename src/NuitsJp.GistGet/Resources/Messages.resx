@@ -348,6 +348,26 @@
     <value>Ignore package dependency failures</value>
   </data>
 
+  <!-- Upgrade All Messages -->
+  <data name="NoUpdatesAvailable" xml:space="preserve">
+    <value>No updates available.</value>
+  </data>
+  <data name="FoundUpdatesCount" xml:space="preserve">
+    <value>Found {0} package(s) with updates available.</value>
+  </data>
+  <data name="UpgradingPackage" xml:space="preserve">
+    <value>Upgrading {0} [{1}]...</value>
+  </data>
+  <data name="UpgradePackageFailed" xml:space="preserve">
+    <value>Failed to upgrade {0}: exit code {1}</value>
+  </data>
+  <data name="UpgradeAllCompleted" xml:space="preserve">
+    <value>Successfully upgraded {0} package(s).</value>
+  </data>
+  <data name="UpgradeAllCompletedWithFailures" xml:space="preserve">
+    <value>Upgraded {0} package(s), {1} failed.</value>
+  </data>
+
   <!-- Winget Passthrough Commands -->
   <data name="WingetListCommandDescription" xml:space="preserve">
     <value>Displays installed packages [Passthrough]</value>

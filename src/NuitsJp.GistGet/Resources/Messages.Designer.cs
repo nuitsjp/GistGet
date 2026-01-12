@@ -707,6 +707,42 @@ internal static class Messages
     internal static string WingetImportCommandDescription =>
         ResourceManager.GetString("WingetImportCommandDescription", null) ?? string.Empty;
 
+    /// <summary>
+    /// Looks up a localized string similar to: No updates available.
+    /// </summary>
+    internal static string NoUpdatesAvailable =>
+        ResourceManager.GetString("NoUpdatesAvailable", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Found {0} package(s) with updates available.
+    /// </summary>
+    internal static string FoundUpdatesCount =>
+        ResourceManager.GetString("FoundUpdatesCount", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Upgrading {0} [{1}]...
+    /// </summary>
+    internal static string UpgradingPackage =>
+        ResourceManager.GetString("UpgradingPackage", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Failed to upgrade {0}: exit code {1}
+    /// </summary>
+    internal static string UpgradePackageFailed =>
+        ResourceManager.GetString("UpgradePackageFailed", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Successfully upgraded {0} package(s).
+    /// </summary>
+    internal static string UpgradeAllCompleted =>
+        ResourceManager.GetString("UpgradeAllCompleted", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Upgraded {0} package(s), {1} failed.
+    /// </summary>
+    internal static string UpgradeAllCompletedWithFailures =>
+        ResourceManager.GetString("UpgradeAllCompletedWithFailures", null) ?? string.Empty;
+
 }
 
 
