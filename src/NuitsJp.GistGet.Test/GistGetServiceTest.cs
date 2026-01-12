@@ -1442,6 +1442,168 @@ public class GistGetServiceTests
         }
     }
 
+    public class UpgradeAllAsync : GistGetServiceTests
+    {
+        [Fact]
+        public async Task WhenNoUpdatesAvailable_WritesInfoAndReturnsZero()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var options = new UpgradeOptions { Id = "placeholder" };
+
+            WinGetServiceMock
+                .Setup(x => x.GetPackagesWithUpdates())
+                .Returns(new List<WinGetPackage>());
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await Target.UpgradeAllAsync(options);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.ShouldBe(0);
+            ConsoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s =>
+                s.Contains("No updates", StringComparison.OrdinalIgnoreCase))), Times.Once);
+            PassthroughRunnerMock.Verify(x => x.RunAsync(It.IsAny<string[]>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task WhenUpdatesExist_WithFailures_ReportsWarnings()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var options = new UpgradeOptions { Id = "base-option" };
+            var credential = new Credential("user", "token");
+            var packagesWithUpdates = new List<WinGetPackage>
+            {
+                new("Package One", new PackageId("Package.One"), new Version("2.0.0"), null, "winget"),
+                new("Package Two", new PackageId("Package.Two"), new Version("3.0.0"), null, "winget")
+            };
+
+            var existingPackages = new List<GistGetPackage>
+            {
+                new() { Id = "Package.One" },
+                new() { Id = "Package.Two" }
+            };
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            WinGetServiceMock
+                .Setup(x => x.GetPackagesWithUpdates())
+                .Returns(packagesWithUpdates);
+
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == "Package.One")))
+                .Returns(new WinGetPackage("Package One", new PackageId("Package.One"), new Version("2.0.0"), null, "winget"));
+
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == "Package.Two")))
+                .Returns(new WinGetPackage("Package Two", new PackageId("Package.Two"), new Version("3.0.0"), null, "winget"));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(existingPackages);
+
+            PassthroughRunnerMock
+                .SetupSequence(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "upgrade" &&
+                    args.Contains("--id", StringComparer.Ordinal))))
+                .ReturnsAsync(0)
+                .ReturnsAsync(1);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await Target.UpgradeAllAsync(options);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.ShouldBe(0);
+            ConsoleServiceMock.Verify(x => x.WriteWarning(It.Is<string>(s =>
+                s.Contains("Package Two", StringComparison.OrdinalIgnoreCase) ||
+                s.Contains("fail", StringComparison.OrdinalIgnoreCase))), Times.AtLeastOnce);
+            PassthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args =>
+                args[0] == "upgrade" && args.Contains("Package.One", StringComparer.Ordinal))), Times.Once);
+            PassthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args =>
+                args[0] == "upgrade" && args.Contains("Package.Two", StringComparer.Ordinal))), Times.Once);
+        }
+
+        [Fact]
+        public async Task WhenAllUpgradesSucceed_ReportsSuccessForAllPackages()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var options = new UpgradeOptions { Id = "base-option" };
+            var credential = new Credential("user", "token");
+            var packagesWithUpdates = new List<WinGetPackage>
+            {
+                new("Package One", new PackageId("Package.One"), new Version("2.0.0"), null, "winget"),
+                new("Package Two", new PackageId("Package.Two"), new Version("3.0.0"), null, "winget")
+            };
+
+            var existingPackages = new List<GistGetPackage>
+            {
+                new() { Id = "Package.One" },
+                new() { Id = "Package.Two" }
+            };
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            WinGetServiceMock
+                .Setup(x => x.GetPackagesWithUpdates())
+                .Returns(packagesWithUpdates);
+
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == "Package.One")))
+                .Returns(new WinGetPackage("Package One", new PackageId("Package.One"), new Version("2.0.0"), null, "winget"));
+
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == "Package.Two")))
+                .Returns(new WinGetPackage("Package Two", new PackageId("Package.Two"), new Version("3.0.0"), null, "winget"));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(existingPackages);
+
+            PassthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "upgrade" &&
+                    args.Contains("--id", StringComparer.Ordinal))))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await Target.UpgradeAllAsync(options);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.ShouldBe(0);
+            ConsoleServiceMock.Verify(x => x.WriteSuccess(It.Is<string>(s =>
+                s.Contains(packagesWithUpdates.Count.ToString(), StringComparison.Ordinal))), Times.AtLeastOnce);
+            ConsoleServiceMock.Verify(x => x.WriteWarning(It.IsAny<string>()), Times.Never);
+        }
+    }
+
     public class UninstallAndSaveAsync : GistGetServiceTests
     {
         [Fact]
@@ -3930,6 +4092,53 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             AuthServiceMock.Verify(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
             ConsoleServiceMock.Verify(x => x.WriteError(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task WhenAuthenticated_DoesNotWriteDirectlyToConsole()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var credential = new Credential("user", "token");
+            var packages = new List<GistGetPackage>
+            {
+                new GistGetPackage { Id = "Package.One", Name = "Package One", Pin = "1.0.0" },
+                new GistGetPackage { Id = "Package.Two", Name = "Package Two", Pin = null }
+            };
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(packages);
+
+            var originalOut = Console.Out;
+            var buffer = new StringWriter();
+            Console.SetOut(buffer);
+
+            try
+            {
+                // -------------------------------------------------------------------
+                // Act
+                // -------------------------------------------------------------------
+                await Target.ListGistPackagesAsync();
+            }
+            finally
+            {
+                Console.SetOut(originalOut);
+            }
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            buffer.ToString().ShouldBe(string.Empty);
         }
     }
 }

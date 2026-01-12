@@ -463,7 +463,7 @@ public class CommandBuilderTests : IDisposable
         }
 
         [Fact]
-        public async Task WithAll_PassesThroughToWinget()
+        public async Task WithAll_CallsUpgradeAllAsync()
         {
             // -------------------------------------------------------------------
             // Arrange
@@ -472,7 +472,7 @@ public class CommandBuilderTests : IDisposable
             var root = target.Build();
 
             GistGetServiceMock
-                .Setup(x => x.RunPassthroughAsync("upgrade", It.IsAny<string[]>()))
+                .Setup(x => x.UpgradeAllAsync(It.IsAny<UpgradeOptions>()))
                 .ReturnsAsync(0);
 
             // -------------------------------------------------------------------
@@ -484,14 +484,13 @@ public class CommandBuilderTests : IDisposable
             // Assert
             // -------------------------------------------------------------------
             exitCode.ShouldBe(0);
-            GistGetServiceMock.Verify(x => x.RunPassthroughAsync("upgrade", It.Is<string[]>(args =>
-                args.Length == 1 && args[0] == "--all"
-            )), Times.Once);
+            GistGetServiceMock.Verify(x => x.UpgradeAllAsync(It.IsAny<UpgradeOptions>()), Times.Once);
             GistGetServiceMock.Verify(x => x.UpgradeAndSaveAsync(It.IsAny<UpgradeOptions>()), Times.Never);
+            GistGetServiceMock.Verify(x => x.RunPassthroughAsync("upgrade", It.IsAny<string[]>()), Times.Never);
         }
 
         [Fact]
-        public async Task WithAllAndOtherOptions_PassesThroughToWinget()
+        public async Task WithAllAndOtherOptions_CallsUpgradeAllAsyncWithOptions()
         {
             // -------------------------------------------------------------------
             // Arrange
@@ -500,7 +499,7 @@ public class CommandBuilderTests : IDisposable
             var root = target.Build();
 
             GistGetServiceMock
-                .Setup(x => x.RunPassthroughAsync("upgrade", It.IsAny<string[]>()))
+                .Setup(x => x.UpgradeAllAsync(It.IsAny<UpgradeOptions>()))
                 .ReturnsAsync(0);
 
             // -------------------------------------------------------------------
@@ -512,13 +511,12 @@ public class CommandBuilderTests : IDisposable
             // Assert
             // -------------------------------------------------------------------
             exitCode.ShouldBe(0);
-            GistGetServiceMock.Verify(x => x.RunPassthroughAsync("upgrade", It.Is<string[]>(args =>
-                args.Length == 3 &&
-                args[0] == "--all" &&
-                args[1] == "--silent" &&
-                args[2] == "--accept-package-agreements"
+            GistGetServiceMock.Verify(x => x.UpgradeAllAsync(It.Is<UpgradeOptions>(o =>
+                o.Silent &&
+                o.AcceptPackageAgreements
             )), Times.Once);
             GistGetServiceMock.Verify(x => x.UpgradeAndSaveAsync(It.IsAny<UpgradeOptions>()), Times.Never);
+            GistGetServiceMock.Verify(x => x.RunPassthroughAsync("upgrade", It.IsAny<string[]>()), Times.Never);
         }
     }
 

@@ -345,6 +345,26 @@
     <value>依存関係の失敗を無視します</value>
   </data>
 
+  <!-- Upgrade All Messages -->
+  <data name="NoUpdatesAvailable" xml:space="preserve">
+    <value>利用可能な更新がありません。</value>
+  </data>
+  <data name="FoundUpdatesCount" xml:space="preserve">
+    <value>更新可能なパッケージが {0} 個見つかりました。</value>
+  </data>
+  <data name="UpgradingPackage" xml:space="preserve">
+    <value>{0} [{1}] をアップグレード中...</value>
+  </data>
+  <data name="UpgradePackageFailed" xml:space="preserve">
+    <value>{0} のアップグレードに失敗しました: 終了コード {1}</value>
+  </data>
+  <data name="UpgradeAllCompleted" xml:space="preserve">
+    <value>{0} 個のパッケージのアップグレードが完了しました。</value>
+  </data>
+  <data name="UpgradeAllCompletedWithFailures" xml:space="preserve">
+    <value>{0} 個のパッケージをアップグレードしました。{1} 個は失敗しました。</value>
+  </data>
+
   <!-- Winget Passthrough Commands -->
   <data name="WingetListCommandDescription" xml:space="preserve">
     <value>インストール済みパッケージを表示します [パススルー]</value>
