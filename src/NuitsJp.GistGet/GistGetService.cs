@@ -472,10 +472,34 @@ public class GistGetService(
             return 0;
         }
 
-        consoleService.WriteInfo(string.Format(CultureInfo.CurrentCulture, Messages.FoundUpdatesCount, packagesWithUpdates.Count));
+        // Fetch skip list from Gist
+        var gistPackages = await GistGetPackagesAsync(null, null);
+        var skipPackageIds = gistPackages
+            .Where(p => p.SkipUpgradeAll)
+            .Select(p => p.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // Filter out skipped packages
+        var packagesToUpgrade = packagesWithUpdates
+            .Where(p => !skipPackageIds.Contains(p.Id.AsPrimitive()))
+            .ToList();
+
+        var skippedCount = packagesWithUpdates.Count - packagesToUpgrade.Count;
+        if (skippedCount > 0)
+        {
+            consoleService.WriteInfo(string.Format(CultureInfo.CurrentCulture, Messages.SkippedPackagesInUpgradeAll, skippedCount));
+        }
+
+        if (packagesToUpgrade.Count == 0)
+        {
+            consoleService.WriteInfo(Messages.NoUpdatesAvailable);
+            return 0;
+        }
+
+        consoleService.WriteInfo(string.Format(CultureInfo.CurrentCulture, Messages.FoundUpdatesCount, packagesToUpgrade.Count));
 
         var failedCount = 0;
-        foreach (var package in packagesWithUpdates)
+        foreach (var package in packagesToUpgrade)
         {
             consoleService.WriteInfo(string.Format(CultureInfo.CurrentCulture, Messages.UpgradingPackage, package.Name, package.Id.AsPrimitive()));
 
@@ -491,11 +515,11 @@ public class GistGetService(
 
         if (failedCount > 0)
         {
-            consoleService.WriteWarning(string.Format(CultureInfo.CurrentCulture, Messages.UpgradeAllCompletedWithFailures, packagesWithUpdates.Count - failedCount, failedCount));
+            consoleService.WriteWarning(string.Format(CultureInfo.CurrentCulture, Messages.UpgradeAllCompletedWithFailures, packagesToUpgrade.Count - failedCount, failedCount));
         }
         else
         {
-            consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.UpgradeAllCompleted, packagesWithUpdates.Count));
+            consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.UpgradeAllCompleted, packagesToUpgrade.Count));
         }
 
         return 0;
@@ -965,6 +989,149 @@ public class GistGetService(
 
         var rows = packages
             .Where(p => !p.Uninstall)
+            .Select(p => new GistPackageRow
+            {
+                Id = p.Id,
+                Name = p.Name ?? " ",
+                Pin = p.Pin ?? " "
+            })
+            .ToList();
+
+        var table = Build
+            .MarkdownTable<GistPackageRow>()
+            .ToString(rows);
+        consoleService.WriteInfo(table);
+    }
+
+    /// <inheritdoc/>
+    public async Task SkipAddAndSaveAsync(string packageId)
+    {
+        if (!credentialService.TryGetCredential(out var credential))
+        {
+            await AuthLoginAsync();
+            if (!credentialService.TryGetCredential(out credential))
+            {
+                throw new InvalidOperationException("Failed to retrieve credentials after login.");
+            }
+        }
+
+        IReadOnlyList<GistGetPackage> existingPackages;
+        using (consoleService.WriteProgress(Messages.FetchingFromGist))
+        {
+            existingPackages = await gitHubService.GetPackagesAsync(
+                credential.Token,
+                Constants.DefaultGistFileName,
+                Constants.DefaultGistDescription);
+        }
+
+        var existingPackage = existingPackages.FirstOrDefault(p =>
+            string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase));
+
+        var localPackage = winGetService.FindById(new PackageId(packageId));
+
+        var newPackages = existingPackages
+            .Where(p => !string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var packageToSave = existingPackage ?? new GistGetPackage { Id = packageId };
+        packageToSave.Name = localPackage?.Name ?? packageToSave.Name;
+        packageToSave.SkipUpgradeAll = true;
+
+        newPackages.Add(packageToSave);
+
+        using (consoleService.WriteProgress(Messages.SavingToGist))
+        {
+            await gitHubService.SavePackagesAsync(
+                credential.Token,
+                "",
+                Constants.DefaultGistFileName,
+                Constants.DefaultGistDescription,
+                newPackages);
+        }
+
+        consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.SkipAddSuccess, packageToSave.ToDisplayString(colorize: true)));
+    }
+
+    /// <inheritdoc/>
+    public async Task SkipRemoveAndSaveAsync(string packageId)
+    {
+        if (!credentialService.TryGetCredential(out var credential))
+        {
+            await AuthLoginAsync();
+            if (!credentialService.TryGetCredential(out credential))
+            {
+                throw new InvalidOperationException("Failed to retrieve credentials after login.");
+            }
+        }
+
+        IReadOnlyList<GistGetPackage> existingPackages;
+        using (consoleService.WriteProgress(Messages.FetchingFromGist))
+        {
+            existingPackages = await gitHubService.GetPackagesAsync(
+                credential.Token,
+                Constants.DefaultGistFileName,
+                Constants.DefaultGistDescription);
+        }
+
+        var existingPackage = existingPackages.FirstOrDefault(p =>
+            string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase));
+
+        var localPackage = winGetService.FindById(new PackageId(packageId));
+
+        var newPackages = existingPackages
+            .Where(p => !string.Equals(p.Id, packageId, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var packageToSave = existingPackage ?? new GistGetPackage { Id = packageId };
+        packageToSave.Name = localPackage?.Name ?? packageToSave.Name;
+        packageToSave.SkipUpgradeAll = false;
+
+        newPackages.Add(packageToSave);
+
+        using (consoleService.WriteProgress(Messages.SavingToGist))
+        {
+            await gitHubService.SavePackagesAsync(
+                credential.Token,
+                "",
+                Constants.DefaultGistFileName,
+                Constants.DefaultGistDescription,
+                newPackages);
+        }
+
+        consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.SkipRemoveSuccess, packageToSave.ToDisplayString(colorize: true)));
+    }
+
+    /// <inheritdoc/>
+    public async Task ListSkipPackagesAsync()
+    {
+        if (!credentialService.TryGetCredential(out var credential))
+        {
+            consoleService.WriteInfo("You are not logged in.");
+            return;
+        }
+
+        IReadOnlyList<GistGetPackage> packages;
+        using (consoleService.WriteProgress(Messages.FetchingFromGist))
+        {
+            packages = await gitHubService.GetPackagesAsync(
+                credential.Token,
+                Constants.DefaultGistFileName,
+                Constants.DefaultGistDescription);
+        }
+
+        var skippedPackages = packages
+            .Where(p => p.SkipUpgradeAll && !p.Uninstall)
+            .ToList();
+
+        if (skippedPackages.Count == 0)
+        {
+            consoleService.WriteInfo(Messages.NoSkippedPackages);
+            return;
+        }
+
+        consoleService.WriteInfo(string.Format(CultureInfo.CurrentCulture, Messages.SkippedPackagesCount, skippedPackages.Count));
+
+        var rows = skippedPackages
             .Select(p => new GistPackageRow
             {
                 Id = p.Id,

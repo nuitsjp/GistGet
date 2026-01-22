@@ -31,6 +31,7 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
             BuildUninstallCommand(),
             BuildUpgradeCommand(),
             BuildPinCommand(),
+            BuildSkipCommand(),
             BuildGistCommand()
         };
 
@@ -467,6 +468,42 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
             await gistGetService.RunPassthroughAsync("pin", allArgs.ToArray());
         }, resetArgs);
         command.Add(reset);
+
+        return command;
+    }
+
+    private Command BuildSkipCommand()
+    {
+        var command = new Command("skip", Messages.SkipCommandDescription);
+
+        var add = new Command("add", Messages.SkipAddCommandDescription);
+        var addIdOption = new Option<string>("--id", Messages.SkipAddIdOptionDescription) { IsRequired = true };
+        add.Add(addIdOption);
+        add.SetHandler(async context =>
+        {
+            var parseResult = context.ParseResult;
+            var id = parseResult.GetValueForOption(addIdOption)!;
+            await gistGetService.SkipAddAndSaveAsync(id);
+        });
+        command.Add(add);
+
+        var remove = new Command("remove", Messages.SkipRemoveCommandDescription);
+        var removeIdOption = new Option<string>("--id", Messages.SkipRemoveIdOptionDescription) { IsRequired = true };
+        remove.Add(removeIdOption);
+        remove.SetHandler(async context =>
+        {
+            var parseResult = context.ParseResult;
+            var id = parseResult.GetValueForOption(removeIdOption)!;
+            await gistGetService.SkipRemoveAndSaveAsync(id);
+        });
+        command.Add(remove);
+
+        var list = new Command("list", Messages.SkipListCommandDescription);
+        list.SetHandler(async () =>
+        {
+            await gistGetService.ListSkipPackagesAsync();
+        });
+        command.Add(list);
 
         return command;
     }

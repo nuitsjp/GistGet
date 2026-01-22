@@ -57,6 +57,9 @@ public class GistGetPackage
     [YamlMember(Alias = "skipDependencies", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
     public bool SkipDependencies { get; set; }
 
+    [YamlMember(Alias = "skipUpgradeAll", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
+    public bool SkipUpgradeAll { get; set; }
+
     [YamlMember(Alias = "header", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public string? Header { get; set; }
 

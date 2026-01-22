@@ -176,6 +176,31 @@ public class GistGetPackageSerializerTests
             yaml.ShouldNotContain("uninstall:");
             yaml.ShouldNotContain("silent:");
             yaml.ShouldNotContain("force:");
+            yaml.ShouldNotContain("skipUpgradeAll:");
+        }
+
+        [Fact]
+        public void WithSkipUpgradeAll_IncludesFlag()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packages = new List<GistGetPackage>
+            {
+                new() { Id = "Skip.Package", Name = "Skip Package", SkipUpgradeAll = true }
+            };
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var yaml = GistGetPackageSerializer.Serialize(packages);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            yaml.ShouldContain("Skip.Package:");
+            yaml.ShouldContain("name: Skip Package");
+            yaml.ShouldContain("skipUpgradeAll: true");
         }
 
         [Fact]
@@ -367,6 +392,32 @@ public class GistGetPackageSerializerTests
             // -------------------------------------------------------------------
             packages.Count.ShouldBe(1);
             packages[0].Id.ShouldBe("Empty.Package");
+        }
+
+        [Fact]
+        public void WithSkipUpgradeAll_DeserializesFlag()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var yaml = """
+                       Skip.Package:
+                         name: Skip Package
+                         skipUpgradeAll: true
+                       """;
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var packages = GistGetPackageSerializer.Deserialize(yaml);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            packages.Count.ShouldBe(1);
+            packages[0].Id.ShouldBe("Skip.Package");
+            packages[0].Name.ShouldBe("Skip Package");
+            packages[0].SkipUpgradeAll.ShouldBeTrue();
         }
     }
 

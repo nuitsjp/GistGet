@@ -73,6 +73,23 @@ public interface IGistGetService
     /// Lists packages from Gist.
     /// </summary>
     Task ListGistPackagesAsync();
+
+    /// <summary>
+    /// Adds skipUpgradeAll flag to a package and saves to Gist.
+    /// </summary>
+    /// <param name="packageId">Package identifier to skip.</param>
+    Task SkipAddAndSaveAsync(string packageId);
+
+    /// <summary>
+    /// Removes skipUpgradeAll flag from a package and saves to Gist.
+    /// </summary>
+    /// <param name="packageId">Package identifier to remove skip.</param>
+    Task SkipRemoveAndSaveAsync(string packageId);
+
+    /// <summary>
+    /// Lists packages with skipUpgradeAll flag set.
+    /// </summary>
+    Task ListSkipPackagesAsync();
 }
 
 
