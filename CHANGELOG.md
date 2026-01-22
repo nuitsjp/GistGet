@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-01-22
+
+### Added
+
+- `skip` コマンドを追加（`upgrade --all` 時にスキップするパッケージを管理）
+- `upgrade` コマンドに詳細なwingetオプションを追加（--include-unknown、--pinned、--include-pinned、--uninstall-previous、--force、--purge、--custom、--override、--installationNotes）
+- GitHub CLI自動インストール用のセットアップスクリプトを追加
+
+### Changed
+
+- `--all` アップグレードをサービス経由に統一
+
+### Fixed
+
+- GitHub Release更新時の文字化けを修正
+
 ## [1.3.0] - 2026-01-09
 
 ### Added
@@ -114,7 +130,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - YAML-based configuration management (`GistGet.yaml`)
 - Secure credential storage using Windows Credential Manager
 
-[Unreleased]: https://github.com/nuitsjp/GistGet/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/nuitsjp/GistGet/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/nuitsjp/GistGet/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/nuitsjp/GistGet/compare/v1.2.4...v1.3.0
 [1.2.4]: https://github.com/nuitsjp/GistGet/compare/v1.2.3...v1.2.4
 [1.2.3]: https://github.com/nuitsjp/GistGet/compare/v1.2.2...v1.2.3
