@@ -414,4 +414,39 @@
   <data name="GistCommandDescription" xml:space="preserve">
     <value>Gistのパッケージを一覧表示します</value>
   </data>
+
+  <!-- Skip Command Messages -->
+  <data name="SkipCommandDescription" xml:space="preserve">
+    <value>upgrade --all 時にスキップするパッケージを管理します</value>
+  </data>
+  <data name="SkipAddCommandDescription" xml:space="preserve">
+    <value>upgrade --all のスキップ リストにパッケージを追加します</value>
+  </data>
+  <data name="SkipAddIdOptionDescription" xml:space="preserve">
+    <value>スキップするパッケージの ID</value>
+  </data>
+  <data name="SkipRemoveCommandDescription" xml:space="preserve">
+    <value>スキップ リストからパッケージを削除します</value>
+  </data>
+  <data name="SkipRemoveIdOptionDescription" xml:space="preserve">
+    <value>スキップ リストから削除するパッケージの ID</value>
+  </data>
+  <data name="SkipListCommandDescription" xml:space="preserve">
+    <value>upgrade --all 時にスキップされるパッケージを一覧表示します</value>
+  </data>
+  <data name="SkipAddSuccess" xml:space="preserve">
+    <value>{0} をスキップ リストに追加し、Gist に保存しました</value>
+  </data>
+  <data name="SkipRemoveSuccess" xml:space="preserve">
+    <value>{0} をスキップ リストから削除し、Gist に保存しました</value>
+  </data>
+  <data name="SkippedPackagesCount" xml:space="preserve">
+    <value>upgrade --all 時にスキップされるパッケージ: {0} 個</value>
+  </data>
+  <data name="NoSkippedPackages" xml:space="preserve">
+    <value>スキップ設定されたパッケージはありません。</value>
+  </data>
+  <data name="SkippedPackagesInUpgradeAll" xml:space="preserve">
+    <value>スキップ リストに基づいて {0} 個のパッケージをスキップします。</value>
+  </data>
 </root>

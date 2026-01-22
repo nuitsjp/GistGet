@@ -40,6 +40,7 @@ public static class GistGetPackageSerializer
                 AcceptPackageAgreements = package.AcceptPackageAgreements,
                 AcceptSourceAgreements = package.AcceptSourceAgreements,
                 SkipDependencies = package.SkipDependencies,
+                SkipUpgradeAll = package.SkipUpgradeAll,
                 Header = package.Header,
                 InstallerType = package.InstallerType,
                 Log = package.Log,
@@ -77,6 +78,7 @@ public static class GistGetPackageSerializer
                 || package.AcceptPackageAgreements
                 || package.AcceptSourceAgreements
                 || package.SkipDependencies
+                || package.SkipUpgradeAll
                 || !string.IsNullOrWhiteSpace(package.Header)
                 || !string.IsNullOrWhiteSpace(package.InstallerType)
                 || !string.IsNullOrWhiteSpace(package.Log)

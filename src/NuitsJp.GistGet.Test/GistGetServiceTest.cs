@@ -1451,6 +1451,19 @@ public class GistGetServiceTests
             // Arrange
             // -------------------------------------------------------------------
             var options = new UpgradeOptions { Id = "placeholder" };
+            var credential = new Credential("user", "token");
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new List<GistGetPackage>());
 
             WinGetServiceMock
                 .Setup(x => x.GetPackagesWithUpdates())
@@ -1466,7 +1479,8 @@ public class GistGetServiceTests
             // -------------------------------------------------------------------
             result.ShouldBe(0);
             ConsoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s =>
-                s.Contains("No updates", StringComparison.OrdinalIgnoreCase))), Times.Once);
+                s.Contains("No updates", StringComparison.OrdinalIgnoreCase) ||
+                s.Contains("利用可能な更新がありません", StringComparison.OrdinalIgnoreCase))), Times.Once);
             PassthroughRunnerMock.Verify(x => x.RunAsync(It.IsAny<string[]>()), Times.Never);
         }
 
@@ -4139,6 +4153,446 @@ public class GistGetServiceTests
             // Assert
             // -------------------------------------------------------------------
             buffer.ToString().ShouldBe(string.Empty);
+        }
+    }
+
+    public class SkipAddAndSaveAsync : GistGetServiceTests
+    {
+        [Fact]
+        public async Task WhenAuthenticated_SetsSkipUpgradeAllAndSavesToGist()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Test.Package";
+            var credential = new Credential("user", "token");
+            var existingPackages = new List<GistGetPackage>
+            {
+                new() { Id = packageId, Name = "Test Package" }
+            };
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(existingPackages);
+
+            IReadOnlyList<GistGetPackage>? saved = null;
+            AuthServiceMock
+                .Setup(x => x.SavePackagesAsync(
+                    credential.Token,
+                    "",
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<IReadOnlyList<GistGetPackage>>()))
+                .Callback<string, string, string, string, IReadOnlyList<GistGetPackage>>((_, _, _, _, list) => saved = list)
+                .Returns(Task.CompletedTask);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await Target.SkipAddAndSaveAsync(packageId);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            saved.ShouldNotBeNull();
+            saved!.Single().Id.ShouldBe(packageId);
+            saved!.Single().SkipUpgradeAll.ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task WhenPackageNotInGist_CreatesNewEntryWithSkipFlag()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "New.Package";
+            var displayName = "New Package Display";
+            var credential = new Credential("user", "token");
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new List<GistGetPackage>());
+
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == packageId)))
+                .Returns(new WinGetPackage(displayName, new PackageId(packageId), new Version("1.0.0"), null, null));
+
+            IReadOnlyList<GistGetPackage>? saved = null;
+            AuthServiceMock
+                .Setup(x => x.SavePackagesAsync(
+                    credential.Token,
+                    "",
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<IReadOnlyList<GistGetPackage>>()))
+                .Callback<string, string, string, string, IReadOnlyList<GistGetPackage>>((_, _, _, _, list) => saved = list)
+                .Returns(Task.CompletedTask);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await Target.SkipAddAndSaveAsync(packageId);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            saved.ShouldNotBeNull();
+            saved!.Single().Id.ShouldBe(packageId);
+            saved!.Single().Name.ShouldBe(displayName);
+            saved!.Single().SkipUpgradeAll.ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task WhenNotAuthenticated_TriggersLoginAndFails()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Test.Package";
+            var savedCredential = new Credential("user", "token");
+            var attempts = 0;
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = null;
+                    attempts++;
+                    return false;
+                }));
+
+            AuthServiceMock.Setup(x => x.LoginAsync())
+                .ReturnsAsync(savedCredential);
+
+            // -------------------------------------------------------------------
+            // Act & Assert
+            // -------------------------------------------------------------------
+            await Should.ThrowAsync<InvalidOperationException>(async () => await Target.SkipAddAndSaveAsync(packageId));
+
+            AuthServiceMock.Verify(x => x.LoginAsync(), Times.Once);
+            CredentialServiceMock.Verify(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny), Times.Exactly(2));
+        }
+    }
+
+    public class SkipRemoveAndSaveAsync : GistGetServiceTests
+    {
+        [Fact]
+        public async Task WhenAuthenticated_RemovesSkipUpgradeAllAndSavesToGist()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Test.Package";
+            var credential = new Credential("user", "token");
+            var existingPackages = new List<GistGetPackage>
+            {
+                new() { Id = packageId, Name = "Test Package", SkipUpgradeAll = true }
+            };
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(existingPackages);
+
+            IReadOnlyList<GistGetPackage>? saved = null;
+            AuthServiceMock
+                .Setup(x => x.SavePackagesAsync(
+                    credential.Token,
+                    "",
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<IReadOnlyList<GistGetPackage>>()))
+                .Callback<string, string, string, string, IReadOnlyList<GistGetPackage>>((_, _, _, _, list) => saved = list)
+                .Returns(Task.CompletedTask);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await Target.SkipRemoveAndSaveAsync(packageId);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            saved.ShouldNotBeNull();
+            saved!.Single().Id.ShouldBe(packageId);
+            saved!.Single().SkipUpgradeAll.ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task WhenNotAuthenticated_TriggersLoginAndFails()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var packageId = "Test.Package";
+            var savedCredential = new Credential("user", "token");
+            var attempts = 0;
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = null;
+                    attempts++;
+                    return false;
+                }));
+
+            AuthServiceMock.Setup(x => x.LoginAsync())
+                .ReturnsAsync(savedCredential);
+
+            // -------------------------------------------------------------------
+            // Act & Assert
+            // -------------------------------------------------------------------
+            await Should.ThrowAsync<InvalidOperationException>(async () => await Target.SkipRemoveAndSaveAsync(packageId));
+
+            AuthServiceMock.Verify(x => x.LoginAsync(), Times.Once);
+            CredentialServiceMock.Verify(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny), Times.Exactly(2));
+        }
+    }
+
+    public class ListSkipPackagesAsync : GistGetServiceTests
+    {
+        [Fact]
+        public async Task WhenNotAuthenticated_WritesError()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = null;
+                    return false;
+                }));
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await Target.ListSkipPackagesAsync();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            ConsoleServiceMock.Verify(x => x.WriteInfo(It.IsAny<string>()), Times.Once);
+            AuthServiceMock.Verify(x => x.GetPackagesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task WhenNoSkippedPackages_WritesNoSkippedMessage()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var credential = new Credential("user", "token");
+            var packages = new List<GistGetPackage>
+            {
+                new() { Id = "Package.One", Name = "Package One", SkipUpgradeAll = false }
+            };
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(packages);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await Target.ListSkipPackagesAsync();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            ConsoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s =>
+                s.Contains("No packages", StringComparison.OrdinalIgnoreCase) ||
+                s.Contains("スキップ設定されたパッケージはありません", StringComparison.OrdinalIgnoreCase))), Times.Once);
+        }
+
+        [Fact]
+        public async Task WhenSkippedPackagesExist_ListsThemInTable()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var credential = new Credential("user", "token");
+            var packages = new List<GistGetPackage>
+            {
+                new() { Id = "Package.Skip", Name = "Skipped Package", SkipUpgradeAll = true },
+                new() { Id = "Package.Normal", Name = "Normal Package", SkipUpgradeAll = false }
+            };
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out Credential? c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(packages);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await Target.ListSkipPackagesAsync();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            // Verify count message was written
+            ConsoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s =>
+                s.Contains("1") && (s.Contains("package", StringComparison.OrdinalIgnoreCase) || s.Contains("パッケージ")))), Times.AtLeastOnce);
+        }
+    }
+
+    public class UpgradeAllAsync_SkipFeature : GistGetServiceTests
+    {
+        [Fact]
+        public async Task WhenSkipListExists_SkipsMarkedPackages()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var options = new UpgradeOptions { Id = "base-option" };
+            var credential = new Credential("user", "token");
+            var packagesWithUpdates = new List<WinGetPackage>
+            {
+                new("Package One", new PackageId("Package.One"), new Version("2.0.0"), null, "winget"),
+                new("Package Skip", new PackageId("Package.Skip"), new Version("3.0.0"), null, "winget")
+            };
+
+            var gistPackages = new List<GistGetPackage>
+            {
+                new() { Id = "Package.One" },
+                new() { Id = "Package.Skip", SkipUpgradeAll = true }
+            };
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            WinGetServiceMock
+                .Setup(x => x.GetPackagesWithUpdates())
+                .Returns(packagesWithUpdates);
+
+            WinGetServiceMock
+                .Setup(x => x.FindById(It.Is<PackageId>(id => id.AsPrimitive() == "Package.One")))
+                .Returns(new WinGetPackage("Package One", new PackageId("Package.One"), new Version("2.0.0"), null, "winget"));
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(gistPackages);
+
+            PassthroughRunnerMock
+                .Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                    args[0] == "upgrade" &&
+                    args.Contains("--id", StringComparer.Ordinal))))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await Target.UpgradeAllAsync(options);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.ShouldBe(0);
+            // Package.One should be upgraded
+            PassthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args =>
+                args[0] == "upgrade" && args.Contains("Package.One", StringComparer.Ordinal))), Times.Once);
+            // Package.Skip should NOT be upgraded
+            PassthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args =>
+                args[0] == "upgrade" && args.Contains("Package.Skip", StringComparer.Ordinal))), Times.Never);
+            // Skipped count message should be written
+            ConsoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s =>
+                s.Contains("1") && (s.Contains("skip", StringComparison.OrdinalIgnoreCase) || s.Contains("スキップ")))), Times.AtLeastOnce);
+        }
+
+        [Fact]
+        public async Task WhenAllPackagesSkipped_WritesNoUpdatesMessage()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var options = new UpgradeOptions { Id = "base-option" };
+            var credential = new Credential("user", "token");
+            var packagesWithUpdates = new List<WinGetPackage>
+            {
+                new("Package Skip", new PackageId("Package.Skip"), new Version("2.0.0"), null, "winget")
+            };
+
+            var gistPackages = new List<GistGetPackage>
+            {
+                new() { Id = "Package.Skip", SkipUpgradeAll = true }
+            };
+
+            CredentialServiceMock
+                .Setup(x => x.TryGetCredential(out It.Ref<Credential?>.IsAny))
+                .Returns(new TryGetCredentialDelegate((out c) =>
+                {
+                    c = credential;
+                    return true;
+                }));
+
+            WinGetServiceMock
+                .Setup(x => x.GetPackagesWithUpdates())
+                .Returns(packagesWithUpdates);
+
+            AuthServiceMock
+                .Setup(x => x.GetPackagesAsync(credential.Token, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(gistPackages);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await Target.UpgradeAllAsync(options);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.ShouldBe(0);
+            PassthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args =>
+                args[0] == "upgrade")), Times.Never);
+            ConsoleServiceMock.Verify(x => x.WriteInfo(It.Is<string>(s =>
+                s.Contains("No updates", StringComparison.OrdinalIgnoreCase) ||
+                s.Contains("利用可能な更新がありません", StringComparison.OrdinalIgnoreCase))), Times.Once);
         }
     }
 }

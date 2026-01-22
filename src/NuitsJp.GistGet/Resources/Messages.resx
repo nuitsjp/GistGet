@@ -414,4 +414,39 @@
   <data name="WingetImportCommandDescription" xml:space="preserve">
     <value>Installs all packages in a file [Passthrough]</value>
   </data>
+
+  <!-- Skip Command Messages -->
+  <data name="SkipCommandDescription" xml:space="preserve">
+    <value>Manage packages to skip during upgrade --all</value>
+  </data>
+  <data name="SkipAddCommandDescription" xml:space="preserve">
+    <value>Adds a package to the skip list for upgrade --all</value>
+  </data>
+  <data name="SkipAddIdOptionDescription" xml:space="preserve">
+    <value>Package ID to skip</value>
+  </data>
+  <data name="SkipRemoveCommandDescription" xml:space="preserve">
+    <value>Removes a package from the skip list</value>
+  </data>
+  <data name="SkipRemoveIdOptionDescription" xml:space="preserve">
+    <value>Package ID to remove from skip list</value>
+  </data>
+  <data name="SkipListCommandDescription" xml:space="preserve">
+    <value>Lists packages that will be skipped during upgrade --all</value>
+  </data>
+  <data name="SkipAddSuccess" xml:space="preserve">
+    <value>{0} has been added to the skip list and saved to Gist</value>
+  </data>
+  <data name="SkipRemoveSuccess" xml:space="preserve">
+    <value>{0} has been removed from the skip list and saved to Gist</value>
+  </data>
+  <data name="SkippedPackagesCount" xml:space="preserve">
+    <value>{0} package(s) will be skipped during upgrade --all:</value>
+  </data>
+  <data name="NoSkippedPackages" xml:space="preserve">
+    <value>No packages are set to be skipped.</value>
+  </data>
+  <data name="SkippedPackagesInUpgradeAll" xml:space="preserve">
+    <value>Skipping {0} package(s) based on skip list.</value>
+  </data>
 </root>

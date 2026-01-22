@@ -743,6 +743,72 @@ internal static class Messages
     internal static string UpgradeAllCompletedWithFailures =>
         ResourceManager.GetString("UpgradeAllCompletedWithFailures", null) ?? string.Empty;
 
+    /// <summary>
+    /// Looks up a localized string similar to: Manage packages to skip during upgrade --all
+    /// </summary>
+    internal static string SkipCommandDescription =>
+        ResourceManager.GetString("SkipCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Adds a package to the skip list for upgrade --all
+    /// </summary>
+    internal static string SkipAddCommandDescription =>
+        ResourceManager.GetString("SkipAddCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Package ID to skip
+    /// </summary>
+    internal static string SkipAddIdOptionDescription =>
+        ResourceManager.GetString("SkipAddIdOptionDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Removes a package from the skip list
+    /// </summary>
+    internal static string SkipRemoveCommandDescription =>
+        ResourceManager.GetString("SkipRemoveCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Package ID to remove from skip list
+    /// </summary>
+    internal static string SkipRemoveIdOptionDescription =>
+        ResourceManager.GetString("SkipRemoveIdOptionDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Lists packages that will be skipped during upgrade --all
+    /// </summary>
+    internal static string SkipListCommandDescription =>
+        ResourceManager.GetString("SkipListCommandDescription", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: {0} has been added to the skip list and saved to Gist
+    /// </summary>
+    internal static string SkipAddSuccess =>
+        ResourceManager.GetString("SkipAddSuccess", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: {0} has been removed from the skip list and saved to Gist
+    /// </summary>
+    internal static string SkipRemoveSuccess =>
+        ResourceManager.GetString("SkipRemoveSuccess", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: {0} package(s) will be skipped during upgrade --all:
+    /// </summary>
+    internal static string SkippedPackagesCount =>
+        ResourceManager.GetString("SkippedPackagesCount", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: No packages are set to be skipped.
+    /// </summary>
+    internal static string NoSkippedPackages =>
+        ResourceManager.GetString("NoSkippedPackages", null) ?? string.Empty;
+
+    /// <summary>
+    /// Looks up a localized string similar to: Skipping {0} package(s) based on skip list.
+    /// </summary>
+    internal static string SkippedPackagesInUpgradeAll =>
+        ResourceManager.GetString("SkippedPackagesInUpgradeAll", null) ?? string.Empty;
+
 }
 
 
