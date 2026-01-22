@@ -38,6 +38,13 @@ public interface IGistGetService
     Task<int> UpgradeAndSaveAsync(UpgradeOptions options);
 
     /// <summary>
+    /// Upgrades all packages that have updates available.
+    /// </summary>
+    /// <param name="options">Base upgrade options to apply to all packages.</param>
+    /// <returns>Process exit code (0 if all succeed).</returns>
+    Task<int> UpgradeAllAsync(UpgradeOptions options);
+
+    /// <summary>
     /// Adds a pin and persists it to the manifest.
     /// </summary>
     Task PinAddAndSaveAsync(string packageId, string version, string? pinType = null, bool force = false);

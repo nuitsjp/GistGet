@@ -21,6 +21,11 @@ public interface IWinGetService
     /// Returns all pinned packages.
     /// </summary>
     IReadOnlyList<WinGetPin> GetPinnedPackages();
+
+    /// <summary>
+    /// Returns all packages that have updates available.
+    /// </summary>
+    IReadOnlyList<WinGetPackage> GetPackagesWithUpdates();
 }
 
 

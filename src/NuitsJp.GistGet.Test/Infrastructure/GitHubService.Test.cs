@@ -195,10 +195,17 @@ public class GitHubServiceTests
                 // -------------------------------------------------------------------
                 await target.SavePackagesAsync(token, gist.HtmlUrl, fileName, description, packages);
 
-                // GitHub API の反映を待つ
-                await Task.Delay(TimeSpan.FromSeconds(2));
+                IReadOnlyList<GistGetPackage> retrievedPackages = Array.Empty<GistGetPackage>();
+                for (var attempt = 0; attempt < 5; attempt++)
+                {
+                    retrievedPackages = await target.GetPackagesAsync(token, fileName, description);
+                    if (retrievedPackages.Any(p => p.Id == "TestPackage.AllProperties"))
+                    {
+                        break;
+                    }
 
-                var retrievedPackages = await target.GetPackagesAsync(token, fileName, description);
+                    await Task.Delay(TimeSpan.FromSeconds(2));
+                }
 
                 // -------------------------------------------------------------------
                 // Assert: 全プロパティが保持されていることを検証

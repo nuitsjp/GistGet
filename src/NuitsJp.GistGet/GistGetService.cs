@@ -452,6 +452,56 @@ public class GistGetService(
     }
 
     /// <summary>
+    /// Upgrades all packages that have updates available.
+    /// </summary>
+    /// <param name="options">Base upgrade options to apply to all packages.</param>
+    /// <returns>Process exit code (0 if all succeed).</returns>
+    public async Task<int> UpgradeAllAsync(UpgradeOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        IReadOnlyList<WinGetPackage> packagesWithUpdates;
+        using (consoleService.WriteProgress(Messages.FetchingInstalledPackages))
+        {
+            packagesWithUpdates = winGetService.GetPackagesWithUpdates();
+        }
+
+        if (packagesWithUpdates.Count == 0)
+        {
+            consoleService.WriteInfo(Messages.NoUpdatesAvailable);
+            return 0;
+        }
+
+        consoleService.WriteInfo(string.Format(CultureInfo.CurrentCulture, Messages.FoundUpdatesCount, packagesWithUpdates.Count));
+
+        var failedCount = 0;
+        foreach (var package in packagesWithUpdates)
+        {
+            consoleService.WriteInfo(string.Format(CultureInfo.CurrentCulture, Messages.UpgradingPackage, package.Name, package.Id.AsPrimitive()));
+
+            var packageOptions = options with { Id = package.Id.AsPrimitive() };
+            var exitCode = await UpgradeAndSaveAsync(packageOptions);
+
+            if (exitCode != 0)
+            {
+                consoleService.WriteWarning(string.Format(CultureInfo.CurrentCulture, Messages.UpgradePackageFailed, package.Name, exitCode));
+                failedCount++;
+            }
+        }
+
+        if (failedCount > 0)
+        {
+            consoleService.WriteWarning(string.Format(CultureInfo.CurrentCulture, Messages.UpgradeAllCompletedWithFailures, packagesWithUpdates.Count - failedCount, failedCount));
+        }
+        else
+        {
+            consoleService.WriteSuccess(string.Format(CultureInfo.CurrentCulture, Messages.UpgradeAllCompleted, packagesWithUpdates.Count));
+        }
+
+        return 0;
+    }
+
+    /// <summary>
     /// Adds a pin and persists it to the manifest.
     /// </summary>
     /// <param name="packageId">Package identifier to pin.</param>
@@ -923,9 +973,10 @@ public class GistGetService(
             })
             .ToList();
 
-        Build
+        var table = Build
             .MarkdownTable<GistPackageRow>()
-            .WriteLine(rows);
+            .ToString(rows);
+        consoleService.WriteInfo(table);
     }
 }
 

@@ -401,6 +401,16 @@ public partial class WinGetService : IWinGetService
         return pins;
     }
 
+    /// <summary>
+    /// Gets all packages that have updates available.
+    /// </summary>
+    /// <returns>Packages with available updates.</returns>
+    public IReadOnlyList<WinGetPackage> GetPackagesWithUpdates()
+    {
+        var allPackages = GetAllInstalledPackages();
+        return allPackages.Where(p => p.UsableVersion != null).ToList();
+    }
+
     [ExcludeFromCodeCoverage]
     private static string RunWinGetPinList()
     {

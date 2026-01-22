@@ -365,7 +365,6 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
             var parseResult = context.ParseResult;
             var id = parseResult.GetValueForOption(idOption) ?? parseResult.GetValueForArgument(idArgument);
             var all = parseResult.GetValueForOption(allOption);
-            var recognizedArgs = BuildRecognizedArgs();
 
             if (!string.IsNullOrWhiteSpace(id) && !all)
             {
@@ -413,98 +412,44 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
 
                 context.ExitCode = await gistGetService.UpgradeAndSaveAsync(options);
             }
+            else if (all)
+            {
+                // --all: Upgrade all packages with available updates individually
+                var baseOptions = new UpgradeOptions
+                {
+                    Id = string.Empty, // Will be set for each package
+                    Version = parseResult.GetValueForOption(versionOption),
+                    Source = parseResult.GetValueForOption(sourceOption),
+                    Scope = parseResult.GetValueForOption(scopeOption),
+                    Architecture = parseResult.GetValueForOption(archOption),
+                    Location = parseResult.GetValueForOption(locationOption),
+                    Exact = parseResult.GetValueForOption(exactOption),
+                    Interactive = parseResult.GetValueForOption(interactiveOption),
+                    Silent = parseResult.GetValueForOption(silentOption),
+                    Purge = parseResult.GetValueForOption(purgeOption),
+                    Log = parseResult.GetValueForOption(logOption),
+                    Override = parseResult.GetValueForOption(overrideOption),
+                    Force = parseResult.GetValueForOption(forceOption),
+                    SkipDependencies = parseResult.GetValueForOption(skipDependenciesOption),
+                    Header = parseResult.GetValueForOption(headerOption),
+                    InstallerType = parseResult.GetValueForOption(installerTypeOption),
+                    Custom = parseResult.GetValueForOption(customOption),
+                    Locale = parseResult.GetValueForOption(localeOption),
+                    AcceptPackageAgreements = parseResult.GetValueForOption(acceptPackageAgreementsOption),
+                    AcceptSourceAgreements = parseResult.GetValueForOption(acceptSourceAgreementsOption),
+                    AllowHashMismatch = parseResult.GetValueForOption(ignoreSecurityHashOption),
+                    IncludeUnknown = parseResult.GetValueForOption(includeUnknownOption),
+                    IncludePinned = parseResult.GetValueForOption(includePinnedOption),
+                    UninstallPrevious = parseResult.GetValueForOption(uninstallPreviousOption),
+                    AllowReboot = parseResult.GetValueForOption(allowRebootOption)
+                };
+
+                context.ExitCode = await gistGetService.UpgradeAllAsync(baseOptions);
+            }
             else
             {
-                var argsToPass = parseResult.UnmatchedTokens.ToList();
-                if (all)
-                {
-                    argsToPass.Insert(0, "--all");
-                }
-                argsToPass.AddRange(recognizedArgs);
-                context.ExitCode = await gistGetService.RunPassthroughAsync("upgrade", argsToPass.ToArray());
-            }
-
-            List<string> BuildRecognizedArgs()
-            {
-                var args = new List<string>();
-
-                var manifest = parseResult.GetValueForOption(manifestOption);
-                if (!string.IsNullOrEmpty(manifest)) { args.Add("--manifest"); args.Add(manifest); }
-
-                var name = parseResult.GetValueForOption(nameOption);
-                if (!string.IsNullOrEmpty(name)) { args.Add("--name"); args.Add(name); }
-
-                var moniker = parseResult.GetValueForOption(monikerOption);
-                if (!string.IsNullOrEmpty(moniker)) { args.Add("--moniker"); args.Add(moniker); }
-
-                var version = parseResult.GetValueForOption(versionOption);
-                if (!string.IsNullOrEmpty(version)) { args.Add("--version"); args.Add(version); }
-
-                var source = parseResult.GetValueForOption(sourceOption);
-                if (!string.IsNullOrEmpty(source)) { args.Add("--source"); args.Add(source); }
-
-                var scope = parseResult.GetValueForOption(scopeOption);
-                if (!string.IsNullOrEmpty(scope)) { args.Add("--scope"); args.Add(scope); }
-
-                var arch = parseResult.GetValueForOption(archOption);
-                if (!string.IsNullOrEmpty(arch)) { args.Add("--architecture"); args.Add(arch); }
-
-                var location = parseResult.GetValueForOption(locationOption);
-                if (!string.IsNullOrEmpty(location)) { args.Add("--location"); args.Add(location); }
-
-                if (parseResult.GetValueForOption(exactOption)) { args.Add("--exact"); }
-                if (parseResult.GetValueForOption(interactiveOption)) { args.Add("--interactive"); }
-                if (parseResult.GetValueForOption(silentOption)) { args.Add("--silent"); }
-                if (parseResult.GetValueForOption(purgeOption)) { args.Add("--purge"); }
-
-                var log = parseResult.GetValueForOption(logOption);
-                if (!string.IsNullOrEmpty(log)) { args.Add("--log"); args.Add(log); }
-
-                var overrideArg = parseResult.GetValueForOption(overrideOption);
-                if (!string.IsNullOrEmpty(overrideArg)) { args.Add("--override"); args.Add(overrideArg); }
-
-                if (parseResult.GetValueForOption(forceOption)) { args.Add("--force"); }
-                if (parseResult.GetValueForOption(skipDependenciesOption)) { args.Add("--skip-dependencies"); }
-
-                var header = parseResult.GetValueForOption(headerOption);
-                if (!string.IsNullOrEmpty(header)) { args.Add("--header"); args.Add(header); }
-
-                var installerType = parseResult.GetValueForOption(installerTypeOption);
-                if (!string.IsNullOrEmpty(installerType)) { args.Add("--installer-type"); args.Add(installerType); }
-
-                var custom = parseResult.GetValueForOption(customOption);
-                if (!string.IsNullOrEmpty(custom)) { args.Add("--custom"); args.Add(custom); }
-
-                var locale = parseResult.GetValueForOption(localeOption);
-                if (!string.IsNullOrEmpty(locale)) { args.Add("--locale"); args.Add(locale); }
-
-                if (parseResult.GetValueForOption(acceptPackageAgreementsOption)) { args.Add("--accept-package-agreements"); }
-                if (parseResult.GetValueForOption(acceptSourceAgreementsOption)) { args.Add("--accept-source-agreements"); }
-                if (parseResult.GetValueForOption(ignoreSecurityHashOption)) { args.Add("--ignore-security-hash"); }
-                if (parseResult.GetValueForOption(includeUnknownOption)) { args.Add("--include-unknown"); }
-                if (parseResult.GetValueForOption(includePinnedOption)) { args.Add("--include-pinned"); }
-                if (parseResult.GetValueForOption(uninstallPreviousOption)) { args.Add("--uninstall-previous"); }
-                if (parseResult.GetValueForOption(allowRebootOption)) { args.Add("--allow-reboot"); }
-
-                var authenticationMode = parseResult.GetValueForOption(authenticationModeOption);
-                if (!string.IsNullOrEmpty(authenticationMode)) { args.Add("--authentication-mode"); args.Add(authenticationMode); }
-
-                var authenticationAccount = parseResult.GetValueForOption(authenticationAccountOption);
-                if (!string.IsNullOrEmpty(authenticationAccount)) { args.Add("--authentication-account"); args.Add(authenticationAccount); }
-
-                if (parseResult.GetValueForOption(ignoreLocalArchiveMalwareScanOption)) { args.Add("--ignore-local-archive-malware-scan"); }
-                if (parseResult.GetValueForOption(waitOption)) { args.Add("--wait"); }
-                if (parseResult.GetValueForOption(openLogsOption)) { args.Add("--logs"); }
-                if (parseResult.GetValueForOption(verboseLogsOption)) { args.Add("--verbose"); }
-                if (parseResult.GetValueForOption(ignoreWarningsOption)) { args.Add("--nowarn"); }
-                if (parseResult.GetValueForOption(disableInteractivityOption)) { args.Add("--disable-interactivity"); }
-
-                var proxy = parseResult.GetValueForOption(proxyOption);
-                if (!string.IsNullOrEmpty(proxy)) { args.Add("--proxy"); args.Add(proxy); }
-
-                if (parseResult.GetValueForOption(noProxyOption)) { args.Add("--no-proxy"); }
-
-                return args;
+                // No --id and no --all: passthrough to winget (shows available upgrades)
+                context.ExitCode = await gistGetService.RunPassthroughAsync("upgrade", parseResult.UnmatchedTokens.ToArray());
             }
         });
 
