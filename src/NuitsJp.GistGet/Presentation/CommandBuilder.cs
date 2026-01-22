@@ -264,17 +264,27 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
         var idArgument = new Argument<string?>("package", Messages.UpgradePackageArgumentDescription) { Arity = ArgumentArity.ZeroOrOne };
         var idOption = new Option<string>("--id", Messages.OptionDescriptionFilterById);
         var versionOption = new Option<string>("--version", Messages.OptionDescriptionVersion);
+        versionOption.AddAlias("-v");
+        var manifestOption = new Option<string>("--manifest", Messages.OptionDescriptionManifest);
+        manifestOption.AddAlias("-m");
+        var nameOption = new Option<string>("--name", Messages.OptionDescriptionFilterByName);
+        var monikerOption = new Option<string>("--moniker", Messages.OptionDescriptionMoniker);
         var sourceOption = new Option<string>("--source", Messages.OptionDescriptionSource);
         sourceOption.AddAlias("-s");
         var scopeOption = new Option<string>("--scope", Messages.OptionDescriptionScope);
         var archOption = new Option<string>("--architecture", Messages.OptionDescriptionArchitecture);
+        archOption.AddAlias("-a");
         var locationOption = new Option<string>("--location", Messages.OptionDescriptionLocation);
+        locationOption.AddAlias("-l");
         var exactOption = new Option<bool>("--exact", Messages.OptionDescriptionExact);
         exactOption.AddAlias("-e");
         var interactiveOption = new Option<bool>("--interactive", Messages.OptionDescriptionInteractiveUpgrade);
+        interactiveOption.AddAlias("-i");
         var silentOption = new Option<bool>("--silent", Messages.OptionDescriptionSilentUpgrade);
+        silentOption.AddAlias("-h");
         var purgeOption = new Option<bool>("--purge", Messages.OptionDescriptionPurge);
         var logOption = new Option<string>("--log", Messages.OptionDescriptionLogLocation);
+        logOption.AddAlias("-o");
         var overrideOption = new Option<string>("--override", Messages.OptionDescriptionOverrideArguments);
         var forceOption = new Option<bool>("--force", Messages.OptionDescriptionForceOverrideHash);
         var skipDependenciesOption = new Option<bool>("--skip-dependencies", Messages.OptionDescriptionSkipDependencies);
@@ -287,14 +297,33 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
         var ignoreSecurityHashOption = new Option<bool>("--ignore-security-hash", Messages.OptionDescriptionIgnoreSecurityHash);
         var includeUnknownOption = new Option<bool>("--include-unknown", Messages.OptionDescriptionIncludeUnknown);
         includeUnknownOption.AddAlias("-u");
-        var includePinnedOption = new Option<bool>("--pinned", Messages.OptionDescriptionIncludePinned);
+        includeUnknownOption.AddAlias("--unknown");
+        var includePinnedOption = new Option<bool>("--include-pinned", Messages.OptionDescriptionIncludePinned);
+        includePinnedOption.AddAlias("--pinned");
         var uninstallPreviousOption = new Option<bool>("--uninstall-previous", Messages.OptionDescriptionUninstallPrevious);
         var allowRebootOption = new Option<bool>("--allow-reboot", Messages.OptionDescriptionAllowReboot);
         var allOption = new Option<bool>("--all", Messages.OptionDescriptionUpgradeAll);
         allOption.AddAlias("-r");
+        allOption.AddAlias("--recurse");
+        var authenticationModeOption = new Option<string>("--authentication-mode", Messages.OptionDescriptionAuthenticationMode);
+        var authenticationAccountOption = new Option<string>("--authentication-account", Messages.OptionDescriptionAuthenticationAccount);
+        var ignoreLocalArchiveMalwareScanOption = new Option<bool>("--ignore-local-archive-malware-scan", Messages.OptionDescriptionIgnoreLocalArchiveMalwareScan);
+        var waitOption = new Option<bool>("--wait", Messages.OptionDescriptionWait);
+        var openLogsOption = new Option<bool>("--logs", Messages.OptionDescriptionOpenLogs);
+        openLogsOption.AddAlias("--open-logs");
+        var verboseLogsOption = new Option<bool>("--verbose", Messages.OptionDescriptionVerboseLogs);
+        verboseLogsOption.AddAlias("--verbose-logs");
+        var ignoreWarningsOption = new Option<bool>("--nowarn", Messages.OptionDescriptionIgnoreWarnings);
+        ignoreWarningsOption.AddAlias("--ignore-warnings");
+        var disableInteractivityOption = new Option<bool>("--disable-interactivity", Messages.OptionDescriptionDisableInteractivity);
+        var proxyOption = new Option<string>("--proxy", Messages.OptionDescriptionProxy);
+        var noProxyOption = new Option<bool>("--no-proxy", Messages.OptionDescriptionNoProxy);
 
         command.Add(idArgument);
         command.Add(idOption);
+        command.Add(manifestOption);
+        command.Add(nameOption);
+        command.Add(monikerOption);
         command.Add(versionOption);
         command.Add(sourceOption);
         command.Add(scopeOption);
@@ -320,6 +349,16 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
         command.Add(uninstallPreviousOption);
         command.Add(allowRebootOption);
         command.Add(allOption);
+        command.Add(authenticationModeOption);
+        command.Add(authenticationAccountOption);
+        command.Add(ignoreLocalArchiveMalwareScanOption);
+        command.Add(waitOption);
+        command.Add(openLogsOption);
+        command.Add(verboseLogsOption);
+        command.Add(ignoreWarningsOption);
+        command.Add(disableInteractivityOption);
+        command.Add(proxyOption);
+        command.Add(noProxyOption);
         command.TreatUnmatchedTokensAsErrors = false;
 
         command.SetHandler(async context =>
@@ -333,6 +372,9 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
                 var options = new UpgradeOptions
                 {
                     Id = id,
+                    Manifest = parseResult.GetValueForOption(manifestOption),
+                    Name = parseResult.GetValueForOption(nameOption),
+                    Moniker = parseResult.GetValueForOption(monikerOption),
                     Version = parseResult.GetValueForOption(versionOption),
                     Source = parseResult.GetValueForOption(sourceOption),
                     Scope = parseResult.GetValueForOption(scopeOption),
@@ -356,7 +398,17 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
                     IncludeUnknown = parseResult.GetValueForOption(includeUnknownOption),
                     IncludePinned = parseResult.GetValueForOption(includePinnedOption),
                     UninstallPrevious = parseResult.GetValueForOption(uninstallPreviousOption),
-                    AllowReboot = parseResult.GetValueForOption(allowRebootOption)
+                    AllowReboot = parseResult.GetValueForOption(allowRebootOption),
+                    AuthenticationMode = parseResult.GetValueForOption(authenticationModeOption),
+                    AuthenticationAccount = parseResult.GetValueForOption(authenticationAccountOption),
+                    IgnoreLocalArchiveMalwareScan = parseResult.GetValueForOption(ignoreLocalArchiveMalwareScanOption),
+                    Wait = parseResult.GetValueForOption(waitOption),
+                    OpenLogs = parseResult.GetValueForOption(openLogsOption),
+                    VerboseLogs = parseResult.GetValueForOption(verboseLogsOption),
+                    IgnoreWarnings = parseResult.GetValueForOption(ignoreWarningsOption),
+                    DisableInteractivity = parseResult.GetValueForOption(disableInteractivityOption),
+                    Proxy = parseResult.GetValueForOption(proxyOption),
+                    NoProxy = parseResult.GetValueForOption(noProxyOption)
                 };
 
                 context.ExitCode = await gistGetService.UpgradeAndSaveAsync(options);
@@ -592,7 +644,3 @@ public class CommandBuilder(IGistGetService gistGetService, IAnsiConsole console
         }
     }
 }
-
-
-
-

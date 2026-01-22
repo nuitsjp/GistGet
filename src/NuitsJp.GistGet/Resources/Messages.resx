@@ -242,8 +242,17 @@
   <data name="OptionDescriptionFilterById" xml:space="preserve">
     <value>Filter results by id</value>
   </data>
+  <data name="OptionDescriptionFilterByName" xml:space="preserve">
+    <value>Filter results by name</value>
+  </data>
+  <data name="OptionDescriptionMoniker" xml:space="preserve">
+    <value>Filter results by moniker</value>
+  </data>
   <data name="OptionDescriptionVersion" xml:space="preserve">
     <value>Use the specified version</value>
+  </data>
+  <data name="OptionDescriptionManifest" xml:space="preserve">
+    <value>Path to the package manifest</value>
   </data>
   <data name="OptionDescriptionScope" xml:space="preserve">
     <value>Select install scope (user or machine)</value>
@@ -328,6 +337,36 @@
   </data>
   <data name="OptionDescriptionAllowReboot" xml:space="preserve">
     <value>Allows the installer to reboot the machine if required</value>
+  </data>
+  <data name="OptionDescriptionAuthenticationMode" xml:space="preserve">
+    <value>Authentication prompt mode (silent, silentPreferred, or interactive)</value>
+  </data>
+  <data name="OptionDescriptionAuthenticationAccount" xml:space="preserve">
+    <value>Account to use for authentication</value>
+  </data>
+  <data name="OptionDescriptionIgnoreLocalArchiveMalwareScan" xml:space="preserve">
+    <value>Ignore malware scan for archive packages from local manifests</value>
+  </data>
+  <data name="OptionDescriptionWait" xml:space="preserve">
+    <value>Prompt before exiting</value>
+  </data>
+  <data name="OptionDescriptionOpenLogs" xml:space="preserve">
+    <value>Open the default log location</value>
+  </data>
+  <data name="OptionDescriptionVerboseLogs" xml:space="preserve">
+    <value>Enable verbose WinGet logs</value>
+  </data>
+  <data name="OptionDescriptionIgnoreWarnings" xml:space="preserve">
+    <value>Suppress warning output</value>
+  </data>
+  <data name="OptionDescriptionDisableInteractivity" xml:space="preserve">
+    <value>Disable interactive prompts</value>
+  </data>
+  <data name="OptionDescriptionProxy" xml:space="preserve">
+    <value>Proxy to use for this execution</value>
+  </data>
+  <data name="OptionDescriptionNoProxy" xml:space="preserve">
+    <value>Disable proxy for this execution</value>
   </data>
   <data name="UninstallAllOptionDescription" xml:space="preserve">
     <value>Remove all versions of the package</value>

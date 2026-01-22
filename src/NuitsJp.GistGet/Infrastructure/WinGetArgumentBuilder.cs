@@ -53,6 +53,9 @@ public class WinGetArgumentBuilder : IWinGetArgumentBuilder
 
         var args = new List<string> { "upgrade", "--id", options.Id };
 
+        if (!string.IsNullOrEmpty(options.Manifest)) { args.Add("--manifest"); args.Add(options.Manifest); }
+        if (!string.IsNullOrEmpty(options.Name)) { args.Add("--name"); args.Add(options.Name); }
+        if (!string.IsNullOrEmpty(options.Moniker)) { args.Add("--moniker"); args.Add(options.Moniker); }
         if (!string.IsNullOrEmpty(options.Version)) { args.Add("--version"); args.Add(options.Version); }
         if (!string.IsNullOrEmpty(options.Source)) { args.Add("--source"); args.Add(options.Source); }
         if (options.Exact) args.Add("--exact");
@@ -61,6 +64,16 @@ public class WinGetArgumentBuilder : IWinGetArgumentBuilder
         if (options.IncludePinned) args.Add("--include-pinned");
         if (options.UninstallPrevious) args.Add("--uninstall-previous");
         if (options.AllowReboot) args.Add("--allow-reboot");
+        if (options.IgnoreLocalArchiveMalwareScan) args.Add("--ignore-local-archive-malware-scan");
+        if (options.Wait) args.Add("--wait");
+        if (options.OpenLogs) args.Add("--logs");
+        if (options.VerboseLogs) args.Add("--verbose");
+        if (options.IgnoreWarnings) args.Add("--nowarn");
+        if (options.DisableInteractivity) args.Add("--disable-interactivity");
+        if (!string.IsNullOrEmpty(options.Proxy)) { args.Add("--proxy"); args.Add(options.Proxy); }
+        if (options.NoProxy) args.Add("--no-proxy");
+        if (!string.IsNullOrEmpty(options.AuthenticationMode)) { args.Add("--authentication-mode"); args.Add(options.AuthenticationMode); }
+        if (!string.IsNullOrEmpty(options.AuthenticationAccount)) { args.Add("--authentication-account"); args.Add(options.AuthenticationAccount); }
 
         args.AddRange(BuildCommonInstallOptions(
             options.Scope, options.Architecture, options.Location,
@@ -139,7 +152,6 @@ public class WinGetArgumentBuilder : IWinGetArgumentBuilder
         return args;
     }
 }
-
 
 
 
