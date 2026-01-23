@@ -10,7 +10,16 @@ public record WinGetPackage(
     PackageId Id,
     Version Version,
     Version? UsableVersion,
-    string? Source);
+    string? Source)
+{
+    /// <summary>
+    /// Gets a value indicating whether the installed version is unknown.
+    /// WinGet reports "Unknown" when it cannot determine the installed version.
+    /// </summary>
+    public bool IsVersionUnknown =>
+        string.IsNullOrEmpty(Version.AsPrimitive()) ||
+        Version.AsPrimitive().Equals("Unknown", StringComparison.OrdinalIgnoreCase);
+}
 
 
 

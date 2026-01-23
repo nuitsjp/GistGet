@@ -1466,7 +1466,7 @@ public class GistGetServiceTests
                 .ReturnsAsync(new List<GistGetPackage>());
 
             WinGetServiceMock
-                .Setup(x => x.GetPackagesWithUpdates())
+                .Setup(x => x.GetPackagesWithUpdates(It.IsAny<bool>()))
                 .Returns(new List<WinGetPackage>());
 
             // -------------------------------------------------------------------
@@ -1513,7 +1513,7 @@ public class GistGetServiceTests
                 }));
 
             WinGetServiceMock
-                .Setup(x => x.GetPackagesWithUpdates())
+                .Setup(x => x.GetPackagesWithUpdates(It.IsAny<bool>()))
                 .Returns(packagesWithUpdates);
 
             WinGetServiceMock
@@ -1582,7 +1582,7 @@ public class GistGetServiceTests
                 }));
 
             WinGetServiceMock
-                .Setup(x => x.GetPackagesWithUpdates())
+                .Setup(x => x.GetPackagesWithUpdates(It.IsAny<bool>()))
                 .Returns(packagesWithUpdates);
 
             WinGetServiceMock
@@ -4508,7 +4508,7 @@ public class GistGetServiceTests
                 }));
 
             WinGetServiceMock
-                .Setup(x => x.GetPackagesWithUpdates())
+                .Setup(x => x.GetPackagesWithUpdates(It.IsAny<bool>()))
                 .Returns(packagesWithUpdates);
 
             WinGetServiceMock
@@ -4572,7 +4572,7 @@ public class GistGetServiceTests
                 }));
 
             WinGetServiceMock
-                .Setup(x => x.GetPackagesWithUpdates())
+                .Setup(x => x.GetPackagesWithUpdates(It.IsAny<bool>()))
                 .Returns(packagesWithUpdates);
 
             AuthServiceMock

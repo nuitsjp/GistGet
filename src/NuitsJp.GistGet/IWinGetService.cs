@@ -25,7 +25,20 @@ public interface IWinGetService
     /// <summary>
     /// Returns all packages that have updates available.
     /// </summary>
+    /// <remarks>
+    /// By default, packages with unknown installed versions are excluded.
+    /// Use <see cref="GetPackagesWithUpdates(bool)"/> to include them.
+    /// </remarks>
     IReadOnlyList<WinGetPackage> GetPackagesWithUpdates();
+
+    /// <summary>
+    /// Returns all packages that have updates available.
+    /// </summary>
+    /// <param name="includeUnknown">
+    /// When <c>true</c>, includes packages whose installed version is unknown.
+    /// When <c>false</c>, excludes such packages.
+    /// </param>
+    IReadOnlyList<WinGetPackage> GetPackagesWithUpdates(bool includeUnknown);
 }
 
 

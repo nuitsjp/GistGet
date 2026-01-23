@@ -304,18 +304,19 @@ public partial class WinGetService : IWinGetService
     /// </summary>
     private static Version? GetUsableVersion(CatalogPackage catalogPackage, PackageVersionInfo installedVersion)
     {
-        // Check for available updates by comparing versions.
-        // Note: IsUpdateAvailable performs applicability checks (architecture, requirements, pinning)
-        // and may return false even when AvailableVersions contains newer versions (e.g., arm64-only on x64).
-        // We use AvailableVersions[0] for simple version comparison without applicability constraints.
+        // Use IsUpdateAvailable to check if an applicable update exists.
+        // This performs applicability checks (architecture, system requirements, pinning).
+        // Only returns a version when the update is actually applicable to the current system.
+        if (!catalogPackage.IsUpdateAvailable)
+        {
+            return null;
+        }
+
         if (catalogPackage.AvailableVersions.Count > 0)
         {
-            var latestAvailableVersion = catalogPackage.AvailableVersions[0].Version;
-            if (latestAvailableVersion != installedVersion.Version)
-            {
-                return new Version(latestAvailableVersion);
-            }
+            return new Version(catalogPackage.AvailableVersions[0].Version);
         }
+
         return null;
     }
 
@@ -403,12 +404,28 @@ public partial class WinGetService : IWinGetService
 
     /// <summary>
     /// Gets all packages that have updates available.
+    /// By default, packages with unknown installed versions are excluded.
     /// </summary>
-    /// <returns>Packages with available updates.</returns>
+    /// <returns>Packages with available updates (excluding unknown versions).</returns>
     public IReadOnlyList<WinGetPackage> GetPackagesWithUpdates()
     {
+        return GetPackagesWithUpdates(includeUnknown: false);
+    }
+
+    /// <summary>
+    /// Gets all packages that have updates available.
+    /// </summary>
+    /// <param name="includeUnknown">
+    /// When <c>true</c>, includes packages whose installed version is unknown.
+    /// When <c>false</c>, excludes such packages.
+    /// </param>
+    /// <returns>Packages with available updates.</returns>
+    public IReadOnlyList<WinGetPackage> GetPackagesWithUpdates(bool includeUnknown)
+    {
         var allPackages = GetAllInstalledPackages();
-        return allPackages.Where(p => p.UsableVersion != null).ToList();
+        return allPackages
+            .Where(p => p.UsableVersion != null && (includeUnknown || !p.IsVersionUnknown))
+            .ToList();
     }
 
     [ExcludeFromCodeCoverage]
