@@ -1,96 +1,96 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+このファイルは、Claude Code (claude.ai/code) がこのリポジトリのコードを扱う際のガイダンスを提供します。
 
-## Language Policy
+## 言語ポリシー
 
-- **Think in English** but **interact with users in Japanese**
-- Plans, commit messages, and PR descriptions must be written in **Japanese**
+- **思考は英語**で行い、**ユーザーとのやり取りは日本語**で行うこと
+- プラン、コミットメッセージ、PRの説明は**日本語**で記述すること
 
-## Build & Development Commands
+## ビルド・開発コマンド
 
 ```powershell
-# Build
+# ビルド
 dotnet build src/GistGet.slnx -c Debug
 
-# Run CLI
+# CLI実行
 dotnet run --project src/NuitsJp.GistGet/NuitsJp.GistGet.csproj -- <command>
-# Examples: -- auth login, -- sync, -- install <id>
+# 例: -- auth login, -- sync, -- install <id>
 
-# Run all tests with coverage
+# 全テスト実行（カバレッジ付き）
 dotnet test src/NuitsJp.GistGet.Test/NuitsJp.GistGet.Test.csproj -c Debug --collect:"XPlat Code Coverage" --results-directory TestResults
 
-# Run a specific test class
+# 特定のテストクラスを実行
 dotnet test src/NuitsJp.GistGet.Test/NuitsJp.GistGet.Test.csproj --filter "FullyQualifiedName~ClassName"
 
-# Run a specific test method
+# 特定のテストメソッドを実行
 dotnet test src/NuitsJp.GistGet.Test/NuitsJp.GistGet.Test.csproj --filter "FullyQualifiedName~ClassName.MethodName"
 
-# Full code quality pipeline (FormatCheck -> Build -> Tests -> ReSharper)
+# コード品質パイプライン全体実行（FormatCheck -> Build -> Tests -> ReSharper）
 .\scripts\Run-CodeQuality.ps1
 
-# Run specific steps only
-.\scripts\Run-CodeQuality.ps1 -Build           # Build only
-.\scripts\Run-CodeQuality.ps1 -Build -Tests    # Build and tests only
-.\scripts\Run-CodeQuality.ps1 -Tests           # Tests only
+# 特定のステップのみ実行
+.\scripts\Run-CodeQuality.ps1 -Build           # ビルドのみ
+.\scripts\Run-CodeQuality.ps1 -Build -Tests    # ビルドとテストのみ
+.\scripts\Run-CodeQuality.ps1 -Tests           # テストのみ
 
-# GitHub authentication (required before integration tests)
+# GitHub認証（統合テスト実行前に必要）
 .\scripts\Run-AuthLogin.ps1
 ```
 
-## Architecture
+## アーキテクチャ
 
-GistGet is a CLI tool that syncs winget packages across devices via GitHub Gist.
+GistGetは、GitHub Gistを介してデバイス間でwingetパッケージを同期するCLIツールです。
 
-### Project Structure
+### プロジェクト構成
 
 ```
 src/
-├── GistGet/                       # Launcher executable (thin wrapper)
-│   └── Program.cs                 # Entry point that calls NuitsJp.GistGet
-├── NuitsJp.GistGet/               # Main library
-│   ├── Program.cs                 # DI bootstrap and CLI entry point
-│   ├── GistGetService.cs          # Main orchestration (init, sync, install, etc.)
-│   ├── GistGetPackage.cs          # Package model
-│   ├── GistGetPackageSerializer.cs # YAML serialization
+├── GistGet/                       # ランチャー実行ファイル（薄いラッパー）
+│   └── Program.cs                 # NuitsJp.GistGetを呼び出すエントリーポイント
+├── NuitsJp.GistGet/               # メインライブラリ
+│   ├── Program.cs                 # DIブートストラップとCLIエントリーポイント
+│   ├── GistGetService.cs          # メインオーケストレーション（init, sync, installなど）
+│   ├── GistGetPackage.cs          # パッケージモデル
+│   ├── GistGetPackageSerializer.cs # YAMLシリアライゼーション
 │   ├── Presentation/
-│   │   ├── CommandBuilder.cs      # All CLI commands definition
-│   │   └── ConsoleService.cs      # Console output handling
+│   │   ├── CommandBuilder.cs      # 全CLIコマンド定義
+│   │   └── ConsoleService.cs      # コンソール出力処理
 │   ├── Infrastructure/
-│   │   ├── WinGet/                # WinGet COM interop helpers
-│   │   ├── CredentialService.cs   # Windows Credential Manager
-│   │   ├── GitHubService.cs       # Gist read/write operations
-│   │   └── WinGetService.cs       # Package search, install, upgrade, uninstall
+│   │   ├── WinGet/                # WinGet COMインターオプヘルパー
+│   │   ├── CredentialService.cs   # Windows資格情報マネージャー
+│   │   ├── GitHubService.cs       # Gist読み書き操作
+│   │   └── WinGetService.cs       # パッケージ検索、インストール、アップグレード、アンインストール
 │   └── *Options.cs                # InstallOptions, UpgradeOptions, UninstallOptions
-└── NuitsJp.GistGet.Test/          # Test project
+└── NuitsJp.GistGet.Test/          # テストプロジェクト
 ```
 
-### Key Dependencies
+### 主要な依存関係
 
 - **Microsoft.WindowsPackageManager.ComInterop**: WinGet COM API
-- **Octokit**: GitHub API (Gist operations)
-- **System.CommandLine**: CLI argument parsing
-- **Spectre.Console**: Rich console output
-- **Sharprompt**: Interactive prompts for `init` command
-- **YamlDotNet**: YAML serialization for GistGet.yaml
-- **UnitGenerator**: Value object generation (PackageId, Version)
+- **Octokit**: GitHub API（Gist操作）
+- **System.CommandLine**: CLI引数パーシング
+- **Spectre.Console**: リッチコンソール出力
+- **Sharprompt**: `init`コマンド用の対話型プロンプト
+- **YamlDotNet**: GistGet.yaml用YAMLシリアライゼーション
+- **UnitGenerator**: 値オブジェクト生成（PackageId, Version）
 
-### Core Workflows
+### コアワークフロー
 
-1. **auth login**: GitHub device flow -> stores token in Windows Credential Manager
-2. **init**: Lists local winget packages -> user selects -> creates/updates GistGet.yaml in Gist
-3. **sync**: Fetches GistGet.yaml -> compares with local -> installs missing, uninstalls marked packages
-4. **install/upgrade/uninstall**: Standard winget operations + updates Gist
+1. **auth login**: GitHubデバイスフロー -> Windows資格情報マネージャーにトークンを保存
+2. **init**: ローカルのwingetパッケージ一覧 -> ユーザーが選択 -> GistにGistGet.yamlを作成/更新
+3. **sync**: GistGet.yamlを取得 -> ローカルと比較 -> 不足分をインストール、マーク済みをアンインストール
+4. **install/upgrade/uninstall**: 標準的なwinget操作 + Gistを更新
 
-## Coding Standards
+## コーディング規約
 
-- **Framework**: .NET 10.0, C# 14, Windows 10.0.26100.0
-- **DI**: All services registered in Program.cs, constructor injection
-- **Async**: `*Async` suffix for async methods
-- **Testing**: xUnit + Moq + Shouldly, strict AAA pattern with comment separators
-- **TDD**: Follow t-wada style RED-GREEN-REFACTOR cycle
+- **フレームワーク**: .NET 10.0, C# 14, Windows 10.0.26100.0
+- **DI**: 全サービスをProgram.csで登録、コンストラクタインジェクション
+- **非同期**: 非同期メソッドには`*Async`サフィックスを付与
+- **テスト**: xUnit + Moq + Shouldly、厳密なAAAパターン（コメント区切り）
+- **TDD**: t-wada流のRED-GREEN-REFACTORサイクルに従う
 
-### Test File Structure
+### テストファイル構成
 
 ```csharp
 public class WinGetServiceTests
@@ -121,8 +121,8 @@ public class WinGetServiceTests
 }
 ```
 
-## Coverage Requirements
+## カバレッジ要件
 
-- **Line coverage**: 98% minimum
-- **Branch coverage**: 85% minimum
-- **Per-file threshold**: 89% minimum
+- **行カバレッジ**: 最低98%
+- **分岐カバレッジ**: 最低85%
+- **ファイル単位の閾値**: 最低89%

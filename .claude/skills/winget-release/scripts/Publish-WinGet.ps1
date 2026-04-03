@@ -78,6 +78,10 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+# UTF-8エンコーディングを強制（Bash経由での実行時の文字化け防止）
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'
+
 #region Constants and Paths
 $PackageIdentifier = 'NuitsJp.GistGet'
 $Publisher = 'nuitsjp'
@@ -497,28 +501,37 @@ if (-not $SkipWinGetPR) {
     Push-Location $wingetPkgsPath
     try {
         if (-not $DryRun) {
-            # 既存のブランチがあれば削除
-            $existingBranch = git branch --list $branchName
-            if ($existingBranch) {
-                Write-Host "既存のブランチを削除: $branchName" -ForegroundColor Yellow
-                git branch -D $branchName
+            # master ブランチから新しいブランチを作成（既存ブランチは上書き）
+            Write-Host "ブランチを作成: $branchName (from master)" -ForegroundColor Yellow
+            git checkout -B $branchName master
+            if ($LASTEXITCODE -ne 0) {
+                Write-Error "ブランチの作成に失敗しました。"
+                exit $LASTEXITCODE
             }
-
-            # 新しいブランチを作成
-            Write-Host "ブランチを作成: $branchName" -ForegroundColor Yellow
-            git checkout -b $branchName
 
             # 変更をステージング
             git add "manifests/n/$Publisher/$PackageName/$Version"
+            if ($LASTEXITCODE -ne 0) {
+                Write-Error "ステージングに失敗しました。"
+                exit $LASTEXITCODE
+            }
 
             # コミット
             $commitMessage = "New version: $PackageIdentifier version $Version"
             Write-Host "コミット: $commitMessage" -ForegroundColor Yellow
             git commit -m $commitMessage
+            if ($LASTEXITCODE -ne 0) {
+                Write-Error "コミットに失敗しました。"
+                exit $LASTEXITCODE
+            }
 
             # fork リポジトリにプッシュ
             Write-Host "fork リポジトリにプッシュ中..." -ForegroundColor Yellow
             git push origin $branchName --force
+            if ($LASTEXITCODE -ne 0) {
+                Write-Error "プッシュに失敗しました。"
+                exit $LASTEXITCODE
+            }
 
             Write-Host "ブランチをプッシュしました: $branchName" -ForegroundColor Green
         } else {
