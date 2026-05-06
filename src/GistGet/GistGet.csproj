@@ -8,7 +8,7 @@
 		<RootNamespace>GistGet</RootNamespace>
 
 		<!-- パッケージ情報 -->
-		<Version>1.4.1</Version>
+		<Version>1.4.2</Version>
 		<Authors>nuitsjp</Authors>
 		<Company>nuitsjp</Company>
 		<Product>GistGet</Product>

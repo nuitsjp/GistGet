@@ -438,7 +438,7 @@ public partial class WinGetService : IWinGetService
             var startInfo = new ProcessStartInfo
             {
                 FileName = wingetPath,
-                Arguments = "pin list",
+                Arguments = "pin list --accept-source-agreements --disable-interactivity",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 CreateNoWindow = true
