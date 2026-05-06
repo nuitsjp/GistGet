@@ -696,7 +696,7 @@ if ($runBuild) {
 
     # Extract and display CA1502 (cyclomatic complexity) violations
     if ($diagnostics -and $diagnostics.Warnings) {
-        $complexityIssues = $diagnostics.Warnings | Where-Object { $_.Code -eq "CA1502" }
+        $complexityIssues = @($diagnostics.Warnings | Where-Object { $_.Code -eq "CA1502" })
         if ($complexityIssues.Count -gt 0) {
             Write-Host ""
             Write-Host "HIGH COMPLEXITY METHODS (CA1502)" -ForegroundColor Yellow
