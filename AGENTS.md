@@ -47,3 +47,8 @@
 ## Security & Configuration Tips
 - Authentication uses GitHub device flow; never commit personal access tokens. `CredentialService` stores secrets in Windows Credential Manager; avoid alternative secret storage without discussion.
 - Keep WinGet interactions deterministic: prefer explicit package IDs and versions in YAML; document any fallback logic. Update manifests and docs together when command semantics change.
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- SPECKIT END -->
