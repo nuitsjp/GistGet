@@ -1,252 +1,115 @@
 ---
-
-description: "Task list template for feature implementation"
+description: "機能実装用タスクリストテンプレート"
 ---
 
-# Tasks: [FEATURE NAME]
+# タスク: [FEATURE NAME]
 
-**Input**: Design documents from `/specs/[###-feature-name]/`
+**入力**: `/specs/[###-feature-name]/` の設計ドキュメント
 
-**Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
+**前提**: plan.md（必須）、spec.md（ユーザーストーリーに必須）、research.md、data-model.md、contracts/
 
-**Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
+**テスト**: t-wada 式 TDD に従い、新しい振る舞いには必ず先に失敗するテストを追加する。
 
-**Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
+**構成**: 各ユーザーストーリーを独立して実装、テストできるようにグループ化する。
 
-## Format: `[ID] [P?] [Story] Description`
+## 形式: `[ID] [P?] [Story] 説明`
 
-- **[P]**: Can run in parallel (different files, no dependencies)
-- **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
-- Include exact file paths in descriptions
+- **[P]**: 別ファイルを扱い、依存関係がないため並列実行できる。
+- **[Story]**: 対応するユーザーストーリー（例: US1、US2、US3）。
+- 説明には正確なファイルパスを含める。
 
-## Path Conventions
+## パス規約
 
-- **Single project**: `src/`, `tests/` at repository root
-- **Web app**: `backend/src/`, `frontend/src/`
-- **Mobile**: `api/src/`, `ios/src/` or `android/src/`
-- Paths shown below assume single project - adjust based on plan.md structure
+- 本体: `src/GistGet/`
+- テスト: `src/GistGet.Tests/`
+- スクリプト: `scripts/`
+- 仕様: `specs/[###-feature-name]/`
 
-<!--
-  ============================================================================
-  IMPORTANT: The tasks below are SAMPLE TASKS for illustration purposes only.
+## Phase 1: 準備（共有基盤）
 
-  The /speckit-tasks command MUST replace these with actual tasks based on:
-  - User stories from spec.md (with their priorities P1, P2, P3...)
-  - Feature requirements from plan.md
-  - Entities from data-model.md
-  - Endpoints from contracts/
+**目的**: 対象ファイル、既存パターン、テスト配置を確認する。
 
-  Tasks MUST be organized by user story so each story can be:
-  - Implemented independently
-  - Tested independently
-  - Delivered as an MVP increment
-
-  DO NOT keep these sample tasks in the generated tasks.md file.
-  ============================================================================
--->
-
-## Phase 1: Setup (Shared Infrastructure)
-
-**Purpose**: Project initialization and basic structure
-
-- [ ] T001 Create project structure per implementation plan
-- [ ] T002 Initialize [language] project with [framework] dependencies
-- [ ] T003 [P] Configure linting and formatting tools
+- [ ] T001 対象機能に関係する既存実装とテストを確認する
+- [ ] T002 追加または変更するファイルパスを確定する
+- [ ] T003 [P] 必要なテストデータまたはモック方針を整理する
 
 ---
 
-## Phase 2: Foundational (Blocking Prerequisites)
+## Phase 2: RED（失敗するテスト）
 
-**Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
+**目的**: 実装前に期待する振る舞いをテストで固定する。
 
-**⚠️ CRITICAL**: No user story work can begin until this phase is complete
+**重要**: このフェーズのテストは、実装前に失敗することを確認する。
 
-Examples of foundational tasks (adjust based on your project):
+- [ ] T004 [P] [US1] ユーザーストーリー 1 の失敗する単体テストを追加する
+- [ ] T005 [P] [US1] 副作用またはプレビューがある場合は副作用なしの失敗テストを追加する
+- [ ] T006 [P] [US2] ユーザーストーリー 2 の失敗する単体テストを追加する
+- [ ] T007 [P] [US3] ユーザーストーリー 3 の失敗する単体テストを追加する
+- [ ] T008 追加したテストが期待どおり失敗することを確認する
 
-- [ ] T004 Setup database schema and migrations framework
-- [ ] T005 [P] Implement authentication/authorization framework
-- [ ] T006 [P] Setup API routing and middleware structure
-- [ ] T007 Create base models/entities that all stories depend on
-- [ ] T008 Configure error handling and logging infrastructure
-- [ ] T009 Setup environment configuration management
-
-**Checkpoint**: Foundation ready - user story implementation can now begin in parallel
+**チェックポイント**: RED が確認できるまで実装に進まない。
 
 ---
 
-## Phase 3: User Story 1 - [Title] (Priority: P1) 🎯 MVP
+## Phase 3: GREEN（最小実装）
 
-**Goal**: [Brief description of what this story delivers]
+**目的**: 失敗しているテストを通すための最小実装を行う。
 
-**Independent Test**: [How to verify this story works on its own]
+- [ ] T009 [US1] ユーザーストーリー 1 を通す最小実装を追加する
+- [ ] T010 [US2] ユーザーストーリー 2 を通す最小実装を追加する
+- [ ] T011 [US3] ユーザーストーリー 3 を通す最小実装を追加する
+- [ ] T012 全テストが通ることを確認する
 
-### Tests for User Story 1 (OPTIONAL - only if tests requested) ⚠️
-
-> **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
-
-- [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].py
-
-### Implementation for User Story 1
-
-- [ ] T012 [P] [US1] Create [Entity1] model in src/models/[entity1].py
-- [ ] T013 [P] [US1] Create [Entity2] model in src/models/[entity2].py
-- [ ] T014 [US1] Implement [Service] in src/services/[service].py (depends on T012, T013)
-- [ ] T015 [US1] Implement [endpoint/feature] in src/[location]/[file].py
-- [ ] T016 [US1] Add validation and error handling
-- [ ] T017 [US1] Add logging for user story 1 operations
-
-**Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
+**チェックポイント**: すべての対象テストが GREEN になる。
 
 ---
 
-## Phase 4: User Story 2 - [Title] (Priority: P2)
+## Phase 4: REFACTOR（整理）
 
-**Goal**: [Brief description of what this story delivers]
+**目的**: テストが通った状態を保ちながら、既存構造に沿って整理する。
 
-**Independent Test**: [How to verify this story works on its own]
+- [ ] T013 重複、命名、DI、ファイル配置を既存パターンに合わせて整理する
+- [ ] T014 不要なフォールバック、後方互換処理、過度な抽象化がないことを確認する
+- [ ] T015 全テストを再実行する
 
-### Tests for User Story 2 (OPTIONAL - only if tests requested) ⚠️
-
-- [ ] T018 [P] [US2] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T019 [P] [US2] Integration test for [user journey] in tests/integration/test_[name].py
-
-### Implementation for User Story 2
-
-- [ ] T020 [P] [US2] Create [Entity] model in src/models/[entity].py
-- [ ] T021 [US2] Implement [Service] in src/services/[service].py
-- [ ] T022 [US2] Implement [endpoint/feature] in src/[location]/[file].py
-- [ ] T023 [US2] Integrate with User Story 1 components (if needed)
-
-**Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
+**チェックポイント**: 振る舞いを変えずに品質を整える。
 
 ---
 
-## Phase 5: User Story 3 - [Title] (Priority: P3)
+## Phase 5: 仕上げと検証
 
-**Goal**: [Brief description of what this story delivers]
+**目的**: ドキュメント、サンプル、手動確認を必要最小限で更新する。
 
-**Independent Test**: [How to verify this story works on its own]
-
-### Tests for User Story 3 (OPTIONAL - only if tests requested) ⚠️
-
-- [ ] T024 [P] [US3] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T025 [P] [US3] Integration test for [user journey] in tests/integration/test_[name].py
-
-### Implementation for User Story 3
-
-- [ ] T026 [P] [US3] Create [Entity] model in src/models/[entity].py
-- [ ] T027 [US3] Implement [Service] in src/services/[service].py
-- [ ] T028 [US3] Implement [endpoint/feature] in src/[location]/[file].py
-
-**Checkpoint**: All user stories should now be independently functional
+- [ ] T016 [P] 必要な README、仕様、quickstart を日本語で更新する
+- [ ] T017 CLI の代表的な実行例を確認する
+- [ ] T018 `dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug --collect:"XPlat Code Coverage" --results-directory TestResults` を実行する
 
 ---
 
-[Add more user story phases as needed, following the same pattern]
+## 依存関係と実行順序
 
----
+- 準備は最初に実行する。
+- RED は GREEN より前に必ず完了する。
+- GREEN は失敗テストを通すための最小実装に限定する。
+- REFACTOR は GREEN 後に実行する。
+- 仕上げと検証は対象ストーリーが完了してから実行する。
 
-## Phase N: Polish & Cross-Cutting Concerns
+## 並列化の機会
 
-**Purpose**: Improvements that affect multiple user stories
+- 別ファイルのテスト追加は `[P]` として並列化できる。
+- 同じファイルを編集するタスクは並列化しない。
+- GREEN の実装は対象ファイルが競合しない場合のみ並列化できる。
 
-- [ ] TXXX [P] Documentation updates in docs/
-- [ ] TXXX Code cleanup and refactoring
-- [ ] TXXX Performance optimization across all stories
-- [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
-- [ ] TXXX Security hardening
-- [ ] TXXX Run quickstart.md validation
+## 実装戦略
 
----
+1. 仕様と計画から最小の対象範囲を決める。
+2. 失敗するテストを追加し、RED を確認する。
+3. テストを通す最小実装を行い、GREEN を確認する。
+4. テストを保ったままリファクタリングする。
+5. 必要なドキュメントと検証結果を日本語で残す。
 
-## Dependencies & Execution Order
+## 注意
 
-### Phase Dependencies
-
-- **Setup (Phase 1)**: No dependencies - can start immediately
-- **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user stories
-- **User Stories (Phase 3+)**: All depend on Foundational phase completion
-  - User stories can then proceed in parallel (if staffed)
-  - Or sequentially in priority order (P1 → P2 → P3)
-- **Polish (Final Phase)**: Depends on all desired user stories being complete
-
-### User Story Dependencies
-
-- **User Story 1 (P1)**: Can start after Foundational (Phase 2) - No dependencies on other stories
-- **User Story 2 (P2)**: Can start after Foundational (Phase 2) - May integrate with US1 but should be independently testable
-- **User Story 3 (P3)**: Can start after Foundational (Phase 2) - May integrate with US1/US2 but should be independently testable
-
-### Within Each User Story
-
-- Tests (if included) MUST be written and FAIL before implementation
-- Models before services
-- Services before endpoints
-- Core implementation before integration
-- Story complete before moving to next priority
-
-### Parallel Opportunities
-
-- All Setup tasks marked [P] can run in parallel
-- All Foundational tasks marked [P] can run in parallel (within Phase 2)
-- Once Foundational phase completes, all user stories can start in parallel (if team capacity allows)
-- All tests for a user story marked [P] can run in parallel
-- Models within a story marked [P] can run in parallel
-- Different user stories can be worked on in parallel by different team members
-
----
-
-## Parallel Example: User Story 1
-
-```bash
-# Launch all tests for User Story 1 together (if tests requested):
-Task: "Contract test for [endpoint] in tests/contract/test_[name].py"
-Task: "Integration test for [user journey] in tests/integration/test_[name].py"
-
-# Launch all models for User Story 1 together:
-Task: "Create [Entity1] model in src/models/[entity1].py"
-Task: "Create [Entity2] model in src/models/[entity2].py"
-```
-
----
-
-## Implementation Strategy
-
-### MVP First (User Story 1 Only)
-
-1. Complete Phase 1: Setup
-2. Complete Phase 2: Foundational (CRITICAL - blocks all stories)
-3. Complete Phase 3: User Story 1
-4. **STOP and VALIDATE**: Test User Story 1 independently
-5. Deploy/demo if ready
-
-### Incremental Delivery
-
-1. Complete Setup + Foundational → Foundation ready
-2. Add User Story 1 → Test independently → Deploy/Demo (MVP!)
-3. Add User Story 2 → Test independently → Deploy/Demo
-4. Add User Story 3 → Test independently → Deploy/Demo
-5. Each story adds value without breaking previous stories
-
-### Parallel Team Strategy
-
-With multiple developers:
-
-1. Team completes Setup + Foundational together
-2. Once Foundational is done:
-   - Developer A: User Story 1
-   - Developer B: User Story 2
-   - Developer C: User Story 3
-3. Stories complete and integrate independently
-
----
-
-## Notes
-
-- [P] tasks = different files, no dependencies
-- [Story] label maps task to specific user story for traceability
-- Each user story should be independently completable and testable
-- Verify tests fail before implementing
-- Commit after each task or logical group
-- Stop at any checkpoint to validate story independently
-- Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence
+- 曖昧なタスク、同一ファイルの競合、ストーリー間の不要な依存を避ける。
+- 破壊的操作では、実操作とプレビューの分離をテストで確認する。
+- 明示要求がない限り、フォールバックや後方互換性を追加しない。

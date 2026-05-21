@@ -1,131 +1,97 @@
-# Feature Specification: [FEATURE NAME]
+# 機能仕様: [FEATURE NAME]
 
-**Feature Branch**: `[###-feature-name]`
+**機能ブランチ**: `[###-feature-name]`
 
-**Created**: [DATE]
+**作成日**: [DATE]
 
-**Status**: Draft
+**状態**: Draft
 
-**Input**: User description: "$ARGUMENTS"
+**入力**: ユーザー説明: "$ARGUMENTS"
 
-## User Scenarios & Testing *(mandatory)*
+## ユーザーシナリオとテスト *(必須)*
 
-<!--
-  IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
-  Each user story/journey must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
-  you should still have a viable MVP (Minimum Viable Product) that delivers value.
+ユーザーストーリーは価値の高い順に並べる。各ストーリーは独立して実装、テスト、デモできる
+単位にする。
 
-  Assign priorities (P1, P2, P3, etc.) to each story, where P1 is the most critical.
-  Think of each story as a standalone slice of functionality that can be:
-  - Developed independently
-  - Tested independently
-  - Deployed independently
-  - Demonstrated to users independently
--->
+### ユーザーストーリー 1 - [短いタイトル] (優先度: P1)
 
-### User Story 1 - [Brief Title] (Priority: P1)
+[ユーザーの行動と得られる価値を自然言語で記述する]
 
-[Describe this user journey in plain language]
+**優先理由**: [この優先度にした理由]
 
-**Why this priority**: [Explain the value and why it has this priority level]
+**独立テスト**: [このストーリー単体で検証する方法]
 
-**Independent Test**: [Describe how this can be tested independently - e.g., "Can be fully tested by [specific action] and delivers [specific value]"]
+**受け入れシナリオ**:
 
-**Acceptance Scenarios**:
-
-1. **Given** [initial state], **When** [action], **Then** [expected outcome]
-2. **Given** [initial state], **When** [action], **Then** [expected outcome]
+1. **Given** [初期状態], **When** [操作], **Then** [期待結果]
+2. **Given** [初期状態], **When** [操作], **Then** [期待結果]
 
 ---
 
-### User Story 2 - [Brief Title] (Priority: P2)
+### ユーザーストーリー 2 - [短いタイトル] (優先度: P2)
 
-[Describe this user journey in plain language]
+[ユーザーの行動と得られる価値を自然言語で記述する]
 
-**Why this priority**: [Explain the value and why it has this priority level]
+**優先理由**: [この優先度にした理由]
 
-**Independent Test**: [Describe how this can be tested independently]
+**独立テスト**: [このストーリー単体で検証する方法]
 
-**Acceptance Scenarios**:
+**受け入れシナリオ**:
 
-1. **Given** [initial state], **When** [action], **Then** [expected outcome]
-
----
-
-### User Story 3 - [Brief Title] (Priority: P3)
-
-[Describe this user journey in plain language]
-
-**Why this priority**: [Explain the value and why it has this priority level]
-
-**Independent Test**: [Describe how this can be tested independently]
-
-**Acceptance Scenarios**:
-
-1. **Given** [initial state], **When** [action], **Then** [expected outcome]
+1. **Given** [初期状態], **When** [操作], **Then** [期待結果]
 
 ---
 
-[Add more user stories as needed, each with an assigned priority]
+### ユーザーストーリー 3 - [短いタイトル] (優先度: P3)
 
-### Edge Cases
+[ユーザーの行動と得られる価値を自然言語で記述する]
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right edge cases.
--->
+**優先理由**: [この優先度にした理由]
 
-- What happens when [boundary condition]?
-- How does system handle [error scenario]?
+**独立テスト**: [このストーリー単体で検証する方法]
 
-## Requirements *(mandatory)*
+**受け入れシナリオ**:
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right functional requirements.
--->
+1. **Given** [初期状態], **When** [操作], **Then** [期待結果]
 
-### Functional Requirements
+---
 
-- **FR-001**: System MUST [specific capability, e.g., "allow users to create accounts"]
-- **FR-002**: System MUST [specific capability, e.g., "validate email addresses"]
-- **FR-003**: Users MUST be able to [key interaction, e.g., "reset their password"]
-- **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
-- **FR-005**: System MUST [behavior, e.g., "log all security events"]
+[必要に応じてユーザーストーリーを追加する]
 
-*Example of marking unclear requirements:*
+### エッジケース
 
-- **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
-- **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
+- [境界条件] の場合はどうなるか。
+- [エラー状況] をどのように扱うか。
+- 副作用を持つ操作の場合、プレビューで外部状態が変更されないことをどう検証するか。
 
-### Key Entities *(include if feature involves data)*
+## 要件 *(必須)*
 
-- **[Entity 1]**: [What it represents, key attributes without implementation]
-- **[Entity 2]**: [What it represents, relationships to other entities]
+### 機能要件
 
-## Success Criteria *(mandatory)*
+- **FR-001**: システムは [具体的な能力] しなければならない。
+- **FR-002**: システムは [具体的な検証] しなければならない。
+- **FR-003**: ユーザーは [主要操作] できなければならない。
+- **FR-004**: システムは [データ要件] を満たさなければならない。
+- **FR-005**: システムは [エラーまたは表示要件] を満たさなければならない。
 
-<!--
-  ACTION REQUIRED: Define measurable success criteria.
-  These must be technology-agnostic and measurable.
--->
+不明点が残る場合は、仕様内に `[NEEDS CLARIFICATION: ...]` と理由を明記する。
 
-### Measurable Outcomes
+### 主要エンティティ *(データを扱う機能のみ)*
 
-- **SC-001**: [Measurable metric, e.g., "Users can complete account creation in under 2 minutes"]
-- **SC-002**: [Measurable metric, e.g., "System handles 1000 concurrent users without degradation"]
-- **SC-003**: [User satisfaction metric, e.g., "90% of users successfully complete primary task on first attempt"]
-- **SC-004**: [Business metric, e.g., "Reduce support tickets related to [X] by 50%"]
+- **[Entity 1]**: [表すもの、主要属性]
+- **[Entity 2]**: [他エンティティとの関係]
 
-## Assumptions
+## 成功基準 *(必須)*
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right assumptions based on reasonable defaults
-  chosen when the feature description did not specify certain details.
--->
+### 測定可能な成果
 
-- [Assumption about target users, e.g., "Users have stable internet connectivity"]
-- [Assumption about scope boundaries, e.g., "Mobile support is out of scope for v1"]
-- [Assumption about data/environment, e.g., "Existing authentication system will be reused"]
-- [Dependency on existing system/service, e.g., "Requires access to the existing user profile API"]
+- **SC-001**: [ユーザーが主要タスクを完了できる測定可能な基準]
+- **SC-002**: [エラー、表示、性能、または副作用なしを確認できる基準]
+- **SC-003**: [テストまたは操作で確認できる品質基準]
+- **SC-004**: [必要に応じた業務上または運用上の基準]
+
+## 前提
+
+- [仕様に明記されていないが採用する合理的な前提]
+- [対象外とする範囲]
+- [既存システムや外部サービスへの依存]

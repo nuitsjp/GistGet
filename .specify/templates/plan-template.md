@@ -1,113 +1,82 @@
-# Implementation Plan: [FEATURE]
+# 実装計画: [FEATURE]
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
+**ブランチ**: `[###-feature-name]` | **日付**: [DATE] | **仕様**: [link]
 
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
+**入力**: `/specs/[###-feature-name]/spec.md` の機能仕様
 
-**Note**: This template is filled in by the `/speckit-plan` command. See `.specify/templates/plan-template.md` for the execution workflow.
+**注記**: このテンプレートは `/speckit-plan` コマンドで埋める。
 
-## Summary
+## 概要
 
-[Extract from feature spec: primary requirement + technical approach from research]
+[機能仕様から、主要要件と技術アプローチを要約する]
 
-## Technical Context
+## 技術コンテキスト
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
+**言語/バージョン**: C# 14 / net10.0-windows10.0.26100.0
 
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]
+**主要依存関係**: System.CommandLine、Spectre.Console、Windows Package Manager
 
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]
+**ストレージ**: GitHub Gist の `GistGet.yaml`、Windows Credential Manager（該当時）
 
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
+**テスト**: xUnit、Moq、Shouldly
 
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]
+**対象プラットフォーム**: Windows 10/11、Windows SDK 10.0.26100.0 以降
 
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
+**プロジェクト種別**: .NET CLI
 
-**Project Type**: [e.g., library/cli/web-service/mobile-app/compiler/desktop-app or NEEDS CLARIFICATION]
+**性能目標**: [機能固有の測定可能な目標、または該当なし]
 
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]
+**制約**: 日本語成果物、t-wada 式 TDD、明示的な winget 引数、フォールバックなし
 
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]
+**規模/範囲**: [対象コマンド、対象サービス、対象ユーザーストーリーを記載]
 
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+## 憲章チェック
 
-## Constitution Check
+*ゲート: Phase 0 調査前に必ず通過。Phase 1 設計後にも再確認する。*
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+- [ ] 仕様、計画、タスク、説明文は日本語で書かれている。
+- [ ] 新しい振る舞いに対して、先に失敗するテストを書く計画になっている。
+- [ ] RED、GREEN、REFACTOR の順序がタスクに反映されている。
+- [ ] 実操作とプレビューが必要な副作用を識別し、分離方法を記載している。
+- [ ] 既存の DI、命名、ファイル構成、リソース管理に従う方針になっている。
+- [ ] 明示要求のない後方互換性、フォールバック、過度な抽象化を追加していない。
 
-[Gates determined based on constitution file]
+## プロジェクト構成
 
-## Project Structure
-
-### Documentation (this feature)
+### ドキュメント（この機能）
 
 ```text
 specs/[###-feature]/
-├── plan.md              # This file (/speckit-plan command output)
-├── research.md          # Phase 0 output (/speckit-plan command)
-├── data-model.md        # Phase 1 output (/speckit-plan command)
-├── quickstart.md        # Phase 1 output (/speckit-plan command)
-├── contracts/           # Phase 1 output (/speckit-plan command)
-└── tasks.md             # Phase 2 output (/speckit-tasks command - NOT created by /speckit-plan)
+├── plan.md              # このファイル（/speckit-plan の出力）
+├── research.md          # Phase 0 の出力
+├── data-model.md        # Phase 1 の出力
+├── quickstart.md        # Phase 1 の出力
+├── contracts/           # Phase 1 の出力
+└── tasks.md             # Phase 2 の出力（/speckit-tasks で作成）
 ```
 
-### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
+### ソースコード（リポジトリルート）
 
 ```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
-src/
-├── models/
-├── services/
-├── cli/
-└── lib/
+src/GistGet/
+├── Application/Services/
+├── Infrastructure/
+├── Models/
+├── Presentation/
+└── Utils/
 
-tests/
-├── contract/
-├── integration/
-└── unit/
-
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
-
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
-
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+src/GistGet.Tests/
+├── Presentation/
+├── Services/
+└── Utils/
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**構成判断**: [この機能で追加または変更する実パスを記載する]
 
-## Complexity Tracking
+## 複雑性追跡
 
-> **Fill ONLY if Constitution Check has violations that must be justified**
+> **憲章チェック違反を正当化する必要がある場合のみ記入する**
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+| 違反 | 必要な理由 | 却下した単純な代替案と理由 |
+|------|------------|----------------------------|
+| [例: 新しい抽象化] | [現在必要な理由] | [既存サービスでは不十分な理由] |
