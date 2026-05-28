@@ -50,5 +50,5 @@ dotnet run --project src/GistGet/GistGet.csproj -- sync --dry-run --url https://
 ## 回帰確認
 
 ```powershell
-dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug --collect:"XPlat Code Coverage" --results-directory TestResults
+dotnet test src/NuitsJp.GistGet.Test/NuitsJp.GistGet.Test.csproj -c Debug --collect:"XPlat Code Coverage" --results-directory TestResults
 ```

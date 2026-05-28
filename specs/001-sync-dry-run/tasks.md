@@ -32,11 +32,12 @@
 **重要**: このフェーズはユーザーストーリー実装の土台であり、完了前に US1 の実装へ進まない。
 
 - [ ] T005 `src/NuitsJp.GistGet.Test/Presentation/CommandBuilderTests.cs` に `sync --dry-run` が値引数なしのフラグとして受理される失敗テストを追加する
-- [ ] T006 `dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug --filter "FullyQualifiedName~CommandBuilderTests"` を実行し、T005 の RED を確認する
+- [ ] T006 `dotnet test src/NuitsJp.GistGet.Test/NuitsJp.GistGet.Test.csproj -c Debug --filter "FullyQualifiedName~CommandBuilderTests"` を実行し、T005 の RED を確認する
 - [ ] T007 `src/NuitsJp.GistGet/IGistGetService.cs` の `SyncAsync` に `bool dryRun = false` を追加し、既存呼び出しを壊さない最小契約へ変更する
 - [ ] T008 `src/NuitsJp.GistGet/Presentation/CommandBuilder.cs` に `--dry-run` の `Option<bool>` を追加し、`SyncAsync(url, filePath, dryRun)` へ渡す
 - [ ] T009 `src/NuitsJp.GistGet/GistGetService.cs` の `SyncAsync` シグネチャに `bool dryRun = false` を追加し、通常同期の既存処理は変えずにビルドを通す
-- [ ] T010 `dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug --filter "FullyQualifiedName~CommandBuilderTests"` を実行し、T005 の GREEN を確認する
+- [ ] T010 `src/NuitsJp.GistGet.Test/Presentation/CommandBuilderTests.cs` の既存 sync テストを更新し、通常 `sync` が `SyncAsync(url, filePath, false)` を呼ぶことを確認する
+- [ ] T011 `dotnet test src/NuitsJp.GistGet.Test/NuitsJp.GistGet.Test.csproj -c Debug --filter "FullyQualifiedName~CommandBuilderTests"` を実行し、T005 と T010 の GREEN を確認する
 
 ---
 
@@ -48,29 +49,29 @@
 
 ### RED
 
-- [ ] T011 [US1] `src/NuitsJp.GistGet.Test/GistGetServiceTest.cs` に dry-run で未導入パッケージを `Installed` に分類する失敗テストを追加する
-- [ ] T012 [US1] `dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug --filter "FullyQualifiedName~SyncAsync"` を実行し、T011 の RED を確認する
-- [ ] T013 [US1] `src/NuitsJp.GistGet.Test/GistGetServiceTest.cs` に dry-run で削除対象パッケージを `Uninstalled` に分類し `IWinGetPassthroughRunner.RunAsync` を呼ばない失敗テストを追加する
-- [ ] T014 [US1] `dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug --filter "FullyQualifiedName~SyncAsync"` を実行し、T013 の RED を確認する
-- [ ] T015 [US1] `src/NuitsJp.GistGet.Test/GistGetServiceTest.cs` に dry-run でバージョン差分をアップグレード予定に分類する失敗テストを追加する
-- [ ] T016 [US1] `dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug --filter "FullyQualifiedName~SyncAsync"` を実行し、T015 の RED を確認する
-- [ ] T017 [US1] `src/NuitsJp.GistGet.Test/GistGetServiceTest.cs` に dry-run でピン追加、更新、削除予定を分類しピン操作を呼ばない失敗テストを追加する
-- [ ] T018 [US1] `dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug --filter "FullyQualifiedName~SyncAsync"` を実行し、T017 の RED を確認する
+- [ ] T012 [US1] `src/NuitsJp.GistGet.Test/GistGetServiceTest.cs` に dry-run で未導入パッケージを `Installed` に分類する失敗テストを追加する
+- [ ] T013 [US1] `dotnet test src/NuitsJp.GistGet.Test/NuitsJp.GistGet.Test.csproj -c Debug --filter "FullyQualifiedName~SyncAsync"` を実行し、T012 の RED を確認する
+- [ ] T014 [US1] `src/NuitsJp.GistGet.Test/GistGetServiceTest.cs` に dry-run で削除対象パッケージを `Uninstalled` に分類し `IWinGetPassthroughRunner.RunAsync` を呼ばない失敗テストを追加する
+- [ ] T015 [US1] `dotnet test src/NuitsJp.GistGet.Test/NuitsJp.GistGet.Test.csproj -c Debug --filter "FullyQualifiedName~SyncAsync"` を実行し、T014 の RED を確認する
+- [ ] T016 [US1] `src/NuitsJp.GistGet.Test/GistGetServiceTest.cs` に dry-run でバージョン差分をアップグレード予定に分類する失敗テストを追加する
+- [ ] T017 [US1] `dotnet test src/NuitsJp.GistGet.Test/NuitsJp.GistGet.Test.csproj -c Debug --filter "FullyQualifiedName~SyncAsync"` を実行し、T016 の RED を確認する
+- [ ] T018 [US1] `src/NuitsJp.GistGet.Test/GistGetServiceTest.cs` に dry-run でピン追加、更新、削除予定を分類しピン操作を呼ばない失敗テストを追加する
+- [ ] T019 [US1] `dotnet test src/NuitsJp.GistGet.Test/NuitsJp.GistGet.Test.csproj -c Debug --filter "FullyQualifiedName~SyncAsync"` を実行し、T018 の RED を確認する
 
 ### GREEN
 
-- [ ] T019 [US1] `src/NuitsJp.GistGet/SyncResult.cs` に `Upgraded`、`UnchangedCount`、`IsDryRun` を追加し、既存プロパティ名は維持する
-- [ ] T020 [US1] `src/NuitsJp.GistGet/GistGetService.cs` に dry-run 分岐を追加し、同期元読み込み、導入済み一覧取得、ピン一覧取得だけを行う
-- [ ] T021 [US1] `src/NuitsJp.GistGet/GistGetService.cs` に `GistGetPackage` とローカル状態の分類処理を追加し、インストール予定、アンインストール予定、アップグレード予定、ピン予定、更新不要件数を `SyncResult` に設定する
-- [ ] T022 [US1] `src/NuitsJp.GistGet/GistGetService.cs` の dry-run 分岐で `IWinGetPassthroughRunner.RunAsync` と `IGitHubService.SavePackagesAsync` を呼ばないことを GREEN にする
-- [ ] T023 [US1] `dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug --filter "FullyQualifiedName~SyncAsync"` を実行し、US1 の GREEN を確認する
+- [ ] T020 [US1] `src/NuitsJp.GistGet/SyncResult.cs` に `Upgraded`、`UnchangedCount`、`IsDryRun` を追加し、既存プロパティ名は維持する
+- [ ] T021 [US1] `src/NuitsJp.GistGet/GistGetService.cs` に dry-run 分岐を追加し、同期元読み込み、導入済み一覧取得、ピン一覧取得だけを行う
+- [ ] T022 [US1] `src/NuitsJp.GistGet/GistGetService.cs` に `GistGetPackage` とローカル状態の分類処理を追加し、インストール予定、アンインストール予定、アップグレード予定、ピン予定、更新不要件数を `SyncResult` に設定する
+- [ ] T023 [US1] `src/NuitsJp.GistGet/GistGetService.cs` の dry-run 分岐で `IWinGetPassthroughRunner.RunAsync` と `IGitHubService.SavePackagesAsync` を呼ばないことを GREEN にする
+- [ ] T024 [US1] `dotnet test src/NuitsJp.GistGet.Test/NuitsJp.GistGet.Test.csproj -c Debug --filter "FullyQualifiedName~SyncAsync"` を実行し、US1 の GREEN を確認する
 
 ### 表示
 
-- [ ] T024 [US1] `src/NuitsJp.GistGet.Test/Presentation/CommandBuilderTests.cs` に dry-run 結果の操作種別、対象パッケージ、件数が表示される失敗テストを追加する
-- [ ] T025 [US1] `dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug --filter "FullyQualifiedName~CommandBuilderTests"` を実行し、T024 の RED を確認する
-- [ ] T026 [US1] `src/NuitsJp.GistGet/Presentation/CommandBuilder.cs` に dry-run 用の `Spectre.Console.Table` 表示を追加する
-- [ ] T027 [US1] `dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug --filter "FullyQualifiedName~CommandBuilderTests"` を実行し、T024 の GREEN を確認する
+- [ ] T025 [US1] `src/NuitsJp.GistGet.Test/Presentation/CommandBuilderTests.cs` に dry-run 結果の操作種別、対象パッケージ、件数が表示される失敗テストを追加する
+- [ ] T026 [US1] `dotnet test src/NuitsJp.GistGet.Test/NuitsJp.GistGet.Test.csproj -c Debug --filter "FullyQualifiedName~CommandBuilderTests"` を実行し、T025 の RED を確認する
+- [ ] T027 [US1] `src/NuitsJp.GistGet/Presentation/CommandBuilder.cs` に dry-run 用の `Spectre.Console.Table` 表示を追加する
+- [ ] T028 [US1] `dotnet test src/NuitsJp.GistGet.Test/NuitsJp.GistGet.Test.csproj -c Debug --filter "FullyQualifiedName~CommandBuilderTests"` を実行し、T025 の GREEN を確認する
 
 **チェックポイント**: US1 だけで `sync --dry-run` の主要価値をデモでき、実操作が 0 件であることをテストで確認できる。
 
@@ -84,18 +85,18 @@
 
 ### RED
 
-- [ ] T028 [US2] `src/NuitsJp.GistGet.Test/Presentation/CommandBuilderTests.cs` に `sync --dry-run --url <URL>` が `SyncAsync(url, null, true)` を呼ぶ失敗テストを追加する
-- [ ] T029 [US2] `src/NuitsJp.GistGet.Test/Presentation/CommandBuilderTests.cs` に `sync --dry-run --file <PATH>` が `SyncAsync(null, filePath, true)` を呼ぶ失敗テストを追加する
-- [ ] T030 [US2] `dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug --filter "FullyQualifiedName~CommandBuilderTests"` を実行し、T028 と T029 の RED を確認する
-- [ ] T031 [US2] `src/NuitsJp.GistGet.Test/GistGetServiceTest.cs` に dry-run と `filePath` 指定でローカル YAML を分類し保存しない失敗テストを追加する
-- [ ] T032 [US2] `src/NuitsJp.GistGet.Test/GistGetServiceTest.cs` に dry-run と `url` 指定で URL 同期元を分類し保存しない失敗テストを追加する
-- [ ] T033 [US2] `dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug --filter "FullyQualifiedName~SyncAsync"` を実行し、T031 と T032 の RED を確認する
+- [ ] T029 [US2] `src/NuitsJp.GistGet.Test/Presentation/CommandBuilderTests.cs` に `sync --dry-run --url <URL>` が `SyncAsync(url, null, true)` を呼ぶ失敗テストを追加する
+- [ ] T030 [US2] `src/NuitsJp.GistGet.Test/Presentation/CommandBuilderTests.cs` に `sync --dry-run --file <PATH>` が `SyncAsync(null, filePath, true)` を呼ぶ失敗テストを追加する
+- [ ] T031 [US2] `dotnet test src/NuitsJp.GistGet.Test/NuitsJp.GistGet.Test.csproj -c Debug --filter "FullyQualifiedName~CommandBuilderTests"` を実行し、T029 と T030 の RED を確認する
+- [ ] T032 [US2] `src/NuitsJp.GistGet.Test/GistGetServiceTest.cs` に dry-run と `filePath` 指定でローカル YAML を分類し保存しない失敗テストを追加する
+- [ ] T033 [US2] `src/NuitsJp.GistGet.Test/GistGetServiceTest.cs` に dry-run と `url` 指定で URL 同期元を分類し保存しない失敗テストを追加する
+- [ ] T034 [US2] `dotnet test src/NuitsJp.GistGet.Test/NuitsJp.GistGet.Test.csproj -c Debug --filter "FullyQualifiedName~SyncAsync"` を実行し、T032 と T033 の RED を確認する
 
 ### GREEN
 
-- [ ] T034 [US2] `src/NuitsJp.GistGet/Presentation/CommandBuilder.cs` の dry-run 引き渡しを `--url` と `--file` の同時利用でも GREEN になるよう調整する
-- [ ] T035 [US2] `src/NuitsJp.GistGet/GistGetService.cs` の dry-run 分岐で既存の `GistGetPackagesAsync(url, filePath)` を使い、通常同期元、URL、ローカルファイルの読み込み経路を共通化する
-- [ ] T036 [US2] `dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug --filter "FullyQualifiedName~CommandBuilderTests|FullyQualifiedName~SyncAsync"` を実行し、US2 の GREEN を確認する
+- [ ] T035 [US2] `src/NuitsJp.GistGet/Presentation/CommandBuilder.cs` の dry-run 引き渡しを `--url` と `--file` の同時利用でも GREEN になるよう調整する
+- [ ] T036 [US2] `src/NuitsJp.GistGet/GistGetService.cs` の dry-run 分岐で既存の `GistGetPackagesAsync(url, filePath)` を使い、通常同期元、URL、ローカルファイルの読み込み経路を共通化する
+- [ ] T037 [US2] `dotnet test src/NuitsJp.GistGet.Test/NuitsJp.GistGet.Test.csproj -c Debug --filter "FullyQualifiedName~CommandBuilderTests|FullyQualifiedName~SyncAsync"` を実行し、US2 の GREEN を確認する
 
 **チェックポイント**: US2 完了時点で、3 種類の同期元に対する dry-run がすべて同じ分類結果を返せる。
 
@@ -109,16 +110,16 @@
 
 ### RED
 
-- [ ] T037 [US3] `src/NuitsJp.GistGet.Test/GistGetServiceTest.cs` に dry-run で差分がない同期元パッケージを `UnchangedCount` に数える失敗テストを追加する
-- [ ] T038 [US3] `dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug --filter "FullyQualifiedName~SyncAsync"` を実行し、T037 の RED を確認する
-- [ ] T039 [US3] `src/NuitsJp.GistGet.Test/Presentation/CommandBuilderTests.cs` に dry-run の差分あり結果でも終了コードが `0` で、更新不要件数が表示される失敗テストを追加する
-- [ ] T040 [US3] `dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug --filter "FullyQualifiedName~CommandBuilderTests"` を実行し、T039 の RED を確認する
+- [ ] T038 [US3] `src/NuitsJp.GistGet.Test/GistGetServiceTest.cs` に dry-run で差分がない同期元パッケージを `UnchangedCount` に数える失敗テストを追加する
+- [ ] T039 [US3] `dotnet test src/NuitsJp.GistGet.Test/NuitsJp.GistGet.Test.csproj -c Debug --filter "FullyQualifiedName~SyncAsync"` を実行し、T038 の RED を確認する
+- [ ] T040 [US3] `src/NuitsJp.GistGet.Test/Presentation/CommandBuilderTests.cs` に dry-run の差分あり結果でも終了コードが `0` で、更新不要件数が表示される失敗テストを追加する
+- [ ] T041 [US3] `dotnet test src/NuitsJp.GistGet.Test/NuitsJp.GistGet.Test.csproj -c Debug --filter "FullyQualifiedName~CommandBuilderTests"` を実行し、T040 の RED を確認する
 
 ### GREEN
 
-- [ ] T041 [US3] `src/NuitsJp.GistGet/GistGetService.cs` の分類処理でどの予定にも該当しない同期元パッケージを `UnchangedCount` に加算する
-- [ ] T042 [US3] `src/NuitsJp.GistGet/Presentation/CommandBuilder.cs` の dry-run 表示で更新不要件数と成功扱いを表示する
-- [ ] T043 [US3] `dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug --filter "FullyQualifiedName~CommandBuilderTests|FullyQualifiedName~SyncAsync"` を実行し、US3 の GREEN を確認する
+- [ ] T042 [US3] `src/NuitsJp.GistGet/GistGetService.cs` の分類処理でどの予定にも該当しない同期元パッケージを `UnchangedCount` に加算する
+- [ ] T043 [US3] `src/NuitsJp.GistGet/Presentation/CommandBuilder.cs` の dry-run 表示で更新不要件数と成功扱いを表示する
+- [ ] T044 [US3] `dotnet test src/NuitsJp.GistGet.Test/NuitsJp.GistGet.Test.csproj -c Debug --filter "FullyQualifiedName~CommandBuilderTests|FullyQualifiedName~SyncAsync"` を実行し、US3 の GREEN を確認する
 
 **チェックポイント**: US3 完了時点で、差分あり、差分なし、空同期元の判断がユーザーに伝わる。
 
@@ -128,11 +129,11 @@
 
 **目的**: すべての対象テストが GREEN の状態を保ち、既存構造に沿って最小限の整理を行う。
 
-- [ ] T044 `src/NuitsJp.GistGet/GistGetService.cs` の dry-run 分類処理を既存同期処理と重複しすぎない小さな private メソッドへ整理する
-- [ ] T045 `src/NuitsJp.GistGet/Presentation/CommandBuilder.cs` の通常 sync 表示と dry-run 表示の条件分岐を読みやすく整理する
-- [ ] T046 `src/NuitsJp.GistGet.Test/GistGetServiceTest.cs` の dry-run テストデータ作成を既存テストのパターンに合わせて整理する
-- [ ] T047 `src/NuitsJp.GistGet.Test/Presentation/CommandBuilderTests.cs` の dry-run 表示テストで重複する Arrange を必要最小限に整理する
-- [ ] T048 `dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug --filter "FullyQualifiedName~CommandBuilderTests|FullyQualifiedName~SyncAsync"` を実行し、REFACTOR 後も GREEN であることを確認する
+- [ ] T045 `src/NuitsJp.GistGet/GistGetService.cs` の dry-run 分類処理を既存同期処理と重複しすぎない小さな private メソッドへ整理する
+- [ ] T046 `src/NuitsJp.GistGet/Presentation/CommandBuilder.cs` の通常 sync 表示と dry-run 表示の条件分岐を読みやすく整理する
+- [ ] T047 `src/NuitsJp.GistGet.Test/GistGetServiceTest.cs` の dry-run テストデータ作成を既存テストのパターンに合わせて整理する
+- [ ] T048 `src/NuitsJp.GistGet.Test/Presentation/CommandBuilderTests.cs` の dry-run 表示テストで重複する Arrange を必要最小限に整理する
+- [ ] T049 `dotnet test src/NuitsJp.GistGet.Test/NuitsJp.GistGet.Test.csproj -c Debug --filter "FullyQualifiedName~CommandBuilderTests|FullyQualifiedName~SyncAsync"` を実行し、REFACTOR 後も GREEN であることを確認する
 
 ---
 
@@ -140,14 +141,15 @@
 
 **目的**: ユーザー向け説明と最終検証を整え、通常同期への影響がないことを確認する。
 
-- [ ] T049 [P] `src/NuitsJp.GistGet/Resources/Messages.resx` に `--dry-run` オプション説明と dry-run 表示に必要な文言を追加する
-- [ ] T050 [P] `src/NuitsJp.GistGet/Resources/Messages.ja.resx` に `--dry-run` オプション説明と dry-run 表示に必要な日本語文言を追加する
-- [ ] T051 `src/NuitsJp.GistGet/Resources/Messages.Designer.cs` を既存のリソース生成方法に従って更新する
-- [ ] T052 [P] `README.md` の `sync` コマンド説明に `gistget sync --dry-run`、`--file`、`--url` の実行例を追加する
-- [ ] T053 `dotnet build src/GistGet.slnx -c Debug` を実行してビルド成功を確認する
-- [ ] T054 `dotnet test src/GistGet.Tests/GistGet.Tests.csproj -c Debug --collect:"XPlat Code Coverage" --results-directory TestResults` を実行して全体 GREEN とカバレッジ収集を確認する
-- [ ] T055 `dotnet run --project src/GistGet/GistGet.csproj -- sync --help` を実行し、`--dry-run` がヘルプに表示されることを確認する
-- [ ] T056 `dotnet run --project src/GistGet/GistGet.csproj -- sync --dry-run --file specs/001-sync-dry-run/fixtures/GistGet.dryrun.yaml` を実行し、代表的な手動確認結果を記録する
+- [ ] T050 [P] `src/NuitsJp.GistGet/Resources/Messages.resx` に `--dry-run` オプション説明と dry-run 表示に必要な文言を追加する
+- [ ] T051 [P] `src/NuitsJp.GistGet/Resources/Messages.ja.resx` に `--dry-run` オプション説明と dry-run 表示に必要な日本語文言を追加する
+- [ ] T052 `src/NuitsJp.GistGet/Resources/Messages.Designer.cs` を既存のリソース生成方法に従って更新する
+- [ ] T053 [P] `README.md` の `sync` コマンド説明に `gistget sync --dry-run`、`--file`、`--url` の実行例を追加する
+- [ ] T054 `specs/001-sync-dry-run/fixtures/GistGet.dryrun.yaml` に手動確認用の最小 YAML fixture を作成する
+- [ ] T055 `dotnet build src/GistGet.slnx -c Debug` を実行してビルド成功を確認する
+- [ ] T056 `dotnet test src/NuitsJp.GistGet.Test/NuitsJp.GistGet.Test.csproj -c Debug --collect:"XPlat Code Coverage" --results-directory TestResults` を実行して全体 GREEN とカバレッジ収集を確認する
+- [ ] T057 `dotnet run --project src/GistGet/GistGet.csproj -- sync --help` を実行し、`--dry-run` がヘルプに表示されることを確認する
+- [ ] T058 `dotnet run --project src/GistGet/GistGet.csproj -- sync --dry-run --file specs/001-sync-dry-run/fixtures/GistGet.dryrun.yaml` を実行し、代表的な手動確認結果を記録する
 
 ---
 
