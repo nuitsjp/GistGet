@@ -49,6 +49,6 @@
 - Keep WinGet interactions deterministic: prefer explicit package IDs and versions in YAML; document any fallback logic. Update manifests and docs together when command semantics change.
 
 <!-- SPECKIT START -->
-For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
+追加の技術コンテキスト、プロジェクト構成、検証コマンド、重要な判断は
+`specs/001-sync-dry-run/plan.md` の現在の計画を参照する。
 <!-- SPECKIT END -->
