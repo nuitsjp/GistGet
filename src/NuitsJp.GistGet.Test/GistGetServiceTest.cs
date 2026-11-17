@@ -2887,6 +2887,73 @@ public class GistGetServiceTests
         }
 
         [Fact]
+        public async Task WhenPostInstallQueryFails_DoesNotChangeRemainingPackages()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var url = "https://example.com/packages.yml";
+            var firstPackage = new GistGetPackage { Id = "Example.First", Pin = "1.0.0" };
+            var remainingPackage = new GistGetPackage { Id = "Example.Remaining" };
+            AuthServiceMock.Setup(x => x.GetPackagesFromUrlAsync(url))
+                .ReturnsAsync(new List<GistGetPackage> { firstPackage, remainingPackage });
+            WinGetServiceMock.Setup(x => x.GetAllInstalledPackages()).Returns(new List<WinGetPackage>());
+            var failure = new InvalidOperationException("post-install query failed");
+            WinGetServiceMock.SetupSequence(x => x.FindById(new PackageId(firstPackage.Id)))
+                .Returns((WinGetPackage?)null)
+                .Throws(failure);
+            PassthroughRunnerMock.Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                args[0] == "install" && args.Contains(firstPackage.Id))))
+                .ReturnsAsync(17);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var exception = await Record.ExceptionAsync(() => Target.SyncAsync(url));
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            PassthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args =>
+                args.Contains(remainingPackage.Id))), Times.Never);
+            exception.ShouldBe(failure);
+            PassthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args =>
+                args[0] == "install" && args.Contains(firstPackage.Id))), Times.Once);
+            PassthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args => args[0] == "pin")), Times.Never);
+        }
+
+        [Fact]
+        public async Task WhenInstallProcessThrows_ContinuesWithRemainingPackages()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var url = "https://example.com/packages.yml";
+            var failingPackage = new GistGetPackage { Id = "Example.Failed" };
+            var remainingPackage = new GistGetPackage { Id = "Example.Remaining" };
+            AuthServiceMock.Setup(x => x.GetPackagesFromUrlAsync(url))
+                .ReturnsAsync(new List<GistGetPackage> { failingPackage, remainingPackage });
+            WinGetServiceMock.Setup(x => x.GetAllInstalledPackages()).Returns(new List<WinGetPackage>());
+            PassthroughRunnerMock.Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                args[0] == "install" && args.Contains(failingPackage.Id))))
+                .ThrowsAsync(new InvalidOperationException("install process failed"));
+            PassthroughRunnerMock.Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                args[0] == "install" && args.Contains(remainingPackage.Id))))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await Target.SyncAsync(url);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.Failed[failingPackage].ShouldBe(-1);
+            result.Installed.ShouldContain(remainingPackage);
+        }
+
+        [Fact]
         public async Task WhenPinQueryFails_DoesNotStartPackageChanges()
         {
             // -------------------------------------------------------------------
