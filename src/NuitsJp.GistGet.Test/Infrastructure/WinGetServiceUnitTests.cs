@@ -15,6 +15,28 @@ public class WinGetServiceUnitTests
     public class FindByIdWithMock : WinGetServiceUnitTests
     {
         [Fact]
+        public void WhenConnectThrows_PreservesFailure()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var connector = new Mock<IPackageCatalogConnector>();
+            var failure = (System.Runtime.InteropServices.COMException)System.Runtime.InteropServices.Marshal.GetExceptionForHR(unchecked((int)0x80040154))!;
+            connector.Setup(x => x.Connect(It.IsAny<CompositeSearchBehavior>())).Throws(failure);
+            var target = new WinGetService(connector.Object);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var exception = Should.Throw<System.Runtime.InteropServices.COMException>(() => target.FindById(new PackageId("Test.Package")));
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            exception.ShouldBe(failure);
+        }
+
+        [Fact]
         public void WhenConnectFails_ThrowsInsteadOfTreatingPackageAsMissing()
         {
             // -------------------------------------------------------------------
@@ -36,6 +58,7 @@ public class WinGetServiceUnitTests
             // Assert
             // -------------------------------------------------------------------
             exception.Message.ShouldContain("catalog");
+            connector.Verify(x => x.Connect(It.IsAny<CompositeSearchBehavior>()), Times.Once);
         }
     }
 

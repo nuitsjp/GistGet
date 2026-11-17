@@ -53,7 +53,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Content Include="$(PkgMicrosoft_WindowsPackageManager_InProcCom)\runtimes\win-x64\native\Microsoft.Management.Deployment.InProc.dll" Link="Microsoft.Management.Deployment.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+		<Content Include="$(PkgMicrosoft_WindowsPackageManager_InProcCom)\runtimes\win-x64\native\Microsoft.Management.Deployment.InProc.dll" Link="Microsoft.Management.Deployment.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
 		<Content Include="$(PkgMicrosoft_WindowsPackageManager_InProcCom)\runtimes\win-x64\native\Microsoft.Management.Deployment.InProc.dll.manifest" Link="Microsoft.Management.Deployment.dll.manifest" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
 		<Content Include="$(PkgMicrosoft_WindowsPackageManager_InProcCom)\runtimes\win-x64\native\WindowsPackageManager.dll" Link="WindowsPackageManager.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
 	</ItemGroup>

@@ -684,6 +684,20 @@ public class GistGetService(
             p => p,
             StringComparer.OrdinalIgnoreCase);
 
+        // Resolve manifest IDs that differ from the IDs returned by the local catalog.
+        // Complete all queries before starting any package changes.
+        foreach (var packageId in gistPackages.Select(p => p.Id).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (!localPackageDict.ContainsKey(packageId))
+            {
+                var installedPackage = winGetService.FindById(new PackageId(packageId));
+                if (installedPackage != null)
+                {
+                    localPackageDict.Add(packageId, installedPackage);
+                }
+            }
+        }
+
         // Get current pinned packages to avoid unnecessary pin operations
         IReadOnlyList<WinGetPin> pinnedPackages;
         using (consoleService.WriteProgress(Messages.FetchingPinnedPackages))

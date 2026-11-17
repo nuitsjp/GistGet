@@ -2,7 +2,6 @@
 
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Microsoft.Management.Deployment;
 using NuitsJp.GistGet.Infrastructure.WinGet;
@@ -59,25 +58,8 @@ public partial class WinGetService : IWinGetService
     /// <returns>The installed package, or <see langword="null"/> if not found.</returns>
     public WinGetPackage? FindById(PackageId id)
     {
-        try
-        {
-            var package = FindByIdInternal(id);
-            if (package != null)
-            {
-                return package;
-            }
-        }
-        catch (COMException)
-        {
-        }
-        catch (DllNotFoundException)
-        {
-        }
-        catch (TypeLoadException)
-        {
-        }
-
-        return FindByIdViaCli(id);
+        var package = FindByIdInternal(id);
+        return package ?? FindByIdViaCli(id);
     }
 
     private WinGetPackage? FindByIdInternal(PackageId id)
@@ -104,7 +86,7 @@ public partial class WinGetService : IWinGetService
         var catalog = _connector.Connect(searchBehavior);
         if (catalog == null)
         {
-            return null;
+            throw new InvalidOperationException("Failed to connect to the WinGet package catalog.");
         }
 
         foreach (var filter in CreatePackageFilters(id))
@@ -128,7 +110,7 @@ public partial class WinGetService : IWinGetService
         yield return new PackageMatchFilter
         {
             Field = PackageMatchField.Id,
-            Option = PackageFieldMatchOption.EqualsCaseInsensitive,
+            Option = PackageFieldMatchOption.Equals,
             Value = id.AsPrimitive()
         };
 
@@ -149,9 +131,9 @@ public partial class WinGetService : IWinGetService
 
     private static WinGetPackage? ExtractInstalledPackage(FindPackagesResult findResult)
     {
-        if (findResult.Status != FindPackagesResultStatus.Ok || findResult.Matches.Count == 0)
+        if (findResult.Status != FindPackagesResultStatus.Ok)
         {
-            return null;
+            throw new InvalidOperationException($"Failed to find installed packages: {findResult.Status} ({findResult.ExtendedErrorCode}).");
         }
 
         for (var i = 0; i < findResult.Matches.Count; i++)

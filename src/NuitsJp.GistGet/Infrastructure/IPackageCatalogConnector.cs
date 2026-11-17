@@ -13,7 +13,7 @@ public interface IPackageCatalogConnector
     /// Connects to the composite package catalog.
     /// </summary>
     /// <param name="searchBehavior">Composite search behavior.</param>
-    /// <returns>Connected catalog, or null if connection failed.</returns>
+    /// <returns>Connected catalog. Connection failures are reported as exceptions.</returns>
     PackageCatalog? Connect(CompositeSearchBehavior searchBehavior);
 
     /// <summary>
