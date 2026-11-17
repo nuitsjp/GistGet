@@ -236,22 +236,7 @@ public partial class WinGetService : IWinGetService
     /// <returns>Installed packages.</returns>
     public IReadOnlyList<WinGetPackage> GetAllInstalledPackages()
     {
-        try
-        {
-            return GetAllInstalledPackagesInternal();
-        }
-        catch (COMException)
-        {
-            return new List<WinGetPackage>();
-        }
-        catch (DllNotFoundException)
-        {
-            return new List<WinGetPackage>();
-        }
-        catch (TypeLoadException)
-        {
-            return new List<WinGetPackage>();
-        }
+        return GetAllInstalledPackagesInternal();
     }
 
     private IReadOnlyList<WinGetPackage> GetAllInstalledPackagesInternal()
@@ -261,7 +246,7 @@ public partial class WinGetService : IWinGetService
         var catalog = _connector.Connect(CompositeSearchBehavior.LocalCatalogs);
         if (catalog == null)
         {
-            return packages;
+            throw new InvalidOperationException("Failed to connect to the WinGet package catalog.");
         }
 
         var findPackagesOptions = new FindPackagesOptions();
@@ -269,7 +254,7 @@ public partial class WinGetService : IWinGetService
 
         if (findResult.Status != FindPackagesResultStatus.Ok)
         {
-            return packages;
+            throw new InvalidOperationException($"Failed to find installed packages: {findResult.Status} ({findResult.ExtendedErrorCode}).");
         }
 
         for (var i = 0; i < findResult.Matches.Count; i++)

@@ -3,6 +3,7 @@
 	<PropertyGroup>
 		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
 		<IsPackable>false</IsPackable>
+		<MicrosoftManagementDeployment-FactoryLinkage>none</MicrosoftManagementDeployment-FactoryLinkage>
 		<AssemblyName>NuitsJp.GistGet.Test</AssemblyName>
 		<RootNamespace>NuitsJp.GistGet.Test</RootNamespace>
 	</PropertyGroup>

@@ -86,6 +86,8 @@ public class PublishArtifactsTests
                 {
                     "Microsoft.Management.Deployment.CsWinRTProjection.dll",
                     "Microsoft.Management.Deployment.dll",
+                    "Microsoft.Management.Deployment.dll.manifest",
+                    "WindowsPackageManager.dll",
                     "Microsoft.Management.Deployment.winmd",
                     "WinRT.Runtime.dll"
                 };

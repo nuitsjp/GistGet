@@ -34,7 +34,7 @@ public class PackageCatalogConnector : IPackageCatalogConnector
 
         if (connectResult.Status != ConnectResultStatus.Ok)
         {
-            return null;
+            throw new InvalidOperationException($"Failed to connect to the WinGet package catalog: {connectResult.Status} ({connectResult.ExtendedErrorCode}).");
         }
 
         return connectResult.PackageCatalog;

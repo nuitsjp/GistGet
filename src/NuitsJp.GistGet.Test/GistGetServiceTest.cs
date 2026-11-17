@@ -2828,6 +2828,31 @@ public class GistGetServiceTests
     public class SyncAsync : GistGetServiceTests
     {
         [Fact]
+        public async Task WhenInstalledPackageQueryFails_DoesNotChangePackages()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var url = "https://example.com/packages.yml";
+            AuthServiceMock.Setup(x => x.GetPackagesFromUrlAsync(url))
+                .ReturnsAsync(new List<GistGetPackage> { new() { Id = "Example.Package" } });
+            var failure = new InvalidOperationException("catalog unavailable");
+            WinGetServiceMock.Setup(x => x.GetAllInstalledPackages()).Throws(failure);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var exception = await Should.ThrowAsync<InvalidOperationException>(() => Target.SyncAsync(url));
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            exception.ShouldBe(failure);
+            PassthroughRunnerMock.Verify(x => x.RunAsync(It.IsAny<string[]>()), Times.Never);
+            WinGetServiceMock.Verify(x => x.GetPinnedPackages(), Times.Never);
+        }
+
+        [Fact]
         public async Task WhenSyncing_WritesProgressForLocalPackageQueries()
         {
             // -------------------------------------------------------------------

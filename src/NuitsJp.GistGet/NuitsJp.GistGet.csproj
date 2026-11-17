@@ -21,6 +21,7 @@
 		<PublishSingleFile>true</PublishSingleFile>
 		<SelfContained>true</SelfContained>
 		<UseAppHost>true</UseAppHost>
+		<MicrosoftManagementDeployment-FactoryLinkage>none</MicrosoftManagementDeployment-FactoryLinkage>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -28,6 +29,7 @@
 		<PackageReference Include="Microsoft.Extensions.Hosting" />
 		<PackageReference Include="Microsoft.Windows.CsWinRT" />
 		<PackageReference Include="Microsoft.WindowsPackageManager.ComInterop" />
+		<PackageReference Include="Microsoft.WindowsPackageManager.InProcCom" GeneratePathProperty="true" IncludeAssets="none" NoWarn="NU1701" />
 		<PackageReference Include="Octokit" />
 		<PackageReference Include="Sharprompt" />
 		<PackageReference Include="Spectre.Console" />
@@ -48,6 +50,12 @@
 
 	<ItemGroup>
 	  <Folder Include="Properties\" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="$(PkgMicrosoft_WindowsPackageManager_InProcCom)\runtimes\win-x64\native\Microsoft.Management.Deployment.InProc.dll" Link="Microsoft.Management.Deployment.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+		<Content Include="$(PkgMicrosoft_WindowsPackageManager_InProcCom)\runtimes\win-x64\native\Microsoft.Management.Deployment.InProc.dll.manifest" Link="Microsoft.Management.Deployment.dll.manifest" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+		<Content Include="$(PkgMicrosoft_WindowsPackageManager_InProcCom)\runtimes\win-x64\native\WindowsPackageManager.dll" Link="WindowsPackageManager.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
 	</ItemGroup>
 
 	<Target Name="ExcludeWinGetFromSingleFile" AfterTargets="ComputeFilesToPublish">

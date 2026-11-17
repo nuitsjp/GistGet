@@ -15,7 +15,7 @@ public class WinGetServiceUnitTests
     public class FindByIdWithMock : WinGetServiceUnitTests
     {
         [Fact]
-        public void WhenConnectFails_ReturnsNull()
+        public void WhenConnectFails_ThrowsInsteadOfTreatingPackageAsMissing()
         {
             // -------------------------------------------------------------------
             // Arrange
@@ -30,19 +30,36 @@ public class WinGetServiceUnitTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            var result = target.FindById(new PackageId("Test.Package"));
+            var exception = Should.Throw<InvalidOperationException>(() => target.FindById(new PackageId("Test.Package")));
 
             // -------------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------------
-            result.ShouldBeNull();
+            exception.Message.ShouldContain("catalog");
         }
     }
 
     public class GetAllInstalledPackagesWithMock : WinGetServiceUnitTests
     {
         [Fact]
-        public void WhenConnectFails_ReturnsEmptyList()
+        public void WhenConnectThrows_PreservesFailure()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var connector = new Mock<IPackageCatalogConnector>();
+            var failure = (System.Runtime.InteropServices.COMException)System.Runtime.InteropServices.Marshal.GetExceptionForHR(unchecked((int)0x80040154))!;
+            connector.Setup(x => x.Connect(It.IsAny<CompositeSearchBehavior>())).Throws(failure);
+            var target = new WinGetService(connector.Object);
+
+            // -------------------------------------------------------------------
+            // Act & Assert
+            // -------------------------------------------------------------------
+            Should.Throw<System.Runtime.InteropServices.COMException>(() => target.GetAllInstalledPackages()).ShouldBe(failure);
+        }
+
+        [Fact]
+        public void WhenConnectFails_ThrowsInsteadOfReturningEmptyList()
         {
             // -------------------------------------------------------------------
             // Arrange
@@ -57,13 +74,12 @@ public class WinGetServiceUnitTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            var result = target.GetAllInstalledPackages();
+            var exception = Should.Throw<InvalidOperationException>(() => target.GetAllInstalledPackages());
 
             // -------------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------------
-            result.ShouldNotBeNull();
-            result.ShouldBeEmpty();
+            exception.Message.ShouldContain("catalog");
         }
     }
 }
