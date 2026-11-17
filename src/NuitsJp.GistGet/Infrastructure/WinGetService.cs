@@ -1,543 +1,311 @@
-// WinGet COM-based package discovery implementation.
+// Package discovery through the installed Windows Package Manager CLI.
 
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
-using Microsoft.Management.Deployment;
-using NuitsJp.GistGet.Infrastructure.WinGet;
+using NuitsJp.GistGet.Infrastructure.Diagnostics;
+using Spectre.Console.Rendering;
 
 namespace NuitsJp.GistGet.Infrastructure;
 
 /// <summary>
-/// Provides access to installed package data via WinGet COM APIs.
+/// Reads package information from the installed winget.exe.
 /// </summary>
-[ExcludeFromCodeCoverage]
-public partial class WinGetService : IWinGetService
+public partial class WinGetService(IProcessRunner processRunner) : IWinGetService
 {
-    private readonly IPackageCatalogConnector _connector;
+    private const int NoApplicationsFound = unchecked((int)0x8A150014);
 
-    /// <summary>
-    /// Regex pattern for parsing winget pin list data lines.
-    /// Format: Name  Id  Version  Source  PinType  PinnedVersion
-    /// Example: jq   jqlang.jq 1.7        winget Gating     1.7.0
-    /// </summary>
-    /// <remarks>
-    /// Named groups: Name, Id (vendor.package format), Version, Source, PinType, PinnedVersion (optional)
-    /// Uses ExplicitCapture, non-backtracking patterns, and timeout to avoid ReDoS.
-    /// </remarks>
-    [GeneratedRegex(@"^(?<Name>\S+)\s+(?<Id>\S+\.\S+)\s+(?<Version>\S+)\s+(?<Source>\S+)\s+(?<PinType>\S+)(?:\s+(?<PinnedVersion>\S+))?$", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex PinLineRegex();
-
-    /// <summary>
-    /// Regex pattern for parsing winget list output data lines.
-    /// Matches: Name (may contain spaces)  Id  Version  [Available]  [Source]
-    /// </summary>
-    [GeneratedRegex(@"^(?<Name>.+?)\s+(?<Id>\S+\.\S+)\s+(?<Version>\S+)(?:\s+\S+)?(?:\s+(?<Source>\S+))?$", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex ListLineRegex();
-
-    /// <summary>
-    /// Initializes a new instance with the default connector.
-    /// </summary>
-    public WinGetService() : this(new PackageCatalogConnector())
+    public WinGetService() : this(new ProcessRunner())
     {
     }
 
-    /// <summary>
-    /// Initializes a new instance with a custom connector for testing.
-    /// </summary>
-    /// <param name="connector">Package catalog connector.</param>
-    public WinGetService(IPackageCatalogConnector connector)
-    {
-        _connector = connector;
-    }
+    [GeneratedRegex(@"^(?:\((?<Index>\d+)/(?<Total>\d+)\) )?(?<Name>.+) \[(?<Id>[^\]]+)\]$", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex PackageHeaderRegex();
 
-    /// <summary>
-    /// Finds an installed package by ID.
-    /// </summary>
-    /// <param name="id">Package ID.</param>
-    /// <returns>The installed package, or <see langword="null"/> if not found.</returns>
+    [GeneratedRegex(@"^  (?<Source>.+) \[(?<Version>[^\]]+)\]$", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex UpgradeRegex();
+
+    [GeneratedRegex(@"(?<!\S)(?:Id|ID|장치 ID|ИД|識別碼)(?!\S)", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex IdColumnRegex();
+
+    [GeneratedRegex(@"\s+(?<Source>\S+)\s+(?<Type>Gating|Blocking|Pinning)(?:\s+(?<Version>\S+))?\s*$", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex PinSuffixRegex();
+
     public WinGetPackage? FindById(PackageId id)
     {
-        var package = FindByIdInternal(id);
-        return package ?? FindByIdViaCli(id);
+        return ReadPackages(["--id", id.AsPrimitive(), "--exact"])
+            .FirstOrDefault(p => string.Equals(p.Id.AsPrimitive(), id.AsPrimitive(), StringComparison.OrdinalIgnoreCase));
     }
 
-    private WinGetPackage? FindByIdInternal(PackageId id)
-    {
-        var package = FindByIdInCatalog(id, CompositeSearchBehavior.LocalCatalogs);
-        if (package != null)
-        {
-            return package;
-        }
-
-        var installedPackages = GetAllInstalledPackages();
-        package = installedPackages.FirstOrDefault(p =>
-            string.Equals(p.Id.AsPrimitive(), id.AsPrimitive(), StringComparison.OrdinalIgnoreCase));
-        if (package != null)
-        {
-            return package;
-        }
-
-        return FindByIdInCatalog(id, CompositeSearchBehavior.AllCatalogs);
-    }
-
-    private WinGetPackage? FindByIdInCatalog(PackageId id, CompositeSearchBehavior searchBehavior)
-    {
-        var catalog = _connector.Connect(searchBehavior);
-        if (catalog == null)
-        {
-            throw new InvalidOperationException("Failed to connect to the WinGet package catalog.");
-        }
-
-        foreach (var filter in CreatePackageFilters(id))
-        {
-            var findPackagesOptions = new FindPackagesOptions();
-            findPackagesOptions.Selectors.Add(filter);
-
-            var findResult = _connector.FindPackages(catalog, findPackagesOptions);
-            var package = ExtractInstalledPackage(findResult);
-            if (package != null)
-            {
-                return package;
-            }
-        }
-
-        return null;
-    }
-
-    private static IEnumerable<PackageMatchFilter> CreatePackageFilters(PackageId id)
-    {
-        yield return new PackageMatchFilter
-        {
-            Field = PackageMatchField.Id,
-            Option = PackageFieldMatchOption.Equals,
-            Value = id.AsPrimitive()
-        };
-
-        yield return new PackageMatchFilter
-        {
-            Field = PackageMatchField.PackageFamilyName,
-            Option = PackageFieldMatchOption.EqualsCaseInsensitive,
-            Value = id.AsPrimitive()
-        };
-
-        yield return new PackageMatchFilter
-        {
-            Field = PackageMatchField.ProductCode,
-            Option = PackageFieldMatchOption.EqualsCaseInsensitive,
-            Value = id.AsPrimitive()
-        };
-    }
-
-    private static WinGetPackage? ExtractInstalledPackage(FindPackagesResult findResult)
-    {
-        if (findResult.Status != FindPackagesResultStatus.Ok)
-        {
-            throw new InvalidOperationException($"Failed to find installed packages: {findResult.Status} ({findResult.ExtendedErrorCode}).");
-        }
-
-        for (var i = 0; i < findResult.Matches.Count; i++)
-        {
-            var catalogPackage = findResult.Matches[i].CatalogPackage;
-            if (catalogPackage.InstalledVersion == null)
-            {
-                continue;
-            }
-
-            var installedVersion = catalogPackage.InstalledVersion;
-            var usableVersion = GetUsableVersion(catalogPackage, installedVersion);
-            var source = GetSourceName(catalogPackage);
-
-            return new WinGetPackage(
-                Name: catalogPackage.Name,
-                Id: new PackageId(catalogPackage.Id),
-                Version: new Version(installedVersion.Version),
-                UsableVersion: usableVersion,
-                Source: source
-            );
-        }
-
-        return null;
-    }
-
-    [ExcludeFromCodeCoverage]
-    private WinGetPackage? FindByIdViaCli(PackageId id)
-    {
-        var output = RunWingetList(id);
-        if (string.IsNullOrEmpty(output))
-        {
-            return null;
-        }
-
-        var lines = output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
-        var separatorIndex = Array.FindIndex(lines, static line => line.StartsWith("---", StringComparison.Ordinal));
-        if (separatorIndex < 0)
-        {
-            return null;
-        }
-
-        for (var i = separatorIndex + 1; i < lines.Length; i++)
-        {
-            var line = lines[i].Trim();
-            if (string.IsNullOrEmpty(line))
-            {
-                continue;
-            }
-
-            var match = ListLineRegex().Match(line);
-            if (!match.Success)
-            {
-                continue;
-            }
-
-            var candidateId = match.Groups["Id"].Value;
-            if (!string.Equals(candidateId, id.AsPrimitive(), StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            var name = match.Groups["Name"].Value.Trim();
-            var versionText = match.Groups["Version"].Value;
-            var source = match.Groups["Source"].Success ? match.Groups["Source"].Value.Trim() : null;
-            var version = CreateVersionOrDefault(versionText);
-
-            return new WinGetPackage(
-                Name: name,
-                Id: id,
-                Version: version,
-                UsableVersion: null,
-                Source: source);
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// Gets all locally installed packages.
-    /// </summary>
-    /// <returns>Installed packages.</returns>
     public IReadOnlyList<WinGetPackage> GetAllInstalledPackages()
     {
-        return GetAllInstalledPackagesInternal();
+        return ReadPackages([]);
     }
 
-    private IReadOnlyList<WinGetPackage> GetAllInstalledPackagesInternal()
-    {
-        var packages = new List<WinGetPackage>();
-
-        var catalog = _connector.Connect(CompositeSearchBehavior.LocalCatalogs);
-        if (catalog == null)
-        {
-            throw new InvalidOperationException("Failed to connect to the WinGet package catalog.");
-        }
-
-        var findPackagesOptions = new FindPackagesOptions();
-        var findResult = _connector.FindPackages(catalog, findPackagesOptions);
-
-        if (findResult.Status != FindPackagesResultStatus.Ok)
-        {
-            throw new InvalidOperationException($"Failed to find installed packages: {findResult.Status} ({findResult.ExtendedErrorCode}).");
-        }
-
-        for (var i = 0; i < findResult.Matches.Count; i++)
-        {
-            var match = findResult.Matches[i];
-            var catalogPackage = match.CatalogPackage;
-
-            if (catalogPackage.InstalledVersion == null)
-            {
-                continue;
-            }
-
-            var installedVersion = catalogPackage.InstalledVersion;
-            var usableVersion = GetUsableVersion(catalogPackage, installedVersion);
-
-            var source = GetSourceName(catalogPackage);
-
-            packages.Add(new WinGetPackage(
-                Name: catalogPackage.Name,
-                Id: new PackageId(catalogPackage.Id),
-                Version: new Version(installedVersion.Version),
-                UsableVersion: usableVersion,
-                Source: source
-            ));
-        }
-
-        return packages;
-    }
-
-    /// <summary>
-    /// Determines usable version from available versions.
-    /// </summary>
-    private static Version? GetUsableVersion(CatalogPackage catalogPackage, PackageVersionInfo installedVersion)
-    {
-        // Use IsUpdateAvailable to check if an applicable update exists.
-        // This performs applicability checks (architecture, system requirements, pinning).
-        // Only returns a version when the update is actually applicable to the current system.
-        if (!catalogPackage.IsUpdateAvailable)
-        {
-            return null;
-        }
-
-        if (catalogPackage.AvailableVersions.Count > 0)
-        {
-            return new Version(catalogPackage.AvailableVersions[0].Version);
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// Gets the source name from the catalog package.
-    /// </summary>
-    private static string? GetSourceName(CatalogPackage catalogPackage)
-    {
-        for (var i = 0; i < catalogPackage.AvailableVersions.Count; i++)
-        {
-            var versionInfo = catalogPackage.GetPackageVersionInfo(catalogPackage.AvailableVersions[i]);
-            if (versionInfo.Id == catalogPackage.Id)
-            {
-                return versionInfo.PackageCatalog.Info.Name;
-            }
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// Gets all pinned packages by parsing winget pin list output.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Unlike FindById and GetAllInstalledPackages which use the WinGet COM API
-    /// (Microsoft.Management.Deployment), this method uses CLI output parsing.
-    /// </para>
-    /// <para>
-    /// This is because the WinGet COM API does not expose pin management functionality.
-    /// Pin information is managed internally by WinGet in PinningIndex.cpp and PinningData.cpp,
-    /// but these are not part of the public COM API surface (PackageManager.idl).
-    /// </para>
-    /// <para>
-    /// The CLI approach is consistent with how GistGet handles other pin operations
-    /// (pin add, pin remove) via WinGetPassthroughRunner.
-    /// </para>
-    /// </remarks>
-    /// <returns>Pinned packages.</returns>
-    [ExcludeFromCodeCoverage]
-    public IReadOnlyList<WinGetPin> GetPinnedPackages()
-    {
-        var pins = new List<WinGetPin>();
-
-        var output = RunWinGetPinList();
-        if (string.IsNullOrEmpty(output))
-        {
-            return pins;
-        }
-
-        var lines = output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
-        if (lines.Length < 2)
-        {
-            return pins;
-        }
-
-        // Find separator line (contains dashes)
-        var separatorIndex = -1;
-        for (var i = 0; i < lines.Length; i++)
-        {
-            if (lines[i].StartsWith("---"))
-            {
-                separatorIndex = i;
-                break;
-            }
-        }
-
-        if (separatorIndex < 0)
-        {
-            return pins;
-        }
-
-        // Parse data lines using whitespace splitting (language-independent)
-        for (var i = separatorIndex + 1; i < lines.Length; i++)
-        {
-            var pin = ParsePinLineByWhitespace(lines[i]);
-            if (pin != null)
-            {
-                pins.Add(pin);
-            }
-        }
-
-        return pins;
-    }
-
-    /// <summary>
-    /// Gets all packages that have updates available.
-    /// By default, packages with unknown installed versions are excluded.
-    /// </summary>
-    /// <returns>Packages with available updates (excluding unknown versions).</returns>
     public IReadOnlyList<WinGetPackage> GetPackagesWithUpdates()
     {
         return GetPackagesWithUpdates(includeUnknown: false);
     }
 
-    /// <summary>
-    /// Gets all packages that have updates available.
-    /// </summary>
-    /// <param name="includeUnknown">
-    /// When <c>true</c>, includes packages whose installed version is unknown.
-    /// When <c>false</c>, excludes such packages.
-    /// </param>
-    /// <returns>Packages with available updates.</returns>
     public IReadOnlyList<WinGetPackage> GetPackagesWithUpdates(bool includeUnknown)
     {
-        var allPackages = GetAllInstalledPackages();
-        return allPackages
+        var options = new List<string> { "--upgrade-available" };
+        if (includeUnknown)
+        {
+            options.Add("--include-unknown");
+        }
+
+        return ReadPackages(options, updatesOnly: true)
             .Where(p => p.UsableVersion != null && (includeUnknown || !p.IsVersionUnknown))
             .ToList();
     }
 
-    [ExcludeFromCodeCoverage]
-    private static string RunWinGetPinList()
+    private IReadOnlyList<WinGetPackage> ReadPackages(IEnumerable<string> options, bool updatesOnly = false)
     {
+        var arguments = new List<string> { "list", "--details", "--accept-source-agreements", "--disable-interactivity" };
+        arguments.AddRange(options);
+        var result = Run(arguments, allowNoApplications: true);
+        if (result.ExitCode == NoApplicationsFound)
+        {
+            return [];
+        }
+
+        var packages = ParsePackages(result.StandardOutput, updatesOnly);
+        if (packages.Count == 0)
+        {
+            return packages;
+        }
+
+        var sourceResult = Run(["dscv3", "package", "--export", "--disable-interactivity"]);
+        var sources = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
         try
         {
-            var wingetPath = ResolveWinGetPath();
-
-            var startInfo = new ProcessStartInfo
+            foreach (var line in sourceResult.StandardOutput.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
             {
-                FileName = wingetPath,
-                Arguments = "pin list --accept-source-agreements --disable-interactivity",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                CreateNoWindow = true
-            };
+                using var document = JsonDocument.Parse(line);
+                var item = document.RootElement;
+                var packageId = item.GetProperty("id").GetString()
+                    ?? throw new InvalidOperationException("WinGet returned a package without an ID.");
+                sources[packageId] = item.TryGetProperty("source", out var source) ? source.GetString() : null;
+            }
+        }
+        catch (JsonException exception)
+        {
+            throw new InvalidOperationException("WinGet returned invalid package source data.", exception);
+        }
 
-            using var process = Process.Start(startInfo);
-            if (process == null)
+        return packages.Select(p => p with
+        {
+            Source = p.Source ?? sources.GetValueOrDefault(p.Id.AsPrimitive())
+        }).ToList();
+    }
+
+    private static IReadOnlyList<WinGetPackage> ParsePackages(string output, bool updatesOnly)
+    {
+        var packages = new List<WinGetPackage>();
+        string? name = null;
+        string? id = null;
+        Version? installedVersion = null;
+        Version? usableVersion = null;
+        string? source = null;
+        int? total = null;
+
+        void CompletePackage()
+        {
+            if (id == null)
             {
-                return string.Empty;
+                return;
             }
 
-            var output = process.StandardOutput.ReadToEnd();
-            process.WaitForExit();
-
-            return output;
-        }
-        catch
-        {
-            // Process execution can fail in certain environments (e.g., restricted contexts)
-            return string.Empty;
-        }
-    }
-
-    [ExcludeFromCodeCoverage]
-    private static string RunWingetList(PackageId id)
-    {
-        try
-        {
-            var wingetPath = ResolveWinGetPath();
-
-            var startInfo = new ProcessStartInfo
+            if (installedVersion == null)
             {
-                FileName = wingetPath,
-                Arguments = $"list --id {id.AsPrimitive()} --exact --accept-source-agreements",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                CreateNoWindow = true
-            };
-
-            using var process = Process.Start(startInfo);
-            if (process == null)
-            {
-                return string.Empty;
+                throw new InvalidOperationException($"WinGet did not return an installed version for '{id}'.");
             }
 
-            var output = process.StandardOutput.ReadToEnd();
-            process.WaitForExit();
+            packages.Add(new WinGetPackage(name!, new PackageId(id), installedVersion.Value, usableVersion, source));
+            id = null;
+        }
 
-            return output;
-        }
-        catch
+        foreach (var line in output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
         {
-            return string.Empty;
-        }
-    }
-
-    private static Version CreateVersionOrDefault(string versionText)
-    {
-        try
-        {
-            return new Version(versionText);
-        }
-        catch
-        {
-            return new Version("0.0.0");
-        }
-    }
-
-    [ExcludeFromCodeCoverage]
-    private static string ResolveWinGetPath()
-    {
-        var pathEnv = Environment.GetEnvironmentVariable("PATH");
-        if (pathEnv != null)
-        {
-            var paths = pathEnv.Split(Path.PathSeparator);
-            foreach (var path in paths)
+            if (!char.IsWhiteSpace(line[0]))
             {
-                var fullPath = Path.Combine(path, "winget.exe");
-                if (File.Exists(fullPath))
+                var header = PackageHeaderRegex().Match(line);
+                if (header.Success)
                 {
-                    return fullPath;
+                    CompletePackage();
+                    if (total.HasValue && packages.Count == total.Value)
+                    {
+                        break;
+                    }
+
+                    if (header.Groups["Total"].Success)
+                    {
+                        var count = int.Parse(header.Groups["Total"].Value, CultureInfo.InvariantCulture);
+                        var index = int.Parse(header.Groups["Index"].Value, CultureInfo.InvariantCulture);
+                        if ((total.HasValue && total.Value != count) || index != packages.Count + 1)
+                        {
+                            throw new InvalidOperationException("WinGet returned an incomplete package list.");
+                        }
+
+                        total = count;
+                    }
+
+                    name = header.Groups["Name"].Value;
+                    id = header.Groups["Id"].Value;
+                    installedVersion = null;
+                    usableVersion = null;
+                    source = null;
+                    continue;
                 }
             }
+
+            if (id == null)
+            {
+                if (updatesOnly)
+                {
+                    // A successful upgrade query can contain only the no-updates summary.
+                    break;
+                }
+
+                continue;
+            }
+
+            if (installedVersion == null)
+            {
+                // Version is the first detail field; its localized label is not parsed.
+                var separator = line.IndexOf(':', StringComparison.Ordinal);
+                if (separator < 0 || string.IsNullOrWhiteSpace(line[(separator + 1)..]))
+                {
+                    throw new InvalidOperationException($"WinGet returned an invalid version for '{id}'.");
+                }
+
+                installedVersion = new Version(line[(separator + 1)..].Trim());
+                continue;
+            }
+
+            var upgrade = UpgradeRegex().Match(line);
+            if (upgrade.Success && usableVersion == null)
+            {
+                usableVersion = new Version(upgrade.Groups["Version"].Value);
+                source = upgrade.Groups["Source"].Value;
+            }
+            else if (!char.IsWhiteSpace(line[0]) && !line.Contains(':', StringComparison.Ordinal))
+            {
+                // Summaries delimit packages that require explicit targeting or are pinned.
+                CompletePackage();
+                break;
+            }
         }
 
-        var localAppData = Environment.GetEnvironmentVariable("LOCALAPPDATA");
-        return Path.Combine(localAppData!, "Microsoft", "WindowsApps", "winget.exe");
+        CompletePackage();
+        if ((total.HasValue && packages.Count != total.Value) || (!updatesOnly && packages.Count == 0))
+        {
+            throw new InvalidOperationException("WinGet returned an empty or incomplete package list.");
+        }
+
+        var versionComparer = CultureInfo.InvariantCulture.CompareInfo.GetStringComparer(CompareOptions.NumericOrdering);
+        return packages.GroupBy(p => p.Id.AsPrimitive(), StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.OrderBy(p => p.IsVersionUnknown)
+                .ThenByDescending(p => p.Version.AsPrimitive(), versionComparer)
+                .ThenByDescending(p => p.UsableVersion != null)
+                .First())
+            .ToList();
     }
 
-    /// <summary>
-    /// Parses a pin data line using regex pattern matching.
-    /// This approach is language-independent and anchors on the package ID format.
-    /// </summary>
-    /// <remarks>
-    /// Expected format: Name  Id  Version  Source  PinType  PinnedVersion
-    /// Example: jq   jqlang.jq 1.7        winget Gating     1.7.0
-    /// </remarks>
-    [ExcludeFromCodeCoverage]
-    private static WinGetPin? ParsePinLineByWhitespace(string line)
+    public IReadOnlyList<WinGetPin> GetPinnedPackages()
     {
-        try
+        var result = Run(["pin", "list", "--accept-source-agreements", "--disable-interactivity"]);
+        var lines = result.StandardOutput.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+        var separator = Array.FindIndex(lines, line => line.Length > 0 && line.All(c => c == '-'));
+        if (separator < 0)
         {
-            var match = PinLineRegex().Match(line.Trim());
-            if (!match.Success)
+            // WinGet reports an empty pinning index as a successful message without a table.
+            return [];
+        }
+
+        if (separator == 0)
+        {
+            throw new InvalidOperationException("WinGet returned a pin table without a header.");
+        }
+
+        var header = lines[separator - 1];
+        var idColumn = IdColumnRegex().Match(header);
+        if (!idColumn.Success)
+        {
+            throw new InvalidOperationException("WinGet returned an unrecognized pin table.");
+        }
+
+        var idOffset = new Segment(header[..idColumn.Index]).CellCount();
+        var pins = new List<WinGetPin>();
+        foreach (var line in lines.Skip(separator + 1))
+        {
+            var suffix = PinSuffixRegex().Match(line);
+            var idStart = GetCharacterIndex(line, idOffset);
+            if (!suffix.Success || suffix.Index <= idStart)
             {
-                return null;
+                throw new InvalidOperationException($"WinGet returned an invalid pin: {line}");
             }
 
-            // Named groups: Name, Id, Version, Source, PinType, PinnedVersion
-            var id = match.Groups["Id"].Value.Trim();
-            var pinType = match.Groups["PinType"].Value.Trim();
-            var pinnedVersion = match.Groups["PinnedVersion"].Success ? match.Groups["PinnedVersion"].Value.Trim() : string.Empty;
-
-            if (string.IsNullOrEmpty(id))
+            var columns = line[idStart..suffix.Index].Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+            if (columns.Length == 0 || columns[0].Contains('…', StringComparison.Ordinal))
             {
-                return null;
+                throw new InvalidOperationException($"WinGet returned an incomplete pin: {line}");
             }
 
-            return new WinGetPin(
-                Id: new PackageId(id),
-                PinType: pinType,
-                PinnedVersion: string.IsNullOrEmpty(pinnedVersion) ? null : new Version(pinnedVersion)
-            );
+            var pinnedVersion = suffix.Groups["Version"];
+            pins.Add(new WinGetPin(new PackageId(columns[0]), suffix.Groups["Type"].Value,
+                pinnedVersion.Success ? new Version(pinnedVersion.Value) : null));
         }
-        catch
+
+        return pins;
+    }
+
+    private static int GetCharacterIndex(string text, int cells)
+    {
+        var index = 0;
+        var width = 0;
+        foreach (var rune in text.EnumerateRunes())
         {
-            return null;
+            if (width >= cells)
+            {
+                return index;
+            }
+
+            width += new Segment(rune.ToString()).CellCount();
+            index += rune.Utf16SequenceLength;
         }
+
+        return index;
+    }
+
+    private ProcessResult Run(IEnumerable<string> arguments, bool allowNoApplications = false)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = "winget.exe",
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8,
+            CreateNoWindow = true
+        };
+        foreach (var argument in arguments)
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+
+        var result = processRunner.RunAndCapture(startInfo);
+        if (result.ExitCode != 0 && !(allowNoApplications && result.ExitCode == NoApplicationsFound))
+        {
+            throw new InvalidOperationException(
+                $"winget {string.Join(' ', startInfo.ArgumentList)} failed (0x{result.ExitCode:X8}). {result.StandardError} {result.StandardOutput}");
+        }
+
+        return result;
     }
 }
-
-
-
-
 

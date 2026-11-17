@@ -20,7 +20,9 @@
 ## 要件
 
 -   Windows 10/11
--   Windows Package Manager (`winget`)
+-   Windows Package Manager (`winget`) 1.29.380+
+
+パッケージ情報の取得と変更には、インストール済みの `winget.exe` を使用します。WinGet DLL は同梱しません。パッケージ一覧やピン情報を取得できない場合は、パッケージを変更する前に同期を停止します。
 
 ## インストール
 

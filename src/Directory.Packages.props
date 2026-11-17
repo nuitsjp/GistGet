@@ -8,10 +8,6 @@
     <PackageVersion Include="Meziantou.Analyzer" Version="2.0.182" />
     <!-- Microsoft.Extensions -->
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.1" />
-    <!-- WinGet COM Interop -->
-    <PackageVersion Include="Microsoft.Windows.CsWinRT" Version="2.2.0" />
-    <PackageVersion Include="Microsoft.WindowsPackageManager.ComInterop" Version="1.12.420" />
-    <PackageVersion Include="Microsoft.WindowsPackageManager.InProcCom" Version="1.12.420" />
     <!-- GitHub, YAML, CLI -->
     <PackageVersion Include="FluentTextTable" Version="1.0.0" />
     <PackageVersion Include="Octokit" Version="14.0.0" />

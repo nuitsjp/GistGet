@@ -7,7 +7,9 @@
 
 [Japanese](README.ja.md)
 
-**GistGet** is a CLI tool designed to synchronize Windows Package Manager (`winget`) packages across multiple devices using GitHub Gist.
+**GistGet** is a CLI tool designed to synchronize Windows Package Manager (`winget`) 1.29.380+
+
+GistGet uses the installed `winget.exe` for package discovery and changes. WinGet DLLs are not bundled. If package or pin information cannot be retrieved, synchronization stops before changing packages. packages across multiple devices using GitHub Gist.
 It uses a simple YAML configuration file stored in a private or public Gist to keep your installed applications and tools consistent.
 
 ## Features

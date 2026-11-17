@@ -2857,6 +2857,31 @@ public class GistGetServiceTests
         }
 
         [Fact]
+        public async Task WhenPinQueryFails_DoesNotStartPackageChanges()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var url = "https://example.com/packages.yml";
+            AuthServiceMock.Setup(x => x.GetPackagesFromUrlAsync(url))
+                .ReturnsAsync(new List<GistGetPackage> { new() { Id = "Example.Package" } });
+            WinGetServiceMock.Setup(x => x.GetAllInstalledPackages()).Returns(new List<WinGetPackage>());
+            var failure = new InvalidOperationException("pin query failed");
+            WinGetServiceMock.Setup(x => x.GetPinnedPackages()).Throws(failure);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var exception = await Should.ThrowAsync<InvalidOperationException>(() => Target.SyncAsync(url));
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            exception.ShouldBe(failure);
+            PassthroughRunnerMock.Verify(x => x.RunAsync(It.IsAny<string[]>()), Times.Never);
+        }
+
+        [Fact]
         public async Task WhenInstalledPackageHasDifferentCatalogId_DoesNotInstallOrUpgrade()
         {
             // -------------------------------------------------------------------

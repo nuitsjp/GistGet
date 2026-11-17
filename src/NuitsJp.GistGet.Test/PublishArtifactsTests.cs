@@ -1,6 +1,4 @@
 using System.Diagnostics;
-using System.Security.Cryptography;
-using System.Text.Json;
 using Shouldly;
 
 namespace NuitsJp.GistGet.Test;
@@ -32,55 +30,7 @@ public class PublishArtifactsTests
     public class PortablePackage : PublishArtifactsTests
     {
         [Fact]
-        public void ExistingOutOfProcessDll_IsReplacedWithInProcessDll()
-        {
-            // -------------------------------------------------------------------
-            // Arrange
-            // -------------------------------------------------------------------
-            var publishDirectory = Path.Combine(PublishRoot, Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(publishDirectory);
-            using var assets = JsonDocument.Parse(File.ReadAllText(Path.Combine(
-                RepositoryRoot, "src", "NuitsJp.GistGet", "obj", "project.assets.json")));
-            var libraries = assets.RootElement.GetProperty("libraries");
-            var packageFolders = assets.RootElement.GetProperty("packageFolders").EnumerateObject()
-                .Select(folder => folder.Name).ToArray();
-            var inProcessPackage = libraries.EnumerateObject()
-                .Single(library => library.Name.StartsWith("Microsoft.WindowsPackageManager.InProcCom/", StringComparison.Ordinal))
-                .Value.GetProperty("path").GetString()!;
-            var interopPackage = libraries.EnumerateObject()
-                .Single(library => library.Name.StartsWith("Microsoft.WindowsPackageManager.ComInterop/", StringComparison.Ordinal))
-                .Value.GetProperty("path").GetString()!;
-            var inProcessDll = packageFolders.Select(folder => Path.Combine(folder, inProcessPackage,
-                "runtimes", "win-x64", "native", "Microsoft.Management.Deployment.InProc.dll")).First(File.Exists);
-            var outOfProcessDll = packageFolders.Select(folder => Path.Combine(folder, interopPackage,
-                "bin", "win-x64", "native", "static", "Microsoft.Management.Deployment.dll")).First(File.Exists);
-            var publishedDll = Path.Combine(publishDirectory, "Microsoft.Management.Deployment.dll");
-
-            try
-            {
-                File.Copy(outOfProcessDll, publishedDll);
-                File.SetLastWriteTimeUtc(publishedDll, DateTime.UtcNow.AddDays(1));
-
-                // -------------------------------------------------------------------
-                // Act
-                // -------------------------------------------------------------------
-                var publishResult = RunProcess("dotnet",
-                    ["publish", CoreProjectPath, "-c", "Release", "-r", "win-x64", "-o", publishDirectory]);
-
-                // -------------------------------------------------------------------
-                // Assert
-                // -------------------------------------------------------------------
-                publishResult.ExitCode.ShouldBe(0, publishResult.ToString());
-                SHA256.HashData(File.ReadAllBytes(publishedDll)).ShouldBe(SHA256.HashData(File.ReadAllBytes(inProcessDll)));
-            }
-            finally
-            {
-                Directory.Delete(publishDirectory, true);
-            }
-        }
-
-        [Fact]
-        public void MissingLocalDll_ShouldStillRunExecutableAndKeepWinGetInteropBeside()
+        public void SingleFileExecutables_RunWithoutWinGetInteropFiles()
         {
             // -------------------------------------------------------------------
             // Arrange
@@ -131,7 +81,7 @@ public class PublishArtifactsTests
                 var corePath = Path.Combine(publishDirectory, "NuitsJp.GistGet.exe");
                 File.Exists(corePath).ShouldBeTrue("NuitsJp.GistGet.exe (core) should exist");
 
-                // Verify WinGet COM interop DLLs are present
+                // Verify WinGet COM interop files are not distributed
                 var winGetInteropFiles = new[]
                 {
                     "Microsoft.Management.Deployment.CsWinRTProjection.dll",
@@ -145,8 +95,11 @@ public class PublishArtifactsTests
                 foreach (var fileName in winGetInteropFiles)
                 {
                     var fullPath = Path.Combine(publishDirectory, fileName);
-                    File.Exists(fullPath).ShouldBeTrue($"{fileName} should be present beside the executable");
+                    File.Exists(fullPath).ShouldBeFalse($"{fileName} should not be distributed beside the executable");
                 }
+
+                Directory.GetFiles(publishDirectory, "*.dll", SearchOption.AllDirectories).ShouldBeEmpty();
+                Directory.GetFiles(publishDirectory, "*.winmd", SearchOption.AllDirectories).ShouldBeEmpty();
 
                 // -------------------------------------------------------------------
                 // Act
