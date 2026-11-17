@@ -463,7 +463,7 @@ public class GistGetService(
         IReadOnlyList<WinGetPackage> packagesWithUpdates;
         using (consoleService.WriteProgress(Messages.FetchingInstalledPackages))
         {
-            packagesWithUpdates = winGetService.GetPackagesWithUpdates(options.IncludeUnknown);
+            packagesWithUpdates = winGetService.GetPackagesWithUpdates(options.IncludeUnknown, options.IncludePinned);
         }
 
         if (packagesWithUpdates.Count == 0)

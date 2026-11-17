@@ -27,7 +27,7 @@ public interface IWinGetService
     /// </summary>
     /// <remarks>
     /// By default, packages with unknown installed versions are excluded.
-    /// Use <see cref="GetPackagesWithUpdates(bool)"/> to include them.
+    /// Use <see cref="GetPackagesWithUpdates(bool, bool)"/> to include them.
     /// </remarks>
     IReadOnlyList<WinGetPackage> GetPackagesWithUpdates();
 
@@ -38,7 +38,10 @@ public interface IWinGetService
     /// When <c>true</c>, includes packages whose installed version is unknown.
     /// When <c>false</c>, excludes such packages.
     /// </param>
-    IReadOnlyList<WinGetPackage> GetPackagesWithUpdates(bool includeUnknown);
+    /// <param name="includePinned">
+    /// When <c>true</c>, includes <c>Pinning</c> pins; blocking and gating pins still apply.
+    /// </param>
+    IReadOnlyList<WinGetPackage> GetPackagesWithUpdates(bool includeUnknown, bool includePinned);
 }
 
 

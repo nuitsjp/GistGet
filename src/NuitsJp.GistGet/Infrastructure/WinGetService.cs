@@ -35,7 +35,7 @@ public partial class WinGetService(IProcessRunner processRunner) : IWinGetServic
 
     public WinGetPackage? FindById(PackageId id)
     {
-        return ReadPackages(["--id", id.AsPrimitive(), "--exact"])
+        return ReadPackages(["--id", id.AsPrimitive()])
             .FirstOrDefault(p => string.Equals(p.Id.AsPrimitive(), id.AsPrimitive(), StringComparison.OrdinalIgnoreCase));
     }
 
@@ -46,12 +46,17 @@ public partial class WinGetService(IProcessRunner processRunner) : IWinGetServic
 
     public IReadOnlyList<WinGetPackage> GetPackagesWithUpdates()
     {
-        return GetPackagesWithUpdates(includeUnknown: false);
+        return GetPackagesWithUpdates(includeUnknown: false, includePinned: false);
     }
 
-    public IReadOnlyList<WinGetPackage> GetPackagesWithUpdates(bool includeUnknown)
+    public IReadOnlyList<WinGetPackage> GetPackagesWithUpdates(bool includeUnknown, bool includePinned)
     {
         var options = new List<string> { "--upgrade-available" };
+        if (includePinned)
+        {
+            options.Add("--include-pinned");
+        }
+
         if (includeUnknown)
         {
             options.Add("--include-unknown");
@@ -64,7 +69,7 @@ public partial class WinGetService(IProcessRunner processRunner) : IWinGetServic
 
     private IReadOnlyList<WinGetPackage> ReadPackages(IEnumerable<string> options, bool updatesOnly = false)
     {
-        var arguments = new List<string> { "list", "--details", "--accept-source-agreements", "--disable-interactivity" };
+        var arguments = new List<string> { "list", "--details", "--sort", "version", "--descending", "--accept-source-agreements", "--disable-interactivity" };
         arguments.AddRange(options);
         var result = Run(arguments, allowNoApplications: true);
         if (result.ExitCode == NoApplicationsFound)
@@ -166,8 +171,10 @@ public partial class WinGetService(IProcessRunner processRunner) : IWinGetServic
             {
                 if (updatesOnly)
                 {
-                    // A successful upgrade query can contain only the no-updates summary.
-                    break;
+                    if (IsNoInstalledPackageMessage(line))
+                    {
+                        return [];
+                    }
                 }
 
                 continue;
@@ -201,17 +208,18 @@ public partial class WinGetService(IProcessRunner processRunner) : IWinGetServic
         }
 
         CompletePackage();
-        if ((total.HasValue && packages.Count != total.Value) || (!updatesOnly && packages.Count == 0))
+        if ((total.HasValue && packages.Count != total.Value) || packages.Count == 0)
         {
             throw new InvalidOperationException("WinGet returned an empty or incomplete package list.");
         }
 
-        var versionComparer = CultureInfo.InvariantCulture.CompareInfo.GetStringComparer(CompareOptions.NumericOrdering);
+        // WinGet sorts using its own version semantics, including '<' and '>' versions.
         return packages.GroupBy(p => p.Id.AsPrimitive(), StringComparer.OrdinalIgnoreCase)
-            .Select(group => group.OrderBy(p => p.IsVersionUnknown)
-                .ThenByDescending(p => p.Version.AsPrimitive(), versionComparer)
-                .ThenByDescending(p => p.UsableVersion != null)
-                .First())
+            .Select(group =>
+            {
+                var newest = group.First();
+                return group.FirstOrDefault(p => p.Version == newest.Version && p.UsableVersion != null) ?? newest;
+            })
             .ToList();
     }
 
@@ -281,6 +289,56 @@ public partial class WinGetService(IProcessRunner processRunner) : IWinGetServic
         return index;
     }
 
+    // WinGet v1.29.380 NoInstalledPackageFound resource, for the supported UI languages.
+    private static bool IsNoInstalledPackageMessage(string line)
+    {
+        return line.Trim() is
+            "No installed package found matching input criteria." or
+            "Es wurde kein installiertes Paket gefunden, das den Eingabekriterien entspricht." or
+            "No se encontró ningún paquete que coincida con los criterios de entrada." or
+            "Aucun package installé ne correspond aux critères saisis." or
+            "Non è stato trovato alcun pacchetto installato corrispondente ai criteri di input." or
+            "入力条件に一致するインストール済みのパッケージが見つかりませんでした。" or
+            "입력 조건과 일치하는 설치된 패키지를 찾을 수 없습니다." or
+            "Nenhum pacote instalado foi encontrado que corresponda aos critérios de entrada." or
+            "Не найдены установленные пакеты, соответствующие введенным условиям." or
+            "找不到与输入条件匹配的已安装程序包。" or
+            "未找到符合輸入條件的已安裝套件。";
+    }
+
+    private static bool ContainsSourceFailure(string output)
+    {
+        // SourceOpenWithFailedUpdate and SearchFailureWarning are written to stdout,
+        // even when WinGet returns success or NoApplicationsFound.
+        string[] prefixes =
+        [
+            "Failed in attempting to update the source: ",
+            "Failed when searching source; results will not be included: ",
+            "Fehler beim Versuch, die Quelle zu aktualisieren: ",
+            "Fehler beim Durchsuchen der Quelle. Ergebnisse werden nicht einbezogen: ",
+            "Error al intentar actualizar el origen: ",
+            "Error al buscar en el origen, los resultados no se incluirán: ",
+            "Échec de la tentative de mise à jour de la source : ",
+            "Échec lors de la recherche de la source\u00a0; les résultats ne seront pas inclus\u00a0: ",
+            "Non è stato possibile aggiornare l'origine: ",
+            "Errore durante la ricerca nell'origine; i risultati non verranno inclusi: '",
+            "ソースを更新できませんでした: ",
+            "ソースの検索中にエラーが発生しました;結果は含まれません: ",
+            "원본을 업데이트하지 못했습니다. ",
+            "원본을 검색하는 동안 실패했습니다. 결과가 포함되지 않습니다. ",
+            "Falha ao tentar atualizar a origem: ",
+            "Falha ao pesquisar origem; os resultados não serão incluídos: ",
+            "Не удалось обновить источник: ",
+            "Сбой при поиске в источнике; результаты не будут включены: ",
+            "尝试更新源失败： ",
+            "搜索源时失败;结果将不包括在内： ",
+            "嘗試更新來源失敗： ",
+            "搜尋來源時失敗; 將不會包含結果: "
+        ];
+        return output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+            .Any(line => prefixes.Any(prefix => line.StartsWith(prefix, StringComparison.Ordinal)));
+    }
+
     private ProcessResult Run(IEnumerable<string> arguments, bool allowNoApplications = false)
     {
         var startInfo = new ProcessStartInfo
@@ -299,7 +357,8 @@ public partial class WinGetService(IProcessRunner processRunner) : IWinGetServic
         }
 
         var result = processRunner.RunAndCapture(startInfo);
-        if (result.ExitCode != 0 && !(allowNoApplications && result.ExitCode == NoApplicationsFound))
+        if (ContainsSourceFailure(result.StandardOutput) ||
+            (result.ExitCode != 0 && !(allowNoApplications && result.ExitCode == NoApplicationsFound)))
         {
             throw new InvalidOperationException(
                 $"winget {string.Join(' ', startInfo.ArgumentList)} failed (0x{result.ExitCode:X8}). {result.StandardError} {result.StandardOutput}");

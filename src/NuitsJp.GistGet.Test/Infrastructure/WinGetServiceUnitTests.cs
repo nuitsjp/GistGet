@@ -145,6 +145,29 @@ public class WinGetServiceUnitTests
             packages.ShouldHaveSingleItem().UsableVersion.ShouldBe(new Version("16.0.2"));
         }
 
+        [Theory]
+        [InlineData("ソースの検索中にエラーが発生しました;結果は含まれません: winget")]
+        [InlineData("尝试更新源失败： winget")]
+        [InlineData("Échec lors de la recherche de la source\u00a0; les résultats ne seront pas inclus\u00a0: winget")]
+        [InlineData("Errore durante la ricerca nell'origine; i risultati non verranno inclusi: 'winget'")]
+        public void LocalizedSourceFailure_DoesNotReturnPartialPackages(string warning)
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            ListResult = new ProcessResult(0, warning + "\nExample [Example.Package]\nVersion: 1.0", "");
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var exception = Should.Throw<InvalidOperationException>(() => Target.GetAllInstalledPackages());
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            exception.Message.ShouldContain(warning);
+        }
+
         [Fact]
         public void SourceExportFails_ThrowsInsteadOfUsingIncompleteSources()
         {
@@ -183,7 +206,7 @@ public class WinGetServiceUnitTests
     public class FindById : WinGetServiceUnitTests
     {
         [Fact]
-        public void StoreId_QueriesInstalledPackageByExactId()
+        public void StoreId_QueriesIdAndMatchesCompleteIdentifier()
         {
             // -------------------------------------------------------------------
             // Arrange
@@ -206,8 +229,103 @@ public class WinGetServiceUnitTests
             ProcessRunnerMock.Verify(x => x.RunAndCapture(It.Is<ProcessStartInfo>(p =>
                 p.ArgumentList[0] == "list" && p.ArgumentList.Contains("--details") &&
                 p.ArgumentList.Contains("--id") && p.ArgumentList.Contains("XPFFZHVGQWWLHB") &&
-                p.ArgumentList.Contains("--exact") && p.ArgumentList.Contains("--disable-interactivity") &&
+                !p.ArgumentList.Contains("--exact") && p.ArgumentList.Contains("--disable-interactivity") &&
                 p.ArgumentList.Contains("--accept-source-agreements"))), Times.Once);
+        }
+
+        [Fact]
+        public void IdDiffersOnlyByCase_FindsInstalledPackage()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            ListResult = new ProcessResult(0, "Office [Microsoft.Office]\nVersion: 16.0.1", "");
+            ProcessRunnerMock.Setup(x => x.RunAndCapture(It.Is<ProcessStartInfo>(p => p.ArgumentList[0] == "list")))
+                .Returns((ProcessStartInfo p) => p.ArgumentList.Contains("--exact")
+                    ? new ProcessResult(unchecked((int)0x8A150014), "No installed package found matching input criteria.", "")
+                    : ListResult);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var package = Target.FindById(new PackageId("microsoft.office"));
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            package.ShouldNotBeNull();
+            package.Id.AsPrimitive().ShouldBe("Microsoft.Office");
+        }
+
+        [Fact]
+        public void QueryMatchesOnlyLongerIds_ReturnsNull()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            ListResult = new ProcessResult(0, "SDK 10 [Microsoft.DotNet.SDK.10]\nVersion: 10.0.404", "");
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var package = Target.FindById(new PackageId("Microsoft.DotNet.SDK.1"));
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            package.ShouldBeNull();
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(-1978335212)]
+        public void SourceSearchFailure_IsNotTreatedAsPackageAbsence(int exitCode)
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            ListResult = new ProcessResult(exitCode, """
+                Failed when searching source; results will not be included: winget
+                No installed package found matching input criteria.
+                """, "");
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var exception = Should.Throw<InvalidOperationException>(() => Target.FindById(new PackageId("Example.Package")));
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            exception.Message.ShouldContain("Failed when searching source");
+        }
+
+        [Fact]
+        public void ApproximateInstalledVersion_PreservesWinGetVersionOrdering()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            ListResult = new ProcessResult(0, """
+                (1/2) Windows App Runtime newer [Microsoft.WindowsAppRuntime.1.8]
+                Version: > 1.8.10
+                (2/2) Windows App Runtime [Microsoft.WindowsAppRuntime.1.8]
+                Version: 1.8.10
+                """, "");
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var package = Target.FindById(new PackageId("Microsoft.WindowsAppRuntime.1.8"));
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            package.ShouldNotBeNull();
+            package.Version.ShouldBe(new Version("> 1.8.10"));
+            ProcessRunnerMock.Verify(x => x.RunAndCapture(It.Is<ProcessStartInfo>(p =>
+                p.ArgumentList[0] == "list" && p.ArgumentList.Contains("--sort") &&
+                p.ArgumentList.Contains("version") && p.ArgumentList.Contains("--descending"))), Times.Once);
         }
 
         [Fact]
@@ -217,12 +335,12 @@ public class WinGetServiceUnitTests
             // Arrange
             // -------------------------------------------------------------------
             ListResult = new ProcessResult(0, """
-                (1/2) .NET SDK old [Microsoft.DotNet.SDK.10]
+                (1/2) .NET SDK current [Microsoft.DotNet.SDK.10]
+                Version: 10.0.404
+                (2/2) .NET SDK old [Microsoft.DotNet.SDK.10]
                 Version: 10.0.303
                 Available Upgrades:
                   winget [10.0.404]
-                (2/2) .NET SDK current [Microsoft.DotNet.SDK.10]
-                Version: 10.0.404
                 """, "");
 
             // -------------------------------------------------------------------
@@ -279,6 +397,84 @@ public class WinGetServiceUnitTests
         }
 
         [Fact]
+        public void WarningBeforePackageDetails_ThrowsInsteadOfReportingNoUpdates()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            ListResult = new ProcessResult(0, """
+                Failed in attempting to update the source: winget
+                Example [Example.Package]
+                Version: 1.0
+                Available Upgrades:
+                  winget [2.0]
+                """, "");
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var exception = Should.Throw<InvalidOperationException>(() => Target.GetPackagesWithUpdates());
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            exception.Message.ShouldContain("Failed in attempting to update the source");
+        }
+
+        [Fact]
+        public void InformationBeforePackageDetails_DoesNotHideAvailableUpdates()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            ListResult = new ProcessResult(0, """
+                Source company requires authentication.
+                Example [Example.Package]
+                Version: 1.0
+                Available Upgrades:
+                  winget [2.0]
+                """, "");
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var packages = Target.GetPackagesWithUpdates();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            packages.ShouldHaveSingleItem().Id.AsPrimitive().ShouldBe("Example.Package");
+        }
+
+        [Theory]
+        [InlineData("No installed package found matching input criteria.")]
+        [InlineData("入力条件に一致するインストール済みのパッケージが見つかりませんでした。")]
+        [InlineData("Aucun package installé ne correspond aux critères saisis.")]
+        public void OnlyBlockedOrExplicitUpgrades_AreNotAutomaticallySelected(string noPackagesMessage)
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            ListResult = new ProcessResult(0, noPackagesMessage + "\n\n" + """
+                The following packages have an upgrade available, but require explicit targeting for upgrade:
+                Explicit package [Example.Explicit]
+                Version: 1.0
+                Available Upgrades:
+                  winget [2.0]
+                """, "");
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var packages = Target.GetPackagesWithUpdates();
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            packages.ShouldBeEmpty();
+        }
+
+        [Fact]
         public void DefaultQuery_UsesUpgradeFilterWithoutUnknownVersions()
         {
             // -------------------------------------------------------------------
@@ -313,7 +509,7 @@ public class WinGetServiceUnitTests
             // -------------------------------------------------------------------
             // Act
             // -------------------------------------------------------------------
-            Target.GetPackagesWithUpdates(includeUnknown);
+            Target.GetPackagesWithUpdates(includeUnknown, includePinned: false);
 
             // -------------------------------------------------------------------
             // Assert
