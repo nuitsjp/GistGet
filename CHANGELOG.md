@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.3] - 2026-11-17
+
+### Changed
+
+- 同梱 WinGet DLL を廃止し、インストール済みの WinGet 1.29.380 以降を使用
+
+### Fixed
+
+- WinGet の情報取得に失敗した場合に未導入と誤認せず、同期の変更を停止
+- パッケージ ID、複数バージョン、およびピン留めされた更新候補の判定を修正
+
 ## [1.4.2] - 2026-05-06
 
 ### Fixed
