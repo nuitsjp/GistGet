@@ -45,6 +45,23 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - name: Ensure supported WinGet
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $minimumVersion = [version]'1.29.380'
+          $currentVersion = [version]((& winget --version).Trim().TrimStart('v').Split('-')[0])
+          if ($currentVersion -lt $minimumVersion) {
+            Install-Module Microsoft.WinGet.Client -Scope CurrentUser -Repository PSGallery -Force
+            Import-Module Microsoft.WinGet.Client
+            Repair-WinGetPackageManager -Version $minimumVersion.ToString() -Force
+          }
+          $actualVersion = [version]((& winget --version).Trim().TrimStart('v').Split('-')[0])
+          if ($actualVersion -lt $minimumVersion) {
+            throw "WinGet $minimumVersion or later is required; found $actualVersion."
+          }
+          Write-Host "Testing with WinGet $actualVersion"
+
       - name: Ensure test packages are installed
         run: |
           if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {

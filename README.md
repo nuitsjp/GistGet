@@ -20,7 +20,9 @@ It uses a simple YAML configuration file stored in a private or public Gist to k
 ## Requirements
 
 -   Windows 10/11
--   Windows Package Manager (`winget`)
+-   Windows Package Manager (`winget`) 1.29.380+
+
+GistGet uses the installed `winget.exe` for package discovery and changes. WinGet DLLs are not bundled. If package or pin information cannot be retrieved, synchronization stops before changing packages.
 
 ## Installation
 

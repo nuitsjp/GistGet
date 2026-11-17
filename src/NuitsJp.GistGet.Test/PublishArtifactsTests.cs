@@ -30,7 +30,7 @@ public class PublishArtifactsTests
     public class PortablePackage : PublishArtifactsTests
     {
         [Fact]
-        public void MissingLocalDll_ShouldStillRunExecutableAndKeepWinGetInteropBeside()
+        public void SingleFileExecutables_RunWithoutWinGetInteropFiles()
         {
             // -------------------------------------------------------------------
             // Arrange
@@ -81,11 +81,13 @@ public class PublishArtifactsTests
                 var corePath = Path.Combine(publishDirectory, "NuitsJp.GistGet.exe");
                 File.Exists(corePath).ShouldBeTrue("NuitsJp.GistGet.exe (core) should exist");
 
-                // Verify WinGet COM interop DLLs are present
+                // Verify WinGet COM interop files are not distributed
                 var winGetInteropFiles = new[]
                 {
                     "Microsoft.Management.Deployment.CsWinRTProjection.dll",
                     "Microsoft.Management.Deployment.dll",
+                    "Microsoft.Management.Deployment.dll.manifest",
+                    "WindowsPackageManager.dll",
                     "Microsoft.Management.Deployment.winmd",
                     "WinRT.Runtime.dll"
                 };
@@ -93,8 +95,11 @@ public class PublishArtifactsTests
                 foreach (var fileName in winGetInteropFiles)
                 {
                     var fullPath = Path.Combine(publishDirectory, fileName);
-                    File.Exists(fullPath).ShouldBeTrue($"{fileName} should be present beside the executable");
+                    File.Exists(fullPath).ShouldBeFalse($"{fileName} should not be distributed beside the executable");
                 }
+
+                Directory.GetFiles(publishDirectory, "*.dll", SearchOption.AllDirectories).ShouldBeEmpty();
+                Directory.GetFiles(publishDirectory, "*.winmd", SearchOption.AllDirectories).ShouldBeEmpty();
 
                 // -------------------------------------------------------------------
                 // Act

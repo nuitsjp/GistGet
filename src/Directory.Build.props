@@ -6,7 +6,6 @@
 		<Nullable>enable</Nullable>
 		<LangVersion>latest</LangVersion>
 		<RootNamespace></RootNamespace>
-		<MicrosoftManagementDeployment-FactoryLinkage>static</MicrosoftManagementDeployment-FactoryLinkage>
 
 		<!-- 静的解析設定 -->
 		<EnableNETAnalyzers>true</EnableNETAnalyzers>

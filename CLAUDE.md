@@ -67,7 +67,7 @@ src/
 
 ### 主要な依存関係
 
-- **Microsoft.WindowsPackageManager.ComInterop**: WinGet COM API
+- **Windows Package Manager CLI**: インストール済みの `winget.exe` によるパッケージ情報取得と操作
 - **Octokit**: GitHub API（Gist操作）
 - **System.CommandLine**: CLI引数パーシング
 - **Spectre.Console**: リッチコンソール出力

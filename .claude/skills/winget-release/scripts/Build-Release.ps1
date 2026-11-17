@@ -7,7 +7,7 @@
     このスクリプトは以下の処理を行います:
     1. 出力ディレクトリをクリア
     2. GistGet.csproj をpublish（ランチャー）
-    3. NuitsJp.GistGet.csproj を同じディレクトリにpublish（メイン実装 + COM DLL）
+    3. NuitsJp.GistGet.csproj を同じディレクトリにpublish（メイン実装）
     4. オプションでZIPアーカイブを作成
 
 .PARAMETER Version
@@ -118,7 +118,7 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 
-# Step 3: NuitsJp.GistGet.csproj をpublish（メイン実装 + COM DLL）
+# Step 3: NuitsJp.GistGet.csproj をpublish（メイン実装）
 Write-Step "3" "NuitsJp.GistGet.csproj をpublish中..."
 $publishArgs = @(
     'publish'
@@ -144,11 +144,7 @@ Write-Step "4" "ビルド結果を検証中..."
 
 $requiredFiles = @(
     @{ Name = 'GistGet.exe'; Description = 'ランチャー実行ファイル' },
-    @{ Name = 'NuitsJp.GistGet.exe'; Description = 'メイン実行ファイル' },
-    @{ Name = 'Microsoft.Management.Deployment.CsWinRTProjection.dll'; Description = 'WinGet COM相互運用DLL' },
-    @{ Name = 'Microsoft.Management.Deployment.dll'; Description = 'WinGet COM相互運用DLL' },
-    @{ Name = 'Microsoft.Management.Deployment.winmd'; Description = 'WinGet メタデータ' },
-    @{ Name = 'WinRT.Runtime.dll'; Description = 'WinRT ランタイムDLL' }
+    @{ Name = 'NuitsJp.GistGet.exe'; Description = 'メイン実行ファイル' }
 )
 
 $missingFiles = @()

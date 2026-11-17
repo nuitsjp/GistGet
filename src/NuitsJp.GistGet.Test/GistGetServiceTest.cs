@@ -1444,6 +1444,36 @@ public class GistGetServiceTests
 
     public class UpgradeAllAsync : GistGetServiceTests
     {
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public async Task UpgradeInclusionOptions_AreForwardedToPackageDiscovery(bool includeUnknown, bool includePinned)
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var options = new UpgradeOptions
+            {
+                Id = "placeholder",
+                IncludeUnknown = includeUnknown,
+                IncludePinned = includePinned
+            };
+            WinGetServiceMock.Setup(x => x.GetPackagesWithUpdates(It.IsAny<bool>(), It.IsAny<bool>()))
+                .Returns(new List<WinGetPackage>());
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            await Target.UpgradeAllAsync(options);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            WinGetServiceMock.Verify(x => x.GetPackagesWithUpdates(includeUnknown, includePinned), Times.Once);
+        }
+
         [Fact]
         public async Task WhenNoUpdatesAvailable_WritesInfoAndReturnsZero()
         {
@@ -1466,7 +1496,7 @@ public class GistGetServiceTests
                 .ReturnsAsync(new List<GistGetPackage>());
 
             WinGetServiceMock
-                .Setup(x => x.GetPackagesWithUpdates(It.IsAny<bool>()))
+                .Setup(x => x.GetPackagesWithUpdates(It.IsAny<bool>(), It.IsAny<bool>()))
                 .Returns(new List<WinGetPackage>());
 
             // -------------------------------------------------------------------
@@ -1513,7 +1543,7 @@ public class GistGetServiceTests
                 }));
 
             WinGetServiceMock
-                .Setup(x => x.GetPackagesWithUpdates(It.IsAny<bool>()))
+                .Setup(x => x.GetPackagesWithUpdates(It.IsAny<bool>(), It.IsAny<bool>()))
                 .Returns(packagesWithUpdates);
 
             WinGetServiceMock
@@ -1582,7 +1612,7 @@ public class GistGetServiceTests
                 }));
 
             WinGetServiceMock
-                .Setup(x => x.GetPackagesWithUpdates(It.IsAny<bool>()))
+                .Setup(x => x.GetPackagesWithUpdates(It.IsAny<bool>(), It.IsAny<bool>()))
                 .Returns(packagesWithUpdates);
 
             WinGetServiceMock
@@ -2827,6 +2857,213 @@ public class GistGetServiceTests
     [Collection("Sequential")]
     public class SyncAsync : GistGetServiceTests
     {
+        [Fact]
+        public async Task WhenInstalledPackageQueryFails_DoesNotChangePackages()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var url = "https://example.com/packages.yml";
+            AuthServiceMock.Setup(x => x.GetPackagesFromUrlAsync(url))
+                .ReturnsAsync(new List<GistGetPackage>
+                {
+                    new() { Id = "Example.Install", Pin = "1.0.0" },
+                    new() { Id = "Example.Uninstall", Uninstall = true }
+                });
+            var failure = new InvalidOperationException("catalog unavailable");
+            WinGetServiceMock.Setup(x => x.GetAllInstalledPackages()).Throws(failure);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var exception = await Should.ThrowAsync<InvalidOperationException>(() => Target.SyncAsync(url));
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            exception.ShouldBe(failure);
+            PassthroughRunnerMock.Verify(x => x.RunAsync(It.IsAny<string[]>()), Times.Never);
+            WinGetServiceMock.Verify(x => x.GetPinnedPackages(), Times.Never);
+        }
+
+        [Fact]
+        public async Task WhenPostInstallQueryFails_DoesNotChangeRemainingPackages()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var url = "https://example.com/packages.yml";
+            var firstPackage = new GistGetPackage { Id = "Example.First", Pin = "1.0.0" };
+            var remainingPackage = new GistGetPackage { Id = "Example.Remaining" };
+            AuthServiceMock.Setup(x => x.GetPackagesFromUrlAsync(url))
+                .ReturnsAsync(new List<GistGetPackage> { firstPackage, remainingPackage });
+            WinGetServiceMock.Setup(x => x.GetAllInstalledPackages()).Returns(new List<WinGetPackage>());
+            var failure = new InvalidOperationException("post-install query failed");
+            WinGetServiceMock.SetupSequence(x => x.FindById(new PackageId(firstPackage.Id)))
+                .Returns((WinGetPackage?)null)
+                .Throws(failure);
+            PassthroughRunnerMock.Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                args[0] == "install" && args.Contains(firstPackage.Id))))
+                .ReturnsAsync(17);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var exception = await Record.ExceptionAsync(() => Target.SyncAsync(url));
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            PassthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args =>
+                args.Contains(remainingPackage.Id))), Times.Never);
+            exception.ShouldBe(failure);
+            PassthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args =>
+                args[0] == "install" && args.Contains(firstPackage.Id))), Times.Once);
+            PassthroughRunnerMock.Verify(x => x.RunAsync(It.Is<string[]>(args => args[0] == "pin")), Times.Never);
+        }
+
+        [Fact]
+        public async Task WhenInstallProcessThrows_ContinuesWithRemainingPackages()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var url = "https://example.com/packages.yml";
+            var failingPackage = new GistGetPackage { Id = "Example.Failed" };
+            var remainingPackage = new GistGetPackage { Id = "Example.Remaining" };
+            AuthServiceMock.Setup(x => x.GetPackagesFromUrlAsync(url))
+                .ReturnsAsync(new List<GistGetPackage> { failingPackage, remainingPackage });
+            WinGetServiceMock.Setup(x => x.GetAllInstalledPackages()).Returns(new List<WinGetPackage>());
+            PassthroughRunnerMock.Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                args[0] == "install" && args.Contains(failingPackage.Id))))
+                .ThrowsAsync(new InvalidOperationException("install process failed"));
+            PassthroughRunnerMock.Setup(x => x.RunAsync(It.Is<string[]>(args =>
+                args[0] == "install" && args.Contains(remainingPackage.Id))))
+                .ReturnsAsync(0);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await Target.SyncAsync(url);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.Failed[failingPackage].ShouldBe(-1);
+            result.Installed.ShouldContain(remainingPackage);
+        }
+
+        [Fact]
+        public async Task WhenPinQueryFails_DoesNotStartPackageChanges()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var url = "https://example.com/packages.yml";
+            AuthServiceMock.Setup(x => x.GetPackagesFromUrlAsync(url))
+                .ReturnsAsync(new List<GistGetPackage> { new() { Id = "Example.Package" } });
+            WinGetServiceMock.Setup(x => x.GetAllInstalledPackages()).Returns(new List<WinGetPackage>());
+            var failure = new InvalidOperationException("pin query failed");
+            WinGetServiceMock.Setup(x => x.GetPinnedPackages()).Throws(failure);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var exception = await Should.ThrowAsync<InvalidOperationException>(() => Target.SyncAsync(url));
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            exception.ShouldBe(failure);
+            PassthroughRunnerMock.Verify(x => x.RunAsync(It.IsAny<string[]>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task WhenInstalledPackageHasDifferentCatalogId_DoesNotInstallOrUpgrade()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var url = "https://example.com/packages.yml";
+            var packageId = "XPFFZHVGQWWLHB";
+            AuthServiceMock.Setup(x => x.GetPackagesFromUrlAsync(url))
+                .ReturnsAsync(new List<GistGetPackage> { new() { Id = packageId } });
+            var installedPackage = new WinGetPackage("OneNote", new PackageId(packageId), new Version("1.0.0"), null, "msstore");
+            WinGetServiceMock.Setup(x => x.GetAllInstalledPackages())
+                .Returns(new List<WinGetPackage> { installedPackage with { Id = new PackageId("ARP.Machine.OneNote") } });
+            WinGetServiceMock.Setup(x => x.FindById(new PackageId(packageId))).Returns(installedPackage);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await Target.SyncAsync(url);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.Installed.ShouldBeEmpty();
+            result.Failed.ShouldBeEmpty();
+            PassthroughRunnerMock.Verify(x => x.RunAsync(It.IsAny<string[]>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task WhenPackageIdQueryFails_DoesNotStartAnyPackageChanges()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var url = "https://example.com/packages.yml";
+            AuthServiceMock.Setup(x => x.GetPackagesFromUrlAsync(url))
+                .ReturnsAsync(new List<GistGetPackage>
+                {
+                    new() { Id = "Example.New" },
+                    new() { Id = "Example.Failed", Uninstall = true }
+                });
+            WinGetServiceMock.Setup(x => x.GetAllInstalledPackages()).Returns(new List<WinGetPackage>());
+            var failure = new InvalidOperationException("catalog query failed");
+            WinGetServiceMock.Setup(x => x.FindById(new PackageId("Example.Failed"))).Throws(failure);
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var exception = await Should.ThrowAsync<InvalidOperationException>(() => Target.SyncAsync(url));
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            exception.ShouldBe(failure);
+            PassthroughRunnerMock.Verify(x => x.RunAsync(It.IsAny<string[]>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task WhenPackageIsInstalledWithUpdateAvailable_DoesNotInstallOrUpgrade()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            var url = "https://example.com/packages.yml";
+            var packageId = "Microsoft.Office";
+            AuthServiceMock.Setup(x => x.GetPackagesFromUrlAsync(url))
+                .ReturnsAsync(new List<GistGetPackage> { new() { Id = packageId } });
+            WinGetServiceMock.Setup(x => x.GetAllInstalledPackages())
+                .Returns(new List<WinGetPackage>
+                {
+                    new("Office", new PackageId(packageId), new Version("1.0.0"), new Version("2.0.0"), "winget")
+                });
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var result = await Target.SyncAsync(url);
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            result.Installed.ShouldBeEmpty();
+            result.Failed.ShouldBeEmpty();
+            PassthroughRunnerMock.Verify(x => x.RunAsync(It.IsAny<string[]>()), Times.Never);
+        }
+
         [Fact]
         public async Task WhenSyncing_WritesProgressForLocalPackageQueries()
         {
@@ -4508,7 +4745,7 @@ public class GistGetServiceTests
                 }));
 
             WinGetServiceMock
-                .Setup(x => x.GetPackagesWithUpdates(It.IsAny<bool>()))
+                .Setup(x => x.GetPackagesWithUpdates(It.IsAny<bool>(), It.IsAny<bool>()))
                 .Returns(packagesWithUpdates);
 
             WinGetServiceMock
@@ -4572,7 +4809,7 @@ public class GistGetServiceTests
                 }));
 
             WinGetServiceMock
-                .Setup(x => x.GetPackagesWithUpdates(It.IsAny<bool>()))
+                .Setup(x => x.GetPackagesWithUpdates(It.IsAny<bool>(), It.IsAny<bool>()))
                 .Returns(packagesWithUpdates);
 
             AuthServiceMock

@@ -463,7 +463,7 @@ public class GistGetService(
         IReadOnlyList<WinGetPackage> packagesWithUpdates;
         using (consoleService.WriteProgress(Messages.FetchingInstalledPackages))
         {
-            packagesWithUpdates = winGetService.GetPackagesWithUpdates(options.IncludeUnknown);
+            packagesWithUpdates = winGetService.GetPackagesWithUpdates(options.IncludeUnknown, options.IncludePinned);
         }
 
         if (packagesWithUpdates.Count == 0)
@@ -684,6 +684,20 @@ public class GistGetService(
             p => p,
             StringComparer.OrdinalIgnoreCase);
 
+        // Resolve manifest IDs that differ from the IDs returned by the local catalog.
+        // Complete all queries before starting any package changes.
+        foreach (var packageId in gistPackages.Select(p => p.Id).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (!localPackageDict.ContainsKey(packageId))
+            {
+                var installedPackage = winGetService.FindById(new PackageId(packageId));
+                if (installedPackage != null)
+                {
+                    localPackageDict.Add(packageId, installedPackage);
+                }
+            }
+        }
+
         // Get current pinned packages to avoid unnecessary pin operations
         IReadOnlyList<WinGetPin> pinnedPackages;
         using (consoleService.WriteProgress(Messages.FetchingPinnedPackages))
@@ -732,23 +746,31 @@ public class GistGetService(
         {
             if (!localPackageDict.TryGetValue(gistPkg.Id, out _))
             {
+                int exitCode;
                 try
                 {
                     var installArgs = argumentBuilder.BuildInstallArgs(gistPkg);
 
                     consoleService.WriteInfo($"[sync] Installing {gistPkg.ToDisplayString(colorize: true)}...");
-                    var exitCode = await passthroughRunner.RunAsync(installArgs.ToArray());
+                    exitCode = await passthroughRunner.RunAsync(installArgs.ToArray());
+                }
+                catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or IOException)
+                {
+                    // Use exit code -1 for exceptions (no exit code available)
+                    result.Failed[gistPkg] = -1;
+                    continue;
+                }
 
-                    // Check if the package is installed locally after winget install attempt.
-                    // This handles cases where winget returns non-zero exit code but the package
-                    // is already installed (e.g., "no upgrade available" scenario).
-                    var installedPackage = winGetService.FindById(new PackageId(gistPkg.Id));
-                    var isInstalled = s_alreadyInstalledExitCodes.Contains(exitCode) || installedPackage != null;
+                // Stop synchronization if installed state cannot be verified after installation.
+                var installedPackage = winGetService.FindById(new PackageId(gistPkg.Id));
+                var isInstalled = s_alreadyInstalledExitCodes.Contains(exitCode) || installedPackage != null;
 
-                    if (isInstalled)
+                if (isInstalled)
+                {
+                    result.Installed.Add(gistPkg);
+
+                    try
                     {
-                        result.Installed.Add(gistPkg);
-
                         if (!string.IsNullOrEmpty(gistPkg.Pin))
                         {
                             var pinArgs = argumentBuilder.BuildPinAddArgs(gistPkg.Id, gistPkg.Pin, gistPkg.PinType);
@@ -756,15 +778,14 @@ public class GistGetService(
                             await passthroughRunner.RunAsync(pinArgs);
                         }
                     }
-                    else
+                    catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or IOException)
                     {
-                        result.Failed[gistPkg] = exitCode;
+                        result.Failed[gistPkg] = -1;
                     }
                 }
-                catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or IOException)
+                else
                 {
-                    // Use exit code -1 for exceptions (no exit code available)
-                    result.Failed[gistPkg] = -1;
+                    result.Failed[gistPkg] = exitCode;
                 }
             }
         }

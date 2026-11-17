@@ -419,13 +419,7 @@ InstallationMetadata:
   Files:
   - RelativeFilePath: GistGet.exe
     FileType: launch
-  - RelativeFilePath: Microsoft.Management.Deployment.CsWinRTProjection.dll
-    FileType: other
-  - RelativeFilePath: Microsoft.Management.Deployment.dll
-    FileType: other
-  - RelativeFilePath: Microsoft.Management.Deployment.winmd
-    FileType: other
-  - RelativeFilePath: WinRT.Runtime.dll
+  - RelativeFilePath: NuitsJp.GistGet.exe
     FileType: other
 Installers:
 - Architecture: x64
