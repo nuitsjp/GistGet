@@ -35,7 +35,10 @@ public partial class WinGetService(IProcessRunner processRunner) : IWinGetServic
 
     public WinGetPackage? FindById(PackageId id)
     {
-        return ReadPackages(["--id", id.AsPrimitive()])
+        var sources = ReadPackageSources();
+        var canonicalId = sources.Keys.FirstOrDefault(packageId =>
+            string.Equals(packageId, id.AsPrimitive(), StringComparison.OrdinalIgnoreCase)) ?? id.AsPrimitive();
+        return ReadPackages(["--id", canonicalId, "--exact"], sources: sources)
             .FirstOrDefault(p => string.Equals(p.Id.AsPrimitive(), id.AsPrimitive(), StringComparison.OrdinalIgnoreCase));
     }
 
@@ -67,7 +70,8 @@ public partial class WinGetService(IProcessRunner processRunner) : IWinGetServic
             .ToList();
     }
 
-    private IReadOnlyList<WinGetPackage> ReadPackages(IEnumerable<string> options, bool updatesOnly = false)
+    private IReadOnlyList<WinGetPackage> ReadPackages(IEnumerable<string> options, bool updatesOnly = false,
+        Dictionary<string, string?>? sources = null)
     {
         var arguments = new List<string> { "list", "--details", "--sort", "version", "--descending", "--accept-source-agreements", "--disable-interactivity" };
         arguments.AddRange(options);
@@ -83,6 +87,16 @@ public partial class WinGetService(IProcessRunner processRunner) : IWinGetServic
             return packages;
         }
 
+        sources ??= ReadPackageSources();
+
+        return packages.Select(p => p with
+        {
+            Source = p.Source ?? sources.GetValueOrDefault(p.Id.AsPrimitive())
+        }).ToList();
+    }
+
+    private Dictionary<string, string?> ReadPackageSources()
+    {
         var sourceResult = Run(["dscv3", "package", "--export", "--disable-interactivity"]);
         var sources = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
         try
@@ -101,10 +115,7 @@ public partial class WinGetService(IProcessRunner processRunner) : IWinGetServic
             throw new InvalidOperationException("WinGet returned invalid package source data.", exception);
         }
 
-        return packages.Select(p => p with
-        {
-            Source = p.Source ?? sources.GetValueOrDefault(p.Id.AsPrimitive())
-        }).ToList();
+        return sources;
     }
 
     private static IReadOnlyList<WinGetPackage> ParsePackages(string output, bool updatesOnly)

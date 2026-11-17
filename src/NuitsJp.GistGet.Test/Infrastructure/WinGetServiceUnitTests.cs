@@ -206,7 +206,7 @@ public class WinGetServiceUnitTests
     public class FindById : WinGetServiceUnitTests
     {
         [Fact]
-        public void StoreId_QueriesIdAndMatchesCompleteIdentifier()
+        public void StoreId_QueriesCanonicalIdentifierByExactMatch()
         {
             // -------------------------------------------------------------------
             // Arrange
@@ -229,8 +229,33 @@ public class WinGetServiceUnitTests
             ProcessRunnerMock.Verify(x => x.RunAndCapture(It.Is<ProcessStartInfo>(p =>
                 p.ArgumentList[0] == "list" && p.ArgumentList.Contains("--details") &&
                 p.ArgumentList.Contains("--id") && p.ArgumentList.Contains("XPFFZHVGQWWLHB") &&
-                !p.ArgumentList.Contains("--exact") && p.ArgumentList.Contains("--disable-interactivity") &&
+                p.ArgumentList.Contains("--exact") && p.ArgumentList.Contains("--disable-interactivity") &&
                 p.ArgumentList.Contains("--accept-source-agreements"))), Times.Once);
+        }
+
+        [Fact]
+        public void StoreIdOnWinGet129_UsesCanonicalCaseAndExactQuery()
+        {
+            // -------------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------------
+            SourcesResult = new ProcessResult(0, "{\"id\":\"9NTRHF51WGGB\",\"source\":\"msstore\"}", "");
+            ProcessRunnerMock.Setup(x => x.RunAndCapture(It.Is<ProcessStartInfo>(p => p.ArgumentList[0] == "list")))
+                .Returns((ProcessStartInfo p) => p.ArgumentList.Contains("--exact") && p.ArgumentList.Contains("9NTRHF51WGGB")
+                    ? new ProcessResult(0, "Nani Translate [9NTRHF51WGGB]\nVersion: 1.0", "")
+                    : new ProcessResult(unchecked((int)0x8A150014), "No installed package found matching input criteria.", ""));
+
+            // -------------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------------
+            var package = Target.FindById(new PackageId("9ntrhf51wggb"));
+
+            // -------------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------------
+            package.ShouldNotBeNull();
+            package.Id.AsPrimitive().ShouldBe("9NTRHF51WGGB");
+            package.Source.ShouldBe("msstore");
         }
 
         [Fact]
@@ -240,8 +265,9 @@ public class WinGetServiceUnitTests
             // Arrange
             // -------------------------------------------------------------------
             ListResult = new ProcessResult(0, "Office [Microsoft.Office]\nVersion: 16.0.1", "");
+            SourcesResult = new ProcessResult(0, "{\"id\":\"Microsoft.Office\",\"source\":\"winget\"}", "");
             ProcessRunnerMock.Setup(x => x.RunAndCapture(It.Is<ProcessStartInfo>(p => p.ArgumentList[0] == "list")))
-                .Returns((ProcessStartInfo p) => p.ArgumentList.Contains("--exact")
+                .Returns((ProcessStartInfo p) => p.ArgumentList.Contains("--exact") && p.ArgumentList.Contains("microsoft.office")
                     ? new ProcessResult(unchecked((int)0x8A150014), "No installed package found matching input criteria.", "")
                     : ListResult);
 
